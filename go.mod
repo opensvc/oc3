@@ -7,7 +7,6 @@ require (
 	github.com/getkin/kin-openapi v0.123.0
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/oapi-codegen/runtime v1.1.1
-	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/shaj13/go-guardian/v2 v2.11.5
 	github.com/spf13/viper v1.18.2
 )

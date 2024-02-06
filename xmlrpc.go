@@ -3,10 +3,10 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/sagikazarmark/slog-shim"
 )
 
 type Arith struct{}
