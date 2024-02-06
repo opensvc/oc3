@@ -1,0 +1,16 @@
+**/*
+!**/*.go
+!**/*.json
+!**/testdata/**
+!**/*.yaml
+!**/*.conf
+!**/
+!**/text/*/*
+!go.sum
+!go.mod
+!LICENSE
+!.gitignore
+!Makefile
+.idea
+core/version/version.go
+.trash
