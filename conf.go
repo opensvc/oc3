@@ -9,7 +9,7 @@ import (
 
 func initConf() error {
 	// env
-	viper.SetEnvPrefix("API")
+	viper.SetEnvPrefix("OC3")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
@@ -20,6 +20,9 @@ func initConf() error {
 	viper.SetDefault("db.port", "3306")
 	viper.SetDefault("db.log.level", "warn")
 	viper.SetDefault("db.log.slow_query_threshold", "1s")
+	viper.SetDefault("redis.db", 0)
+	viper.SetDefault("redis.address", "localhost:6379")
+	viper.SetDefault("redis.password", "")
 
 	// config file
 	viper.SetConfigName("config")
