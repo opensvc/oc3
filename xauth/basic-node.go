@@ -1,4 +1,4 @@
-package auth
+package xauth
 
 import (
 	"context"
@@ -18,8 +18,8 @@ type (
 )
 
 const (
-	xNodeID string = "node_id"
-	xApp    string = "app"
+	XNodeID string = "node_id"
+	XApp    string = "app"
 )
 
 const (
@@ -53,8 +53,8 @@ func authenticateNode(ctx context.Context, db *sql.DB, nodename, password string
 
 func (n *authNode) extensions() auth.Extensions {
 	ext := make(auth.Extensions)
-	ext.Set(xNodeID, n.id)
-	ext.Set(xApp, n.app)
+	ext.Set(XNodeID, n.id)
+	ext.Set(XApp, n.app)
 	return ext
 }
 
