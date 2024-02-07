@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 
@@ -21,9 +22,16 @@ const (
 	xApp    string = "app"
 )
 
-func NewBasicNode() auth.Strategy {
+const (
+	queryAuthNode = "SELECT nodes.node_id, nodes.app " +
+		"FROM auth_node " +
+		"JOIN nodes ON nodes.node_id = auth_node.node_id " +
+		"WHERE auth_node.nodename = ? and auth_node.uuid = ?"
+)
+
+func NewBasicNode(db *sql.DB) auth.Strategy {
 	authFunc := func(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {
-		u, err := authenticateNode(ctx, userName, password)
+		u, err := authenticateNode(ctx, db, userName, password)
 		if err != nil {
 			return nil, fmt.Errorf("invalid credentials")
 		}
@@ -32,14 +40,15 @@ func NewBasicNode() auth.Strategy {
 	return basic.New(authFunc)
 }
 
-func authenticateNode(ctx context.Context, nodename, password string) (*authNode, error) {
-	if nodename == "foo" && password == "baar" {
-		return &authNode{
-			id:  "foo",
-			app: "fooApp",
-		}, nil
+func authenticateNode(ctx context.Context, db *sql.DB, nodename, password string) (*authNode, error) {
+	var node authNode
+	err := db.
+		QueryRowContext(ctx, queryAuthNode, nodename, password).
+		Scan(&node.id, &node.app)
+	if err != nil {
+		return nil, fmt.Errorf("invalid Credentials for node %s", nodename)
 	}
-	return nil, fmt.Errorf("invalid Credentials for node %s", nodename)
+	return &node, nil
 }
 
 func (n *authNode) extensions() auth.Extensions {

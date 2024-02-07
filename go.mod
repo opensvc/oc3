@@ -6,6 +6,7 @@ require (
 	github.com/allenai/go-swaggerui v0.1.0
 	github.com/getkin/kin-openapi v0.123.0
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/shaj13/go-guardian/v2 v2.11.5
