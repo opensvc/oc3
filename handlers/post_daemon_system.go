@@ -12,8 +12,11 @@ import (
 )
 
 func (a *Api) PostDaemonSystem(c echo.Context) error {
-	var nodeUUID, nodeName string
-	key := fmt.Sprintf("%s:%s", nodeUUID, nodeName)
+	key := nodeIDFromContext(c)
+	if key == "" {
+		return JSONNodeAuthProblem(c)
+	}
+
 	b, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return fmt.Errorf("read request body: %w", err)

@@ -3,6 +3,10 @@ package cache
 var (
 	clientKey = "redisClient"
 
+	KeyAsset     = "oc3:q:asset"
+	KeyAssetHash = "oc3:h:asset"
+	KeyGeneric   = "oc3:q:generic"
+
 	KeyDaemonStatusHash        = "osvc:h:daemon_status"
 	KeyDaemonStatusChangesHash = "osvc:h:daemon_status_changes"
 	KeyDaemonStatus            = "osvc:q:daemon_status"
@@ -15,13 +19,10 @@ var (
 	KeyResinfo                 = "osvc:q:resinfo"
 	KeySvcmonUpdate            = "osvc:q:svcmon_update"
 	KeySysreport               = "osvc:q:sysreport"
-	KeyAssetHash               = "osvc:h:asset"
-	KeyAsset                   = "osvc:q:asset"
 	KeySvcconfHash             = "osvc:h:svcconf"
 	KeySvcconf                 = "osvc:q:svcconf"
-	KeyGeneric                 = "osvc:q:generic"
 	KeyChecksHash              = "osvc:h:checks"
-	KeyCHECKS                  = "osvc:q:checks"
+	KeyChecks                  = "osvc:q:checks"
 	KeyUpdateDashNetdevErrors  = "osvc:q:update_dash_netdev_errors"
 	KeySvcmon                  = "osvc:q:svcmon"
 	KeySvcactions              = "osvc:q:svcactions"
