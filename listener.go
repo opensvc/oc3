@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/api"
-	"github.com/opensvc/oc3/auth"
 	"github.com/opensvc/oc3/handlers"
+	"github.com/opensvc/oc3/xauth"
 )
 
 func initListener() error {
@@ -25,8 +25,8 @@ func listenAndServe(addr string) error {
 	}
 	e := echo.New()
 	strategy := union.New(
-		auth.NewPublicStrategy("/public/"),
-		auth.NewBasicNode(db),
+		xauth.NewPublicStrategy("/public/"),
+		xauth.NewBasicNode(db),
 	)
 	e.Use(handlers.AuthMiddleware(strategy))
 	api.RegisterHandlers(e, &handlers.Api{
