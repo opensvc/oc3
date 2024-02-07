@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func initConf() error {
+func initConfig() error {
 	// env
 	viper.SetEnvPrefix("OC3")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))

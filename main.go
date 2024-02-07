@@ -4,23 +4,24 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-
-	"github.com/spf13/viper"
 )
 
-func fatal(err error) {
-	if err != nil {
-		slog.Info(err.Error())
-		os.Exit(1)
+func start() error {
+	if err := initConfig(); err != nil {
+		return fmt.Errorf("can't load config: %w", err)
 	}
+	if err := initRedis(); err != nil {
+		return fmt.Errorf("init redis: %w", err)
+	}
+	if err := initListener(); err != nil {
+		return fmt.Errorf("init redis: %w", err)
+	}
+	return nil
 }
 
 func main() {
-	if err := initConf(); err != nil {
-		fatal(fmt.Errorf("can't load config: %w", err))
-	}
-	addr := viper.GetString("Listen")
-	if err := listenAndServe(addr); err != nil {
-		fatal(err)
+	if err := start(); err != nil {
+		slog.Info(err.Error())
+		os.Exit(1)
 	}
 }
