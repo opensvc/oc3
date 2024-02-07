@@ -28,9 +28,6 @@ type Problem struct {
 // System defines model for system.
 type System = map[string]interface{}
 
-// InPathNodeName defines model for inPathNodeName.
-type InPathNodeName = string
-
 // N200 defines model for 200.
 type N200 = Problem
 
