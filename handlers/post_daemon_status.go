@@ -4,11 +4,9 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-
-	"github.com/opensvc/oc3/api"
 )
 
-func (a *Api) PostDaemonStatus(ctx echo.Context, nodename api.InPathNodeName) error {
+func (a *Api) PostDaemonStatus(ctx echo.Context) error {
 	nodeID := nodeIDFromContext(ctx)
 	if nodeID == "" {
 		return JSONProblem(ctx, http.StatusForbidden, "forbidden", "missing node authentication")
