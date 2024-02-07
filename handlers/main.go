@@ -1,13 +1,14 @@
 package handlers
 
-import "database/sql"
+import (
+	"database/sql"
+
+	"github.com/go-redis/redis/v8"
+)
 
 type (
 	Api struct {
-		DB *sql.DB
+		DB    *sql.DB
+		Redis *redis.Client
 	}
 )
-
-func New(db *sql.DB) *Api {
-	return &Api{DB: db}
-}

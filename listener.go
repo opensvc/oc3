@@ -10,7 +10,6 @@ import (
 
 	"github.com/opensvc/oc3/api"
 	"github.com/opensvc/oc3/auth"
-	"github.com/opensvc/oc3/cache"
 	"github.com/opensvc/oc3/handlers"
 )
 
@@ -26,15 +25,11 @@ func listenAndServe(addr string) error {
 		auth.NewBasicNode(DB),
 	)
 	e.Use(handlers.AuthMiddleware(strategy))
-	api.RegisterHandlers(e, handlers.New(DB))
+	api.RegisterHandlers(e, &handlers.Api{
+		DB:    DB,
+		Redis: Redis,
+	})
 	registerAPIUI(e)
-
-	daemonGroup := e.Group("/daemon")
-	daemonGroup.Use(cache.RedisMiddleware(
-		viper.GetString("Redis.Address"),
-		viper.GetString("Redis.Password"),
-		viper.GetInt("Redis.Database"),
-	))
 
 	slog.Info("starting server on " + addr)
 	return e.Start(addr)

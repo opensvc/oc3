@@ -1,10 +1,5 @@
 package cache
 
-import (
-	"github.com/go-redis/redis/v8"
-	"github.com/labstack/echo/v4"
-)
-
 var (
 	clientKey = "redisClient"
 
@@ -32,30 +27,3 @@ var (
 	KeySvcactions              = "osvc:q:svcactions"
 	KeyStorage                 = "osvc:q:storage"
 )
-
-func NewClient(address, password string, database int) *redis.Client {
-	return redis.NewClient(&redis.Options{
-		Addr:     address,
-		Password: password,
-		DB:       database,
-	})
-}
-
-func ContextWithClient(c echo.Context, client *redis.Client) echo.Context {
-	c.Set(clientKey, client)
-	return c
-}
-
-func ClientFromContext(c echo.Context) *redis.Client {
-	return c.Get(clientKey).(*redis.Client)
-}
-
-func RedisMiddleware(address, password string, database int) echo.MiddlewareFunc {
-	client := NewClient(address, password, database)
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			c = ContextWithClient(c, client)
-			return next(c)
-		}
-	}
-}
