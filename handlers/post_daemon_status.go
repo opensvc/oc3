@@ -6,10 +6,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (a *Api) PostDaemonStatus(ctx echo.Context) error {
-	nodeID := nodeIDFromContext(ctx)
+func (a *Api) PostDaemonStatus(c echo.Context) error {
+	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {
-		return JSONProblem(ctx, http.StatusForbidden, "forbidden", "missing node authentication")
+		return JSONNodeAuthProblem(c)
 	}
-	return JSONProblem(ctx, http.StatusInternalServerError, "not yet implemented", "")
+
+	return JSONProblem(c, http.StatusInternalServerError, "not yet implemented", "")
 }
