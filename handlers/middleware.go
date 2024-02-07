@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/shaj13/go-guardian/v2/auth"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 )
 
@@ -20,4 +21,12 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
+}
+
+func getUser(c echo.Context) auth.Info {
+	user, ok := c.Get("user").(auth.Info)
+	if ok {
+		return user
+	}
+	return nil
 }

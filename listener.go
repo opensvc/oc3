@@ -22,10 +22,10 @@ func listenAndServe(addr string) error {
 	e := echo.New()
 	strategy := union.New(
 		auth.NewPublicStrategy("/public/"),
-		auth.NewBasicNode(),
+		auth.NewBasicNode(DB),
 	)
 	e.Use(handlers.AuthMiddleware(strategy))
-	api.RegisterHandlers(e, handlers.New())
+	api.RegisterHandlers(e, handlers.New(DB))
 	registerAPIUI(e)
 	slog.Info("starting server on " + addr)
 	return e.Start(addr)
