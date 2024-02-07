@@ -1,12 +1,12 @@
-package main
+package cache
 
 import (
 	"github.com/go-redis/redis/v8"
-	"github.com/spf13/viper"
+	"github.com/labstack/echo/v4"
 )
 
 var (
-	Redis *redis.Client
+	clientKey = "redisClient"
 
 	KeyDaemonStatusHash        = "osvc:h:daemon_status"
 	KeyDaemonStatusChangesHash = "osvc:h:daemon_status_changes"
@@ -33,14 +33,29 @@ var (
 	KeyStorage                 = "osvc:q:storage"
 )
 
-func initRedis() error {
-	address := viper.GetString("Redis.Address")
-	password := viper.GetString("Redis.Password")
-	database := viper.GetInt("Redis.Database")
-	Redis = redis.NewClient(&redis.Options{
+func NewClient(address, password string, database int) *redis.Client {
+	return redis.NewClient(&redis.Options{
 		Addr:     address,
 		Password: password,
 		DB:       database,
 	})
-	return nil
+}
+
+func ContextWithClient(c echo.Context, client *redis.Client) echo.Context {
+	c.Set(clientKey, client)
+	return c
+}
+
+func ClientFromContext(c echo.Context) *redis.Client {
+	return c.Get(clientKey).(*redis.Client)
+}
+
+func RedisMiddleware(address, password string, database int) echo.MiddlewareFunc {
+	client := NewClient(address, password, database)
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c = ContextWithClient(c, client)
+			return next(c)
+		}
+	}
 }

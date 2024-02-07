@@ -23,6 +23,35 @@ paths:
           $ref: '#/components/responses/403'
         500:
           $ref: '#/components/responses/500'
+
+  /daemon/system:
+    post:
+      description: |
+        Post daemon system discovery
+      operationId: PostDaemonSystem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/system'
+      responses:
+        200:
+          $ref: '#/components/responses/200'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: []
+        - bearerAuth: []
+      tags:
+        - agent
+
   /daemon/status/{nodename}:
     post:
       description: |
@@ -73,6 +102,9 @@ components:
         - detail
         - status
         - title
+
+    system:
+      type: object
 
   parameters:
 

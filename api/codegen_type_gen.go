@@ -25,6 +25,9 @@ type Problem struct {
 	Title string `json:"title"`
 }
 
+// System defines model for system.
+type System = map[string]interface{}
+
 // InPathNodeName defines model for inPathNodeName.
 type InPathNodeName = string
 
@@ -42,3 +45,6 @@ type N403 = Problem
 
 // N500 defines model for 500.
 type N500 = Problem
+
+// PostDaemonSystemJSONRequestBody defines body for PostDaemonSystem for application/json ContentType.
+type PostDaemonSystemJSONRequestBody = System
