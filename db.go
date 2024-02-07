@@ -9,12 +9,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	DB *sql.DB
-)
-
 // initDatabase setup database handler.
-func initDatabase() (err error) {
+func newDatabase() (*sql.DB, error) {
 	cfg := mysql.Config{
 		User:                 viper.GetString("db.username"),
 		Passwd:               viper.GetString("db.password"),
@@ -24,12 +20,12 @@ func initDatabase() (err error) {
 		AllowNativePasswords: true,
 	}
 	slog.Info("db config.addr=" + cfg.Addr)
-	DB, err = sql.Open("mysql", cfg.FormatDSN())
+	DB, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
-		return
+		return nil, err
 	}
 	DB.SetConnMaxLifetime(time.Minute * 3)
 	DB.SetMaxOpenConns(10)
 	DB.SetMaxIdleConns(10)
-	return
+	return DB, nil
 }

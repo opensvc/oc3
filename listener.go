@@ -19,15 +19,19 @@ func initListener() error {
 }
 
 func listenAndServe(addr string) error {
+	db, err := newDatabase()
+	if err != nil {
+		return err
+	}
 	e := echo.New()
 	strategy := union.New(
 		auth.NewPublicStrategy("/public/"),
-		auth.NewBasicNode(DB),
+		auth.NewBasicNode(db),
 	)
 	e.Use(handlers.AuthMiddleware(strategy))
 	api.RegisterHandlers(e, &handlers.Api{
-		DB:    DB,
-		Redis: Redis,
+		DB:    db,
+		Redis: newRedis(),
 	})
 	registerAPIUI(e)
 
