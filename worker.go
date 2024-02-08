@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/go-redis/redis/v8"
+
+	"github.com/opensvc/oc3/cache"
 )
 
 type (
@@ -40,14 +43,28 @@ func newWorker(queues []string) (*Worker, error) {
 	return w, nil
 }
 
+func (t *Worker) Asset(nodeId string) error {
+	cmd := t.Redis.HGet(context.Background(), cache.KeyAssetHash, nodeId)
+	result, err := cmd.Result()
+	switch err {
+	case nil:
+	case redis.Nil:
+		return nil
+	default:
+		return err
+	}
+	var v any
+	if err := json.Unmarshal([]byte(result), &v); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (t *Worker) Run() error {
 	slog.Info(fmt.Sprintf("dequeue %s", t.Queues))
 	for {
-		tasks := t.Redis.BLPop(context.Background(), 5*time.Second, t.Queues...)
-		if tasks == nil {
-			continue
-		}
-		result, err := tasks.Result()
+		cmd := t.Redis.BLPop(context.Background(), 5*time.Second, t.Queues...)
+		result, err := cmd.Result()
 		switch err {
 		case nil:
 		case redis.Nil:
@@ -57,7 +74,16 @@ func (t *Worker) Run() error {
 			time.Sleep(time.Second)
 			continue
 		}
-		slog.Info(fmt.Sprintf("BLPOP %s => %s", result[0], result[1]))
+		slog.Info(fmt.Sprintf("BLPOP %s -> %s", result[0], result[1]))
+		switch result[0] {
+		case cache.KeyAsset:
+			err = t.Asset(result[1])
+		default:
+			slog.Warn(fmt.Sprintf("unsupported queue: %s", result[0]))
+		}
+		if err != nil {
+			slog.Error(err.Error())
+		}
 	}
 	return nil
 }
