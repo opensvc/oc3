@@ -13,7 +13,7 @@ import (
 	"github.com/opensvc/oc3/xauth"
 )
 
-func initListener() error {
+func listen() error {
 	addr := viper.GetString("Listen")
 	return listenAndServe(addr)
 }
@@ -23,7 +23,11 @@ func listenAndServe(addr string) error {
 	if err != nil {
 		return err
 	}
+
 	e := echo.New()
+	e.HideBanner = true
+	e.HidePort = true
+
 	strategy := union.New(
 		xauth.NewPublicStrategy("/public/"),
 		xauth.NewBasicNode(db),
@@ -35,7 +39,7 @@ func listenAndServe(addr string) error {
 	})
 	registerAPIUI(e)
 
-	slog.Info("starting server on " + addr)
+	slog.Info("listen on " + addr)
 	return e.Start(addr)
 }
 

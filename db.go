@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -19,7 +20,7 @@ func newDatabase() (*sql.DB, error) {
 		DBName:               "opensvc",
 		AllowNativePasswords: true,
 	}
-	slog.Info("db config.addr=" + cfg.Addr)
+	slog.Info(fmt.Sprintf("db addr=%s", cfg.Addr))
 	DB, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
 		return nil, err
