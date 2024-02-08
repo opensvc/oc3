@@ -8,6 +8,15 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	configCandidateDirs = []string{"/etc/oc3/", "$HOME/.oc3/", "./"}
+)
+
+func logConfig() {
+	slog.Info(fmt.Sprintf("candidate config directories: %s", configCandidateDirs))
+	slog.Info(fmt.Sprintf("using config file: %s", viper.ConfigFileUsed()))
+}
+
 func initConfig() error {
 	// env
 	viper.SetEnvPrefix("OC3")
@@ -28,11 +37,8 @@ func initConfig() error {
 	// config file
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	slog.Info(fmt.Sprintf("add candidate config directory: %s", "/etc/oc3/"))
 	viper.AddConfigPath("/etc/oc3")
-	slog.Info(fmt.Sprintf("add candidate config directory: %s", "$HOME/.oc3/"))
 	viper.AddConfigPath("$HOME/.oc3")
-	slog.Info(fmt.Sprintf("add candidate config directory: %s", "./"))
 	viper.AddConfigPath(".")
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
@@ -41,6 +47,5 @@ func initConfig() error {
 			slog.Info(err.Error())
 		}
 	}
-	slog.Info(fmt.Sprintf("using config file: %s", viper.ConfigFileUsed()))
 	return nil
 }

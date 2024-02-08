@@ -14,6 +14,7 @@ import (
 )
 
 func listen() error {
+	logConfig()
 	addr := viper.GetString("Listen")
 	return listenAndServe(addr)
 }

@@ -1,20 +1,16 @@
 package main
 
 import (
-	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
 
-var (
-	root = &cobra.Command{
-		Use:   filepath.Base(os.Args[0]),
+func newCmd(args []string) *cobra.Command {
+	root := &cobra.Command{
+		Use:   filepath.Base(args[0]),
 		Short: "Manage the opensvc collector infrastructure components.",
 	}
-)
-
-func init() {
 	root.AddCommand(
 		&cobra.Command{
 			Use:   "api",
@@ -24,4 +20,5 @@ func init() {
 			},
 		},
 	)
+	return root
 }
