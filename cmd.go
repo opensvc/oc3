@@ -19,6 +19,13 @@ func newCmd(args []string) *cobra.Command {
 				return listen()
 			},
 		},
+		&cobra.Command{
+			Use:   "worker",
+			Short: "run jobs from a list of queues",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return runWorker(args)
+			},
+		},
 	)
 	return root
 }
