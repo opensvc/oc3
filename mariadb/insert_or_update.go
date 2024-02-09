@@ -3,106 +3,98 @@ package mariadb
 import (
 	"database/sql"
 	"fmt"
+	"slices"
 	"strings"
 )
 
 type (
+	Raw          string
+	AccessorFunc func(v any) (any, error)
+
 	InsertOrUpdate struct {
-		Table        string
-		Keys         []string
-		Columns      Columns
+		Table    string
+		Keys     []string
+		Mappings Mappings
+		Accessor AccessorFunc
+		Data     any
+
 		names        []string
 		placeholders []string
 		updates      []string
-		updateValues []any
 		values       []any
 	}
 )
 
-func (t Column) Names() []string {
-	return append([]string{t.Name}, t.Alias...)
-}
-
-func (t *InsertOrUpdate) Add(name string, value any) {
-	for _, k := range t.Keys {
-		if k == name {
-			t.addKey(name, value)
-			return
-		}
+func (t *InsertOrUpdate) load() error {
+	switch v := t.Data.(type) {
+	case map[string]any:
+		return t.loadLines([]any{v})
+	case []any:
+		return t.loadLines(v)
+	default:
+		return fmt.Errorf("unsupported data format")
 	}
-	t.addNonKey(name, value)
 }
 
-func (t *InsertOrUpdate) AddString(name string, value string) {
-	for _, k := range t.Keys {
-		if k == name {
-			t.addStringKey(name, value)
-			return
-		}
+func (t *InsertOrUpdate) loadLines(data []any) error {
+	if len(data) == 0 {
+		return nil
 	}
-	t.addStringNonKey(name, value)
-}
 
-func (t *InsertOrUpdate) LoadWithAccessor(data map[string]any, accessor func(v any) (any, error)) error {
-	for _, column := range t.Columns {
-		for _, name := range column.Names() {
-			if value, ok := data[name]; ok {
-				if v, err := accessor(value); err != nil {
-					return fmt.Errorf("%s: %w", name, err)
-				} else {
-					t.Add(name, v)
-				}
+	for _, mapping := range t.Mappings {
+		d, ok := data[0].(map[string]any)
+		if !ok {
+			return fmt.Errorf("unsupported data line format")
+		}
+		if _, ok := d[mapping.From]; ok {
+			t.names = append(t.names, mapping.To)
+			if !slices.Contains(t.Keys, mapping.To) {
+				t.updates = append(t.updates, fmt.Sprintf("%s = VALUES(%s)", mapping.To, mapping.To))
 			}
 		}
+	}
+
+	for _, line := range data {
+		var placeholders []string
+		d, ok := line.(map[string]any)
+		if !ok {
+			return fmt.Errorf("unsupported data line format")
+		}
+		for _, mapping := range t.Mappings {
+			if value, ok := d[mapping.From]; ok {
+				if v, ok := value.(Raw); ok {
+					placeholders = append(placeholders, string(v))
+					continue
+				}
+				if t.Accessor != nil {
+					if v, err := t.Accessor(value); err != nil {
+						return fmt.Errorf("accessor: %s: %w", mapping.From, err)
+					} else {
+						value = v
+					}
+				}
+				placeholders = append(placeholders, "?")
+				t.values = append(t.values, value)
+			}
+		}
+		t.placeholders = append(t.placeholders, fmt.Sprintf("(%s)", strings.Join(placeholders, ", ")))
 	}
 	return nil
 }
 
-func (t *InsertOrUpdate) Load(data map[string]any) {
-	for _, column := range t.Columns {
-		for _, name := range column.Names() {
-			if value, ok := data[name]; ok {
-				t.Add(name, value)
-			}
-		}
-	}
-}
-
 func (t *InsertOrUpdate) Query(db *sql.DB) (*sql.Rows, error) {
-	return db.Query(t.SQL(), append(t.values, t.updateValues...)...)
+	if err := t.load(); err != nil {
+		return nil, err
+	}
+	return db.Query(t.SQL(), t.values...)
 }
 
 func (t *InsertOrUpdate) SQL() string {
 	return fmt.Sprintf(
-		"INSERT INTO %s (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s",
+		"INSERT INTO %s (%s) VALUES %s ON DUPLICATE KEY UPDATE %s",
 		t.Table,
 		strings.Join(t.names, ", "),
 		strings.Join(t.placeholders, ", "),
 		strings.Join(t.updates, ", "),
 	)
-}
-
-func (t *InsertOrUpdate) addStringNonKey(name string, value string) {
-	t.names = append(t.names, name)
-	t.placeholders = append(t.placeholders, value)
-	t.updates = append(t.updates, fmt.Sprintf("%s = %s", name, value))
-}
-
-func (t *InsertOrUpdate) addStringKey(name string, value string) {
-	t.names = append(t.names, name)
-	t.placeholders = append(t.placeholders, value)
-}
-
-func (t *InsertOrUpdate) addNonKey(name string, value any) {
-	t.names = append(t.names, name)
-	t.updates = append(t.updates, fmt.Sprintf("%s = ?", name))
-	t.placeholders = append(t.placeholders, "?")
-	t.values = append(t.values, value)
-	t.updateValues = append(t.updateValues, value)
-}
-
-func (t *InsertOrUpdate) addKey(name string, value any) {
-	t.names = append(t.names, name)
-	t.values = append(t.values, value)
-	t.placeholders = append(t.placeholders, "?")
 }
