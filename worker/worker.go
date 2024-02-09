@@ -1,10 +1,11 @@
-package main
+package worker
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -20,30 +21,8 @@ type (
 	}
 )
 
-func runWorker(queues []string) error {
-	w, err := newWorker(queues)
-	if err != nil {
-		return err
-	}
-	return w.Run()
-}
-
-func newWorker(queues []string) (*Worker, error) {
-	logConfig()
-	db, err := newDatabase()
-	if err != nil {
-		return nil, err
-	}
-	w := &Worker{
-		Redis:  newRedis(),
-		DB:     db,
-		Queues: queues,
-	}
-	return w, nil
-}
-
 func (t *Worker) Run() error {
-	slog.Info(fmt.Sprintf("dequeue %s", t.Queues))
+	slog.Info(fmt.Sprintf("work with queues: %s", strings.Join(t.Queues, ", ")))
 	for {
 		cmd := t.Redis.BLPop(context.Background(), 5*time.Second, t.Queues...)
 		result, err := cmd.Result()
