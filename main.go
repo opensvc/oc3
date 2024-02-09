@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log/slog"
 	"os"
 )
 
@@ -19,7 +18,6 @@ func cmd(args []string) error {
 // keep it simple.
 func main() {
 	if err := cmd(os.Args); err != nil {
-		slog.Info(err.Error())
 		os.Exit(1)
 	}
 }
