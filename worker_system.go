@@ -19,6 +19,7 @@ func (t *Worker) handleSystemProperties(nodeID string, i any) error {
 	}
 
 	request := mariadb.InsertOrUpdate{
+		Table: "nodes",
 		Columns: mariadb.Columns{
 			mariadb.Column{Name: "asset_env"},
 			mariadb.Column{Name: "bios_version"},
@@ -65,22 +66,22 @@ func (t *Worker) handleSystemProperties(nodeID string, i any) error {
 	}
 	request.Add("node_id", nodeID)
 	request.AddString("updated", "NOW()")
-
-	for _, column := range request.Columns {
-		for _, name := range column.Names() {
-			if v, ok := data[name]; ok {
-				if keyData, ok := v.(map[string]any); !ok {
-					slog.Warn(fmt.Sprintf("unsupported system property '%s' format", name))
-				} else if value, ok := keyData["value"]; !ok {
-					slog.Warn(fmt.Sprintf("unsupported system property '%s' format: key not found: value", name))
-				} else {
-					request.Add(name, value)
-				}
-			}
+	err := request.LoadWithAccessor(data, func(v any) (any, error) {
+		keyData, ok := v.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("unsupported system property format")
 		}
+		value, ok := keyData["value"]
+		if !ok {
+			return nil, fmt.Errorf("unsupported system property format: key not found")
+		}
+		return value, nil
+	})
+	if err != nil {
+		return err
 	}
 
-	_, err := request.Query(t.DB)
+	_, err = request.Query(t.DB)
 
 	return err
 }

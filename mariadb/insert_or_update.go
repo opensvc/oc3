@@ -8,6 +8,7 @@ import (
 
 type (
 	InsertOrUpdate struct {
+		Table        string
 		Keys         []string
 		Columns      Columns
 		names        []string
@@ -42,6 +43,21 @@ func (t *InsertOrUpdate) AddString(name string, value string) {
 	t.addStringNonKey(name, value)
 }
 
+func (t *InsertOrUpdate) LoadWithAccessor(data map[string]any, accessor func(v any) (any, error)) error {
+	for _, column := range t.Columns {
+		for _, name := range column.Names() {
+			if value, ok := data[name]; ok {
+				if v, err := accessor(value); err != nil {
+					return fmt.Errorf("%s: %w", name, err)
+				} else {
+					t.Add(name, v)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func (t *InsertOrUpdate) Load(data map[string]any) {
 	for _, column := range t.Columns {
 		for _, name := range column.Names() {
@@ -58,7 +74,8 @@ func (t *InsertOrUpdate) Query(db *sql.DB) (*sql.Rows, error) {
 
 func (t *InsertOrUpdate) SQL() string {
 	return fmt.Sprintf(
-		"INSERT INTO nodes (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s",
+		"INSERT INTO %s (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s",
+		t.Table,
 		strings.Join(t.names, ", "),
 		strings.Join(t.placeholders, ", "),
 		strings.Join(t.updates, ", "),
