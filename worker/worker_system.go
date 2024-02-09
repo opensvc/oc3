@@ -11,6 +11,76 @@ import (
 	"github.com/opensvc/oc3/mariadb"
 )
 
+func (t *Worker) handleSystemGroups(nodeID string, i any) error {
+	data, ok := i.([]any)
+	if !ok {
+		slog.Warn("unsupported system groups table format")
+		return nil
+	}
+
+	for i, _ := range data {
+		line, ok := data[i].(map[string]any)
+		if !ok {
+			slog.Warn("unsupported system groups entry format")
+			return nil
+		}
+		line["node_id"] = nodeID
+		line["updated"] = mariadb.Raw("NOW()")
+		data[i] = line
+	}
+
+	request := mariadb.InsertOrUpdate{
+		Table: "node_groups",
+		Mappings: mariadb.Mappings{
+			mariadb.NewNaturalMapping("node_id"),
+			mariadb.NewNaturalMapping("updated"),
+			mariadb.NewMapping("group_id", "uid"),
+			mariadb.NewMapping("group_name", "groupname"),
+		},
+		Keys: []string{"node_id"},
+		Data: data,
+	}
+
+	_, err := request.Query(t.DB)
+
+	return err
+}
+
+func (t *Worker) handleSystemUsers(nodeID string, i any) error {
+	data, ok := i.([]any)
+	if !ok {
+		slog.Warn("unsupported system users table format")
+		return nil
+	}
+
+	for i, _ := range data {
+		line, ok := data[i].(map[string]any)
+		if !ok {
+			slog.Warn("unsupported system users entry format")
+			return nil
+		}
+		line["node_id"] = nodeID
+		line["updated"] = mariadb.Raw("NOW()")
+		data[i] = line
+	}
+
+	request := mariadb.InsertOrUpdate{
+		Table: "node_users",
+		Mappings: mariadb.Mappings{
+			mariadb.NewNaturalMapping("node_id"),
+			mariadb.NewNaturalMapping("updated"),
+			mariadb.NewMapping("user_id", "uid"),
+			mariadb.NewMapping("user_name", "username"),
+		},
+		Keys: []string{"node_id"},
+		Data: data,
+	}
+
+	_, err := request.Query(t.DB)
+
+	return err
+}
+
 func (t *Worker) handleSystemHardware(nodeID string, i any) error {
 	data, ok := i.([]any)
 	if !ok {
@@ -146,6 +216,10 @@ func (t *Worker) handleSystem(nodeID string) error {
 			err = t.handleSystemHardware(nodeID, i)
 		case "properties":
 			err = t.handleSystemProperties(nodeID, i)
+		case "gids":
+			err = t.handleSystemGroups(nodeID, i)
+		case "uids":
+			err = t.handleSystemUsers(nodeID, i)
 		default:
 			slog.Warn(fmt.Sprintf("unsupported system sub: %s", k))
 		}
