@@ -101,6 +101,7 @@ func (t *Worker) handleSystemProperties(nodeID string, i any) error {
 			mariadb.NewNaturalMapping("team_integ"),
 			mariadb.NewNaturalMapping("team_support"),
 			mariadb.NewNaturalMapping("tz"),
+			mariadb.NewNaturalMapping("updated"),
 			mariadb.NewNaturalMapping("version"),
 		},
 		Keys: []string{"node_id"},
