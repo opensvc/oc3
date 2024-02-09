@@ -11,6 +11,53 @@ import (
 	"github.com/opensvc/oc3/mariadb"
 )
 
+func (t *Worker) handleSystemLAN(nodeID string, i any) error {
+	var l []any
+	data, ok := i.(map[string]any)
+	if !ok {
+		slog.Warn("unsupported system lans table format")
+		return nil
+	}
+	for mac, addressesInterface := range data {
+		addresses, ok := addressesInterface.([]any)
+		if !ok {
+			slog.Warn("unsupported system lan addresses format")
+			return nil
+		}
+		for _, addressInterface := range addresses {
+			line, ok := addressInterface.(map[string]any)
+			if !ok {
+				slog.Warn("unsupported system lan address format")
+				return nil
+			}
+			line["mac"] = mac
+			line["node_id"] = nodeID
+			line["updated"] = mariadb.Raw("NOW()")
+			l = append(l, line)
+		}
+	}
+
+	request := mariadb.InsertOrUpdate{
+		Table: "node_ip",
+		Mappings: mariadb.Mappings{
+			mariadb.NewNaturalMapping("node_id"),
+			mariadb.NewNaturalMapping("updated"),
+			mariadb.NewNaturalMapping("mac"),
+			mariadb.NewNaturalMapping("intf"),
+			mariadb.NewNaturalMapping("type"),
+			mariadb.NewNaturalMapping("addr"),
+			mariadb.NewNaturalMapping("mask"),
+			mariadb.NewNaturalMapping("flag_deprecated"),
+		},
+		Keys: []string{"node_id"},
+		Data: l,
+	}
+
+	_, err := request.Query(t.DB)
+
+	return err
+}
+
 func (t *Worker) handleSystemGroups(nodeID string, i any) error {
 	data, ok := i.([]any)
 	if !ok {
@@ -220,6 +267,8 @@ func (t *Worker) handleSystem(nodeID string) error {
 			err = t.handleSystemGroups(nodeID, i)
 		case "uids":
 			err = t.handleSystemUsers(nodeID, i)
+		case "lan":
+			err = t.handleSystemLAN(nodeID, i)
 		default:
 			slog.Warn(fmt.Sprintf("unsupported system sub: %s", k))
 		}
