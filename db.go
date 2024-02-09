@@ -21,12 +21,12 @@ func newDatabase() (*sql.DB, error) {
 		AllowNativePasswords: true,
 	}
 	slog.Info(fmt.Sprintf("db addr=%s", cfg.Addr))
-	DB, err := sql.Open("mysql", cfg.FormatDSN())
+	db, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
 		return nil, err
 	}
-	DB.SetConnMaxLifetime(time.Minute * 3)
-	DB.SetMaxOpenConns(10)
-	DB.SetMaxIdleConns(10)
-	return DB, nil
+	db.SetConnMaxLifetime(time.Minute * 3)
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(10)
+	return db, nil
 }

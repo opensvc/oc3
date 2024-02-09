@@ -3,9 +3,9 @@ package cache
 var (
 	clientKey = "redisClient"
 
-	KeyAsset     = "oc3:q:asset"
-	KeyAssetHash = "oc3:h:asset"
-	KeyGeneric   = "oc3:q:generic"
+	KeySystem     = "oc3:q:system"
+	KeySystemHash = "oc3:h:system"
+	KeyGeneric    = "oc3:q:generic"
 
 	KeyDaemonStatusHash        = "osvc:h:daemon_status"
 	KeyDaemonStatusChangesHash = "osvc:h:daemon_status_changes"

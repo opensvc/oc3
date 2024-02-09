@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
@@ -43,23 +42,6 @@ func newWorker(queues []string) (*Worker, error) {
 	return w, nil
 }
 
-func (t *Worker) Asset(nodeId string) error {
-	cmd := t.Redis.HGet(context.Background(), cache.KeyAssetHash, nodeId)
-	result, err := cmd.Result()
-	switch err {
-	case nil:
-	case redis.Nil:
-		return nil
-	default:
-		return err
-	}
-	var v any
-	if err := json.Unmarshal([]byte(result), &v); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (t *Worker) Run() error {
 	slog.Info(fmt.Sprintf("dequeue %s", t.Queues))
 	for {
@@ -76,8 +58,8 @@ func (t *Worker) Run() error {
 		}
 		slog.Info(fmt.Sprintf("BLPOP %s -> %s", result[0], result[1]))
 		switch result[0] {
-		case cache.KeyAsset:
-			err = t.Asset(result[1])
+		case cache.KeySystem:
+			err = t.handleSystem(result[1])
 		default:
 			slog.Warn(fmt.Sprintf("unsupported queue: %s", result[0]))
 		}

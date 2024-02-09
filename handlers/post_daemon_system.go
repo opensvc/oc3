@@ -25,23 +25,23 @@ func (a *Api) PostDaemonSystem(c echo.Context) error {
 
 	reqCtx := c.Request().Context()
 
-	s := fmt.Sprintf("HSET %s %s", cache.KeyAssetHash, key)
+	s := fmt.Sprintf("HSET %s %s", cache.KeySystemHash, key)
 	slog.Info(s)
-	if _, err := a.Redis.HSet(reqCtx, cache.KeyAssetHash, key, string(b)).Result(); err != nil {
+	if _, err := a.Redis.HSet(reqCtx, cache.KeySystemHash, key, string(b)).Result(); err != nil {
 		s = fmt.Sprintf("%s: %s", s, err)
 		slog.Error(s)
 		return JSONProblem(c, http.StatusInternalServerError, "", s)
 	}
 
-	s = fmt.Sprintf("LPOS %s %s", cache.KeyAsset, key)
+	s = fmt.Sprintf("LPOS %s %s", cache.KeySystem, key)
 	slog.Info(s)
-	if _, err := a.Redis.LPos(reqCtx, cache.KeyAsset, key, redis.LPosArgs{}).Result(); err != nil {
+	if _, err := a.Redis.LPos(reqCtx, cache.KeySystem, key, redis.LPosArgs{}).Result(); err != nil {
 		switch err {
 		case nil:
 		case redis.Nil:
-			s = fmt.Sprintf("LPUSH %s %s", cache.KeyAsset, key)
+			s = fmt.Sprintf("LPUSH %s %s", cache.KeySystem, key)
 			slog.Info(s)
-			if _, err := a.Redis.LPush(reqCtx, cache.KeyAsset, key).Result(); err != nil {
+			if _, err := a.Redis.LPush(reqCtx, cache.KeySystem, key).Result(); err != nil {
 				s := fmt.Sprintf("%s: %s", s, err)
 				slog.Error(s)
 				return JSONProblemf(c, http.StatusInternalServerError, "", "%s", s)
