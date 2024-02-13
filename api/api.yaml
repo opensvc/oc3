@@ -47,8 +47,8 @@ paths:
         500:
           $ref: '#/components/responses/500'
       security:
-        - basicAuth: []
-        - bearerAuth: []
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
       tags:
         - agent
 
@@ -57,6 +57,19 @@ paths:
       description: |
         Post daemon status view from node.
       operationId: PostDaemonStatus
+      parameters:
+        - in: header
+          name: XDaemonChange
+          schema:
+            type: string
+            description: list of changes separated with space
+          required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeStatus'
       responses:
         200:
           $ref: '#/components/responses/200'
@@ -69,13 +82,16 @@ paths:
         500:
           $ref: '#/components/responses/500'
       security:
-        - basicAuth: []
-        - bearerAuth: []
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
       tags:
         - agent
 
 components:
   schemas:
+    NodeStatus:
+      type: object
+
     Problem:
       type: object
       properties:
