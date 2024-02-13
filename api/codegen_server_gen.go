@@ -8,19 +8,21 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
+	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
 	// (POST /daemon/status)
-	PostDaemonStatus(ctx echo.Context) error
+	PostDaemonStatus(ctx echo.Context, params PostDaemonStatusParams) error
 
 	// (POST /daemon/system)
 	PostDaemonSystem(ctx echo.Context) error
@@ -42,8 +44,28 @@ func (w *ServerInterfaceWrapper) PostDaemonStatus(ctx echo.Context) error {
 
 	ctx.Set(BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostDaemonStatusParams
+
+	headers := ctx.Request().Header
+	// ------------- Optional header parameter "XDaemonChange" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("XDaemonChange")]; found {
+		var XDaemonChange string
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for XDaemonChange, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithLocation("simple", false, "XDaemonChange", runtime.ParamLocationHeader, valueList[0], &XDaemonChange)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter XDaemonChange: %s", err))
+		}
+
+		params.XDaemonChange = &XDaemonChange
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostDaemonStatus(ctx)
+	err = w.Handler.PostDaemonStatus(ctx, params)
 	return err
 }
 
@@ -106,20 +128,21 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xWTY/bRgz9K8S0hwRQ/RGnLaCekqbbbFt0F7GDHmwfxiNamkAaTjiUE8fQfy9Gs/Z6",
-	"He82RYtFDz1Z1jyST3yPlHbKUOPJoZOg8p1iDJ5cwP7Ps9Eo/hhygk7ipfa+tkaLJTd8F8jFe8FU2Oh4",
-	"9TXjWuXqq+FtzmE6DcNrplWNjeq6LlMFBsPWxzQqV1e/qi5Tzx+n2EtdwBt832KQVHX8GFXfOt1KRWw/",
-	"YZHKTh6j7AXxyhYFuljz28dp8KUTZKdrmCJvkOEnZmIVcTfBMfc+Pt8pz+SRxSbLFSja1unqOOsLqNpG",
-	"u28YdaFXNQJ+9LV2PXcIHo1dWwNCIJUNQMa0zOgMAq1BKlw4nyoOFk5lSrYeVa6CsHVl7E0QLW34vOys",
-	"Qng9m11DAoChAuHJ/M3Fj98/m4yXGUzR9BS+ewolOmQtWMBqm2oS29I6CKkRa+J72ME5ctYJlsiRnVip",
-	"8VxPQkUs2WlrQts0mrcnySHmHQBcCkxfX7397dXC/X41A1NpVyKsmZpjYkL308wAPxr0snDxkXzLngKG",
-	"CKrJ6Np+Sqo8wUE5yKAN1pUxVBuxG4Qb/y2cw5LE9tgfICDCmbZOBs+fnpWsyxTj+9YyFiqf721zEHLf",
-	"s+UhkFbv0PQjH7ZBkvVOjuIZmpatbKfRqsmRKx2sedFKdZiOGNPfvaVVifiYe4Wakffo9O+CuNGicvXL",
-	"HzOVHaXoT09zRBbWrannl3RX5NGFjQFDdY1GiEF7qzK1QQ7JCqPBaDCOBCI0HuZqMhgNRipTXkvVP8iw",
-	"0NiQG9563VOQz211TUEgYfe231j8kCziqMAkSJzaXrzL4iboVR8z3Stw7lVybqcccMMIun0TPIx9vseO",
-	"vwQ7Plq6f4WdHC3Lh7ERdOwalc/v+GW+7LLdHU/Ml120pC5DdK0u4yJexhQHcQ7m/AJxeiwUNhjaIG8f",
-	"liUlTmODQV5Ssf3XXgc3rLu7YyncYve/D/6eD3y7qq0ZHuZ4p0rs1bkr7M8o0w+6LPsF8o8+2k6X4L2f",
-	"Z/+BBu8blpoUO9Z1fwYAAP//TlV41sIKAAA=",
+	"H4sIAAAAAAAC/+xWXW/bNhT9KxfcHlpA80fdbYD21I9lzTY0Qe1iA2w/0NS1xEIi2csrp66h/z6QjBzH",
+	"cbIC3YI97MmSeHju4T2HpHdC2cZZg4a9yHeC0DtrPMaXZ6NR+FHWMBoOj9K5WivJ2prhB29N+OZVhY0M",
+	"T98SrkUuvhnecA7TqB9ekl3V2Iiu6zJRoFekXaARubj4TXSZeP44xV7KAt7hxxY9p6rjx6j63siWK0v6",
+	"Mxap7OQxyp5ZWumiQBNqfv84DT43jGRkDVOkDRL8TGRJBNz15MD91hY4ZcltfOOtQ5ELu/qAKrrS0+c7",
+	"4cg6JNYpkQWy1HV6Oiz6Aqq2keY7QlnIVY2An1wtTVwaeIdKr7UCtsCV9mCVaonQKAS7Bq5wYVyqOFgY",
+	"kfV6PJM2ZdDj91Jvl51VCG9ms0tIAFC2QHgyf3f26sdnk/EygymqKOGHp1CiQZKMBay2qaYlXWoDPvVp",
+	"bekedXBKnDaMJVJQx5prPNUTX1ni7Lg1vm0aSdsjcgi8A4Bzhumbi/e/v16YtxczUJU0JcKabHMojO39",
+	"MjPATwodL0xYkmvJWY8+gGqrZK0/J1ee4KAcZNB6bcowVSrWG4TreC6MwdKyjtifwCPCibZOBs+fnrSs",
+	"ywThx1YTFiKf97HZG9n3bJndzZ7fek7ROxoKY6ha0rydhiSnRK6k1+pFy9V+84Q58euNrIrZBe4VSkLq",
+	"0entzFIjWeTi1z9mIjugiKPHHEGFNmsb9SXfhXVo/EaBsnWNii2BdFpkYoPkUxRGg9FgHAQEaBjMxWQw",
+	"GoxEJpzkKi5kWEhsrBneZN1Zz3djdWk9Q8L2sd9ovEoRMbbAZEjYtdG88+J60us4Z9o74CTJBhnJi3y+",
+	"EzpwVyiLuGYjYw/+THNexRD2zZF3NdXacwhYSqsHj4E97LUrzRV4JxWeCMkypQQ9v7TF9h87HA8Ot+52",
+	"EplajB/uXrKnCPe4YQDd3JEPY5/32PGXYMcH19HfYScH18jD2AA63DDR4oOtMl922e7Wdpgvgx0syxAH",
+	"IcvgwjJQ7HO535dfkMuIhUJ7ZTdI24cTmYj/nSxcq/4/B1+fA9euaq2G+yNsJ0qM7tw29hfk6ZUsy3iO",
+	"fNXf2ePz/94/rv+BBvcNS00KHeu6vwIAAP//Ruk5IdwLAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

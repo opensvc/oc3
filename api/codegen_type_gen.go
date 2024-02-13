@@ -8,6 +8,9 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// NodeStatus defines model for NodeStatus.
+type NodeStatus = map[string]interface{}
+
 // Problem defines model for Problem.
 type Problem struct {
 	// Detail A human-readable explanation specific to this occurrence of the
@@ -42,6 +45,14 @@ type N403 = Problem
 
 // N500 defines model for 500.
 type N500 = Problem
+
+// PostDaemonStatusParams defines parameters for PostDaemonStatus.
+type PostDaemonStatusParams struct {
+	XDaemonChange *string `json:"XDaemonChange,omitempty"`
+}
+
+// PostDaemonStatusJSONRequestBody defines body for PostDaemonStatus for application/json ContentType.
+type PostDaemonStatusJSONRequestBody = NodeStatus
 
 // PostDaemonSystemJSONRequestBody defines body for PostDaemonSystem for application/json ContentType.
 type PostDaemonSystemJSONRequestBody = System
