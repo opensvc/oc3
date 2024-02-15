@@ -46,14 +46,14 @@ func (a *Api) pushNotPending(ctx context.Context, pendingKey, queueKey string, v
 		return nil
 	case redis.Nil:
 		// not in try push
-		s = fmt.Sprintf("LPUSH %s %s", queueKey, value)
-		slog.Info(s)
-		if _, err := a.Redis.LPush(ctx, queueKey, value).Result(); err != nil {
-			return fmt.Errorf("%s: %w", s, err)
-		}
 		s = fmt.Sprintf("HSET %s %s %s", pendingKey, value, value)
 		slog.Info(s)
 		if _, err := a.Redis.HSet(ctx, pendingKey, value, value).Result(); err != nil {
+			return fmt.Errorf("%s: %w", s, err)
+		}
+		s = fmt.Sprintf("LPUSH %s %s", queueKey, value)
+		slog.Info(s)
+		if _, err := a.Redis.LPush(ctx, queueKey, value).Result(); err != nil {
 			return fmt.Errorf("%s: %w", s, err)
 		}
 		return nil
