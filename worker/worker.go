@@ -39,6 +39,8 @@ func (t *Worker) Run() error {
 		switch result[0] {
 		case cache.KeySystem:
 			err = t.handleSystem(result[1])
+		case cache.KeyDaemonStatus:
+			err = t.handleDaemonStatus(result[1])
 		default:
 			slog.Warn(fmt.Sprintf("unsupported queue: %s", result[0]))
 		}
