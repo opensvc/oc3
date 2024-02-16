@@ -33,18 +33,20 @@ type (
 		nodesData   map[string]any
 		byNodename  map[string]*DBNode
 		byNodeID    map[string]*DBNode
+		tableChange map[string]struct{}
 	}
 )
 
 func (t *Worker) handleDaemonStatus(nodeID string) error {
 	d := daemonStatus{
-		ctx:        context.Background(),
-		redis:      t.Redis,
-		db:         t.DB,
-		nodeID:     nodeID,
-		nodesData:  make(map[string]any),
-		byNodename: make(map[string]*DBNode),
-		byNodeID:   make(map[string]*DBNode),
+		ctx:         context.Background(),
+		redis:       t.Redis,
+		db:          t.DB,
+		nodeID:      nodeID,
+		nodesData:   make(map[string]any),
+		byNodename:  make(map[string]*DBNode),
+		byNodeID:    make(map[string]*DBNode),
+		tableChange: make(map[string]struct{}),
 	}
 	functions := []func() error{
 		d.dropPending,
@@ -184,8 +186,15 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 				if _, err := d.db.ExecContext(d.ctx, query, frozen, nodeID); err != nil {
 					return fmt.Errorf("dataToNodeFrozen ExecContext: %w", err)
 				}
+				d.addTableChange("nodes")
 			}
 		}
 	}
 	return nil
+}
+
+func (d *daemonStatus) addTableChange(s ...string) {
+	for _, table := range s {
+		d.tableChange[table] = struct{}{}
+	}
 }
