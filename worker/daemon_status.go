@@ -33,6 +33,7 @@ type (
 		nodesData   map[string]any
 		byNodename  map[string]*DBNode
 		byNodeID    map[string]*DBNode
+		rawData     []byte
 		tableChange map[string]struct{}
 	}
 )
@@ -91,6 +92,8 @@ func (d *daemonStatus) getData() error {
 		return fmt.Errorf("getChanges: HGET %s %s: %w", cache.KeyDaemonStatusHash, d.nodeID, err)
 	} else if err = json.Unmarshal(b, &d.data); err != nil {
 		return fmt.Errorf("getChanges: unexpected data from %s %s: %w: %s", cache.KeyDaemonStatusHash, d.nodeID, err)
+	} else {
+		d.rawData = b
 	}
 	if clusterID, ok := d.data["cluster_id"]; !ok {
 		return fmt.Errorf("getData: missing mandatory cluster_id for %s", d.nodeID)
@@ -106,7 +109,23 @@ func (d *daemonStatus) getData() error {
 }
 
 func (d *daemonStatus) dbCheckClusters() error {
-	// can't assert things here
+	// TODO: verify if still needed, we can't assert things here
+	// +--------------+--------------+------+-----+---------+----------------+
+	// | Field        | Type         | Null | Key | Default | Extra          |
+	// +--------------+--------------+------+-----+---------+----------------+
+	// | id           | int(11)      | NO   | PRI | NULL    | auto_increment |
+	// | cluster_id   | char(36)     | YES  | UNI |         |                |
+	// | cluster_name | varchar(128) | NO   |     | NULL    |                |
+	// | cluster_data | longtext     | YES  |     | NULL    |                |
+	// +--------------+--------------+------+-----+---------+----------------+
+	const query = "" +
+		"INSERT INTO clusters (cluster_name, cluster_data, cluster_id) VALUES (?, ?, ?)" +
+		" ON DUPLICATE KEY UPDATE cluster_name = ?, cluster_data = ?"
+	clusterData := string(d.rawData)
+	slog.Info(fmt.Sprintf("dbCheckClusters INSERT or UPDATE clusters for node_id %s with cluster_id %s", d.nodeID, d.clusterID))
+	if _, err := d.db.ExecContext(d.ctx, query, d.clusterName, clusterData, d.clusterID, d.clusterName, clusterData); err != nil {
+		return fmt.Errorf("dbCheckClusters can't update clusters nodeID: %s clusterID: %s: %w", d.nodeID, d.clusterID, err)
+	}
 	return nil
 }
 
