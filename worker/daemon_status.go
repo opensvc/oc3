@@ -21,16 +21,33 @@ type (
 		clusterID string
 	}
 
+	dataLister interface {
+		nodeNames() ([]string, error)
+	}
+
+	nodeInfoer interface {
+		nodeFrozen(string) (string, error)
+	}
+
+	clusterer interface {
+		clusterID() (s string, err error)
+		clusterName() (s string, err error)
+	}
+	dataProvider interface {
+		dataLister
+		clusterer
+		nodeInfoer
+	}
+
 	daemonStatus struct {
 		ctx         context.Context
 		redis       *redis.Client
 		db          *sql.DB
 		nodeID      string
 		changes     []string
-		data        map[string]any
+		data        dataProvider
 		clusterID   string
 		clusterName string
-		nodesData   map[string]any
 		byNodename  map[string]*DBNode
 		byNodeID    map[string]*DBNode
 		rawData     []byte
@@ -44,7 +61,6 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		redis:       t.Redis,
 		db:          t.DB,
 		nodeID:      nodeID,
-		nodesData:   make(map[string]any),
 		byNodename:  make(map[string]*DBNode),
 		byNodeID:    make(map[string]*DBNode),
 		tableChange: make(map[string]struct{}),
@@ -89,22 +105,23 @@ func (d *daemonStatus) getChanges() error {
 }
 
 func (d *daemonStatus) getData() error {
+	var (
+		err  error
+		data map[string]any
+	)
 	if b, err := d.redis.HGet(d.ctx, cache.KeyDaemonStatusHash, d.nodeID).Bytes(); err != nil {
 		return fmt.Errorf("getChanges: HGET %s %s: %w", cache.KeyDaemonStatusHash, d.nodeID, err)
-	} else if err = json.Unmarshal(b, &d.data); err != nil {
+	} else if err = json.Unmarshal(b, &data); err != nil {
 		return fmt.Errorf("getChanges: unexpected data from %s %s: %w", cache.KeyDaemonStatusHash, d.nodeID, err)
 	} else {
 		d.rawData = b
+		d.data = &daemonDataV2{data: data}
 	}
-	if clusterID, ok := d.data["cluster_id"]; !ok {
-		return fmt.Errorf("getData: missing mandatory cluster_id for %s", d.nodeID)
-	} else if d.clusterID, ok = clusterID.(string); !ok {
-		return fmt.Errorf("getData: got empty mandatory cluster_id for %s", d.nodeID)
+	if d.clusterID, err = d.data.clusterID(); err != nil {
+		return fmt.Errorf("getData %s: %w", d.nodeID, err)
 	}
-	if clusterName, ok := d.data["cluster_name"]; !ok {
-		return fmt.Errorf("getData: missing mandatory cluster_name for %s", d.nodeID)
-	} else if d.clusterName, ok = clusterName.(string); !ok {
-		return fmt.Errorf("getData: got empty mandatory cluster_name for %s", d.nodeID)
+	if d.clusterName, err = d.data.clusterName(); err != nil {
+		return fmt.Errorf("getData %s: %w", d.nodeID, err)
 	}
 	return nil
 }
@@ -154,16 +171,15 @@ func (d *daemonStatus) dbFindNodes() error {
 	const queryFindClusterNodesInfo = "SELECT nodename, node_id, node_frozen, cluster_id" +
 		" FROM nodes" +
 		" WHERE cluster_id = ? AND nodename IN (?"
-	nodes, ok := d.data["nodes"].(map[string]any)
-	if !ok {
-		return fmt.Errorf("getData: missing mandatory nodes for %s", d.nodeID)
+	nodes, err := d.data.nodeNames()
+	if err != nil {
+		return fmt.Errorf("getData %s: %w", d.nodeID, err)
 	}
 	l := make([]string, 0)
 	values := []any{d.clusterID}
-	for nodename, nodeData := range nodes {
+	for _, nodename := range nodes {
 		l = append(l, nodename)
 		values = append(values, nodename)
-		d.nodesData[nodename] = nodeData
 	}
 	if len(l) == 0 {
 		return fmt.Errorf("getData: empty nodes for %s", d.nodeID)
@@ -183,17 +199,17 @@ func (d *daemonStatus) dbFindNodes() error {
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
-		var nodename, node_id, frozen, cluster_id string
-		if err := rows.Scan(&nodename, &node_id, &frozen, &cluster_id); err != nil {
+		var nodename, nodeID, frozen, clusterID string
+		if err := rows.Scan(&nodename, &nodeID, &frozen, &clusterID); err != nil {
 			return fmt.Errorf("dbFindNodes FindClusterNodesInfo scan %s: %w", d.nodeID, err)
 		}
 		found := &DBNode{
 			nodename:  nodename,
 			frozen:    frozen,
-			nodeID:    node_id,
-			clusterID: cluster_id,
+			nodeID:    nodeID,
+			clusterID: clusterID,
 		}
-		d.byNodeID[node_id] = found
+		d.byNodeID[nodeID] = found
 		d.byNodename[nodename] = found
 	}
 	if err := rows.Err(); err != nil {
@@ -205,29 +221,17 @@ func (d *daemonStatus) dbFindNodes() error {
 func (d *daemonStatus) dataToNodeFrozen() error {
 	for nodeID, dbNode := range d.byNodeID {
 		nodename := dbNode.nodename
-		if i, ok := d.nodesData[nodename]; ok {
-			frozen := "F"
-			nodeData := i.(map[string]any)
-			switch v := nodeData["frozen"].(type) {
-			case int:
-				if v > 0 {
-					frozen = "T"
-				}
-			case float64:
-				if v > 0 {
-					frozen = "T"
-				}
-			default:
-				return fmt.Errorf("dataToNodeFrozen: can't detect node frozen value")
+		frozen, err := d.data.nodeFrozen(nodename)
+		if err != nil {
+			return fmt.Errorf("dataToNodeFrozen %s: %w", nodename, err)
+		}
+		if frozen != dbNode.frozen {
+			const query = "UPDATE nodes SET node_frozen = ? WHERE node_id = ?"
+			slog.Info(fmt.Sprintf("dataToNodeFrozen: updating node %s: %s frozen from %s -> %s", nodename, nodeID, dbNode.frozen, frozen))
+			if _, err := d.db.ExecContext(d.ctx, query, frozen, nodeID); err != nil {
+				return fmt.Errorf("dataToNodeFrozen ExecContext: %w", err)
 			}
-			if frozen != dbNode.frozen {
-				const query = "UPDATE nodes SET node_frozen = ? WHERE node_id = ?"
-				slog.Info(fmt.Sprintf("dataToNodeFrozen: updating node %s: %s frozen from %s -> %s", nodename, nodeID, dbNode.frozen, frozen))
-				if _, err := d.db.ExecContext(d.ctx, query, frozen, nodeID); err != nil {
-					return fmt.Errorf("dataToNodeFrozen ExecContext: %w", err)
-				}
-				d.addTableChange("nodes")
-			}
+			d.addTableChange("nodes")
 		}
 	}
 	return nil
