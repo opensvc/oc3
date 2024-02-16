@@ -21,7 +21,14 @@ type (
 		clusterID string
 	}
 
+	DBObject struct {
+		svcname   string
+		svcID     string
+		clusterID string
+	}
+
 	dataLister interface {
+		objectNames() ([]string, error)
 		nodeNames() ([]string, error)
 	}
 
@@ -40,30 +47,40 @@ type (
 	}
 
 	daemonStatus struct {
-		ctx         context.Context
-		redis       *redis.Client
-		db          *sql.DB
+		ctx   context.Context
+		redis *redis.Client
+		db    *sql.DB
+
 		nodeID      string
-		changes     []string
-		data        dataProvider
 		clusterID   string
 		clusterName string
-		byNodename  map[string]*DBNode
-		byNodeID    map[string]*DBNode
-		rawData     []byte
+
+		changes []string
+		rawData []byte
+
+		data dataProvider
+
+		byNodename map[string]*DBNode
+		byNodeID   map[string]*DBNode
+
+		byObjectName map[string]*DBObject
+		byObjectID   map[string]*DBObject
+
 		tableChange map[string]struct{}
 	}
 )
 
 func (t *Worker) handleDaemonStatus(nodeID string) error {
 	d := daemonStatus{
-		ctx:         context.Background(),
-		redis:       t.Redis,
-		db:          t.DB,
-		nodeID:      nodeID,
-		byNodename:  make(map[string]*DBNode),
-		byNodeID:    make(map[string]*DBNode),
-		tableChange: make(map[string]struct{}),
+		ctx:          context.Background(),
+		redis:        t.Redis,
+		db:           t.DB,
+		nodeID:       nodeID,
+		byNodename:   make(map[string]*DBNode),
+		byNodeID:     make(map[string]*DBNode),
+		byObjectID:   make(map[string]*DBObject),
+		byObjectName: make(map[string]*DBObject),
+		tableChange:  make(map[string]struct{}),
 	}
 	functions := []func() error{
 		d.dropPending,
@@ -73,6 +90,7 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.dbCheckClusters,
 		d.dbFindNodes,
 		d.dataToNodeFrozen,
+		d.dbFindServices,
 	}
 	for _, f := range functions {
 		err := f()
@@ -241,4 +259,50 @@ func (d *daemonStatus) addTableChange(s ...string) {
 	for _, table := range s {
 		d.tableChange[table] = struct{}{}
 	}
+}
+
+func (d *daemonStatus) dbFindServices() error {
+	const queryFindServicesInfo = "SELECT svcname, svc_id, cluster_id" +
+		" FROM services" +
+		" WHERE cluster_id = ? AND svcname IN (?"
+	objectNames, err := d.data.objectNames()
+	if err != nil {
+		return fmt.Errorf("dbFindServices %s: %w", d.nodeID, err)
+	}
+	l := make([]string, 0)
+	values := []any{d.clusterID}
+	for _, objectName := range objectNames {
+		l = append(l, objectName)
+		values = append(values, objectName)
+	}
+	if len(l) == 0 {
+		slog.Info(fmt.Sprintf("dbFindServices: no services for %s", d.nodeID))
+		return nil
+	}
+	query := queryFindServicesInfo
+	for i := 1; i < len(l); i++ {
+		query += ", ?"
+	}
+	query += ")"
+
+	rows, err := d.db.QueryContext(d.ctx, query, values...)
+	if err != nil {
+		return fmt.Errorf("dbFindServices query %s cluster_id: %s [%s]: %w", d.nodeID, d.clusterID, l, err)
+	}
+	if rows == nil {
+		return fmt.Errorf("dbFindServices query returns nil rows %s", d.nodeID)
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var o DBObject
+		if err := rows.Scan(&o.svcname, &o.svcID, &o.clusterID); err != nil {
+			return fmt.Errorf("dbFindServices scan %s: %w", d.nodeID, err)
+		}
+		d.byObjectName[o.svcname] = &o
+		d.byObjectID[o.svcID] = &o
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("dbFindServices FindClusterNodesInfo %s: %w", d.nodeID, err)
+	}
+	return nil
 }
