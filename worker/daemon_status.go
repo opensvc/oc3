@@ -92,7 +92,7 @@ func (d *daemonStatus) getData() error {
 	if b, err := d.redis.HGet(d.ctx, cache.KeyDaemonStatusHash, d.nodeID).Bytes(); err != nil {
 		return fmt.Errorf("getChanges: HGET %s %s: %w", cache.KeyDaemonStatusHash, d.nodeID, err)
 	} else if err = json.Unmarshal(b, &d.data); err != nil {
-		return fmt.Errorf("getChanges: unexpected data from %s %s: %w: %s", cache.KeyDaemonStatusHash, d.nodeID, err)
+		return fmt.Errorf("getChanges: unexpected data from %s %s: %w", cache.KeyDaemonStatusHash, d.nodeID, err)
 	} else {
 		d.rawData = b
 	}
