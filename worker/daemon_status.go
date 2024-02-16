@@ -53,6 +53,7 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.dropPending,
 		d.getChanges,
 		d.getData,
+		d.dbCheckClusterIDForNodeID,
 		d.dbCheckClusters,
 		d.dbFindNodes,
 		d.dataToNodeFrozen,
@@ -106,6 +107,26 @@ func (d *daemonStatus) getData() error {
 		return fmt.Errorf("getData: got empty mandatory cluster_name for %s", d.nodeID)
 	}
 	return nil
+}
+
+func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
+	const querySearch = "SELECT cluster_id FROM nodes WHERE node_id = ? and cluster_id = ?"
+	const queryUpdate = "UPDATE nodes SET cluster_id = ? WHERE node_id = ?"
+	row := d.db.QueryRowContext(d.ctx, querySearch, d.nodeID, d.clusterID)
+	var s string
+	err := row.Scan(&s)
+	switch err {
+	case nil:
+		return nil
+	case sql.ErrNoRows:
+		slog.Info(fmt.Sprintf("dbCheckClusterIDForNodeID update cluster for %s", d.nodeID))
+		if _, err := d.db.ExecContext(d.ctx, queryUpdate, d.clusterID, d.nodeID); err != nil {
+			return fmt.Errorf("dbCheckClusterIDForNodeID can't update cluster_id for node %s: %w", d.nodeID, err)
+		}
+		return nil
+	default:
+		return fmt.Errorf("dbCheckClusterIDForNodeID can't verify cluster_id for node %s: %w", d.nodeID, err)
+	}
 }
 
 func (d *daemonStatus) dbCheckClusters() error {
