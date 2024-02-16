@@ -7,10 +7,6 @@ import (
 // cmd parses the command line and run the selected component.
 func cmd(args []string) error {
 	root := newCmd(args)
-
-	if err := initConfig(); err != nil {
-		return err
-	}
 	return root.Execute()
 }
 

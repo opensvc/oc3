@@ -12,9 +12,12 @@ var (
 	configCandidateDirs = []string{"/etc/oc3/", "$HOME/.oc3/", "./"}
 )
 
-func logConfig() {
+func logConfigDir() {
 	slog.Info(fmt.Sprintf("candidate config directories: %s", configCandidateDirs))
-	slog.Info(fmt.Sprintf("using config file: %s", viper.ConfigFileUsed()))
+}
+
+func logConfigFileUsed() {
+	slog.Info(fmt.Sprintf("used config file: %s", viper.ConfigFileUsed()))
 }
 
 func initConfig() error {
