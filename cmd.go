@@ -1,9 +1,14 @@
 package main
 
 import (
+	"log/slog"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+)
+
+var (
+	debug bool
 )
 
 func newCmd(args []string) *cobra.Command {
@@ -11,6 +16,10 @@ func newCmd(args []string) *cobra.Command {
 		Use:   filepath.Base(args[0]),
 		Short: "Manage the opensvc collector infrastructure components.",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if debug {
+				slog.SetLogLoggerLevel(slog.LevelDebug)
+			}
+
 			logConfigDir()
 			if err := initConfig(); err != nil {
 				return err
@@ -19,6 +28,8 @@ func newCmd(args []string) *cobra.Command {
 			return nil
 		},
 	}
+
+	root.PersistentFlags().BoolVar(&debug, "debug", false, "set log level to debug")
 
 	root.AddCommand(
 		&cobra.Command{
