@@ -30,7 +30,7 @@ type (
 	DBInstance struct {
 		svcID  string
 		nodeID string
-		Frozen uint
+		Frozen int
 	}
 
 	dataLister interface {
