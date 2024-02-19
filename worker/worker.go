@@ -35,7 +35,8 @@ func (t *Worker) Run() error {
 			time.Sleep(time.Second)
 			continue
 		}
-		slog.Info(fmt.Sprintf("BLPOP %s -> %s", result[0], result[1]))
+		begin := time.Now()
+		slog.Debug(fmt.Sprintf("BLPOP %s -> %s", result[0], result[1]))
 		switch result[0] {
 		case cache.KeySystem:
 			err = t.handleSystem(result[1])
@@ -47,6 +48,7 @@ func (t *Worker) Run() error {
 		if err != nil {
 			slog.Error(err.Error())
 		}
+		slog.Debug(fmt.Sprintf("BLPOP %s <- %s: %s", result[0], result[1], time.Now().Sub(begin)))
 	}
 	return nil
 }
