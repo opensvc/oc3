@@ -11,11 +11,79 @@ import (
 	"github.com/opensvc/oc3/mariadb"
 )
 
+func (t *Worker) handleSystemTargets(nodeID string, i any) error {
+	data, ok := i.([]any)
+	if !ok {
+		slog.Warn("unsupported system targets data format")
+		return nil
+	}
+	for i, _ := range data {
+		line, ok := data[i].(map[string]any)
+		if !ok {
+			slog.Warn("unsupported system targets entry format")
+			return nil
+		}
+		line["node_id"] = nodeID
+		line["updated"] = mariadb.Raw("NOW()")
+		data[i] = line
+	}
+
+	request := mariadb.InsertOrUpdate{
+		Table: "stor_zone",
+		Mappings: mariadb.Mappings{
+			mariadb.NewNaturalMapping("node_id"),
+			mariadb.NewNaturalMapping("updated"),
+			mariadb.NewNaturalMapping("hba_id"),
+			mariadb.NewNaturalMapping("tgt_id"),
+		},
+		Keys: []string{"node_id"},
+		Data: data,
+	}
+
+	_, err := request.Query(t.DB)
+
+	return err
+}
+
+func (t *Worker) handleSystemHBA(nodeID string, i any) error {
+	data, ok := i.([]any)
+	if !ok {
+		slog.Warn("unsupported system hba data format")
+		return nil
+	}
+	for i, _ := range data {
+		line, ok := data[i].(map[string]any)
+		if !ok {
+			slog.Warn("unsupported system hba entry format")
+			return nil
+		}
+		line["node_id"] = nodeID
+		line["updated"] = mariadb.Raw("NOW()")
+		data[i] = line
+	}
+
+	request := mariadb.InsertOrUpdate{
+		Table: "node_hba",
+		Mappings: mariadb.Mappings{
+			mariadb.NewNaturalMapping("node_id"),
+			mariadb.NewNaturalMapping("updated"),
+			mariadb.NewNaturalMapping("hba_id"),
+			mariadb.NewNaturalMapping("hba_type"),
+		},
+		Keys: []string{"node_id"},
+		Data: data,
+	}
+
+	_, err := request.Query(t.DB)
+
+	return err
+}
+
 func (t *Worker) handleSystemLAN(nodeID string, i any) error {
 	var l []any
 	data, ok := i.(map[string]any)
 	if !ok {
-		slog.Warn("unsupported system lans table format")
+		slog.Warn("unsupported system lan data format")
 		return nil
 	}
 	for mac, addressesInterface := range data {
@@ -61,7 +129,7 @@ func (t *Worker) handleSystemLAN(nodeID string, i any) error {
 func (t *Worker) handleSystemGroups(nodeID string, i any) error {
 	data, ok := i.([]any)
 	if !ok {
-		slog.Warn("unsupported system groups table format")
+		slog.Warn("unsupported system groups data format")
 		return nil
 	}
 
@@ -96,7 +164,7 @@ func (t *Worker) handleSystemGroups(nodeID string, i any) error {
 func (t *Worker) handleSystemUsers(nodeID string, i any) error {
 	data, ok := i.([]any)
 	if !ok {
-		slog.Warn("unsupported system users table format")
+		slog.Warn("unsupported system users data format")
 		return nil
 	}
 
@@ -131,7 +199,7 @@ func (t *Worker) handleSystemUsers(nodeID string, i any) error {
 func (t *Worker) handleSystemHardware(nodeID string, i any) error {
 	data, ok := i.([]any)
 	if !ok {
-		slog.Warn("unsupported system hardware table format")
+		slog.Warn("unsupported system hardware data format")
 		return nil
 	}
 
@@ -269,6 +337,10 @@ func (t *Worker) handleSystem(nodeID string) error {
 			err = t.handleSystemUsers(nodeID, i)
 		case "lan":
 			err = t.handleSystemLAN(nodeID, i)
+		case "hba":
+			err = t.handleSystemHBA(nodeID, i)
+		case "targets":
+			err = t.handleSystemTargets(nodeID, i)
 		default:
 			slog.Warn(fmt.Sprintf("unsupported system sub: %s", k))
 		}
