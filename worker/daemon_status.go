@@ -146,7 +146,19 @@ func (d *daemonStatus) dropPending() error {
 
 func (d *daemonStatus) getChanges() error {
 	s, err := d.redis.HGet(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Result()
-	if err != nil {
+	if err == nil {
+		// TODO: fix possible race:
+		// worker iteration 1: pickup changes 'a'
+		// listener: read previous changes 'a'
+		// listener: merge b => set changes from 'a' to 'a', 'b'
+		// listener: ask for new worker iteration 2
+		// worker iteration 1: delete changes the 'b' => 'b' change is lost
+		// worker iteration 1: ... done
+		// worker iteration 2: pickup changes: empty instead of expected 'b'
+		if err := d.redis.HDel(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Err(); err != nil {
+			return fmt.Errorf("getChanges: HDEL %s %s: %w", cache.KeyDaemonStatusChangesHash, d.nodeID, err)
+		}
+	} else {
 		return fmt.Errorf("getChanges: HGET %s %s: %w", cache.KeyDaemonStatusChangesHash, d.nodeID, err)
 	}
 	d.changes = strings.Fields(s)
