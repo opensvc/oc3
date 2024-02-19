@@ -97,8 +97,17 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 
 		tableChange: make(map[string]struct{}),
 	}
-	functions := []func() error{
-		d.dropPending,
+	chain := func(f ...func() error) error {
+		for _, f := range f {
+			err := f()
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	err := chain(d.dropPending,
 		d.getChanges,
 		d.getData,
 		d.dbCheckClusterIDForNodeID,
@@ -107,13 +116,11 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.dataToNodeFrozen,
 		d.dbFindServices,
 		d.dbFindInstance,
+	)
+	if err != nil {
+		return err
 	}
-	for _, f := range functions {
-		err := f()
-		if err != nil {
-			return err
-		}
-	}
+
 	slog.Info(fmt.Sprintf("handleDaemonStatus done: node_id: %s cluster_id: %s, cluster_name: %s changes: %s, byNodes: %#v",
 		d.nodeID, d.clusterID, d.clusterName, d.changes, d.byNodename))
 	for k, v := range d.byNodename {
