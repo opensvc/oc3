@@ -27,6 +27,12 @@ type (
 		clusterID string
 	}
 
+	DBInstance struct {
+		svcID  string
+		nodeID string
+		Frozen uint
+	}
+
 	dataLister interface {
 		objectNames() ([]string, error)
 		nodeNames() ([]string, error)
@@ -67,23 +73,41 @@ type (
 		byObjectID   map[string]*DBObject
 
 		tableChange map[string]struct{}
+
+		byInstanceName map[string]*DBInstance
+		byInstanceID   map[string]*DBInstance
 	}
 )
 
 func (t *Worker) handleDaemonStatus(nodeID string) error {
 	d := daemonStatus{
-		ctx:          context.Background(),
-		redis:        t.Redis,
-		db:           t.DB,
-		nodeID:       nodeID,
-		byNodename:   make(map[string]*DBNode),
-		byNodeID:     make(map[string]*DBNode),
+		ctx:    context.Background(),
+		redis:  t.Redis,
+		db:     t.DB,
+		nodeID: nodeID,
+
+		byNodename: make(map[string]*DBNode),
+		byNodeID:   make(map[string]*DBNode),
+
 		byObjectID:   make(map[string]*DBObject),
 		byObjectName: make(map[string]*DBObject),
-		tableChange:  make(map[string]struct{}),
+
+		byInstanceID:   make(map[string]*DBInstance),
+		byInstanceName: make(map[string]*DBInstance),
+
+		tableChange: make(map[string]struct{}),
 	}
-	functions := []func() error{
-		d.dropPending,
+	chain := func(f ...func() error) error {
+		for _, f := range f {
+			err := f()
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	err := chain(d.dropPending,
 		d.getChanges,
 		d.getData,
 		d.dbCheckClusterIDForNodeID,
@@ -91,17 +115,24 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.dbFindNodes,
 		d.dataToNodeFrozen,
 		d.dbFindServices,
+		d.dbFindInstance,
+	)
+	if err != nil {
+		return err
 	}
-	for _, f := range functions {
-		err := f()
-		if err != nil {
-			return err
-		}
-	}
+
 	slog.Info(fmt.Sprintf("handleDaemonStatus done: node_id: %s cluster_id: %s, cluster_name: %s changes: %s, byNodes: %#v",
 		d.nodeID, d.clusterID, d.clusterName, d.changes, d.byNodename))
 	for k, v := range d.byNodename {
-		slog.Info(fmt.Sprintf("found node %s: %#v", k, v))
+		slog.Debug(fmt.Sprintf("found db node %s: %#v", k, v))
+	}
+
+	for k, v := range d.byObjectID {
+		slog.Debug(fmt.Sprintf("found db object %s: %#v", k, v))
+	}
+
+	for k, v := range d.byInstanceName {
+		slog.Debug(fmt.Sprintf("found db instance %s: %#v", k, v))
 	}
 	return nil
 }
@@ -115,7 +146,19 @@ func (d *daemonStatus) dropPending() error {
 
 func (d *daemonStatus) getChanges() error {
 	s, err := d.redis.HGet(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Result()
-	if err != nil {
+	if err == nil {
+		// TODO: fix possible race:
+		// worker iteration 1: pickup changes 'a'
+		// listener: read previous changes 'a'
+		// listener: merge b => set changes from 'a' to 'a', 'b'
+		// listener: ask for new worker iteration 2
+		// worker iteration 1: delete changes the 'b' => 'b' change is lost
+		// worker iteration 1: ... done
+		// worker iteration 2: pickup changes: empty instead of expected 'b'
+		if err := d.redis.HDel(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Err(); err != nil {
+			return fmt.Errorf("getChanges: HDEL %s %s: %w", cache.KeyDaemonStatusChangesHash, d.nodeID, err)
+		}
+	} else {
 		return fmt.Errorf("getChanges: HGET %s %s: %w", cache.KeyDaemonStatusChangesHash, d.nodeID, err)
 	}
 	d.changes = strings.Fields(s)
@@ -303,6 +346,53 @@ func (d *daemonStatus) dbFindServices() error {
 	}
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("dbFindServices FindClusterNodesInfo %s: %w", d.nodeID, err)
+	}
+	return nil
+}
+
+func (d *daemonStatus) dbFindInstance() error {
+	const querySelect = "" +
+		"SELECT svc_id, node_id, mon_frozen" +
+		" FROM svcmon" +
+		" WHERE svc_id IN (?"
+
+	values := []any{}
+	for svcID := range d.byObjectID {
+		values = append(values, svcID)
+	}
+	if len(values) == 0 {
+		return nil
+	}
+	query := querySelect
+	for i := 1; i < len(values); i++ {
+		query += ", ?"
+	}
+	query += ")"
+
+	rows, err := d.db.QueryContext(d.ctx, query, values...)
+	if err != nil {
+		return fmt.Errorf("dbFindInstance query svcIDs: [%s]: %w", values, err)
+	}
+	if rows == nil {
+		return fmt.Errorf("dbFindInstance query returns nil rows")
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var o DBInstance
+		if err := rows.Scan(&o.svcID, &o.nodeID, &o.Frozen); err != nil {
+			return fmt.Errorf("dbFindServices scan %s: %w", d.nodeID, err)
+		}
+		if n, ok := d.byNodeID[o.nodeID]; ok {
+			// Only pickup instances from known nodes
+			if s, ok := d.byObjectID[o.svcID]; ok {
+				// Only pickup instances from known objects
+				d.byInstanceName[s.svcname+"@"+n.nodename] = &o
+				d.byInstanceID[s.svcID+"@"+n.nodeID] = &o
+			}
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("dbFindInstance query rows: %w", err)
 	}
 	return nil
 }
