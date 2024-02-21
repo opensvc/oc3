@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/opensvc/oc3/cache"
@@ -36,8 +37,9 @@ func (t *Worker) handleSystemTargets(nodeID string, i any) error {
 			mariadb.NewNaturalMapping("hba_id"),
 			mariadb.NewNaturalMapping("tgt_id"),
 		},
-		Keys: []string{"node_id"},
-		Data: data,
+		Keys:    []string{"node_id", "hba_id", "tgt_id"},
+		Data:    data,
+		Timeout: time.Second * 5,
 	}
 
 	_, err := request.Query(t.DB)
@@ -70,8 +72,9 @@ func (t *Worker) handleSystemHBA(nodeID string, i any) error {
 			mariadb.NewNaturalMapping("hba_id"),
 			mariadb.NewNaturalMapping("hba_type"),
 		},
-		Keys: []string{"node_id"},
-		Data: data,
+		Keys:    []string{"node_id", "hba_id"},
+		Data:    data,
+		Timeout: time.Second * 5,
 	}
 
 	_, err := request.Query(t.DB)
@@ -117,8 +120,9 @@ func (t *Worker) handleSystemLAN(nodeID string, i any) error {
 			mariadb.NewNaturalMapping("mask"),
 			mariadb.NewNaturalMapping("flag_deprecated"),
 		},
-		Keys: []string{"node_id"},
-		Data: l,
+		Keys:    []string{"node_id"},
+		Data:    l,
+		Timeout: time.Second * 5,
 	}
 
 	_, err := request.Query(t.DB)
@@ -149,11 +153,12 @@ func (t *Worker) handleSystemGroups(nodeID string, i any) error {
 		Mappings: mariadb.Mappings{
 			mariadb.NewNaturalMapping("node_id"),
 			mariadb.NewNaturalMapping("updated"),
-			mariadb.NewMapping("group_id", "uid"),
+			mariadb.NewMapping("group_id", "gid"),
 			mariadb.NewMapping("group_name", "groupname"),
 		},
-		Keys: []string{"node_id"},
-		Data: data,
+		Keys:    []string{"node_id", "group_id"},
+		Data:    data,
+		Timeout: time.Second * 5,
 	}
 
 	_, err := request.Query(t.DB)
@@ -187,8 +192,9 @@ func (t *Worker) handleSystemUsers(nodeID string, i any) error {
 			mariadb.NewMapping("user_id", "uid"),
 			mariadb.NewMapping("user_name", "username"),
 		},
-		Keys: []string{"node_id"},
-		Data: data,
+		Keys:    []string{"node_id", "user_id"},
+		Data:    data,
+		Timeout: time.Second * 5,
 	}
 
 	_, err := request.Query(t.DB)
@@ -225,8 +231,9 @@ func (t *Worker) handleSystemHardware(nodeID string, i any) error {
 			mariadb.NewMapping("hw_driver", "driver"),
 			mariadb.NewNaturalMapping("updated"),
 		},
-		Keys: []string{"node_id"},
-		Data: data,
+		Keys:    []string{"node_id", "hw_type", "hw_path"},
+		Data:    data,
+		Timeout: time.Second * 5,
 	}
 
 	_, err := request.Query(t.DB)
@@ -301,7 +308,8 @@ func (t *Worker) handleSystemProperties(nodeID string, i any) error {
 			}
 			return value, nil
 		},
-		Data: data,
+		Data:    data,
+		Timeout: time.Second * 5,
 	}
 
 	_, err := request.Query(t.DB)
