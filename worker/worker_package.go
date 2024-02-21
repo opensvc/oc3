@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
+
 	"github.com/go-redis/redis/v8"
+
 	"github.com/opensvc/oc3/cache"
 	"github.com/opensvc/oc3/mariadb"
-	"log/slog"
 )
 
 func (t *Worker) handlePackage(nodeID string) error {
@@ -29,7 +31,7 @@ func (t *Worker) handlePackage(nodeID string) error {
 
 	var data map[string]any
 	if err := json.Unmarshal(result, &data); err != nil {
-		slog.Error(fmt.Sprintf("unmarshaled data: %#v\n", data))
+		slog.Error(fmt.Sprintf("unmarshalled data: %#v\n", data))
 		return err
 	}
 
@@ -55,8 +57,6 @@ func (t *Worker) handlePackage(nodeID string) error {
 		return nil
 	}
 
-	line := make(map[string]any)
-
 	for i := range pkgList {
 		pkg, ok := pkgList[i].([]interface{})
 		if !ok {
@@ -68,10 +68,11 @@ func (t *Worker) handlePackage(nodeID string) error {
 			slog.Warn(fmt.Sprintf("index of package out of range, %d keys for %d package elements", len(keys), len(pkg)))
 			return nil
 		}
+		line := make(map[string]any)
 
 		for e, v := range pkg {
 			line["node_id"] = nodeID
-			line["updated"] = mariadb.Raw("NOW()")
+			line["pkg_updated"] = mariadb.Raw("NOW()")
 			key := keys[e].(string)
 			if !ok {
 				slog.Warn(fmt.Sprint("unsupported key entry format"))
@@ -82,5 +83,26 @@ func (t *Worker) handlePackage(nodeID string) error {
 		pkgList[i] = line
 	}
 
-	return err
+	request := mariadb.InsertOrUpdate{
+		Table: "packages",
+		Mappings: mariadb.Mappings{
+			mariadb.NewNaturalMapping("node_id"),
+			mariadb.NewNaturalMapping("pkg_updated"),
+			mariadb.NewNaturalMapping("pkg_name"),
+			mariadb.NewNaturalMapping("pkg_version"),
+			mariadb.NewNaturalMapping("pkg_arch"),
+			mariadb.NewNaturalMapping("pkg_type"),
+			mariadb.NewNaturalMapping("pkg_sig"),
+			mariadb.NewNaturalMapping("pkg_install_date"),
+		},
+		Keys: []string{`node_id`, `pkg_name`, `pkg_arch`, `pkg_version`, `pkg_type`},
+		Data: pkgList,
+	}
+
+	_, err = request.Query(t.DB)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
