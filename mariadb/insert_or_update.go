@@ -1,10 +1,12 @@
 package mariadb
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 )
 
 type (
@@ -17,6 +19,7 @@ type (
 		Mappings Mappings
 		Accessor AccessorFunc
 		Data     any
+		Timeout  time.Duration
 
 		names        []string
 		placeholders []string
@@ -86,15 +89,28 @@ func (t *InsertOrUpdate) Query(db *sql.DB) (*sql.Rows, error) {
 	if err := t.load(); err != nil {
 		return nil, err
 	}
-	return db.Query(t.SQL(), t.values...)
+	if len(t.values) == 0 {
+		return nil, nil
+	}
+	ctx := context.Background()
+	if t.Timeout > 0 {
+		ctx, _ = context.WithTimeout(ctx, t.Timeout)
+	}
+	return db.QueryContext(ctx, t.SQL(), t.values...)
 }
 
 func (t *InsertOrUpdate) SQL() string {
-	return fmt.Sprintf(
-		"INSERT INTO %s (%s) VALUES %s ON DUPLICATE KEY UPDATE %s",
+	s := fmt.Sprintf(
+		"INSERT INTO %s (%s) VALUES %s",
 		t.Table,
 		strings.Join(t.names, ", "),
 		strings.Join(t.placeholders, ", "),
-		strings.Join(t.updates, ", "),
 	)
+	if len(t.updates) > 0 {
+		s += fmt.Sprintf(
+			" ON DUPLICATE KEY UPDATE %s",
+			strings.Join(t.updates, ", "),
+		)
+	}
+	return s
 }
