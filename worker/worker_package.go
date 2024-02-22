@@ -29,57 +29,28 @@ func (t *Worker) handlePackage(nodeID string) error {
 		return err
 	}
 
-	var data map[string]any
+	var data map[string][]any
 	if err := json.Unmarshal(result, &data); err != nil {
 		slog.Error(fmt.Sprintf("unmarshalled data: %#v\n", data))
 		return err
 	}
 
-	if _, ok := data[`packages`]; !ok {
-		slog.Warn(fmt.Sprint("unsupported json format for packages"))
+	if _, ok := data["packages"]; !ok {
+		slog.Warn(fmt.Sprint(`unsupported json format for packages, must be in the following format :\n
+			{ "packages": [ { "name": "foo", "version": "3.1", "arch": "amd64", }, ... ], }`))
 		return nil
 	}
 
-	if _, ok := data[`keys`]; !ok {
-		slog.Warn(fmt.Sprint("missing package keys"))
-		return nil
-	}
-
-	pkgList, ok := data[`packages`].([]any)
-	if !ok {
-		slog.Warn(fmt.Sprint("unsupported package table format"))
-		return nil
-	}
-
-	keys, ok := data[`keys`].([]interface{})
-	if !ok {
-		slog.Warn(fmt.Sprint("unsupported key table format"))
-		return nil
-	}
+	pkgList := data["packages"]
 
 	for i := range pkgList {
-		pkg, ok := pkgList[i].([]interface{})
+		line, ok := pkgList[i].(map[string]any)
 		if !ok {
 			slog.Warn(fmt.Sprint("unsupported package entry format"))
 			return nil
 		}
-
-		if len(keys) != len(pkg) {
-			slog.Warn(fmt.Sprintf("index of package out of range, %d keys for %d package elements", len(keys), len(pkg)))
-			return nil
-		}
-		line := make(map[string]any)
-
-		for e, v := range pkg {
-			line["node_id"] = nodeID
-			line["pkg_updated"] = mariadb.Raw("NOW()")
-			key := keys[e].(string)
-			if !ok {
-				slog.Warn(fmt.Sprint("unsupported key entry format"))
-				return nil
-			}
-			line[key] = v
-		}
+		line["node_id"] = nodeID
+		line["pkg_updated"] = mariadb.Raw("NOW()")
 		pkgList[i] = line
 	}
 
@@ -88,21 +59,17 @@ func (t *Worker) handlePackage(nodeID string) error {
 		Mappings: mariadb.Mappings{
 			mariadb.NewNaturalMapping("node_id"),
 			mariadb.NewNaturalMapping("pkg_updated"),
-			mariadb.NewNaturalMapping("pkg_name"),
-			mariadb.NewNaturalMapping("pkg_version"),
-			mariadb.NewNaturalMapping("pkg_arch"),
-			mariadb.NewNaturalMapping("pkg_type"),
-			mariadb.NewNaturalMapping("pkg_sig"),
-			mariadb.NewNaturalMapping("pkg_install_date"),
+			mariadb.NewMapping("pkg_name", "name"),
+			mariadb.NewMapping("pkg_version", "version"),
+			mariadb.NewMapping("pkg_arch", "arch"),
+			mariadb.NewMapping("pkg_type", "type"),
+			mariadb.NewMapping("pkg_sig", "sig"),
+			mariadb.NewMapping("pkg_install_date", "install_date"),
 		},
-		Keys: []string{`node_id`, `pkg_name`, `pkg_arch`, `pkg_version`, `pkg_type`},
+		Keys: []string{"node_id", "pkg_name", "pkg_arch", "pkg_version", "pkg_type"},
 		Data: pkgList,
 	}
 
 	_, err = request.Query(t.DB)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

@@ -12,6 +12,7 @@ import (
 )
 
 func (a *Api) PostDaemonSystemPackage(c echo.Context) error {
+
 	log := getLog(c)
 	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {
@@ -19,13 +20,7 @@ func (a *Api) PostDaemonSystemPackage(c echo.Context) error {
 		return JSONNodeAuthProblem(c)
 	}
 
-	body := c.Request().Body
-	b, err := io.ReadAll(body)
-	defer func() {
-		if err := body.Close(); err != nil {
-			log.Error("close body failed: " + err.Error())
-		}
-	}()
+	b, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return JSONProblemf(c, http.StatusInternalServerError, "", "read request body: %s", err)
 	}
@@ -41,7 +36,7 @@ func (a *Api) PostDaemonSystemPackage(c echo.Context) error {
 	}
 
 	if err := a.pushNotPending(reqCtx, cache.KeyPackagesPending, cache.KeyPackages, nodeID); err != nil {
-		log.Error(fmt.Sprintf("can't push %s %s: %s", cache.KeyPackages, nodeID, err))
+		slog.Error(fmt.Sprintf("can't push %s %s: %s", cache.KeyPackages, nodeID, err))
 		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", cache.KeyPackages, nodeID, err)
 	}
 	return c.JSON(http.StatusOK, nil)
