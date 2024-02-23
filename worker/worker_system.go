@@ -12,7 +12,7 @@ import (
 	"github.com/opensvc/oc3/mariadb"
 )
 
-func (t *Worker) handleSystemTargets(nodeID string, i any) error {
+func (t *Worker) handleSystemTargets(ctx context.Context, nodeID string, i any, now string) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system targets data format")
@@ -25,7 +25,7 @@ func (t *Worker) handleSystemTargets(nodeID string, i any) error {
 			return nil
 		}
 		line["node_id"] = nodeID
-		line["updated"] = mariadb.Raw("NOW()")
+		line["updated"] = now
 		data[i] = line
 	}
 
@@ -37,17 +37,24 @@ func (t *Worker) handleSystemTargets(nodeID string, i any) error {
 			mariadb.NewNaturalMapping("hba_id"),
 			mariadb.NewNaturalMapping("tgt_id"),
 		},
-		Keys:    []string{"node_id", "hba_id", "tgt_id"},
-		Data:    data,
-		Timeout: time.Second * 5,
+		Keys: []string{"node_id", "hba_id", "tgt_id"},
+		Data: data,
 	}
 
-	_, err := request.Query(t.DB)
+	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+		return err
+	}
 
-	return err
+	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM stor_zone WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+		return err
+	} else {
+		defer rows.Close()
+	}
+
+	return nil
 }
 
-func (t *Worker) handleSystemHBA(nodeID string, i any) error {
+func (t *Worker) handleSystemHBA(ctx context.Context, nodeID string, i any, now string) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system hba data format")
@@ -60,7 +67,7 @@ func (t *Worker) handleSystemHBA(nodeID string, i any) error {
 			return nil
 		}
 		line["node_id"] = nodeID
-		line["updated"] = mariadb.Raw("NOW()")
+		line["updated"] = now
 		data[i] = line
 	}
 
@@ -72,17 +79,24 @@ func (t *Worker) handleSystemHBA(nodeID string, i any) error {
 			mariadb.NewNaturalMapping("hba_id"),
 			mariadb.NewNaturalMapping("hba_type"),
 		},
-		Keys:    []string{"node_id", "hba_id"},
-		Data:    data,
-		Timeout: time.Second * 5,
+		Keys: []string{"node_id", "hba_id"},
+		Data: data,
 	}
 
-	_, err := request.Query(t.DB)
+	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+		return err
+	}
 
-	return err
+	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM node_hba WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+		return err
+	} else {
+		defer rows.Close()
+	}
+
+	return nil
 }
 
-func (t *Worker) handleSystemLAN(nodeID string, i any) error {
+func (t *Worker) handleSystemLAN(ctx context.Context, nodeID string, i any, now string) error {
 	var l []any
 	data, ok := i.(map[string]any)
 	if !ok {
@@ -103,7 +117,7 @@ func (t *Worker) handleSystemLAN(nodeID string, i any) error {
 			}
 			line["mac"] = mac
 			line["node_id"] = nodeID
-			line["updated"] = mariadb.Raw("NOW()")
+			line["updated"] = now
 			l = append(l, line)
 		}
 	}
@@ -120,17 +134,24 @@ func (t *Worker) handleSystemLAN(nodeID string, i any) error {
 			mariadb.NewNaturalMapping("mask"),
 			mariadb.NewNaturalMapping("flag_deprecated"),
 		},
-		Keys:    []string{"node_id"},
-		Data:    l,
-		Timeout: time.Second * 5,
+		Keys: []string{"node_id"},
+		Data: l,
 	}
 
-	_, err := request.Query(t.DB)
+	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+		return err
+	}
 
-	return err
+	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM node_ip WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+		return err
+	} else {
+		defer rows.Close()
+	}
+
+	return nil
 }
 
-func (t *Worker) handleSystemGroups(nodeID string, i any) error {
+func (t *Worker) handleSystemGroups(ctx context.Context, nodeID string, i any, now string) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system groups data format")
@@ -144,7 +165,7 @@ func (t *Worker) handleSystemGroups(nodeID string, i any) error {
 			return nil
 		}
 		line["node_id"] = nodeID
-		line["updated"] = mariadb.Raw("NOW()")
+		line["updated"] = now
 		data[i] = line
 	}
 
@@ -156,17 +177,24 @@ func (t *Worker) handleSystemGroups(nodeID string, i any) error {
 			mariadb.NewMapping("group_id", "gid"),
 			mariadb.NewMapping("group_name", "groupname"),
 		},
-		Keys:    []string{"node_id", "group_id"},
-		Data:    data,
-		Timeout: time.Second * 5,
+		Keys: []string{"node_id", "group_id"},
+		Data: data,
 	}
 
-	_, err := request.Query(t.DB)
+	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+		return err
+	}
 
-	return err
+	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM node_groups WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+		return err
+	} else {
+		defer rows.Close()
+	}
+
+	return nil
 }
 
-func (t *Worker) handleSystemUsers(nodeID string, i any) error {
+func (t *Worker) handleSystemUsers(ctx context.Context, nodeID string, i any, now string) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system users data format")
@@ -180,7 +208,7 @@ func (t *Worker) handleSystemUsers(nodeID string, i any) error {
 			return nil
 		}
 		line["node_id"] = nodeID
-		line["updated"] = mariadb.Raw("NOW()")
+		line["updated"] = now
 		data[i] = line
 	}
 
@@ -192,17 +220,24 @@ func (t *Worker) handleSystemUsers(nodeID string, i any) error {
 			mariadb.NewMapping("user_id", "uid"),
 			mariadb.NewMapping("user_name", "username"),
 		},
-		Keys:    []string{"node_id", "user_id"},
-		Data:    data,
-		Timeout: time.Second * 5,
+		Keys: []string{"node_id", "user_id"},
+		Data: data,
 	}
 
-	_, err := request.Query(t.DB)
+	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+		return err
+	}
 
-	return err
+	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM node_users WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+		return err
+	} else {
+		defer rows.Close()
+	}
+
+	return nil
 }
 
-func (t *Worker) handleSystemHardware(nodeID string, i any) error {
+func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any, now string) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system hardware data format")
@@ -216,7 +251,7 @@ func (t *Worker) handleSystemHardware(nodeID string, i any) error {
 			return nil
 		}
 		line["node_id"] = nodeID
-		line["updated"] = mariadb.Raw("NOW()")
+		line["updated"] = now
 		data[i] = line
 	}
 
@@ -231,17 +266,24 @@ func (t *Worker) handleSystemHardware(nodeID string, i any) error {
 			mariadb.NewMapping("hw_driver", "driver"),
 			mariadb.NewNaturalMapping("updated"),
 		},
-		Keys:    []string{"node_id", "hw_type", "hw_path"},
-		Data:    data,
-		Timeout: time.Second * 5,
+		Keys: []string{"node_id", "hw_type", "hw_path"},
+		Data: data,
 	}
 
-	_, err := request.Query(t.DB)
+	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+		return err
+	}
 
-	return err
+	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM node_hw WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+		return err
+	} else {
+		defer rows.Close()
+	}
+
+	return nil
 }
 
-func (t *Worker) handleSystemProperties(nodeID string, i any) error {
+func (t *Worker) handleSystemProperties(ctx context.Context, nodeID string, i any, now string) error {
 	data, ok := i.(map[string]any)
 	if !ok {
 		slog.Warn("unsupported system properties format")
@@ -249,7 +291,7 @@ func (t *Worker) handleSystemProperties(nodeID string, i any) error {
 	}
 
 	data["node_id"] = map[string]any{"value": nodeID}
-	data["updated"] = mariadb.Raw("NOW()")
+	data["updated"] = map[string]any{"value": now}
 
 	request := mariadb.InsertOrUpdate{
 		Table: "nodes",
@@ -308,52 +350,61 @@ func (t *Worker) handleSystemProperties(nodeID string, i any) error {
 			}
 			return value, nil
 		},
-		Data:    data,
-		Timeout: time.Second * 5,
+		Data: data,
 	}
 
-	_, err := request.Query(t.DB)
+	_, err := request.QueryContext(ctx, t.DB)
 
 	return err
 }
 
 func (t *Worker) handleSystem(nodeID string) error {
-	cmd := t.Redis.HGet(context.Background(), cache.KeySystemHash, nodeID)
+	ctx := context.Background()
+	ctx, _ = context.WithTimeout(ctx, time.Second*5)
+
+	cmd := t.Redis.HGet(ctx, cache.KeySystemHash, nodeID)
 	result, err := cmd.Result()
 	switch err {
 	case nil:
 	case redis.Nil:
 		return nil
 	default:
-		return err
+		return fmt.Errorf("system: HGET: %w", err)
 	}
 
 	var v map[string]any
 	if err := json.Unmarshal([]byte(result), &v); err != nil {
-		return err
+		return fmt.Errorf("system: unmarshal: %w", err)
+	}
+
+	now, err := mariadb.Now(ctx, t.DB)
+	if err != nil {
+		return fmt.Errorf("system: now: %w", err)
 	}
 
 	for k, i := range v {
 		switch k {
 		case "hardware":
-			err = t.handleSystemHardware(nodeID, i)
+			err = t.handleSystemHardware(ctx, nodeID, i, now)
 		case "properties":
-			err = t.handleSystemProperties(nodeID, i)
+			err = t.handleSystemProperties(ctx, nodeID, i, now)
 		case "gids":
-			err = t.handleSystemGroups(nodeID, i)
+			err = t.handleSystemGroups(ctx, nodeID, i, now)
 		case "uids":
-			err = t.handleSystemUsers(nodeID, i)
+			err = t.handleSystemUsers(ctx, nodeID, i, now)
 		case "lan":
-			err = t.handleSystemLAN(nodeID, i)
+			err = t.handleSystemLAN(ctx, nodeID, i, now)
 		case "hba":
-			err = t.handleSystemHBA(nodeID, i)
+			err = t.handleSystemHBA(ctx, nodeID, i, now)
 		case "targets":
-			err = t.handleSystemTargets(nodeID, i)
+			err = t.handleSystemTargets(ctx, nodeID, i, now)
 		default:
-			slog.Warn(fmt.Sprintf("unsupported system sub: %s", k))
+			slog.Info(fmt.Sprintf("system: %s: ignore key '%s'", nodeID, k))
 		}
 		if err != nil {
-			slog.Warn(fmt.Sprintf("%s: %s", k, err))
+			slog.Warn(fmt.Sprintf("system: %s: %s: %s", nodeID, k, err))
+		} else {
+			slog.Info(fmt.Sprintf("system: %s: %s", nodeID, k))
 		}
 	}
 	return nil

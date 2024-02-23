@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"time"
 )
 
 type (
@@ -19,7 +18,6 @@ type (
 		Mappings Mappings
 		Accessor AccessorFunc
 		Data     any
-		Timeout  time.Duration
 
 		names        []string
 		placeholders []string
@@ -85,16 +83,12 @@ func (t *InsertOrUpdate) loadLines(data []any) error {
 	return nil
 }
 
-func (t *InsertOrUpdate) Query(db *sql.DB) (*sql.Rows, error) {
+func (t *InsertOrUpdate) QueryContext(ctx context.Context, db *sql.DB) (*sql.Rows, error) {
 	if err := t.load(); err != nil {
 		return nil, err
 	}
 	if len(t.values) == 0 {
 		return nil, nil
-	}
-	ctx := context.Background()
-	if t.Timeout > 0 {
-		ctx, _ = context.WithTimeout(ctx, t.Timeout)
 	}
 	return db.QueryContext(ctx, t.SQL(), t.values...)
 }

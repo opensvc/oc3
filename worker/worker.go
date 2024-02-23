@@ -43,7 +43,7 @@ func (t *Worker) Run() error {
 		case cache.KeyDaemonStatus:
 			err = t.handleDaemonStatus(result[1])
 		default:
-			slog.Warn(fmt.Sprintf("unsupported queue: %s", result[0]))
+			slog.Debug(fmt.Sprintf("ignore queue '%s'", result[0]))
 		}
 		if err != nil {
 			slog.Error(err.Error())
