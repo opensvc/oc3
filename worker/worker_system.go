@@ -32,10 +32,10 @@ func (t *Worker) handleSystemTargets(ctx context.Context, nodeID string, i any, 
 	request := mariadb.InsertOrUpdate{
 		Table: "stor_zone",
 		Mappings: mariadb.Mappings{
-			mariadb.NewNaturalMapping("node_id"),
-			mariadb.NewNaturalMapping("updated"),
-			mariadb.NewNaturalMapping("hba_id"),
-			mariadb.NewNaturalMapping("tgt_id"),
+			mariadb.Mapping{To: "node_id"},
+			mariadb.Mapping{To: "updated"},
+			mariadb.Mapping{To: "hba_id"},
+			mariadb.Mapping{To: "tgt_id"},
 		},
 		Keys: []string{"node_id", "hba_id", "tgt_id"},
 		Data: data,
@@ -74,10 +74,10 @@ func (t *Worker) handleSystemHBA(ctx context.Context, nodeID string, i any, now 
 	request := mariadb.InsertOrUpdate{
 		Table: "node_hba",
 		Mappings: mariadb.Mappings{
-			mariadb.NewNaturalMapping("node_id"),
-			mariadb.NewNaturalMapping("updated"),
-			mariadb.NewNaturalMapping("hba_id"),
-			mariadb.NewNaturalMapping("hba_type"),
+			mariadb.Mapping{To: "node_id"},
+			mariadb.Mapping{To: "updated"},
+			mariadb.Mapping{To: "hba_id"},
+			mariadb.Mapping{To: "hba_type"},
 		},
 		Keys: []string{"node_id", "hba_id"},
 		Data: data,
@@ -125,14 +125,14 @@ func (t *Worker) handleSystemLAN(ctx context.Context, nodeID string, i any, now 
 	request := mariadb.InsertOrUpdate{
 		Table: "node_ip",
 		Mappings: mariadb.Mappings{
-			mariadb.NewNaturalMapping("node_id"),
-			mariadb.NewNaturalMapping("updated"),
-			mariadb.NewNaturalMapping("mac"),
-			mariadb.NewNaturalMapping("intf"),
-			mariadb.NewNaturalMapping("type"),
-			mariadb.NewNaturalMapping("addr"),
-			mariadb.NewNaturalMapping("mask"),
-			mariadb.NewNaturalMapping("flag_deprecated"),
+			mariadb.Mapping{To: "node_id"},
+			mariadb.Mapping{To: "updated"},
+			mariadb.Mapping{To: "mac"},
+			mariadb.Mapping{To: "intf"},
+			mariadb.Mapping{To: "type"},
+			mariadb.Mapping{To: "addr"},
+			mariadb.Mapping{To: "mask"},
+			mariadb.Mapping{To: "flag_deprecated"},
 		},
 		Keys: []string{"node_id"},
 		Data: l,
@@ -172,10 +172,10 @@ func (t *Worker) handleSystemGroups(ctx context.Context, nodeID string, i any, n
 	request := mariadb.InsertOrUpdate{
 		Table: "node_groups",
 		Mappings: mariadb.Mappings{
-			mariadb.NewNaturalMapping("node_id"),
-			mariadb.NewNaturalMapping("updated"),
-			mariadb.NewMapping("group_id", "gid"),
-			mariadb.NewMapping("group_name", "groupname"),
+			mariadb.Mapping{To: "node_id"},
+			mariadb.Mapping{To: "updated"},
+			mariadb.Mapping{To: "group_id", From: "gid"},
+			mariadb.Mapping{To: "group_name", From: "groupname"},
 		},
 		Keys: []string{"node_id", "group_id"},
 		Data: data,
@@ -215,10 +215,10 @@ func (t *Worker) handleSystemUsers(ctx context.Context, nodeID string, i any, no
 	request := mariadb.InsertOrUpdate{
 		Table: "node_users",
 		Mappings: mariadb.Mappings{
-			mariadb.NewNaturalMapping("node_id"),
-			mariadb.NewNaturalMapping("updated"),
-			mariadb.NewMapping("user_id", "uid"),
-			mariadb.NewMapping("user_name", "username"),
+			mariadb.Mapping{To: "node_id"},
+			mariadb.Mapping{To: "updated"},
+			mariadb.Mapping{To: "user_id", From: "uid"},
+			mariadb.Mapping{To: "user_name", From: "username"},
 		},
 		Keys: []string{"node_id", "user_id"},
 		Data: data,
@@ -258,13 +258,13 @@ func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any,
 	request := mariadb.InsertOrUpdate{
 		Table: "node_hw",
 		Mappings: mariadb.Mappings{
-			mariadb.NewNaturalMapping("node_id"),
-			mariadb.NewMapping("hw_type", "type"),
-			mariadb.NewMapping("hw_path", "path"),
-			mariadb.NewMapping("hw_class", "class"),
-			mariadb.NewMapping("hw_description", "description"),
-			mariadb.NewMapping("hw_driver", "driver"),
-			mariadb.NewNaturalMapping("updated"),
+			mariadb.Mapping{To: "node_id"},
+			mariadb.Mapping{To: "hw_type", From: "type"},
+			mariadb.Mapping{To: "hw_path", From: "path"},
+			mariadb.Mapping{To: "hw_class", From: "class"},
+			mariadb.Mapping{To: "hw_description", From: "description"},
+			mariadb.Mapping{To: "hw_driver", From: "driver"},
+			mariadb.Mapping{To: "updated"},
 		},
 		Keys: []string{"node_id", "hw_type", "hw_path"},
 		Data: data,
@@ -293,63 +293,64 @@ func (t *Worker) handleSystemProperties(ctx context.Context, nodeID string, i an
 	data["node_id"] = map[string]any{"value": nodeID}
 	data["updated"] = map[string]any{"value": now}
 
+	get := func(v any) (any, error) {
+		keyData, ok := v.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("unsupported system property format: %#v", v)
+		}
+		value, ok := keyData["value"]
+		if !ok {
+			return nil, fmt.Errorf("key 'value' not found in property %#v", v)
+		}
+		return value, nil
+	}
+
 	request := mariadb.InsertOrUpdate{
 		Table: "nodes",
 		Mappings: mariadb.Mappings{
-			mariadb.NewNaturalMapping("asset_env"),
-			mariadb.NewNaturalMapping("bios_version"),
-			mariadb.NewNaturalMapping("cluster_id"),
-			mariadb.NewNaturalMapping("connect_to"),
-			mariadb.NewNaturalMapping("cpu_cores"),
-			mariadb.NewNaturalMapping("cpu_dies"),
-			mariadb.NewNaturalMapping("cpu_freq"),
-			mariadb.NewNaturalMapping("cpu_model"),
-			mariadb.NewNaturalMapping("cpu_threads"),
-			mariadb.NewNaturalMapping("enclosure"),
-			mariadb.NewNaturalMapping("fqdn"),
-			mariadb.NewNaturalMapping("last_boot"),
-			mariadb.NewNaturalMapping("listener_port"),
-			mariadb.NewNaturalMapping("loc_addr"),
-			mariadb.NewNaturalMapping("loc_building"),
-			mariadb.NewNaturalMapping("loc_city"),
-			mariadb.NewNaturalMapping("loc_country"),
-			mariadb.NewNaturalMapping("loc_floor"),
-			mariadb.NewNaturalMapping("loc_rack"),
-			mariadb.NewNaturalMapping("loc_room"),
-			mariadb.NewNaturalMapping("loc_zip"),
-			mariadb.NewNaturalMapping("manufacturer"),
-			mariadb.NewNaturalMapping("mem_banks"),
-			mariadb.NewNaturalMapping("mem_bytes"),
-			mariadb.NewNaturalMapping("mem_slots"),
-			mariadb.NewNaturalMapping("model"),
-			mariadb.NewNaturalMapping("node_id"),
-			mariadb.NewNaturalMapping("node_env"),
-			mariadb.NewNaturalMapping("nodename"),
-			mariadb.NewNaturalMapping("os_arch"),
-			mariadb.NewNaturalMapping("os_kernel"),
-			mariadb.NewNaturalMapping("os_name"),
-			mariadb.NewNaturalMapping("os_vendor"),
-			mariadb.NewNaturalMapping("sec_zone"),
-			mariadb.NewNaturalMapping("serial"),
-			mariadb.NewNaturalMapping("sp_version"),
-			mariadb.NewNaturalMapping("team_integ"),
-			mariadb.NewNaturalMapping("team_support"),
-			mariadb.NewNaturalMapping("tz"),
-			mariadb.NewNaturalMapping("updated"),
-			mariadb.NewNaturalMapping("version"),
+			mariadb.Mapping{To: "asset_env", Get: get},
+			mariadb.Mapping{To: "bios_version", Get: get},
+			mariadb.Mapping{To: "cluster_id", Get: get},
+			mariadb.Mapping{To: "connect_to", Get: get},
+			mariadb.Mapping{To: "cpu_cores", Get: get},
+			mariadb.Mapping{To: "cpu_dies", Get: get},
+			mariadb.Mapping{To: "cpu_freq", Get: get},
+			mariadb.Mapping{To: "cpu_model", Get: get},
+			mariadb.Mapping{To: "cpu_threads", Get: get},
+			mariadb.Mapping{To: "enclosure", Get: get},
+			mariadb.Mapping{To: "fqdn", Get: get},
+			mariadb.Mapping{To: "last_boot", Get: get, Modify: mariadb.ModifyDatetime},
+			mariadb.Mapping{To: "listener_port", Get: get},
+			mariadb.Mapping{To: "loc_addr", Get: get},
+			mariadb.Mapping{To: "loc_building", Get: get},
+			mariadb.Mapping{To: "loc_city", Get: get},
+			mariadb.Mapping{To: "loc_country", Get: get},
+			mariadb.Mapping{To: "loc_floor", Get: get},
+			mariadb.Mapping{To: "loc_rack", Get: get},
+			mariadb.Mapping{To: "loc_room", Get: get},
+			mariadb.Mapping{To: "loc_zip", Get: get},
+			mariadb.Mapping{To: "manufacturer", Get: get},
+			mariadb.Mapping{To: "mem_banks", Get: get},
+			mariadb.Mapping{To: "mem_bytes", Get: get},
+			mariadb.Mapping{To: "mem_slots", Get: get},
+			mariadb.Mapping{To: "model", Get: get},
+			mariadb.Mapping{To: "node_id", Get: get},
+			mariadb.Mapping{To: "node_env", Get: get},
+			mariadb.Mapping{To: "nodename", Get: get},
+			mariadb.Mapping{To: "os_arch", Get: get},
+			mariadb.Mapping{To: "os_kernel", Get: get},
+			mariadb.Mapping{To: "os_name", Get: get},
+			mariadb.Mapping{To: "os_vendor", Get: get},
+			mariadb.Mapping{To: "sec_zone", Get: get},
+			mariadb.Mapping{To: "serial", Get: get},
+			mariadb.Mapping{To: "sp_version", Get: get},
+			mariadb.Mapping{To: "team_integ", Get: get},
+			mariadb.Mapping{To: "team_support", Get: get},
+			mariadb.Mapping{To: "tz", Get: get},
+			mariadb.Mapping{To: "updated", Get: get},
+			mariadb.Mapping{To: "version", Get: get},
 		},
 		Keys: []string{"node_id"},
-		Accessor: func(v any) (any, error) {
-			keyData, ok := v.(map[string]any)
-			if !ok {
-				return nil, fmt.Errorf("unsupported system property format")
-			}
-			value, ok := keyData["value"]
-			if !ok {
-				return nil, fmt.Errorf("'value' key not found in property")
-			}
-			return value, nil
-		},
 		Data: data,
 	}
 
