@@ -1,5 +1,10 @@
 package mariadb
 
+import (
+	"fmt"
+	"strings"
+)
+
 type (
 	Mappings []Mapping
 	Mapping  struct {
@@ -8,19 +13,31 @@ type (
 
 		// From is the loaded list element key name
 		From string
+
+		// Raw is the string to use as a placeholder
+		Raw string
+
+		// Get extracts the value from the initial data
+		Get func(v any) (any, error)
+
+		// Modify modifies the placeholder and value (ex: datetimes rfc change)
+		Modify func(v any) (string, []any, error)
 	}
 )
 
-func NewNaturalMapping(s string) Mapping {
-	return Mapping{
-		To:   s,
-		From: s,
+func ModifyDatetime(v any) (placeholder string, values []any, err error) {
+	s := fmt.Sprint(v)
+	if i := strings.Index(s, "+"); i > 0 {
+		placeholder = "CONVERT_TZ(?, ?, \"SYSTEM\")"
+		values = append(values, s[:i], s[i:])
+		return
 	}
-}
-
-func NewMapping(to, from string) Mapping {
-	return Mapping{
-		To:   to,
-		From: from,
+	if i := strings.Index(s, "-"); i > 0 {
+		placeholder = "CONVERT_TZ(?, ?, \"SYSTEM\")"
+		values = append(values, s[:i], s[i:])
+		return
 	}
+	placeholder = "?"
+	values = append(values, s)
+	return
 }

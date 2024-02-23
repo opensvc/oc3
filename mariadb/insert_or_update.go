@@ -9,14 +9,10 @@ import (
 )
 
 type (
-	Raw          string
-	AccessorFunc func(v any) (any, error)
-
 	InsertOrUpdate struct {
 		Table    string
 		Keys     []string
 		Mappings Mappings
-		Accessor AccessorFunc
 		Data     any
 
 		names        []string
@@ -43,15 +39,9 @@ func (t *InsertOrUpdate) loadLines(data []any) error {
 	}
 
 	for _, mapping := range t.Mappings {
-		d, ok := data[0].(map[string]any)
-		if !ok {
-			return fmt.Errorf("unsupported data line format")
-		}
-		if _, ok := d[mapping.From]; ok {
-			t.names = append(t.names, mapping.To)
-			if !slices.Contains(t.Keys, mapping.To) {
-				t.updates = append(t.updates, fmt.Sprintf("%s = VALUES(%s)", mapping.To, mapping.To))
-			}
+		t.names = append(t.names, mapping.To)
+		if !slices.Contains(t.Keys, mapping.To) {
+			t.updates = append(t.updates, fmt.Sprintf("%s = VALUES(%s)", mapping.To, mapping.To))
 		}
 	}
 
@@ -62,18 +52,38 @@ func (t *InsertOrUpdate) loadLines(data []any) error {
 			return fmt.Errorf("unsupported data line format")
 		}
 		for _, mapping := range t.Mappings {
-			if value, ok := d[mapping.From]; ok {
-				if v, ok := value.(Raw); ok {
-					placeholders = append(placeholders, string(v))
-					continue
+			if mapping.Raw != "" {
+				placeholders = append(placeholders, mapping.Raw)
+				continue
+			}
+			var value any
+			var key string
+			if mapping.From != "" {
+				key = mapping.From
+			} else {
+				key = mapping.To
+			}
+			if v, ok := d[key]; !ok {
+				return fmt.Errorf("key '%s' not found", key)
+			} else {
+				value = v
+			}
+			if mapping.Get != nil {
+				if v, err := mapping.Get(value); err != nil {
+					return err
+				} else {
+					value = v
 				}
-				if t.Accessor != nil {
-					if v, err := t.Accessor(value); err != nil {
-						return fmt.Errorf("accessor: %s: %w", mapping.From, err)
-					} else {
-						value = v
-					}
+			}
+			if mapping.Modify != nil {
+				if placeholder, values, err := mapping.Modify(value); err != nil {
+					return err
+				} else {
+					placeholders = append(placeholders, placeholder)
+					t.values = append(t.values, values...)
 				}
+			} else {
+
 				placeholders = append(placeholders, "?")
 				t.values = append(t.values, value)
 			}
@@ -90,7 +100,9 @@ func (t *InsertOrUpdate) QueryContext(ctx context.Context, db *sql.DB) (*sql.Row
 	if len(t.values) == 0 {
 		return nil, nil
 	}
-	return db.QueryContext(ctx, t.SQL(), t.values...)
+	sql := t.SQL()
+	//slog.Debug(fmt.Sprint(sql, t.values))
+	return db.QueryContext(ctx, sql, t.values...)
 }
 
 func (t *InsertOrUpdate) SQL() string {
