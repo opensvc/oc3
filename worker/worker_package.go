@@ -36,8 +36,7 @@ func (t *Worker) handlePackage(nodeID string) error {
 	}
 
 	if _, ok := data["packages"]; !ok {
-		slog.Warn(fmt.Sprint(`unsupported json format for packages, must be in the following format :\n
-			{ "packages": [ { "name": "foo", "version": "3.1", "arch": "amd64", }, ... ], }`))
+		slog.Warn(fmt.Sprint("unsupported json format for packages"))
 		return nil
 	}
 
