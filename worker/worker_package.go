@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 
@@ -13,13 +14,16 @@ import (
 )
 
 func (t *Worker) handlePackage(nodeID string) error {
-	_, err := t.Redis.HDel(context.Background(), cache.KeyPackagesPending, nodeID).Result()
+	ctx := context.Background()
+	ctx, _ = context.WithTimeout(ctx, time.Second*5)
+
+	_, err := t.Redis.HDel(ctx, cache.KeyPackagesPending, nodeID).Result()
 	if err != nil {
 		slog.Error(fmt.Sprintf("can't HDEL %s: %s", cache.KeyPackagesPending, nodeID))
 		return err
 	}
 
-	cmd := t.Redis.HGet(context.Background(), cache.KeyPackagesHash, nodeID)
+	cmd := t.Redis.HGet(ctx, cache.KeyPackagesHash, nodeID)
 	result, err := cmd.Bytes()
 	switch err {
 	case nil:
@@ -33,6 +37,11 @@ func (t *Worker) handlePackage(nodeID string) error {
 	if err := json.Unmarshal(result, &data); err != nil {
 		slog.Error(fmt.Sprintf("unmarshalled data: %#v\n", data))
 		return err
+	}
+
+	now, err := mariadb.Now(ctx, t.DB)
+	if err != nil {
+		return fmt.Errorf("system: now: %w", err)
 	}
 
 	if _, ok := data["packages"]; !ok {
@@ -49,26 +58,35 @@ func (t *Worker) handlePackage(nodeID string) error {
 			return nil
 		}
 		line["node_id"] = nodeID
-		line["pkg_updated"] = mariadb.Raw("NOW()")
+		line["pkg_updated"] = now
 		pkgList[i] = line
 	}
 
 	request := mariadb.InsertOrUpdate{
 		Table: "packages",
 		Mappings: mariadb.Mappings{
-			mariadb.NewNaturalMapping("node_id"),
-			mariadb.NewNaturalMapping("pkg_updated"),
-			mariadb.NewMapping("pkg_name", "name"),
-			mariadb.NewMapping("pkg_version", "version"),
-			mariadb.NewMapping("pkg_arch", "arch"),
-			mariadb.NewMapping("pkg_type", "type"),
-			mariadb.NewMapping("pkg_sig", "sig"),
-			mariadb.NewMapping("pkg_install_date", "install_date"),
+			mariadb.Mapping{To: "node_id"},
+			mariadb.Mapping{To: "pkg_updated"},
+			mariadb.Mapping{To: "pkg_name", From: "name"},
+			mariadb.Mapping{To: "pkg_version", From: "version"},
+			mariadb.Mapping{To: "pkg_arch", From: "arch"},
+			mariadb.Mapping{To: "pkg_type", From: "type"},
+			mariadb.Mapping{To: "pkg_sig", From: "sig"},
+			mariadb.Mapping{To: "pkg_install_date", From: "install_date"},
 		},
 		Keys: []string{"node_id", "pkg_name", "pkg_arch", "pkg_version", "pkg_type"},
 		Data: pkgList,
 	}
 
-	_, err = request.Query(t.DB)
-	return err
+	if _, err = request.QueryContext(ctx, t.DB); err != nil {
+		return err
+	}
+
+	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM packages WHERE node_id = ? AND pkg_updated < ?", nodeID, now); err != nil {
+		return err
+	} else {
+		defer rows.Close()
+	}
+
+	return nil
 }
