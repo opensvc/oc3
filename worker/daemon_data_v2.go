@@ -38,7 +38,18 @@ func (d *daemonDataV2) nodeNames() (l []string, err error) {
 }
 
 func (d *daemonDataV2) objectNames() (l []string, err error) {
-	return d.data.getDictSubKeys("services")
+	var keys []string
+	keys, err = d.data.getDictSubKeys("services")
+	if err != nil {
+		return
+	}
+	for _, s := range keys {
+		if s == "cluster" {
+			continue
+		}
+		l = append(l, s)
+	}
+	return
 }
 
 func (d *daemonDataV2) clusterID() (s string, err error) {
