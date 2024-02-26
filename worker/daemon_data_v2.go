@@ -103,3 +103,15 @@ func (d *daemonDataV2) getFromKeys(keys ...string) (v any, err error) {
 		return v, nil
 	}
 }
+
+// appFromObjectName returns object app value from nodes object instances status
+func (d *daemonDataV2) appFromObjectName(svcname string, nodes ...string) string {
+	for _, nodename := range nodes {
+		if a, ok := mapTo(d.data, "nodes", nodename, "services", "status", svcname, "app"); ok {
+			if app, ok := a.(string); ok {
+				return app
+			}
+		}
+	}
+	return ""
+}

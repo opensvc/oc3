@@ -19,6 +19,8 @@ type (
 		frozen    string
 		nodeID    string
 		clusterID string
+		app       string
+		nodeEnv   string
 	}
 
 	DBObject struct {
@@ -38,6 +40,10 @@ type (
 		nodeNames() ([]string, error)
 	}
 
+	objectInfoer interface {
+		appFromObjectName(svcname string, nodes ...string) string
+	}
+
 	nodeInfoer interface {
 		nodeFrozen(string) (string, error)
 	}
@@ -50,16 +56,21 @@ type (
 		dataLister
 		clusterer
 		nodeInfoer
+		objectInfoer
 	}
 
 	daemonStatus struct {
 		ctx   context.Context
 		redis *redis.Client
 		db    *sql.DB
+		oDb   *opensvcDB
 
 		nodeID      string
 		clusterID   string
 		clusterName string
+		nodeApp     string
+		nodeEnv     string
+		callerNode  *DBNode
 
 		changes []string
 		rawData []byte
@@ -85,6 +96,7 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		redis:  t.Redis,
 		db:     t.DB,
 		nodeID: nodeID,
+		oDb:    &opensvcDB{db: t.DB},
 
 		byNodename: make(map[string]*DBNode),
 		byNodeID:   make(map[string]*DBNode),
@@ -115,10 +127,11 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.dbFindNodes,
 		d.dataToNodeFrozen,
 		d.dbFindServices,
+		d.dbCreateServices,
 		d.dbFindInstance,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("handleDaemonStatus node_id %s cluster_id %s: %w", nodeID, d.clusterID, err)
 	}
 
 	slog.Info(fmt.Sprintf("handleDaemonStatus done: node_id: %s cluster_id: %s, cluster_name: %s changes: %s, byNodes: %#v",
@@ -229,7 +242,8 @@ func (d *daemonStatus) dbCheckClusters() error {
 }
 
 func (d *daemonStatus) dbFindNodes() error {
-	const queryFindClusterNodesInfo = "SELECT nodename, node_id, node_frozen, cluster_id" +
+	const queryFindClusterNodesInfo = "" +
+		"SELECT nodename, node_id, node_frozen, cluster_id, app, node_env" +
 		" FROM nodes" +
 		" WHERE cluster_id = ? AND nodename IN (?"
 	nodes, err := d.data.nodeNames()
@@ -260,8 +274,8 @@ func (d *daemonStatus) dbFindNodes() error {
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
-		var nodename, nodeID, frozen, clusterID string
-		if err := rows.Scan(&nodename, &nodeID, &frozen, &clusterID); err != nil {
+		var nodename, nodeID, frozen, clusterID, app, nodeEnv string
+		if err := rows.Scan(&nodename, &nodeID, &frozen, &clusterID, &app, &nodeEnv); err != nil {
 			return fmt.Errorf("dbFindNodes FindClusterNodesInfo scan %s: %w", d.nodeID, err)
 		}
 		found := &DBNode{
@@ -269,6 +283,8 @@ func (d *daemonStatus) dbFindNodes() error {
 			frozen:    frozen,
 			nodeID:    nodeID,
 			clusterID: clusterID,
+			app:       app,
+			nodeEnv:   nodeEnv,
 		}
 		d.byNodeID[nodeID] = found
 		d.byNodename[nodename] = found
@@ -276,6 +292,13 @@ func (d *daemonStatus) dbFindNodes() error {
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("dbFindNodes FindClusterNodesInfo %s: %w", d.nodeID, err)
 	}
+	callerNode, ok := d.byNodeID[d.nodeID]
+	if !ok {
+		return fmt.Errorf("dbFindNodes source node has been removed")
+	}
+	d.callerNode = callerNode
+	d.nodeApp = callerNode.app
+	d.nodeEnv = callerNode.nodeEnv
 	return nil
 }
 
@@ -393,6 +416,41 @@ func (d *daemonStatus) dbFindInstance() error {
 	}
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("dbFindInstance query rows: %w", err)
+	}
+	return nil
+}
+
+// dbCreateServices creates missing services
+func (d *daemonStatus) dbCreateServices() error {
+	objectNames, err := d.data.objectNames()
+	if err != nil {
+		return fmt.Errorf("dbCreateServices: %w", err)
+	}
+	missing := make([]string, 0)
+	for _, objectName := range objectNames {
+		if _, ok := d.byObjectName[objectName]; ok {
+			continue
+		}
+		missing = append(missing, objectName)
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	slog.Debug(fmt.Sprintf("dbCreateServices: need create services: %v", missing))
+	nodes := make([]string, 0)
+	for nodename := range d.byNodename {
+		nodes = append(nodes, nodename)
+	}
+	for _, objectName := range missing {
+		app := d.data.appFromObjectName(objectName, nodes...)
+		slog.Debug(fmt.Sprintf("dbCreateServices: creating service %s with app %s", objectName, app))
+		obj, err := d.oDb.createNewObject(d.ctx, objectName, d.clusterID, app, d.byNodeID[d.nodeID])
+		if err != nil {
+			return fmt.Errorf("dbCreateServices createNewObject %s: %w", objectName, err)
+		}
+		slog.Debug(fmt.Sprintf("created service %s with app %s new id: %s", objectName, app, obj.svcID))
+		d.byObjectName[objectName] = obj
+		d.byObjectName[obj.svcID] = obj
 	}
 	return nil
 }
