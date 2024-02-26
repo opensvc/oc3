@@ -96,7 +96,10 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		redis:  t.Redis,
 		db:     t.DB,
 		nodeID: nodeID,
-		oDb:    &opensvcDB{db: t.DB},
+		oDb: &opensvcDB{
+			db:       t.DB,
+			tChanges: make(map[string]struct{}),
+		},
 
 		byNodename: make(map[string]*DBNode),
 		byNodeID:   make(map[string]*DBNode),
@@ -106,8 +109,6 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 
 		byInstanceID:   make(map[string]*DBInstance),
 		byInstanceName: make(map[string]*DBInstance),
-
-		tableChange: make(map[string]struct{}),
 	}
 	chain := func(f ...func() error) error {
 		for _, f := range f {
@@ -315,16 +316,10 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 			if _, err := d.db.ExecContext(d.ctx, query, frozen, nodeID); err != nil {
 				return fmt.Errorf("dataToNodeFrozen ExecContext: %w", err)
 			}
-			d.addTableChange("nodes")
+			d.oDb.tableChange("nodes")
 		}
 	}
 	return nil
-}
-
-func (d *daemonStatus) addTableChange(s ...string) {
-	for _, table := range s {
-		d.tableChange[table] = struct{}{}
-	}
 }
 
 func (d *daemonStatus) dbFindServices() error {

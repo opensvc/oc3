@@ -17,6 +17,8 @@ type (
 	// opensvcDB implements opensvc db functions
 	opensvcDB struct {
 		db *sql.DB
+
+		tChanges map[string]struct{}
 	}
 )
 
@@ -173,5 +175,11 @@ func (oDb *opensvcDB) objectFromID(ctx context.Context, svcID string) (*DBObject
 		return nil, err
 	default:
 		return &o, nil
+	}
+}
+
+func (oDb *opensvcDB) tableChange(s ...string) {
+	for _, table := range s {
+		oDb.tChanges[table] = struct{}{}
 	}
 }
