@@ -1,6 +1,8 @@
 package worker
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type (
 	daemonDataV2 struct {
@@ -114,4 +116,39 @@ func (d *daemonDataV2) appFromObjectName(svcname string, nodes ...string) string
 		}
 	}
 	return ""
+}
+
+func (d *daemonDataV2) objectStatus(objectName string) *DBObjStatus {
+	if i, ok := mapTo(d.data, "services", objectName); ok && i != nil {
+		if o, ok := i.(map[string]any); ok {
+			oStatus := &DBObjStatus{
+				availStatus: "n/a",
+				status:      "n/a",
+				placement:   "n/a",
+				frozen:      "n/a",
+				provisioned: "n/a",
+			}
+			if s, ok := o["avail"].(string); ok {
+				oStatus.availStatus = s
+			}
+			if s, ok := o["overall"].(string); ok {
+				oStatus.status = s
+			}
+			if s, ok := o["placement"].(string); ok {
+				oStatus.placement = s
+			}
+			if s, ok := o["frozen"].(string); ok {
+				oStatus.frozen = s
+			}
+			if prov, ok := o["provisioned"].(bool); ok {
+				if prov {
+					oStatus.provisioned = "True"
+				} else {
+					oStatus.provisioned = "False"
+				}
+			}
+			return oStatus
+		}
+	}
+	return nil
 }

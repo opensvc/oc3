@@ -24,9 +24,10 @@ type (
 	}
 
 	DBObject struct {
-		svcname   string
-		svcID     string
-		clusterID string
+		svcname     string
+		svcID       string
+		clusterID   string
+		availStatus string
 	}
 
 	DBInstance struct {
@@ -42,6 +43,7 @@ type (
 
 	objectInfoer interface {
 		appFromObjectName(svcname string, nodes ...string) string
+		objectStatus(objectName string) *DBObjStatus
 	}
 
 	nodeInfoer interface {
@@ -72,7 +74,7 @@ type (
 		nodeEnv     string
 		callerNode  *DBNode
 
-		changes []string
+		changes map[string]struct{}
 		rawData []byte
 
 		data dataProvider
@@ -100,6 +102,8 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 			db:       t.DB,
 			tChanges: make(map[string]struct{}),
 		},
+
+		changes: make(map[string]struct{}),
 
 		byNodename: make(map[string]*DBNode),
 		byNodeID:   make(map[string]*DBNode),
@@ -130,6 +134,7 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.dbFindServices,
 		d.dbCreateServices,
 		d.dbFindInstance,
+		d.dbUpdateServices,
 	)
 	if err != nil {
 		return fmt.Errorf("handleDaemonStatus node_id %s cluster_id %s: %w", nodeID, d.clusterID, err)
@@ -175,7 +180,9 @@ func (d *daemonStatus) getChanges() error {
 	} else {
 		return fmt.Errorf("getChanges: HGET %s %s: %w", cache.KeyDaemonStatusChangesHash, d.nodeID, err)
 	}
-	d.changes = strings.Fields(s)
+	for _, change := range strings.Fields(s) {
+		d.changes[change] = struct{}{}
+	}
 	return nil
 }
 
@@ -323,7 +330,8 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 }
 
 func (d *daemonStatus) dbFindServices() error {
-	const queryFindServicesInfo = "SELECT svcname, svc_id, cluster_id" +
+	const queryFindServicesInfo = "" +
+		"SELECT svcname, svc_id, cluster_id, svc_availstatus" +
 		" FROM services" +
 		" WHERE cluster_id = ? AND svcname IN (?"
 	objectNames, err := d.data.objectNames()
@@ -356,7 +364,7 @@ func (d *daemonStatus) dbFindServices() error {
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var o DBObject
-		if err := rows.Scan(&o.svcname, &o.svcID, &o.clusterID); err != nil {
+		if err := rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus); err != nil {
 			return fmt.Errorf("dbFindServices scan %s: %w", d.nodeID, err)
 		}
 		d.byObjectName[o.svcname] = &o
@@ -446,6 +454,30 @@ func (d *daemonStatus) dbCreateServices() error {
 		slog.Debug(fmt.Sprintf("created service %s with app %s new id: %s", objectName, app, obj.svcID))
 		d.byObjectName[objectName] = obj
 		d.byObjectName[obj.svcID] = obj
+	}
+	return nil
+}
+
+func (d *daemonStatus) dbUpdateServices() error {
+	for objectID, obj := range d.byObjectID {
+		objectName := obj.svcname
+		_, isChanged := d.changes[objectName]
+		// freshly created services have availStatus "undef" and needs full update
+		// even if not present in changes
+		if !isChanged && obj.availStatus != "undef" {
+			slog.Debug(fmt.Sprintf("ping svc %s %s", objectName, objectID))
+			if _, err := d.oDb.pingObject(d.ctx, objectID); err != nil {
+				return fmt.Errorf("dbUpdateServices can't ping object %s %s: %w", objectName, objectID, err)
+			}
+		} else {
+			oStatus := d.data.objectStatus(objectName)
+			if oStatus != nil {
+				slog.Debug(fmt.Sprintf("update svc %s %s %#v", objectName, objectID, *oStatus))
+				if err := d.oDb.updateObjectStatus(d.ctx, objectID, oStatus); err != nil {
+					return fmt.Errorf("dbUpdateServices can't update object %s %s: %w", objectName, objectID, err)
+				}
+			}
+		}
 	}
 	return nil
 }
