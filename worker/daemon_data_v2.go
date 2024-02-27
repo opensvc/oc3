@@ -154,7 +154,7 @@ func (d *daemonDataV2) objectStatus(objectName string) *DBObjStatus {
 }
 
 func (d *daemonDataV2) instanceStatusData(objectName string, nodename string) map[string]any {
-	return mapToMap(d.data, "nodes", nodename, "services", "status", objectName)
+	return mapToMap(d.data, nil, "nodes", nodename, "services", "status", objectName)
 }
 
 func mapToA(m map[string]any, defaultValue any, k ...string) any {
@@ -166,5 +166,5 @@ func mapToA(m map[string]any, defaultValue any, k ...string) any {
 }
 
 func mapToMap(m map[string]any, defaultValue any, k ...string) map[string]any {
-	return mapToA(m, nil, k...).(map[string]any)
+	return mapToA(m, defaultValue, k...).(map[string]any)
 }
