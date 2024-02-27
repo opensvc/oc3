@@ -15,6 +15,60 @@ type (
 		app string
 	}
 
+	// DBInstanceStatus
+	//
+	// CREATE TABLE `svcmon` (
+	//  `mon_svctype` varchar(10) DEFAULT NULL,
+	//  `mon_ipstatus` varchar(10) DEFAULT 'undef',
+	//  `mon_fsstatus` varchar(10) DEFAULT 'undef',
+	//  `mon_updated` datetime DEFAULT NULL,
+	//  `ID` int(11) NOT NULL AUTO_INCREMENT,
+	//  `mon_frozen` int(11) DEFAULT NULL,
+	//  `mon_changed` timestamp NOT NULL DEFAULT current_timestamp(),
+	//  `mon_diskstatus` varchar(10) DEFAULT 'undef',
+	//  `mon_containerstatus` varchar(10) DEFAULT 'undef',
+	//  `mon_overallstatus` varchar(10) DEFAULT 'undef',
+	//  `mon_syncstatus` varchar(10) DEFAULT 'undef',
+	//  `mon_appstatus` varchar(10) DEFAULT 'undef',
+	//  `mon_hbstatus` varchar(10) DEFAULT NULL,
+	//  `mon_availstatus` varchar(10) DEFAULT 'undef',
+	//  `mon_vmname` varchar(50) DEFAULT '',
+	//  `mon_guestos` varchar(30) DEFAULT NULL,
+	//  `mon_vmem` int(11) DEFAULT 0,
+	//  `mon_vcpus` float DEFAULT 0,
+	//  `mon_containerpath` varchar(512) DEFAULT NULL,
+	//  `mon_vmtype` varchar(10) DEFAULT NULL,
+	//  `mon_sharestatus` varchar(10) DEFAULT 'undef',
+	//  `node_id` char(36) CHARACTER SET ascii DEFAULT '',
+	//  `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
+	//  `mon_smon_status` varchar(32) DEFAULT NULL,
+	//  `mon_smon_global_expect` varchar(32) DEFAULT NULL,
+	//  PRIMARY KEY (`ID`),
+	//  UNIQUE KEY `uk_svcmon` (`node_id`,`svc_id`,`mon_vmname`),
+	//  KEY `mon_vmname` (`mon_vmname`),
+	//  KEY `k_node_id` (`node_id`),
+	//  KEY `k_svc_id` (`svc_id`)
+	//) ENGINE=InnoDB AUTO_INCREMENT=28468 DEFAULT CHARSET=utf8
+	DBInstanceStatus struct {
+		nodeID              string
+		svcID               string
+		monVmname           string
+		monSmonStatus       string
+		monSmonGlobalExpect string
+		monAvailStatus      string
+		monOverallStatus    string
+		monIpStatus         string
+		monDiskStatus       string
+		monFsStatus         string
+		monShareStatus      string
+		monContainerStatus  string
+		monAppStatus        string
+		monSyncStatus       string
+		monFrozen           int
+		monVmType           string
+		monUpdated          string
+	}
+
 	DBObjStatus struct {
 		availStatus string
 		status      string
@@ -388,8 +442,85 @@ func (oDb *opensvcDB) objectFromID(ctx context.Context, svcID string) (*DBObject
 	}
 }
 
+func (oDb *opensvcDB) translateEncapNodename(ctx context.Context, svcID, nodeID string) (subNodeID, vmName, vmType string, err error) {
+	const (
+		query = "" +
+			"SELECT `svcmon`.`node_id`, `svcmon`.`mon_vmname`, `svcmon`.`mon_vmtype`, `svcmon`.`mon_containerstatus`" +
+			" FROM `nodes`, `svcmon`" +
+			" WHERE (" +
+			"   ((`svcmon`.`mon_vmname` = `nodes`.`nodename`)" +
+			"    AND (`nodes`.`node_id` = ?)" +
+			"   ) AND (`svcmon`.`svc_id` = ?))"
+	)
+	var (
+		rows    *sql.Rows
+		hasRow1 bool
+
+		containerStatusMatch = []string{"up", "stdby up", "n/a"}
+	)
+
+	rows, err = oDb.db.QueryContext(ctx, query, nodeID, svcID)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var subNodeIDT, vmNameT, vmTypeT, containerStatusT string
+		if err = rows.Scan(&subNodeIDT, &vmNameT, &vmTypeT, &containerStatusT); err != nil {
+			return
+		}
+		for _, v := range containerStatusMatch {
+			if containerStatusT == v {
+				subNodeID = subNodeIDT
+				vmName = vmNameT
+				vmType = vmTypeT
+				return
+			}
+		}
+		if !hasRow1 {
+			hasRow1 = true
+			subNodeID = subNodeIDT
+			vmName = vmNameT
+			vmType = vmTypeT
+		}
+	}
+	err = rows.Err()
+	return
+}
+
 func (oDb *opensvcDB) tableChange(s ...string) {
 	for _, table := range s {
 		oDb.tChanges[table] = struct{}{}
 	}
+}
+
+func (oDb *opensvcDB) updateInstanceStatus(ctx context.Context, svcID, nodeID string, s *DBInstanceStatus) error {
+	const (
+		qUpdate = "" +
+			"INSERT INTO `svcmon` (`svc_id`, `node_id`, `mon_vmname`, " +
+			" `mon_smon_status`, `mon_smon_global_expect`, `mon_availstatus`, " +
+			" `mon_overallstatus`, `mon_ipstatus`, `mon_diskstatus`, `mon_fsstatus`," +
+			" `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`, `mon_syncstatus`," +
+			" `mon_frozen`, `mon_vmtype`, `mon_updated`)" +
+			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())" +
+			"ON DUPLICATE KEY UPDATE" +
+			" `mon_smon_status` = ?, `mon_smon_global_expect` = ?, `mon_availstatus` = ?, " +
+			" `mon_overallstatus` = ?, `mon_ipstatus` = ?, `mon_diskstatus` = ?, `mon_fsstatus` = ?," +
+			" `mon_sharestatus` = ?, `mon_containerstatus` = ?, `mon_appstatus` = ?, `mon_syncstatus` = ?," +
+			" `mon_frozen` = ?, `mon_vmtype` = ?, `mon_updated` = NOW()"
+	)
+	_, err := oDb.db.ExecContext(ctx, qUpdate, svcID, nodeID, s.monVmname,
+		s.monSmonStatus, s.monSmonGlobalExpect, s.monAvailStatus,
+		s.monOverallStatus, s.monIpStatus, s.monDiskStatus, s.monFsStatus,
+		s.monShareStatus, s.monContainerStatus, s.monAppStatus, s.monSyncStatus,
+		s.monFrozen, s.monVmType,
+		s.monSmonStatus, s.monSmonGlobalExpect, s.monAvailStatus,
+		s.monOverallStatus, s.monIpStatus, s.monDiskStatus, s.monFsStatus,
+		s.monShareStatus, s.monContainerStatus, s.monAppStatus, s.monSyncStatus,
+		s.monFrozen, s.monVmType)
+	if err != nil {
+		return err
+	}
+	oDb.tableChange("svcmon")
+	return nil
 }

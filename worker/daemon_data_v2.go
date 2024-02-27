@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+	"strings"
 )
 
 type (
@@ -154,7 +155,8 @@ func (d *daemonDataV2) objectStatus(objectName string) *DBObjStatus {
 }
 
 func (d *daemonDataV2) instanceStatusData(objectName string, nodename string) map[string]any {
-	return mapToMap(d.data, nil, "nodes", nodename, "services", "status", objectName)
+	var defaultValue map[string]any
+	return mapToMap(d.data, defaultValue, "nodes", nodename, "services", "status", objectName)
 }
 
 func mapToA(m map[string]any, defaultValue any, k ...string) any {
@@ -165,6 +167,43 @@ func mapToA(m map[string]any, defaultValue any, k ...string) any {
 	}
 }
 
+func mapToS(m map[string]any, defaultValue any, k ...string) string {
+	return mapToA(m, defaultValue, k...).(string)
+}
+
 func mapToMap(m map[string]any, defaultValue any, k ...string) map[string]any {
 	return mapToA(m, defaultValue, k...).(map[string]any)
+}
+
+func aToInstanceStatus(a map[string]any, containerID string) *DBInstanceStatus {
+	instanceStatus := &DBInstanceStatus{
+		monSmonStatus:       mapToS(a, "", "monitor", "status"),
+		monSmonGlobalExpect: mapToS(a, "", "monitor", "global_expect"),
+		monAvailStatus:      mapToS(a, "", "avail"),
+		monOverallStatus:    mapToS(a, "", "overall"),
+		monIpStatus:         mapToS(a, "n/a", "status_group", "ip"),
+		monDiskStatus:       mapToS(a, "n/a", "status_group", "disk"),
+		monFsStatus:         mapToS(a, "n/a", "status_group", "fs"),
+		monShareStatus:      mapToS(a, "n/a", "status_group", "share"),
+		monContainerStatus:  mapToS(a, "n/a", "status_group", "container"),
+		monAppStatus:        mapToS(a, "n/a", "status_group", "app"),
+		monSyncStatus:       mapToS(a, "n/a", "status_group", "sync"),
+	}
+
+	if len(containerID) == 0 {
+		switch mapToA(a, 0, "frozen").(type) {
+		case int:
+			instanceStatus.monFrozen = 0
+		default:
+			instanceStatus.monFrozen = 1
+		}
+	} else {
+		switch v := mapToA(a, 0, "resources", containerID, "type").(type) {
+		case string:
+			l := strings.Split(v, ".")
+			instanceStatus.monVmType = l[len(l)-1]
+		}
+		instanceStatus.monVmname = mapToS(a, "", "encap", containerID, "hostname")
+	}
+	return instanceStatus
 }

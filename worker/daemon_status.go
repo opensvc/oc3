@@ -393,7 +393,7 @@ func (d *daemonStatus) dbFindInstance() error {
 		" FROM svcmon" +
 		" WHERE svc_id IN (?"
 
-	values := []any{}
+	var values []any
 	for svcID := range d.byObjectID {
 		values = append(values, svcID)
 	}
@@ -503,6 +503,7 @@ func (d *daemonStatus) dbUpdateInstance() error {
 			}
 			_, isChanged := d.changes[objectName+"@"+nodename]
 			if !isChanged && obj.availStatus != "undef" {
+				slog.Debug(fmt.Sprintf("ping instance %s@%s", objectName, nodename))
 				changes, err := d.oDb.pingInstance(d.ctx, obj.svcID, nodeID)
 				if err != nil {
 					return fmt.Errorf("dbUpdateInstance can't ping instance %s@%s: %w", objectName, nodename, err)
@@ -512,6 +513,29 @@ func (d *daemonStatus) dbUpdateInstance() error {
 					continue
 				}
 			}
+			encap := mapToA(instanceData, nil, "encap")
+			if encap == nil {
+				subNodeID, _, _, err := d.oDb.translateEncapNodename(d.ctx, obj.svcID, nodeID)
+				if err != nil {
+					return err
+				}
+				if subNodeID != "" && subNodeID != nodeID {
+					slog.Debug(fmt.Sprintf("dbUpdateInstance skip for %s@%s subNodeID:%s vs nodeID: %subNodeID", objectName, nodename, subNodeID, nodeID))
+					continue
+				}
+				instanceStatus := aToInstanceStatus(instanceData, "")
+				slog.Debug(fmt.Sprintf("update instance %s@%s", objectName, nodename))
+				if err := d.oDb.updateInstanceStatus(d.ctx, obj.svcID, nodeID, instanceStatus); err != nil {
+					return fmt.Errorf("dbUpdateInstance can't update instance status %s@%s: %w", obj.svcID, nodeID, err)
+				}
+				// TODO: update update_dash: service_frozen, service_not_on_primary, svcmon_not_updated
+				// TODO: update instance_ resources
+			} else {
+				// TODO: update encap instance
+				slog.Debug(fmt.Sprintf("dbUpdateInstance skip encap update %s@%s", objectName, nodename))
+			}
+			// TODO: update_instance_resources
+			// TODO: svcmon_log_update
 		}
 	}
 	return nil
