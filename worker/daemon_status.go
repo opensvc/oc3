@@ -479,7 +479,7 @@ func (d *daemonStatus) dbUpdateServices() error {
 		} else {
 			oStatus := d.data.objectStatus(objectName)
 			if oStatus != nil {
-				slog.Debug(fmt.Sprintf("update svc log %s %s %#v", objectName, objectID))
+				slog.Debug(fmt.Sprintf("update svc log %s %s %#v", objectName, objectID, oStatus))
 				if err := d.oDb.updateObjectLog(d.ctx, objectID, oStatus.availStatus); err != nil {
 					return fmt.Errorf("dbUpdateServices can't update object log %s %s: %w", objectName, objectID, err)
 				}
@@ -505,7 +505,7 @@ func (d *daemonStatus) dbUpdateInstance() error {
 			if !isChanged && obj.availStatus != "undef" {
 				changes, err := d.oDb.pingInstance(d.ctx, obj.svcID, nodeID)
 				if err != nil {
-					return fmt.Errorf("dbUpdateInstance can't ping instance %s@%s: %w", objectName, nodename)
+					return fmt.Errorf("dbUpdateInstance can't ping instance %s@%s: %w", objectName, nodename, err)
 				} else if changes {
 					// the instance already existed, and the updated tstamp has been refreshed
 					// skip the inserts/updates
