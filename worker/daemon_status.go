@@ -472,6 +472,10 @@ func (d *daemonStatus) dbUpdateServices() error {
 		} else {
 			oStatus := d.data.objectStatus(objectName)
 			if oStatus != nil {
+				slog.Debug(fmt.Sprintf("update svc log %s %s %#v", objectName, objectID))
+				if err := d.oDb.updateObjectLog(d.ctx, objectID, oStatus.availStatus); err != nil {
+					return fmt.Errorf("dbUpdateServices can't update object log %s %s: %w", objectName, objectID, err)
+				}
 				slog.Debug(fmt.Sprintf("update svc %s %s %#v", objectName, objectID, *oStatus))
 				if err := d.oDb.updateObjectStatus(d.ctx, objectID, oStatus); err != nil {
 					return fmt.Errorf("dbUpdateServices can't update object %s %s: %w", objectName, objectID, err)

@@ -116,6 +116,84 @@ func (oDb *opensvcDB) updateObjectStatus(ctx context.Context, svcID string, o *D
 	return nil
 }
 
+// updateObjectLog handle services_log_last and services_log avail value changes.
+//
+// services_log_last tracks the current avail value from begin to now.
+// services_log tracks avail values changes with begin and end: [(avail, begin, end), ...]
+func (oDb *opensvcDB) updateObjectLog(ctx context.Context, svcID string, avail string) error {
+	/*
+		CREATE TABLE `services_log_last` (
+		  `id` int(11) NOT NULL AUTO_INCREMENT,
+		  `svc_availstatus` varchar(10) NOT NULL,
+		  `svc_begin` datetime NOT NULL,
+		  `svc_end` datetime NOT NULL,
+		  `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
+		  PRIMARY KEY (`id`),
+		  UNIQUE KEY `uk` (`svc_id`),
+		  KEY `k_svc_id` (`svc_id`)
+		) ENGINE=InnoDB AUTO_INCREMENT=7778 DEFAULT CHARSET=utf8
+
+		CREATE TABLE `services_log` (
+		  `id` int(11) NOT NULL AUTO_INCREMENT,
+		  `svc_availstatus` varchar(10) NOT NULL,
+		  `svc_begin` datetime NOT NULL,
+		  `svc_end` datetime NOT NULL,
+		  `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
+		  PRIMARY KEY (`id`),
+		  KEY `k_svc_id` (`svc_id`),
+		  KEY `idx_svc_end` (`svc_end`)
+		) ENGINE=InnoDB AUTO_INCREMENT=665687 DEFAULT CHARSET=utf8
+	*/
+	const (
+		qGetLogLast = "SELECT `svc_availstatus`, `svc_begin`, `svc_end` FROM `services_log_last` WHERE `svc_id` = ?"
+		qSetLogLast = "" +
+			"INSERT INTO `services_log_last` (`svc_id`, `svc_begin`, `svc_end`, `svc_availstatus`)" +
+			" VALUES (?, NOW(), NOW(), ?)" +
+			" ON DUPLICATE KEY UPDATE `svc_begin` = NOW(), `svc_end` = NOW(), `svc_availstatus` = ?"
+		qExtendIntervalOfCurrentAvail                = "UPDATE `services_log_last` SET `svc_end` = NOW() WHERE `svc_id` = ?"
+		qSaveIntervalOfPreviousAvailBeforeTransition = "" +
+			"INSERT INTO `services_log` (`svc_id`, `svc_begin`, `svc_end`, `svc_availstatus`)" +
+			" VALUES (?, ?, NOW(), ?)"
+	)
+	var (
+		previousAvail string
+
+		previousBegin, previousEnd time.Time
+	)
+	setLogLast := func() error {
+		_, err := oDb.db.ExecContext(ctx, qSetLogLast, svcID, avail, avail)
+		if err != nil {
+			return fmt.Errorf("updateObjectLog can't update services_log_last %s: %w", svcID, err)
+		}
+		return nil
+	}
+	err := oDb.db.QueryRowContext(ctx, qGetLogLast, svcID).Scan(&previousAvail, &previousBegin, &previousEnd)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		// set initial avail value
+		defer oDb.tableChange("service_log")
+		return setLogLast()
+	case err != nil:
+		return fmt.Errorf("updateObjectLog can't get services_log_last %s: %w", svcID, err)
+	default:
+		defer oDb.tableChange("service_log")
+		if previousAvail == avail {
+			// no change, extend last interval
+			if _, err := oDb.db.ExecContext(ctx, qExtendIntervalOfCurrentAvail, svcID); err != nil {
+				return fmt.Errorf("updateObjectLog can't set services_log_last.svc_end %s: %w", svcID, err)
+			}
+			return nil
+		} else {
+			// the avail value will change, save interval of previous avail value before change
+			if _, err := oDb.db.ExecContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, svcID, previousBegin, previousAvail); err != nil {
+				return fmt.Errorf("updateObjectLog can't save services_log change %s: %w", svcID, err)
+			}
+			// reset begin and end interval for new avail
+			return setLogLast()
+		}
+	}
+}
+
 // insertOrUpdateObjectForNodeAndCandidateApp will insert or update object with svcID.
 //
 // If candidate app is not valid, node app will be used (see getAppFromNodeAndCandidateApp)
