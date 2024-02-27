@@ -46,6 +46,10 @@ type (
 		objectStatus(objectName string) *DBObjStatus
 	}
 
+	instancer interface {
+		instanceStatusData(objectName string, nodename string) map[string]any
+	}
+
 	nodeInfoer interface {
 		nodeFrozen(string) (string, error)
 	}
@@ -59,6 +63,7 @@ type (
 		clusterer
 		nodeInfoer
 		objectInfoer
+		instancer
 	}
 
 	daemonStatus struct {
@@ -81,6 +86,7 @@ type (
 
 		byNodename map[string]*DBNode
 		byNodeID   map[string]*DBNode
+		nodes      []string
 
 		byObjectName map[string]*DBObject
 		byObjectID   map[string]*DBObject
@@ -135,6 +141,7 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.dbCreateServices,
 		d.dbFindInstance,
 		d.dbUpdateServices,
+		d.dbUpdateInstance,
 	)
 	if err != nil {
 		return fmt.Errorf("handleDaemonStatus node_id %s cluster_id %s: %w", nodeID, d.clusterID, err)
@@ -307,6 +314,10 @@ func (d *daemonStatus) dbFindNodes() error {
 	d.callerNode = callerNode
 	d.nodeApp = callerNode.app
 	d.nodeEnv = callerNode.nodeEnv
+	d.nodes = make([]string, 0, len(d.byNodename))
+	for nodename := range d.byNodename {
+		d.nodes = append(d.nodes, nodename)
+	}
 	return nil
 }
 
@@ -440,12 +451,8 @@ func (d *daemonStatus) dbCreateServices() error {
 		return nil
 	}
 	slog.Debug(fmt.Sprintf("dbCreateServices: need create services: %v", missing))
-	nodes := make([]string, 0)
-	for nodename := range d.byNodename {
-		nodes = append(nodes, nodename)
-	}
 	for _, objectName := range missing {
-		app := d.data.appFromObjectName(objectName, nodes...)
+		app := d.data.appFromObjectName(objectName, d.nodes...)
 		slog.Debug(fmt.Sprintf("dbCreateServices: creating service %s with app %s", objectName, app))
 		obj, err := d.oDb.createNewObject(d.ctx, objectName, d.clusterID, app, d.byNodeID[d.nodeID])
 		if err != nil {
@@ -479,6 +486,30 @@ func (d *daemonStatus) dbUpdateServices() error {
 				slog.Debug(fmt.Sprintf("update svc %s %s %#v", objectName, objectID, *oStatus))
 				if err := d.oDb.updateObjectStatus(d.ctx, objectID, oStatus); err != nil {
 					return fmt.Errorf("dbUpdateServices can't update object %s %s: %w", objectName, objectID, err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (d *daemonStatus) dbUpdateInstance() error {
+	for objectName, obj := range d.byObjectName {
+		for nodeID, node := range d.byNodeID {
+			nodename := node.nodename
+			instanceData := d.data.instanceStatusData(objectName, nodename)
+			if instanceData == nil {
+				continue
+			}
+			_, isChanged := d.changes[objectName+"@"+nodename]
+			if !isChanged && obj.availStatus != "undef" {
+				changes, err := d.oDb.pingInstance(d.ctx, obj.svcID, nodeID)
+				if err != nil {
+					return fmt.Errorf("dbUpdateInstance can't ping instance %s@%s: %w", objectName, nodename)
+				} else if changes {
+					// the instance already existed, and the updated tstamp has been refreshed
+					// skip the inserts/updates
+					continue
 				}
 			}
 		}
