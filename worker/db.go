@@ -110,25 +110,25 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 			"UPDATE `svcmon` SET `mon_updated` = NOW()" +
 			" WHERE `svc_id` = ?" +
 			"   AND `node_id` = ?" +
-			"   AND `mon_updated` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `mon_updated` is NULL)"
+			"   AND (`mon_updated` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `mon_updated` is NULL)"
 
 		qUpdateSvcmonLogLast = "" +
 			"UPDATE `svcmon_log_last` SET `mon_end` = NOW()" +
 			" WHERE `svc_id` = ?" +
 			"   AND `node_id` = ?" +
-			"   AND `mon_end` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `mon_end` is NULL)"
+			"   AND (`mon_end` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `mon_end` is NULL)"
 
 		qUpdateResmon = "" +
 			"UPDATE `resmon` SET `updated` = NOW()" +
 			" WHERE `svc_id` = ?" +
 			"   AND `node_id` = ?" +
-			"   AND `updated` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `updated` is NULL)"
+			"   AND (`updated` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `updated` is NULL)"
 
 		qUpdateResmonLogLast = "" +
 			"UPDATE `resmon_log_last` SET `res_end` = NOW()" +
 			" WHERE `svc_id` = ?" +
 			"   AND `node_id` = ?" +
-			"   AND `res_end` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `res_end` is NULL)"
+			"   AND (`res_end` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `res_end` is NULL)"
 	)
 	var (
 		count  int64
