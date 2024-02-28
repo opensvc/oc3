@@ -87,6 +87,32 @@ paths:
       tags:
         - agent
 
+  /daemon/system/package:
+    post:
+      operationId: PostDaemonSystemPackage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/package'
+      responses:
+        200:
+          $ref: '#/components/responses/200'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
 components:
   schemas:
     NodeStatus:
@@ -118,6 +144,9 @@ components:
         - title
 
     system:
+      type: object
+
+    package:
       type: object
 
   parameters:

@@ -11,10 +11,11 @@ var (
 	KeyDaemonStatusChangesHash = "oc3:h:daemon_status_changes"
 	KeyDaemonStatus            = "oc3:q:daemon_status"
 	KeyDaemonStatusPending     = "oc3:h:daemon_status_pending"
+	KeyPackagesHash            = "oc3:h:packages"
+	KeyPackages                = "oc3:q:packages"
+	KeyPackagesPending         = "oc3:h:packages_pending"
 
 	KeydaemonPing             = "osvc:q:daemon_ping"
-	KeyPackagesHash           = "osvc:h:packages"
-	KeyPackages               = "osvc:q:packages"
 	KeyPatchesHash            = "osvc:h:patches"
 	KeyPatches                = "osvc:q:patches"
 	KeyResinfoHash            = "osvc:h:resinfo"

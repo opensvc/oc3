@@ -28,6 +28,9 @@ type Problem struct {
 	Title string `json:"title"`
 }
 
+// Package defines model for package.
+type Package = map[string]interface{}
+
 // System defines model for system.
 type System = map[string]interface{}
 
