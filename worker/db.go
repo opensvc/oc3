@@ -79,9 +79,20 @@ type (
 
 	// opensvcDB implements opensvc db functions
 	opensvcDB struct {
-		db *sql.DB
+		db DBOperater
 
 		tChanges map[string]struct{}
+	}
+
+	DBTxer interface {
+		Commit() error
+		Rollback() error
+	}
+
+	DBOperater interface {
+		ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+		QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+		QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	}
 )
 
@@ -123,6 +134,7 @@ func (oDb *opensvcDB) createNewObject(ctx context.Context, objectName, clusterID
 // pingObject updates services.svc_status_updated and services_log_last.svc_end
 // when services.svc_status_updated timestamp for svc_id id older than 30s.
 func (oDb *opensvcDB) pingObject(ctx context.Context, svcID string) (updates bool, err error) {
+	defer logDuration("pingObject "+svcID, time.Now())
 	const UpdateServicesSvcStatusUpdated = "" +
 		"UPDATE `services` SET `svc_status_updated` = NOW()" +
 		" WHERE `svc_id`= ? " +
@@ -158,6 +170,7 @@ func (oDb *opensvcDB) pingObject(ctx context.Context, svcID string) (updates boo
 // resmon.updated and resmon_log_last.res_end
 // when svcmon.mon_updated timestamp for svc_id id older than 30s.
 func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (updates bool, err error) {
+	defer logDuration("pingInstance "+svcID+"@"+nodeID, time.Now())
 	const (
 		qHasInstance  = "SELECT count(*) FROM `svcmon` WHERE `svc_id` = ? AND `node_id` = ?"
 		qUpdateSvcmon = "" +
@@ -188,7 +201,11 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 		count  int64
 		result sql.Result
 	)
+	begin := time.Now()
 	err = oDb.db.QueryRowContext(ctx, qHasInstance, svcID, nodeID).Scan(&count)
+	slog.Info(fmt.Sprintf("pingInstance qHasInstance %s", time.Now().Sub(begin)))
+	begin = time.Now()
+
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		err = nil
@@ -197,6 +214,7 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 		return
 	}
 
+	begin = time.Now()
 	if result, err = oDb.db.ExecContext(ctx, qUpdateSvcmon, svcID, nodeID); err != nil {
 		return
 	} else if count, err = result.RowsAffected(); err != nil {
@@ -204,12 +222,16 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 	} else if count == 0 {
 		return
 	}
+	slog.Info(fmt.Sprintf("pingInstance qUpdateSvcmon %s", time.Now().Sub(begin)))
+	begin = time.Now()
 	updates = true
 
 	oDb.tableChange("svcmon")
 	if _, err = oDb.db.ExecContext(ctx, qUpdateSvcmonLogLast, svcID, nodeID); err != nil {
 		return
 	}
+	slog.Info(fmt.Sprintf("pingInstance qUpdateSvcmonLogLast %s", time.Now().Sub(begin)))
+	begin = time.Now()
 
 	if result, err = oDb.db.ExecContext(ctx, qUpdateResmon, svcID, nodeID); err != nil {
 		return
@@ -218,12 +240,16 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 	} else if count == 0 {
 		return
 	}
+	slog.Info(fmt.Sprintf("pingInstance qUpdateResmon %s", time.Now().Sub(begin)))
+	begin = time.Now()
 	oDb.tableChange("resmon")
 
 	if _, err = oDb.db.ExecContext(ctx, qUpdateResmonLogLast, svcID, nodeID); err != nil {
 		return
 	}
 
+	slog.Info(fmt.Sprintf("pingInstance qUpdateResmonLogLast %s", time.Now().Sub(begin)))
+	begin = time.Now()
 	return
 }
 
@@ -248,6 +274,7 @@ func (oDb *opensvcDB) updateObjectStatus(ctx context.Context, svcID string, o *D
 // services_log_last tracks the current avail value from begin to now.
 // services_log tracks avail values changes with begin and end: [(avail, begin, end), ...]
 func (oDb *opensvcDB) updateObjectLog(ctx context.Context, svcID string, avail string) error {
+	defer logDuration("updateObjectLog "+svcID, time.Now())
 	/*
 		CREATE TABLE `services_log_last` (
 		  `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -495,6 +522,7 @@ func (oDb *opensvcDB) tableChange(s ...string) {
 }
 
 func (oDb *opensvcDB) updateInstanceStatus(ctx context.Context, svcID, nodeID string, s *DBInstanceStatus) error {
+	defer logDuration("updateInstanceStatus "+svcID+"@"+nodeID, time.Now())
 	const (
 		qUpdate = "" +
 			"INSERT INTO `svcmon` (`svc_id`, `node_id`, `mon_vmname`, " +

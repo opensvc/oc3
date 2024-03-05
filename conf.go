@@ -36,6 +36,7 @@ func initConfig() error {
 	viper.SetDefault("redis.db", 0)
 	viper.SetDefault("redis.address", "localhost:6379")
 	viper.SetDefault("redis.password", "")
+	viper.SetDefault("feeder.tx", true)
 
 	// config file
 	viper.SetConfigName("config")

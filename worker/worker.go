@@ -18,6 +18,7 @@ type (
 		Redis  *redis.Client
 		DB     *sql.DB
 		Queues []string
+		WithTx bool
 	}
 )
 

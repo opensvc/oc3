@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 
@@ -69,7 +70,7 @@ type (
 	daemonStatus struct {
 		ctx   context.Context
 		redis *redis.Client
-		db    *sql.DB
+		db    DBOperater
 		oDb   *opensvcDB
 
 		nodeID      string
@@ -99,15 +100,13 @@ type (
 )
 
 func (t *Worker) handleDaemonStatus(nodeID string) error {
+	defer logDuration("handleDaemonStatus", time.Now())
+	ctx := context.Background()
+
 	d := daemonStatus{
-		ctx:    context.Background(),
+		ctx:    ctx,
 		redis:  t.Redis,
-		db:     t.DB,
 		nodeID: nodeID,
-		oDb: &opensvcDB{
-			db:       t.DB,
-			tChanges: make(map[string]struct{}),
-		},
 
 		changes: make(map[string]struct{}),
 
@@ -120,6 +119,20 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		byInstanceID:   make(map[string]*DBInstance),
 		byInstanceName: make(map[string]*DBInstance),
 	}
+
+	switch t.WithTx {
+	case true:
+		if tx, err := t.DB.BeginTx(ctx, nil); err != nil {
+			return err
+		} else {
+			d.db = tx
+			d.oDb = &opensvcDB{db: tx, tChanges: make(map[string]struct{})}
+		}
+	case false:
+		d.db = t.DB
+		d.oDb = &opensvcDB{db: t.DB, tChanges: make(map[string]struct{})}
+	}
+
 	chain := func(f ...func() error) error {
 		for _, f := range f {
 			err := f()
@@ -144,9 +157,19 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.dbUpdateInstance,
 	)
 	if err != nil {
+		if tx, ok := d.db.(DBTxer); ok {
+			slog.Debug("handleDaemonStatus rollback on error")
+			if err := tx.Rollback(); err != nil {
+				slog.Error(fmt.Sprintf("handleDaemonStatus rollback failed: %s", err))
+			}
+		}
 		return fmt.Errorf("handleDaemonStatus node_id %s cluster_id %s: %w", nodeID, d.clusterID, err)
+	} else if tx, ok := d.db.(DBTxer); ok {
+		slog.Debug("handleDaemonStatus commit")
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("handleDaemonStatus commit: %w", err)
+		}
 	}
-
 	slog.Info(fmt.Sprintf("handleDaemonStatus done: node_id: %s cluster_id: %s, cluster_name: %s changes: %s, byNodes: %#v",
 		d.nodeID, d.clusterID, d.clusterName, d.changes, d.byNodename))
 	for k, v := range d.byNodename {
@@ -164,6 +187,7 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 }
 
 func (d *daemonStatus) dropPending() error {
+	defer logDuration("dropPending", time.Now())
 	if err := d.redis.HDel(d.ctx, cache.KeyDaemonStatusPending, d.nodeID).Err(); err != nil {
 		return fmt.Errorf("dropPening: HDEL %s %s: %w", cache.KeyDaemonStatusPending, d.nodeID, err)
 	}
@@ -171,6 +195,7 @@ func (d *daemonStatus) dropPending() error {
 }
 
 func (d *daemonStatus) getChanges() error {
+	defer logDuration("getChanges", time.Now())
 	s, err := d.redis.HGet(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Result()
 	if err == nil {
 		// TODO: fix possible race:
@@ -184,7 +209,7 @@ func (d *daemonStatus) getChanges() error {
 		if err := d.redis.HDel(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Err(); err != nil {
 			return fmt.Errorf("getChanges: HDEL %s %s: %w", cache.KeyDaemonStatusChangesHash, d.nodeID, err)
 		}
-	} else {
+	} else if err != redis.Nil {
 		return fmt.Errorf("getChanges: HGET %s %s: %w", cache.KeyDaemonStatusChangesHash, d.nodeID, err)
 	}
 	for _, change := range strings.Fields(s) {
@@ -194,6 +219,7 @@ func (d *daemonStatus) getChanges() error {
 }
 
 func (d *daemonStatus) getData() error {
+	defer logDuration("getData", time.Now())
 	var (
 		err  error
 		data map[string]any
@@ -216,6 +242,7 @@ func (d *daemonStatus) getData() error {
 }
 
 func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
+	defer logDuration("dbCheckClusterIDForNodeID", time.Now())
 	const querySearch = "SELECT cluster_id FROM nodes WHERE node_id = ? and cluster_id = ?"
 	const queryUpdate = "UPDATE nodes SET cluster_id = ? WHERE node_id = ?"
 	row := d.db.QueryRowContext(d.ctx, querySearch, d.nodeID, d.clusterID)
@@ -236,6 +263,7 @@ func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
 }
 
 func (d *daemonStatus) dbCheckClusters() error {
+	defer logDuration("dbCheckClusters", time.Now())
 	// TODO: verify if still needed, we can't assert things here
 	// +--------------+--------------+------+-----+---------+----------------+
 	// | Field        | Type         | Null | Key | Default | Extra          |
@@ -257,6 +285,7 @@ func (d *daemonStatus) dbCheckClusters() error {
 }
 
 func (d *daemonStatus) dbFindNodes() error {
+	defer logDuration("dbFindNodes", time.Now())
 	const queryFindClusterNodesInfo = "" +
 		"SELECT nodename, node_id, node_frozen, cluster_id, app, node_env" +
 		" FROM nodes" +
@@ -322,6 +351,7 @@ func (d *daemonStatus) dbFindNodes() error {
 }
 
 func (d *daemonStatus) dataToNodeFrozen() error {
+	defer logDuration("dataToNodeFrozen", time.Now())
 	for nodeID, dbNode := range d.byNodeID {
 		nodename := dbNode.nodename
 		frozen, err := d.data.nodeFrozen(nodename)
@@ -341,6 +371,7 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 }
 
 func (d *daemonStatus) dbFindServices() error {
+	defer logDuration("dbFindServices", time.Now())
 	const queryFindServicesInfo = "" +
 		"SELECT svcname, svc_id, cluster_id, svc_availstatus" +
 		" FROM services" +
@@ -388,6 +419,7 @@ func (d *daemonStatus) dbFindServices() error {
 }
 
 func (d *daemonStatus) dbFindInstance() error {
+	defer logDuration("dbFindInstance", time.Now())
 	const querySelect = "" +
 		"SELECT svc_id, node_id, mon_frozen" +
 		" FROM svcmon" +
@@ -436,6 +468,7 @@ func (d *daemonStatus) dbFindInstance() error {
 
 // dbCreateServices creates missing services
 func (d *daemonStatus) dbCreateServices() error {
+	defer logDuration("dbCreateServices", time.Now())
 	objectNames, err := d.data.objectNames()
 	if err != nil {
 		return fmt.Errorf("dbCreateServices: %w", err)
@@ -466,6 +499,7 @@ func (d *daemonStatus) dbCreateServices() error {
 }
 
 func (d *daemonStatus) dbUpdateServices() error {
+	defer logDuration("dbUpdateServices", time.Now())
 	for objectID, obj := range d.byObjectID {
 		objectName := obj.svcname
 		_, isChanged := d.changes[objectName]
@@ -494,6 +528,7 @@ func (d *daemonStatus) dbUpdateServices() error {
 }
 
 func (d *daemonStatus) dbUpdateInstance() error {
+	defer logDuration("dbUpdateInstance", time.Now())
 	for objectName, obj := range d.byObjectName {
 		for nodeID, node := range d.byNodeID {
 			nodename := node.nodename
@@ -539,4 +574,8 @@ func (d *daemonStatus) dbUpdateInstance() error {
 		}
 	}
 	return nil
+}
+
+func logDuration(s string, begin time.Time) {
+	slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", s, time.Now().Sub(begin)))
 }
