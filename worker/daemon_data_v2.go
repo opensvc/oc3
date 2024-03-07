@@ -11,6 +11,13 @@ type (
 	}
 
 	data map[string]any
+
+	instanceStatus struct {
+		DBInstanceStatus
+
+		encap     map[string]any
+		resources map[string]any
+	}
 )
 
 func (d data) getString(key string) (s string, err error) {
@@ -154,16 +161,24 @@ func (d *daemonDataV2) objectStatus(objectName string) *DBObjStatus {
 	return nil
 }
 
-func (d *daemonDataV2) instanceStatusData(objectName string, nodename string) map[string]any {
-	var defaultValue map[string]any
-	return mapToMap(d.data, defaultValue, "nodes", nodename, "services", "status", objectName)
-}
-
 func mapToA(m map[string]any, defaultValue any, k ...string) any {
 	if v, ok := mapTo(m, k...); ok {
 		return v
 	} else {
 		return defaultValue
+	}
+}
+
+func mapToBool(m map[string]any, defaultValue bool, k ...string) bool {
+	return mapToA(m, defaultValue, k...).(bool)
+}
+
+// mapToBoolS returns "T" or "F"
+func mapToBoolS(m map[string]any, defaultValue bool, k ...string) string {
+	if mapToBool(m, defaultValue, k...) {
+		return "T"
+	} else {
+		return "F"
 	}
 }
 
@@ -175,35 +190,74 @@ func mapToMap(m map[string]any, defaultValue any, k ...string) map[string]any {
 	return mapToA(m, defaultValue, k...).(map[string]any)
 }
 
-func aToInstanceStatus(a map[string]any, containerID string) *DBInstanceStatus {
-	instanceStatus := &DBInstanceStatus{
-		monSmonStatus:       mapToS(a, "", "monitor", "status"),
-		monSmonGlobalExpect: mapToS(a, "", "monitor", "global_expect"),
-		monAvailStatus:      mapToS(a, "", "avail"),
-		monOverallStatus:    mapToS(a, "", "overall"),
-		monIpStatus:         mapToS(a, "n/a", "status_group", "ip"),
-		monDiskStatus:       mapToS(a, "n/a", "status_group", "disk"),
-		monFsStatus:         mapToS(a, "n/a", "status_group", "fs"),
-		monShareStatus:      mapToS(a, "n/a", "status_group", "share"),
-		monContainerStatus:  mapToS(a, "n/a", "status_group", "container"),
-		monAppStatus:        mapToS(a, "n/a", "status_group", "app"),
-		monSyncStatus:       mapToS(a, "n/a", "status_group", "sync"),
+func (d *daemonDataV2) InstanceStatus(objectName string, nodename string) *instanceStatus {
+	var a, nilMap map[string]any
+	if i, ok := mapTo(d.data, "nodes", nodename, "services", "status", objectName); !ok {
+		return nil
+	} else if a, ok = i.(map[string]any); !ok {
+		return nil
 	}
+	instanceStatus := &instanceStatus{DBInstanceStatus: DBInstanceStatus{}}
 
-	if len(containerID) == 0 {
-		switch mapToA(a, 0, "frozen").(type) {
-		case int:
-			instanceStatus.monFrozen = 0
-		default:
-			instanceStatus.monFrozen = 1
-		}
-	} else {
-		switch v := mapToA(a, 0, "resources", containerID, "type").(type) {
-		case string:
-			l := strings.Split(v, ".")
-			instanceStatus.monVmType = l[len(l)-1]
-		}
-		instanceStatus.monVmname = mapToS(a, "", "encap", containerID, "hostname")
+	instanceStatus.monSmonStatus = mapToS(a, "", "monitor", "status")
+	instanceStatus.monSmonGlobalExpect = mapToS(a, "", "monitor", "global_expect")
+	instanceStatus.monAvailStatus = mapToS(a, "", "avail")
+	instanceStatus.monOverallStatus = mapToS(a, "", "overall")
+	instanceStatus.monIpStatus = mapToS(a, "n/a", "status_group", "ip")
+	instanceStatus.monDiskStatus = mapToS(a, "n/a", "status_group", "disk")
+	instanceStatus.monFsStatus = mapToS(a, "n/a", "status_group", "fs")
+	instanceStatus.monShareStatus = mapToS(a, "n/a", "status_group", "share")
+	instanceStatus.monContainerStatus = mapToS(a, "n/a", "status_group", "container")
+	instanceStatus.monAppStatus = mapToS(a, "n/a", "status_group", "app")
+	instanceStatus.monSyncStatus = mapToS(a, "n/a", "status_group", "sync")
+	instanceStatus.encap = mapToMap(a, nilMap, "encap")
+	instanceStatus.resources = mapToMap(a, nilMap, "resources")
+
+	switch mapToA(a, 0, "frozen").(type) {
+	case int:
+		instanceStatus.monFrozen = 0
+	default:
+		instanceStatus.monFrozen = 1
 	}
 	return instanceStatus
+}
+
+func aToInstanceResource(a map[string]any, svcID, nodeID, vmName, rID string) *DBInstanceResource {
+	res := &DBInstanceResource{
+		svcID:    svcID,
+		nodeID:   nodeID,
+		vmName:   vmName,
+		rid:      rID,
+		status:   mapToS(a, "", "status"),
+		desc:     mapToS(a, "", "label"),
+		disable:  mapToBoolS(a, false, "disable"),
+		monitor:  mapToBoolS(a, false, "monitor"),
+		optional: mapToBoolS(a, false, "optional"),
+		resType:  mapToS(a, "", "type"),
+	}
+	if logs, ok := mapTo(a, "log"); ok {
+		switch l := logs.(type) {
+		case []string:
+			res.log = strings.Join(l, "\n")
+		}
+	}
+	return res
+}
+
+func (iStatus *instanceStatus) InstanceResources() []*DBInstanceResource {
+	l := make([]*DBInstanceResource, len(iStatus.resources))
+	i := 0
+	for rID, aResource := range iStatus.resources {
+		var vmName string
+		if iStatus.encap != nil {
+			if encapRid, ok := iStatus.encap[rID].(map[string]any); ok {
+				if s, ok := encapRid["hostname"].(string); ok {
+					vmName = s
+				}
+			}
+		}
+		l[i] = aToInstanceResource(aResource.(map[string]any), iStatus.svcID, iStatus.nodeID, vmName, rID)
+		i++
+	}
+	return l
 }

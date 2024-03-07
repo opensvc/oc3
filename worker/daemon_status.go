@@ -48,7 +48,7 @@ type (
 	}
 
 	instancer interface {
-		instanceStatusData(objectName string, nodename string) map[string]any
+		InstanceStatus(objectName string, nodename string) *instanceStatus
 	}
 
 	nodeInfoer interface {
@@ -100,7 +100,8 @@ type (
 )
 
 func (t *Worker) handleDaemonStatus(nodeID string) error {
-	defer logDuration("handleDaemonStatus", time.Now())
+	defer logDurationInfo(fmt.Sprintf("handleDaemonStatus %s with tx %v", nodeID, t.WithTx), time.Now())
+	slog.Info(fmt.Sprintf("handleDaemonStatus node_id: %s", nodeID))
 	ctx := context.Background()
 
 	d := daemonStatus{
@@ -170,8 +171,8 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 			return fmt.Errorf("handleDaemonStatus commit: %w", err)
 		}
 	}
-	slog.Info(fmt.Sprintf("handleDaemonStatus done: node_id: %s cluster_id: %s, cluster_name: %s changes: %s, byNodes: %#v",
-		d.nodeID, d.clusterID, d.clusterName, d.changes, d.byNodename))
+	slog.Info(fmt.Sprintf("handleDaemonStatus done: node_id: %s cluster_id: %s, cluster_name: %s",
+		d.nodeID, d.clusterID, d.clusterName))
 	for k, v := range d.byNodename {
 		slog.Debug(fmt.Sprintf("found db node %s: %#v", k, v))
 	}
@@ -277,7 +278,6 @@ func (d *daemonStatus) dbCheckClusters() error {
 		"INSERT INTO clusters (cluster_name, cluster_data, cluster_id) VALUES (?, ?, ?)" +
 		" ON DUPLICATE KEY UPDATE cluster_name = ?, cluster_data = ?"
 	clusterData := string(d.rawData)
-	slog.Info(fmt.Sprintf("dbCheckClusters INSERT or UPDATE clusters for node_id %s with cluster_id %s", d.nodeID, d.clusterID))
 	if _, err := d.db.ExecContext(d.ctx, query, d.clusterName, clusterData, d.clusterID, d.clusterName, clusterData); err != nil {
 		return fmt.Errorf("dbCheckClusters can't update clusters nodeID: %s clusterID: %s: %w", d.nodeID, d.clusterID, err)
 	}
@@ -530,16 +530,21 @@ func (d *daemonStatus) dbUpdateServices() error {
 func (d *daemonStatus) dbUpdateInstance() error {
 	defer logDuration("dbUpdateInstance", time.Now())
 	for objectName, obj := range d.byObjectName {
+		objID := obj.svcID
+		instanceMonitorStates := make(map[string]bool)
 		for nodeID, node := range d.byNodeID {
+			if node == nil {
+				return fmt.Errorf("dbUpdateInstance unexpected nil value for byNodeID(%s)", nodeID)
+			}
 			nodename := node.nodename
-			instanceData := d.data.instanceStatusData(objectName, nodename)
-			if instanceData == nil {
+			iStatus := d.data.InstanceStatus(objectName, nodename)
+			if iStatus == nil {
 				continue
 			}
 			_, isChanged := d.changes[objectName+"@"+nodename]
 			if !isChanged && obj.availStatus != "undef" {
 				slog.Debug(fmt.Sprintf("ping instance %s@%s", objectName, nodename))
-				changes, err := d.oDb.pingInstance(d.ctx, obj.svcID, nodeID)
+				changes, err := d.oDb.pingInstance(d.ctx, objID, nodeID)
 				if err != nil {
 					return fmt.Errorf("dbUpdateInstance can't ping instance %s@%s: %w", objectName, nodename, err)
 				} else if changes {
@@ -548,9 +553,8 @@ func (d *daemonStatus) dbUpdateInstance() error {
 					continue
 				}
 			}
-			encap := mapToA(instanceData, nil, "encap")
-			if encap == nil {
-				subNodeID, _, _, err := d.oDb.translateEncapNodename(d.ctx, obj.svcID, nodeID)
+			if iStatus.encap == nil {
+				subNodeID, _, _, err := d.oDb.translateEncapNodename(d.ctx, objID, nodeID)
 				if err != nil {
 					return err
 				}
@@ -558,24 +562,70 @@ func (d *daemonStatus) dbUpdateInstance() error {
 					slog.Debug(fmt.Sprintf("dbUpdateInstance skip for %s@%s subNodeID:%s vs nodeID: %subNodeID", objectName, nodename, subNodeID, nodeID))
 					continue
 				}
-				instanceStatus := aToInstanceStatus(instanceData, "")
-				slog.Debug(fmt.Sprintf("update instance %s@%s", objectName, nodename))
-				if err := d.oDb.updateInstanceStatus(d.ctx, obj.svcID, nodeID, instanceStatus); err != nil {
-					return fmt.Errorf("dbUpdateInstance can't update instance status %s@%s: %w", obj.svcID, nodeID, err)
+				if iStatus.resources == nil {
+					// scaler or wrapper, for example
+					if err := d.oDb.instanceStatusDelete(d.ctx, objID, nodeID); err != nil {
+						return fmt.Errorf("dbUpdateInstance delete status %s@%s: %w", objID, nodeID, err)
+					}
+					if err := d.oDb.instanceResourcesDelete(d.ctx, objID, nodeID); err != nil {
+						return fmt.Errorf("dbUpdateInstance delete resources %s@%s: %w", objID, nodeID, err)
+					}
+				} else {
+					instanceMonitorStates[iStatus.monSmonStatus] = true
+					slog.Debug(fmt.Sprintf("dbUpdateInstance updating status %s@%s", objectName, nodename))
+					if err := d.oDb.instanceStatusUpdate(d.ctx, objID, nodeID, &iStatus.DBInstanceStatus); err != nil {
+						return fmt.Errorf("dbUpdateInstance can't update instance status %s@%s: %w", objID, nodeID, err)
+					}
+					slog.Debug(fmt.Sprintf("dbUpdateInstance updating status log %s@%s", objectName, nodename))
+					err := d.oDb.instanceStatusLogUpdate(d.ctx, objID, nodeID, &iStatus.DBInstanceStatus)
+					if err != nil {
+						return fmt.Errorf("dbUpdateInstance update status log %s@%s: %w", objID, nodeID, err)
+					}
+					resourceObsoleteAt := time.Now()
+					for _, res := range iStatus.InstanceResources() {
+						slog.Debug(fmt.Sprintf("dbUpdateInstance updating resource %s@%s %s", objectName, nodename, res.rid))
+						err := d.oDb.instanceResourceUpdate(d.ctx, objID, nodeID, res)
+						if err != nil {
+							return fmt.Errorf("dbUpdateInstance update resource %s@%s %s: %w", objID, nodeID, res.rid, err)
+						}
+					}
+					slog.Debug(fmt.Sprintf("dbUpdateInstance deleting obsolete resources %s@%s", objectName, nodename))
+					if err := d.oDb.instanceResourcesDeleteObsolete(d.ctx, objID, nodeID, resourceObsoleteAt); err != nil {
+						return fmt.Errorf("dbUpdateInstance delete obsolete resources %s@%s: %w", objID, nodeID, err)
+					}
 				}
 				// TODO: update update_dash: service_frozen, service_not_on_primary, svcmon_not_updated
-				// TODO: update instance_ resources
 			} else {
-				// TODO: update encap instance
+				// TODO: for each encap items aka containerID
+				// TODO:   update_container_node_fields
+				// TODO:   update instance
+				// TODO:   update_instance_resources
+				// TODO:   svcmon_log_update
 				slog.Debug(fmt.Sprintf("dbUpdateInstance skip encap update %s@%s", objectName, nodename))
 			}
-			// TODO: update_instance_resources
-			// TODO: svcmon_log_update
+		}
+		if len(instanceMonitorStates) == 1 && instanceMonitorStates["idle"] {
+			// TODO: update dashboard service unavailable
+			// TODO: update dashboard service_placement
+			// TODO: update dashboard service_available_but_degraded
+			// TODO: update dashboard flex_instances_started
+			// TODO: update dashboardsflex_cpu)
 		}
 	}
+
+	// TODO: purge deleted data for instance (svcmon, dashboard, dashboard_events, svcdisks, resmon, checks_live,
+	//       comp_status, action_queue, resinfo, saves)
+	//
+	// TODO: purge deleted data for service (services, svcactions, drpservices, svcmon_log, resmon_log, svcmon_log_ack,
+	//       checks_settings, comp_log, comp_log_daily, comp_rulesets_services, comp_modulesets_services, log,
+	//       action_queue, svc_tags, form_output_results, svcmon_log_last, resmon_log_last)
 	return nil
 }
 
 func logDuration(s string, begin time.Time) {
 	slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", s, time.Now().Sub(begin)))
+}
+
+func logDurationInfo(s string, begin time.Time) {
+	slog.Info(fmt.Sprintf("STAT: %s elapse: %s", s, time.Now().Sub(begin)))
 }

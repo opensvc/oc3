@@ -50,9 +50,10 @@ type (
 	//  KEY `k_svc_id` (`svc_id`)
 	//) ENGINE=InnoDB AUTO_INCREMENT=28468 DEFAULT CHARSET=utf8
 	DBInstanceStatus struct {
+		ID                  int64
 		nodeID              string
 		svcID               string
-		monVmname           string
+		monVmName           string
 		monSmonStatus       string
 		monSmonGlobalExpect string
 		monAvailStatus      string
@@ -67,6 +68,49 @@ type (
 		monFrozen           int
 		monVmType           string
 		monUpdated          string
+	}
+
+	// DBInstanceResource is the database table resmon
+	//
+	// CREATE TABLE `resmon` (
+	//        `id` int(11) NOT NULL AUTO_INCREMENT,
+	//        `rid` varchar(255) DEFAULT NULL,
+	//        `res_status` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+	//        `changed` timestamp NOT NULL DEFAULT current_timestamp(),
+	//        `updated` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+	//        `res_desc` text DEFAULT NULL,
+	//        `res_log` text DEFAULT NULL,
+	//        `vmname` varchar(60) DEFAULT '',
+	//        `res_monitor` varchar(1) DEFAULT NULL,
+	//        `res_disable` varchar(1) DEFAULT NULL,
+	//        `res_optional` varchar(1) DEFAULT NULL,
+	//        `res_type` varchar(16) DEFAULT NULL,
+	//        `node_id` char(36) CHARACTER SET ascii DEFAULT '',
+	//        `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
+	//
+	//        PRIMARY KEY (`id`),
+	//
+	//        UNIQUE KEY `uk_resmon_1` (`svc_id`,`node_id`,`vmname`,`rid`),
+	//
+	//        KEY `resmon_updated` (`updated`),
+	//        KEY `k_node_id` (`node_id`),
+	//        KEY `k_svc_id` (`svc_id`),
+	//        KEY `idx_node_id_updated` (`node_id`,`updated`)
+	// ) ENGINE=InnoDB AUTO_INCREMENT=15524822 DEFAULT CHARSET=utf8
+	DBInstanceResource struct {
+		svcID    string
+		nodeID   string
+		vmName   string
+		rid      string
+		status   string
+		changed  time.Time
+		updated  time.Time
+		desc     string
+		log      string
+		monitor  string
+		disable  string
+		optional string
+		resType  string
 	}
 
 	DBObjStatus struct {
@@ -203,7 +247,7 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 	)
 	begin := time.Now()
 	err = oDb.db.QueryRowContext(ctx, qHasInstance, svcID, nodeID).Scan(&count)
-	slog.Info(fmt.Sprintf("pingInstance qHasInstance %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("pingInstance qHasInstance %s", time.Now().Sub(begin)))
 	begin = time.Now()
 
 	switch {
@@ -222,7 +266,7 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 	} else if count == 0 {
 		return
 	}
-	slog.Info(fmt.Sprintf("pingInstance qUpdateSvcmon %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("pingInstance qUpdateSvcmon %s", time.Now().Sub(begin)))
 	begin = time.Now()
 	updates = true
 
@@ -230,7 +274,7 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 	if _, err = oDb.db.ExecContext(ctx, qUpdateSvcmonLogLast, svcID, nodeID); err != nil {
 		return
 	}
-	slog.Info(fmt.Sprintf("pingInstance qUpdateSvcmonLogLast %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("pingInstance qUpdateSvcmonLogLast %s", time.Now().Sub(begin)))
 	begin = time.Now()
 
 	if result, err = oDb.db.ExecContext(ctx, qUpdateResmon, svcID, nodeID); err != nil {
@@ -240,7 +284,7 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 	} else if count == 0 {
 		return
 	}
-	slog.Info(fmt.Sprintf("pingInstance qUpdateResmon %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("pingInstance qUpdateResmon %s", time.Now().Sub(begin)))
 	begin = time.Now()
 	oDb.tableChange("resmon")
 
@@ -248,7 +292,7 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 		return
 	}
 
-	slog.Info(fmt.Sprintf("pingInstance qUpdateResmonLogLast %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("pingInstance qUpdateResmonLogLast %s", time.Now().Sub(begin)))
 	begin = time.Now()
 	return
 }
@@ -299,7 +343,7 @@ func (oDb *opensvcDB) updateObjectLog(ctx context.Context, svcID string, avail s
 		) ENGINE=InnoDB AUTO_INCREMENT=665687 DEFAULT CHARSET=utf8
 	*/
 	const (
-		qGetLogLast = "SELECT `svc_availstatus`, `svc_begin`, `svc_end` FROM `services_log_last` WHERE `svc_id` = ?"
+		qGetLogLast = "SELECT `svc_availstatus`, `svc_begin` FROM `services_log_last` WHERE `svc_id` = ?"
 		qSetLogLast = "" +
 			"INSERT INTO `services_log_last` (`svc_id`, `svc_begin`, `svc_end`, `svc_availstatus`)" +
 			" VALUES (?, NOW(), NOW(), ?)" +
@@ -312,7 +356,7 @@ func (oDb *opensvcDB) updateObjectLog(ctx context.Context, svcID string, avail s
 	var (
 		previousAvail string
 
-		previousBegin, previousEnd time.Time
+		previousBegin time.Time
 	)
 	setLogLast := func() error {
 		_, err := oDb.db.ExecContext(ctx, qSetLogLast, svcID, avail, avail)
@@ -321,7 +365,7 @@ func (oDb *opensvcDB) updateObjectLog(ctx context.Context, svcID string, avail s
 		}
 		return nil
 	}
-	err := oDb.db.QueryRowContext(ctx, qGetLogLast, svcID).Scan(&previousAvail, &previousBegin, &previousEnd)
+	err := oDb.db.QueryRowContext(ctx, qGetLogLast, svcID).Scan(&previousAvail, &previousBegin)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial avail value
@@ -521,8 +565,163 @@ func (oDb *opensvcDB) tableChange(s ...string) {
 	}
 }
 
-func (oDb *opensvcDB) updateInstanceStatus(ctx context.Context, svcID, nodeID string, s *DBInstanceStatus) error {
-	defer logDuration("updateInstanceStatus "+svcID+"@"+nodeID, time.Now())
+func (oDb *opensvcDB) instanceStatusDelete(ctx context.Context, svcID, nodeID string) error {
+	defer logDuration("instanceStatusDelete "+svcID+"@"+nodeID, time.Now())
+	const (
+		queryDelete = "" +
+			"DELETE FROM `svcmon` WHERE `svc_id` = ? AND `node_id` = ?"
+	)
+	result, err := oDb.db.ExecContext(ctx, queryDelete, svcID, nodeID)
+	if err != nil {
+		return fmt.Errorf("instanceStatusDelete %s@%s: %w", svcID, nodeID, err)
+	}
+	if changes, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("instanceStatusDelete %s@%s can't get deleted count: %w", svcID, nodeID, err)
+	} else if changes > 0 {
+		oDb.tableChange("svcmon")
+	}
+	return nil
+}
+
+func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, svcID, nodeID string, status *DBInstanceStatus) error {
+	defer logDuration("instanceStatusLogUpdate "+svcID+"@"+nodeID, time.Now())
+	/*
+		CREATE TABLE `svcmon_log_last` (
+		  `id` int(11) NOT NULL AUTO_INCREMENT,
+		  `mon_overallstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_ipstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_fsstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_diskstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_containerstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_syncstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_appstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_begin` datetime NOT NULL,
+		  `mon_end` datetime NOT NULL,
+		  `mon_hbstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_availstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_sharestatus` varchar(10) DEFAULT 'undef',
+		  `node_id` char(36) CHARACTER SET ascii DEFAULT '',
+		  `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
+		  PRIMARY KEY (`id`),
+		  UNIQUE KEY `uk` (`node_id`,`svc_id`),
+		  KEY `mon_overallstatus` (`mon_overallstatus`),
+		  KEY `mon_begin` (`mon_begin`,`mon_end`),
+		  KEY `k_node_id` (`node_id`),
+		  KEY `k_svc_id` (`svc_id`)
+		) ENGINE=InnoDB AUTO_INCREMENT=15639 DEFAULT CHARSET=utf8
+
+		CREATE TABLE `svcmon_log` (
+		  `id` int(11) NOT NULL AUTO_INCREMENT,
+		  `mon_overallstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_ipstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_fsstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_diskstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_containerstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_syncstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_appstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_begin` datetime NOT NULL,
+		  `mon_end` datetime NOT NULL,
+		  `mon_hbstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_availstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `mon_sharestatus` varchar(10) DEFAULT 'undef',
+		  `node_id` char(36) CHARACTER SET ascii DEFAULT '',
+		  `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
+		  PRIMARY KEY (`id`),
+		  KEY `mon_overallstatus` (`mon_overallstatus`),
+		  KEY `mon_begin` (`mon_begin`,`mon_end`),
+		  KEY `k_node_id` (`node_id`),
+		  KEY `k_svc_id` (`svc_id`)
+		) ENGINE=InnoDB AUTO_INCREMENT=6749866 DEFAULT CHARSET=utf8
+	*/
+	const (
+		queryGetLogLast = "" +
+			"SELECT `mon_begin`, `id`, " +
+			" `mon_availstatus`, `mon_overallstatus`, `mon_syncstatus`, `mon_ipstatus`, `mon_fsstatus`," +
+			" `mon_diskstatus`, `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`" +
+			"FROM `svcmon_log_last`" +
+			"WHERE `svc_id` = ? AND `node_id` = ?"
+
+		querySetLogLast = "" +
+			"INSERT INTO `svcmon_log_last` (`svc_id`, `node_id`," +
+			" `mon_availstatus`, `mon_overallstatus`, `mon_syncstatus`, `mon_ipstatus`, `mon_fsstatus`," +
+			" `mon_diskstatus`, `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`," +
+			" `mon_begin`, `mon_end`) " +
+			" VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())" +
+			" ON DUPLICATE KEY UPDATE " +
+			"   `mon_availstatus` = ?, `mon_overallstatus` = ? , `mon_syncstatus` = ?, `mon_ipstatus` = ?, `mon_fsstatus` = ?," +
+			" `mon_diskstatus` = ?, `mon_sharestatus` = ?, `mon_containerstatus` = ?, `mon_appstatus`= ?," +
+			" `mon_begin` = NOW(), `mon_end` = NOW()"
+
+		queryExtendIntervalOfCurrent = "" +
+			"UPDATE `svcmon_log_last` SET `mon_end` = NOW() " +
+			" WHERE `svc_id` = ? AND `node_id` = ?"
+
+		querySaveIntervalOfPreviousBeforeTransition = "" +
+			"INSERT INTO `svcmon_log` (`svc_id`, `node_id`," +
+			" `mon_availstatus`, `mon_overallstatus`, `mon_syncstatus`, `mon_ipstatus`, `mon_fsstatus`," +
+			" `mon_diskstatus`, `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`," +
+			" `mon_begin`, `mon_end`)" +
+			" VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+	)
+	var (
+		prev DBInstanceStatus
+
+		previousBegin time.Time
+	)
+	setLogLast := func() error {
+		_, err := oDb.db.ExecContext(ctx, querySetLogLast, svcID, nodeID,
+			status.monAvailStatus, status.monOverallStatus, status.monSyncStatus, status.monIpStatus, status.monFsStatus,
+			status.monDiskStatus, status.monShareStatus, status.monContainerStatus, status.monAppStatus,
+			status.monAvailStatus, status.monOverallStatus, status.monSyncStatus, status.monIpStatus, status.monFsStatus,
+			status.monDiskStatus, status.monShareStatus, status.monContainerStatus, status.monAppStatus)
+		if err != nil {
+			return fmt.Errorf("update svcmon_log_last: %w", err)
+		}
+		return nil
+	}
+	err := oDb.db.QueryRowContext(ctx, queryGetLogLast, svcID, nodeID).Scan(&previousBegin, &prev.ID,
+		&prev.monAvailStatus, &prev.monOverallStatus, &prev.monSyncStatus, &prev.monIpStatus, &prev.monFsStatus,
+		&prev.monDiskStatus, &prev.monShareStatus, &prev.monContainerStatus, &prev.monAppStatus)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		// set initial status, log value
+		defer oDb.tableChange("svcmon_log")
+		return setLogLast()
+	case err != nil:
+		return fmt.Errorf("get svcmon_log_last: %w", err)
+	default:
+		defer oDb.tableChange("svcmon_log")
+		if status.monAvailStatus == prev.monAvailStatus &&
+			status.monOverallStatus == prev.monOverallStatus &&
+			status.monSyncStatus == prev.monSyncStatus &&
+			status.monIpStatus == prev.monIpStatus &&
+			status.monFsStatus == prev.monFsStatus &&
+			status.monDiskStatus == prev.monDiskStatus &&
+			status.monShareStatus == prev.monShareStatus &&
+			status.monContainerStatus == prev.monContainerStatus &&
+			status.monAppStatus == prev.monAppStatus {
+			// no change, extend last interval
+			if _, err := oDb.db.ExecContext(ctx, queryExtendIntervalOfCurrent, svcID, nodeID); err != nil {
+				return fmt.Errorf("extend svcmon_log_last: %w", err)
+			}
+			return nil
+		} else {
+			// the avail value will change, save interval of prev status, log value before change
+			_, err := oDb.db.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, svcID, nodeID,
+				prev.monAvailStatus, prev.monOverallStatus, prev.monSyncStatus, prev.monIpStatus, prev.monFsStatus,
+				prev.monDiskStatus, prev.monShareStatus, prev.monContainerStatus, prev.monAppStatus,
+				previousBegin)
+			if err != nil {
+				return fmt.Errorf("save svcmon_log transition: %w", err)
+			}
+			// reset previousBegin and end interval for new status, log
+			return setLogLast()
+		}
+	}
+}
+
+func (oDb *opensvcDB) instanceStatusUpdate(ctx context.Context, svcID, nodeID string, s *DBInstanceStatus) error {
+	defer logDuration("instanceStatusUpdate "+svcID+"@"+nodeID, time.Now())
 	const (
 		qUpdate = "" +
 			"INSERT INTO `svcmon` (`svc_id`, `node_id`, `mon_vmname`, " +
@@ -537,7 +736,8 @@ func (oDb *opensvcDB) updateInstanceStatus(ctx context.Context, svcID, nodeID st
 			" `mon_sharestatus` = ?, `mon_containerstatus` = ?, `mon_appstatus` = ?, `mon_syncstatus` = ?," +
 			" `mon_frozen` = ?, `mon_vmtype` = ?, `mon_updated` = NOW()"
 	)
-	_, err := oDb.db.ExecContext(ctx, qUpdate, svcID, nodeID, s.monVmname,
+	// TODO check vs v2
+	_, err := oDb.db.ExecContext(ctx, qUpdate, svcID, nodeID, s.monVmName,
 		s.monSmonStatus, s.monSmonGlobalExpect, s.monAvailStatus,
 		s.monOverallStatus, s.monIpStatus, s.monDiskStatus, s.monFsStatus,
 		s.monShareStatus, s.monContainerStatus, s.monAppStatus, s.monSyncStatus,
@@ -550,5 +750,160 @@ func (oDb *opensvcDB) updateInstanceStatus(ctx context.Context, svcID, nodeID st
 		return err
 	}
 	oDb.tableChange("svcmon")
+	return nil
+}
+
+func (oDb *opensvcDB) instanceResourcesDelete(ctx context.Context, svcID, nodeID string) error {
+	defer logDuration("instanceResourcesDelete "+svcID+"@"+nodeID+":", time.Now())
+	const (
+		queryPurge = "DELETE FROM `resmon` WHERE `svc_id` = ? AND `node_id` = ?"
+	)
+	if _, err := oDb.db.ExecContext(ctx, queryPurge, svcID, nodeID); err != nil {
+		return fmt.Errorf("instanceResourcesDelete %s@%s (%s): %w", svcID, nodeID, err)
+	}
+	return nil
+}
+
+func (oDb *opensvcDB) instanceResourcesDeleteObsolete(ctx context.Context, svcID, nodeID string, maxTime time.Time) error {
+	defer logDuration("instanceResourcesDeleteObsolete "+svcID+"@"+nodeID+":", time.Now())
+	const (
+		queryPurge = "" +
+			"DELETE FROM `resmon`" +
+			"WHERE `svc_id` = ? AND `node_id` = ? AND `updated` < ?"
+	)
+	result, err := oDb.db.ExecContext(ctx, queryPurge, svcID, nodeID, maxTime)
+	if err != nil {
+		return fmt.Errorf("instanceResourcesDeleteObsolete: %w", err)
+	}
+	if affected, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("instanceResourcesDeleteObsolete count affected: %w", err)
+	} else {
+		slog.Debug(fmt.Sprintf("instanceResourcesDeleteObsolete %s@%s: %d", svcID, nodeID, affected))
+	}
+	return nil
+}
+
+// instanceResourceLogUpdate handle resmon_log_last and resmon_log avail value changes.
+//
+// resmon_log_last tracks the current status, log value from begin to now.
+// resmon_log tracks status, log values changes with begin and end: [(status, log, begin, end), ...]
+func (oDb *opensvcDB) instanceResourceLogUpdate(ctx context.Context, svcID, nodeID, rID string, status string, resLog string) error {
+	defer logDuration("instanceResourceLogUpdate "+svcID+"@"+nodeID+":"+rID, time.Now())
+	/*
+		CREATE TABLE `resmon_log` (
+		  `id` int(11) NOT NULL AUTO_INCREMENT,
+		  `node_id` char(36) CHARACTER SET ascii DEFAULT '',
+		  `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
+		  `rid` varchar(255) NOT NULL,
+		  `res_status` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `res_begin` datetime NOT NULL,
+		  `res_end` datetime NOT NULL,
+		  `res_log` text DEFAULT NULL,
+		  PRIMARY KEY (`id`),
+		  KEY `idx1` (`node_id`,`svc_id`,`rid`),
+		  KEY `idx_res_end` (`res_end`)
+		) ENGINE=InnoDB AUTO_INCREMENT=1079229 DEFAULT CHARSET=utf8
+
+		CREATE TABLE `resmon_log_last` (
+		  `id` int(11) NOT NULL AUTO_INCREMENT,
+		  `node_id` char(36) CHARACTER SET ascii DEFAULT '',
+		  `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
+		  `rid` varchar(255) NOT NULL,
+		  `res_status` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		  `res_begin` datetime NOT NULL,
+		  `res_end` datetime NOT NULL,
+		  `res_log` text DEFAULT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE KEY `uk` (`node_id`,`svc_id`,`rid`),
+		  KEY `idx1` (`node_id`,`svc_id`,`rid`)
+		) ENGINE=InnoDB AUTO_INCREMENT=40132 DEFAULT CHARSET=utf8
+	*/
+	const (
+		queryGetLogLast = "" +
+			"SELECT `res_status`, `res_log`, `res_begin`" +
+			" FROM `resmon_log_last` WHERE `svc_id` = ? AND `node_id` = ? AND `rid` = ?"
+		querySetLogLast = "" +
+			"INSERT INTO `resmon_log_last` (`svc_id`, `node_id`, `rid`," +
+			" `res_begin`, `res_end`, `res_status`, `res_log`)" +
+			" VALUES (NOW(), NOW(), ?, ?)" +
+			" ON DUPLICATE KEY UPDATE " +
+			"   `res_begin` = NOW(), `res_end` = NOW(), `res_status`= ?, `res_log` = ?"
+		queryExtendIntervalOfCurrent = "" +
+			"UPDATE `resmon_log_last` SET `res_end` = NOW() " +
+			" WHERE `svc_id` = ? AND `node_id` = ? AND `rid` = ?"
+		querySaveIntervalOfPreviousBeforeTransition = "" +
+			"INSERT INTO `resmon_log` (`svc_id`, `node_id`, `rid`, `res_begin`, `res_end`, `res_status`, `res_log`)" +
+			" VALUES (?, ?, ?, ?, NOW(), ?, ?)"
+	)
+	var (
+		previousStatus, previousLog string
+
+		previousBegin time.Time
+	)
+	setLogLast := func() error {
+		_, err := oDb.db.ExecContext(ctx, querySetLogLast, svcID, nodeID, rID, status, resLog)
+		if err != nil {
+			return fmt.Errorf("instanceResourceLogUpdate can't update resmon_log_last %s@%s:%s: %w",
+				svcID, nodeID, rID, err)
+		}
+		return nil
+	}
+	err := oDb.db.QueryRowContext(ctx, queryGetLogLast, svcID, nodeID, rID).Scan(&previousStatus, &previousLog, &previousBegin)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		// set initial status, log value
+		defer oDb.tableChange("resmon_log")
+		return setLogLast()
+	case err != nil:
+		return fmt.Errorf("instanceResourceLogUpdate can't get resmon_log_last %s@%s:%s: %w",
+			svcID, nodeID, rID, err)
+	default:
+		defer oDb.tableChange("resmon_log")
+		if previousStatus == status && previousLog == resLog {
+			// no change, extend last interval
+			if _, err := oDb.db.ExecContext(ctx, queryExtendIntervalOfCurrent, svcID, nodeID, rID); err != nil {
+				return fmt.Errorf("updateObjectLog can't set services_log_last.svc_end %s: %w", svcID, err)
+			}
+			return nil
+		} else {
+			// the avail value will change, save interval of previous status, log value before change
+			if _, err := oDb.db.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition,
+				svcID, nodeID, rID, previousBegin, previousStatus, previousLog); err != nil {
+				return fmt.Errorf("updateObjectLog can't save services_log change %s: %w", svcID, err)
+			}
+			// reset begin and end interval for new status, log
+			return setLogLast()
+		}
+	}
+}
+
+func (oDb *opensvcDB) instanceResourceUpdate(ctx context.Context, svcID, nodeID string, res *DBInstanceResource) error {
+	defer logDuration("instanceResourceUpdate "+svcID+"@"+nodeID+":"+res.rid, time.Now())
+	const (
+		query = "" +
+			"INSERT INTO `resmon` (`svc_id`, `node_id`, `vmname`, `rid`," +
+			" `res_status`, `res_type`, `res_log`, `res_desc`," +
+			" `res_optional`, `res_disable`, `res_monitor`," +
+			" `updated`)" +
+			"VALUES (?, ?, ?, ?," +
+			" ?, ?, ?, ?," +
+			" ?, ?, ?, NOW())" +
+			"ON DUPLICATE KEY UPDATE" +
+			" `res_status` = ?, `res_type` = ?, `res_log` = ?,  `res_desc` = ?," +
+			" `res_optional` = ?, `res_disable` = ?, `res_monitor` = ?," +
+			" `updated` = NOW()"
+	)
+	_, err := oDb.db.ExecContext(ctx, query,
+		svcID, nodeID, res.vmName, res.rid,
+		res.status, res.resType, res.log, res.desc,
+		res.optional, res.disable, res.monitor,
+		res.status, res.resType, res.log, res.desc,
+		res.disable, res.disable, res.monitor,
+	)
+
+	if err != nil {
+		return fmt.Errorf("instanceResourceUpdate %s: %w", res.rid, err)
+	}
+	oDb.tableChange("resmon")
 	return nil
 }
