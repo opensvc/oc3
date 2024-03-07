@@ -15,7 +15,7 @@ func work(queues []string) error {
 		Redis:  newRedis(),
 		DB:     db,
 		Queues: queues,
-		WithTx: viper.GetBool("feeder.WithTx"),
+		WithTx: viper.GetBool("feeder.tx"),
 	}
 	if err != nil {
 		return err
