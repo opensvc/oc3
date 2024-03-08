@@ -583,8 +583,8 @@ func (oDb *opensvcDB) instanceStatusDelete(ctx context.Context, svcID, nodeID st
 	return nil
 }
 
-func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, svcID, nodeID string, status *DBInstanceStatus) error {
-	defer logDuration("instanceStatusLogUpdate "+svcID+"@"+nodeID, time.Now())
+func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, status *DBInstanceStatus) error {
+	defer logDuration("instanceStatusLogUpdate "+status.svcID+"@"+status.nodeID, time.Now())
 	/*
 		CREATE TABLE `svcmon_log_last` (
 		  `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -669,7 +669,7 @@ func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, svcID, nodeID
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.db.ExecContext(ctx, querySetLogLast, svcID, nodeID,
+		_, err := oDb.db.ExecContext(ctx, querySetLogLast, status.svcID, status.nodeID,
 			status.monAvailStatus, status.monOverallStatus, status.monSyncStatus, status.monIpStatus, status.monFsStatus,
 			status.monDiskStatus, status.monShareStatus, status.monContainerStatus, status.monAppStatus,
 			status.monAvailStatus, status.monOverallStatus, status.monSyncStatus, status.monIpStatus, status.monFsStatus,
@@ -679,7 +679,7 @@ func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, svcID, nodeID
 		}
 		return nil
 	}
-	err := oDb.db.QueryRowContext(ctx, queryGetLogLast, svcID, nodeID).Scan(&previousBegin, &prev.ID,
+	err := oDb.db.QueryRowContext(ctx, queryGetLogLast, status.svcID, status.nodeID).Scan(&previousBegin, &prev.ID,
 		&prev.monAvailStatus, &prev.monOverallStatus, &prev.monSyncStatus, &prev.monIpStatus, &prev.monFsStatus,
 		&prev.monDiskStatus, &prev.monShareStatus, &prev.monContainerStatus, &prev.monAppStatus)
 	switch {
@@ -701,13 +701,13 @@ func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, svcID, nodeID
 			status.monContainerStatus == prev.monContainerStatus &&
 			status.monAppStatus == prev.monAppStatus {
 			// no change, extend last interval
-			if _, err := oDb.db.ExecContext(ctx, queryExtendIntervalOfCurrent, svcID, nodeID); err != nil {
+			if _, err := oDb.db.ExecContext(ctx, queryExtendIntervalOfCurrent, status.svcID, status.nodeID); err != nil {
 				return fmt.Errorf("extend svcmon_log_last: %w", err)
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of prev status, log value before change
-			_, err := oDb.db.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, svcID, nodeID,
+			_, err := oDb.db.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, status.svcID, status.nodeID,
 				prev.monAvailStatus, prev.monOverallStatus, prev.monSyncStatus, prev.monIpStatus, prev.monFsStatus,
 				prev.monDiskStatus, prev.monShareStatus, prev.monContainerStatus, prev.monAppStatus,
 				previousBegin)
@@ -720,8 +720,8 @@ func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, svcID, nodeID
 	}
 }
 
-func (oDb *opensvcDB) instanceStatusUpdate(ctx context.Context, svcID, nodeID string, s *DBInstanceStatus) error {
-	defer logDuration("instanceStatusUpdate "+svcID+"@"+nodeID, time.Now())
+func (oDb *opensvcDB) instanceStatusUpdate(ctx context.Context, s *DBInstanceStatus) error {
+	defer logDuration("instanceStatusUpdate "+s.svcID+"@"+s.nodeID, time.Now())
 	const (
 		qUpdate = "" +
 			"INSERT INTO `svcmon` (`svc_id`, `node_id`, `mon_vmname`, " +
@@ -737,7 +737,7 @@ func (oDb *opensvcDB) instanceStatusUpdate(ctx context.Context, svcID, nodeID st
 			" `mon_frozen` = ?, `mon_vmtype` = ?, `mon_updated` = NOW()"
 	)
 	// TODO check vs v2
-	_, err := oDb.db.ExecContext(ctx, qUpdate, svcID, nodeID, s.monVmName,
+	_, err := oDb.db.ExecContext(ctx, qUpdate, s.svcID, s.nodeID, s.monVmName,
 		s.monSmonStatus, s.monSmonGlobalExpect, s.monAvailStatus,
 		s.monOverallStatus, s.monIpStatus, s.monDiskStatus, s.monFsStatus,
 		s.monShareStatus, s.monContainerStatus, s.monAppStatus, s.monSyncStatus,
@@ -787,8 +787,8 @@ func (oDb *opensvcDB) instanceResourcesDeleteObsolete(ctx context.Context, svcID
 //
 // resmon_log_last tracks the current status, log value from begin to now.
 // resmon_log tracks status, log values changes with begin and end: [(status, log, begin, end), ...]
-func (oDb *opensvcDB) instanceResourceLogUpdate(ctx context.Context, svcID, nodeID, rID string, status string, resLog string) error {
-	defer logDuration("instanceResourceLogUpdate "+svcID+"@"+nodeID+":"+rID, time.Now())
+func (oDb *opensvcDB) instanceResourceLogUpdate(ctx context.Context, res *DBInstanceResource) error {
+	defer logDuration("instanceResourceLogUpdate "+res.svcID+"@"+res.nodeID+":"+res.rid, time.Now())
 	/*
 		CREATE TABLE `resmon_log` (
 		  `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -825,7 +825,7 @@ func (oDb *opensvcDB) instanceResourceLogUpdate(ctx context.Context, svcID, node
 		querySetLogLast = "" +
 			"INSERT INTO `resmon_log_last` (`svc_id`, `node_id`, `rid`," +
 			" `res_begin`, `res_end`, `res_status`, `res_log`)" +
-			" VALUES (NOW(), NOW(), ?, ?)" +
+			" VALUES (?, ?, ?, NOW(), NOW(), ?, ?)" +
 			" ON DUPLICATE KEY UPDATE " +
 			"   `res_begin` = NOW(), `res_end` = NOW(), `res_status`= ?, `res_log` = ?"
 		queryExtendIntervalOfCurrent = "" +
@@ -841,35 +841,36 @@ func (oDb *opensvcDB) instanceResourceLogUpdate(ctx context.Context, svcID, node
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.db.ExecContext(ctx, querySetLogLast, svcID, nodeID, rID, status, resLog)
+		_, err := oDb.db.ExecContext(ctx, querySetLogLast,
+			res.svcID, res.nodeID, res.rid,
+			res.status, res.log,
+			res.status, res.log)
 		if err != nil {
-			return fmt.Errorf("instanceResourceLogUpdate can't update resmon_log_last %s@%s:%s: %w",
-				svcID, nodeID, rID, err)
+			return fmt.Errorf("update resmon_log_last: %w", err)
 		}
 		return nil
 	}
-	err := oDb.db.QueryRowContext(ctx, queryGetLogLast, svcID, nodeID, rID).Scan(&previousStatus, &previousLog, &previousBegin)
+	err := oDb.db.QueryRowContext(ctx, queryGetLogLast, res.svcID, res.nodeID, res.rid).Scan(&previousStatus, &previousLog, &previousBegin)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial status, log value
 		defer oDb.tableChange("resmon_log")
 		return setLogLast()
 	case err != nil:
-		return fmt.Errorf("instanceResourceLogUpdate can't get resmon_log_last %s@%s:%s: %w",
-			svcID, nodeID, rID, err)
+		return fmt.Errorf("get resmon_log_last: %w", err)
 	default:
 		defer oDb.tableChange("resmon_log")
-		if previousStatus == status && previousLog == resLog {
+		if previousStatus == res.status && previousLog == res.log {
 			// no change, extend last interval
-			if _, err := oDb.db.ExecContext(ctx, queryExtendIntervalOfCurrent, svcID, nodeID, rID); err != nil {
-				return fmt.Errorf("updateObjectLog can't set services_log_last.svc_end %s: %w", svcID, err)
+			if _, err := oDb.db.ExecContext(ctx, queryExtendIntervalOfCurrent, res.svcID, res.nodeID, res.rid); err != nil {
+				return fmt.Errorf("extend services_log_last: %w", err)
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of previous status, log value before change
 			if _, err := oDb.db.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition,
-				svcID, nodeID, rID, previousBegin, previousStatus, previousLog); err != nil {
-				return fmt.Errorf("updateObjectLog can't save services_log change %s: %w", svcID, err)
+				res.svcID, res.nodeID, res.rid, previousBegin, previousStatus, previousLog); err != nil {
+				return fmt.Errorf("add services_log change: %w", err)
 			}
 			// reset begin and end interval for new status, log
 			return setLogLast()
@@ -877,8 +878,8 @@ func (oDb *opensvcDB) instanceResourceLogUpdate(ctx context.Context, svcID, node
 	}
 }
 
-func (oDb *opensvcDB) instanceResourceUpdate(ctx context.Context, svcID, nodeID string, res *DBInstanceResource) error {
-	defer logDuration("instanceResourceUpdate "+svcID+"@"+nodeID+":"+res.rid, time.Now())
+func (oDb *opensvcDB) instanceResourceUpdate(ctx context.Context, res *DBInstanceResource) error {
+	defer logDuration("instanceResourceUpdate "+res.svcID+"@"+res.nodeID+":"+res.rid, time.Now())
 	const (
 		query = "" +
 			"INSERT INTO `resmon` (`svc_id`, `node_id`, `vmname`, `rid`," +
@@ -894,7 +895,7 @@ func (oDb *opensvcDB) instanceResourceUpdate(ctx context.Context, svcID, nodeID 
 			" `updated` = NOW()"
 	)
 	_, err := oDb.db.ExecContext(ctx, query,
-		svcID, nodeID, res.vmName, res.rid,
+		res.svcID, res.nodeID, res.vmName, res.rid,
 		res.status, res.resType, res.log, res.desc,
 		res.optional, res.disable, res.monitor,
 		res.status, res.resType, res.log, res.desc,

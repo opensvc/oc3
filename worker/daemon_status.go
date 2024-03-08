@@ -553,6 +553,7 @@ func (d *daemonStatus) dbUpdateInstance() error {
 					continue
 				}
 			}
+			instanceMonitorStates[iStatus.monSmonStatus] = true
 			if iStatus.encap == nil {
 				subNodeID, _, _, err := d.oDb.translateEncapNodename(d.ctx, objID, nodeID)
 				if err != nil {
@@ -571,23 +572,12 @@ func (d *daemonStatus) dbUpdateInstance() error {
 						return fmt.Errorf("dbUpdateInstance delete resources %s@%s: %w", objID, nodeID, err)
 					}
 				} else {
-					instanceMonitorStates[iStatus.monSmonStatus] = true
-					slog.Debug(fmt.Sprintf("dbUpdateInstance updating status %s@%s", objectName, nodename))
-					if err := d.oDb.instanceStatusUpdate(d.ctx, objID, nodeID, &iStatus.DBInstanceStatus); err != nil {
-						return fmt.Errorf("dbUpdateInstance can't update instance status %s@%s: %w", objID, nodeID, err)
-					}
-					slog.Debug(fmt.Sprintf("dbUpdateInstance updating status log %s@%s", objectName, nodename))
-					err := d.oDb.instanceStatusLogUpdate(d.ctx, objID, nodeID, &iStatus.DBInstanceStatus)
-					if err != nil {
-						return fmt.Errorf("dbUpdateInstance update status log %s@%s: %w", objID, nodeID, err)
+					if err := d.instanceStatusUpdate(objID, nodeID, iStatus); err != nil {
+						return fmt.Errorf("dbUpdateInstance update status %s@%s (%s@%s): %w", objID, nodeID, objectName, nodename, err)
 					}
 					resourceObsoleteAt := time.Now()
-					for _, res := range iStatus.InstanceResources() {
-						slog.Debug(fmt.Sprintf("dbUpdateInstance updating resource %s@%s %s", objectName, nodename, res.rid))
-						err := d.oDb.instanceResourceUpdate(d.ctx, objID, nodeID, res)
-						if err != nil {
-							return fmt.Errorf("dbUpdateInstance update resource %s@%s %s: %w", objID, nodeID, res.rid, err)
-						}
+					if err := d.instanceResourceUpdate(objID, nodeID, iStatus); err != nil {
+						return fmt.Errorf("dbUpdateInstance update resource %s@%s (%s@%s): %w", objID, nodeID, objectName, nodename, err)
 					}
 					slog.Debug(fmt.Sprintf("dbUpdateInstance deleting obsolete resources %s@%s", objectName, nodename))
 					if err := d.oDb.instanceResourcesDeleteObsolete(d.ctx, objID, nodeID, resourceObsoleteAt); err != nil {
@@ -596,11 +586,29 @@ func (d *daemonStatus) dbUpdateInstance() error {
 				}
 				// TODO: update update_dash: service_frozen, service_not_on_primary, svcmon_not_updated
 			} else {
-				// TODO: for each encap items aka containerID
+				if iStatus.resources == nil {
+					// scaler or wrapper, for example
+					if err := d.oDb.instanceStatusDelete(d.ctx, objID, nodeID); err != nil {
+						return fmt.Errorf("dbUpdateInstance delete status %s@%s: %w", objID, nodeID, err)
+					}
+					if err := d.oDb.instanceResourcesDelete(d.ctx, objID, nodeID); err != nil {
+						return fmt.Errorf("dbUpdateInstance delete resources %s@%s: %w", objID, nodeID, err)
+					}
+				} else {
+					resourceObsoleteAt := time.Now()
+					for containerID, containerStatus := range iStatus.Containers() {
+						// TODO: update_container_node_fields
+						if err := d.instanceStatusUpdate(objID, nodeID, containerStatus); err != nil {
+							return fmt.Errorf("dbUpdateInstance update container %s %s@%s (%s@%s): %w",
+								containerID, objID, nodeID, objectName, nodename, err)
+						}
+					}
+					slog.Debug(fmt.Sprintf("dbUpdateInstance deleting obsolete container resources %s@%s", objectName, nodename))
+					if err := d.oDb.instanceResourcesDeleteObsolete(d.ctx, objID, nodeID, resourceObsoleteAt); err != nil {
+						return fmt.Errorf("dbUpdateInstance delete obsolete container resources %s@%s: %w", objID, nodeID, err)
+					}
+				}
 				// TODO:   update_container_node_fields
-				// TODO:   update instance
-				// TODO:   update_instance_resources
-				// TODO:   svcmon_log_update
 				slog.Debug(fmt.Sprintf("dbUpdateInstance skip encap update %s@%s", objectName, nodename))
 			}
 		}
@@ -619,6 +627,33 @@ func (d *daemonStatus) dbUpdateInstance() error {
 	// TODO: purge deleted data for service (services, svcactions, drpservices, svcmon_log, resmon_log, svcmon_log_ack,
 	//       checks_settings, comp_log, comp_log_daily, comp_rulesets_services, comp_modulesets_services, log,
 	//       action_queue, svc_tags, form_output_results, svcmon_log_last, resmon_log_last)
+	return nil
+}
+
+func (d *daemonStatus) instanceResourceUpdate(objID string, nodeID string, iStatus *instanceStatus) error {
+	for _, res := range iStatus.InstanceResources() {
+		slog.Debug(fmt.Sprintf("updating instance resource %s@%s %s", objID, nodeID, res.rid))
+		if err := d.oDb.instanceResourceUpdate(d.ctx, res); err != nil {
+			return fmt.Errorf("update resource %s: %w", res.rid, err)
+		}
+		slog.Debug(fmt.Sprintf("updating instance resource log %s@%s %s", objID, nodeID, res.rid))
+		if err := d.oDb.instanceResourceLogUpdate(d.ctx, res); err != nil {
+			return fmt.Errorf("update resource log %s: %w", res.rid, err)
+		}
+	}
+	return nil
+}
+
+func (d *daemonStatus) instanceStatusUpdate(objID string, nodeID string, iStatus *instanceStatus) error {
+	slog.Debug(fmt.Sprintf("updating instance status %s@%s", objID, nodeID))
+	if err := d.oDb.instanceStatusUpdate(d.ctx, &iStatus.DBInstanceStatus); err != nil {
+		return fmt.Errorf("update instance status: %w", err)
+	}
+	slog.Debug(fmt.Sprintf("instanceStatusUpdate updating status log %s@%s", objID, nodeID))
+	err := d.oDb.instanceStatusLogUpdate(d.ctx, &iStatus.DBInstanceStatus)
+	if err != nil {
+		return fmt.Errorf("update instance status log: %w", err)
+	}
 	return nil
 }
 

@@ -244,20 +244,101 @@ func aToInstanceResource(a map[string]any, svcID, nodeID, vmName, rID string) *D
 	return res
 }
 
-func (iStatus *instanceStatus) InstanceResources() []*DBInstanceResource {
-	l := make([]*DBInstanceResource, len(iStatus.resources))
-	i := 0
-	for rID, aResource := range iStatus.resources {
+func (i *instanceStatus) InstanceResources() []*DBInstanceResource {
+	l := make([]*DBInstanceResource, len(i.resources))
+	id := 0
+	for rID, aResource := range i.resources {
 		var vmName string
-		if iStatus.encap != nil {
-			if encapRid, ok := iStatus.encap[rID].(map[string]any); ok {
+		if i.encap != nil {
+			if encapRid, ok := i.encap[rID].(map[string]any); ok {
 				if s, ok := encapRid["hostname"].(string); ok {
 					vmName = s
 				}
 			}
 		}
-		l[i] = aToInstanceResource(aResource.(map[string]any), iStatus.svcID, iStatus.nodeID, vmName, rID)
-		i++
+		l[id] = aToInstanceResource(aResource.(map[string]any), i.svcID, i.nodeID, vmName, rID)
+		id++
 	}
 	return l
+}
+
+// Containers returns list of container instanceStatus that are defined by i.encap.
+func (i *instanceStatus) Containers() []*instanceStatus {
+	l := make([]*instanceStatus, len(i.encap))
+	id := 0
+	for containerID := range i.encap {
+		l[id] = i.Container(containerID)
+		id++
+	}
+	return l
+}
+
+// Container returns the container instance status of i from i.encap[id].
+func (i *instanceStatus) Container(id string) *instanceStatus {
+	encap := i.encap[id].(map[string]any)
+	if encap == nil {
+		return nil
+	}
+	dbI := DBInstanceStatus{
+		nodeID: i.nodeID,
+		svcID:  i.svcID,
+	}
+	if vmName, ok := encap["hostname"].(string); ok {
+		dbI.monVmType = vmName
+	}
+	if ctype := strings.SplitN(mapToS(i.resources, "", id, "type"), ".", 1); len(ctype) > 1 {
+		dbI.monVmType = ctype[1]
+	}
+	mergeM := hypervisorContainerMergeMap
+	if encapAvail, ok := encap["avail"].(string); ok {
+		dbI.monAvailStatus = mergeM[i.monAvailStatus+","+encapAvail]
+	} else {
+		dbI.monAvailStatus = mergeM[i.monAvailStatus+",n/a"]
+	}
+	if encapOverall, ok := encap["overall"].(string); ok {
+		dbI.monOverallStatus = mergeM[i.monOverallStatus+","+encapOverall]
+	} else {
+		dbI.monOverallStatus = mergeM[i.monOverallStatus+",n/a"]
+	}
+
+	if statusGroup, ok := encap["status_group"].(map[string]string); ok {
+		dbI.monIpStatus = mergeM[i.monIpStatus+","+statusGroup["ip"]]
+		dbI.monDiskStatus = mergeM[i.monDiskStatus+","+statusGroup["disk"]]
+		dbI.monFsStatus = mergeM[i.monFsStatus+","+statusGroup["fs"]]
+		dbI.monShareStatus = mergeM[i.monShareStatus+","+statusGroup["share"]]
+		dbI.monContainerStatus = mergeM[i.monContainerStatus+","+statusGroup["container"]]
+		dbI.monAppStatus = mergeM[i.monAppStatus+","+statusGroup["app"]]
+		dbI.monSyncStatus = mergeM[i.monSyncStatus+","+statusGroup["sync"]]
+	} else {
+		// unexpected status_group map, ignore all encap status_group
+		dbI.monIpStatus = mergeM[i.monIpStatus+","]
+		dbI.monDiskStatus = mergeM[i.monDiskStatus+","]
+		dbI.monFsStatus = mergeM[i.monFsStatus+","]
+		dbI.monShareStatus = mergeM[i.monShareStatus+","]
+		dbI.monContainerStatus = mergeM[i.monContainerStatus+","]
+		dbI.monAppStatus = mergeM[i.monAppStatus+","]
+		dbI.monSyncStatus = mergeM[i.monSyncStatus+","]
+	}
+
+	// frozen value merge rules:
+	//    0: global thawed + encap thawed
+	//    1: global frozen + encap thawed
+	//    2: global thawed + encap frozen
+	//    3: global frozen + encap frozen
+
+	encapFrozen, _ := encap["frozen"].(int)
+	switch encapFrozen {
+	case 0:
+		// encap is thawed => frozen result is the global frozen value
+		dbI.monFrozen = i.monFrozen
+	default:
+		// encap is frozen => frozen result is the global frozen value + 2
+		dbI.monFrozen = i.monFrozen + 2
+	}
+
+	var nilMap map[string]any
+	return &instanceStatus{
+		DBInstanceStatus: dbI,
+		resources:        mapToMap(encap, nilMap, "resources"),
+	}
 }
