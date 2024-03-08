@@ -908,3 +908,31 @@ func (oDb *opensvcDB) instanceResourceUpdate(ctx context.Context, res *DBInstanc
 	oDb.tableChange("resmon")
 	return nil
 }
+
+func (oDb *opensvcDB) deleteByObject(ctx context.Context, tableName string, objID string) error {
+	const (
+		query = "DELETE from ? WHERE svc_id = ?"
+	)
+	if result, err := oDb.db.ExecContext(ctx, query, tableName, objID); err != nil {
+		return fmt.Errorf("deleteByObject: %w", err)
+	} else if count, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("deleteByObject affected: %w", err)
+	} else if count > 0 {
+		oDb.tableChange(tableName)
+	}
+	return nil
+}
+
+func (oDb *opensvcDB) deleteByInstanceID(ctx context.Context, tableName string, objID, nodeId string) error {
+	const (
+		query = "DELETE from ? WHERE svc_id = ? AND node_id = ?"
+	)
+	if result, err := oDb.db.ExecContext(ctx, query, tableName, objID, nodeId); err != nil {
+		return fmt.Errorf("deleteByInstanceID: %w", err)
+	} else if count, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("deleteByInstanceID affected: %w", err)
+	} else if count > 0 {
+		oDb.tableChange(tableName)
+	}
+	return nil
+}
