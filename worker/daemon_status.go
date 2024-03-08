@@ -596,11 +596,11 @@ func (d *daemonStatus) dbUpdateInstance() error {
 					}
 				} else {
 					resourceObsoleteAt := time.Now()
-					for containerID, containerStatus := range iStatus.Containers() {
+					for _, containerStatus := range iStatus.Containers() {
 						// TODO: update_container_node_fields
 						if err := d.instanceStatusUpdate(objID, nodeID, containerStatus); err != nil {
 							return fmt.Errorf("dbUpdateInstance update container %s %s@%s (%s@%s): %w",
-								containerID, objID, nodeID, objectName, nodename, err)
+								containerStatus.monVmName, objID, nodeID, objectName, nodename, err)
 						}
 					}
 					slog.Debug(fmt.Sprintf("dbUpdateInstance deleting obsolete container resources %s@%s", objectName, nodename))

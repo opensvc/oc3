@@ -286,8 +286,8 @@ func (i *instanceStatus) Container(id string) *instanceStatus {
 	if vmName, ok := encap["hostname"].(string); ok {
 		dbI.monVmType = vmName
 	}
-	if ctype := strings.SplitN(mapToS(i.resources, "", id, "type"), ".", 1); len(ctype) > 1 {
-		dbI.monVmType = ctype[1]
+	if containerType := strings.SplitN(mapToS(i.resources, "", id, "type"), ".", 1); len(containerType) > 1 {
+		dbI.monVmType = containerType[1]
 	}
 	mergeM := hypervisorContainerMergeMap
 	if encapAvail, ok := encap["avail"].(string); ok {
@@ -329,7 +329,7 @@ func (i *instanceStatus) Container(id string) *instanceStatus {
 	encapFrozen, _ := encap["frozen"].(int)
 	switch encapFrozen {
 	case 0:
-		// encap is thawed => frozen result is the global frozen value
+		// encap is thawed => frozen result is the hypervisor frozen value
 		dbI.monFrozen = i.monFrozen
 	default:
 		// encap is frozen => frozen result is the global frozen value + 2

@@ -759,7 +759,7 @@ func (oDb *opensvcDB) instanceResourcesDelete(ctx context.Context, svcID, nodeID
 		queryPurge = "DELETE FROM `resmon` WHERE `svc_id` = ? AND `node_id` = ?"
 	)
 	if _, err := oDb.db.ExecContext(ctx, queryPurge, svcID, nodeID); err != nil {
-		return fmt.Errorf("instanceResourcesDelete %s@%s (%s): %w", svcID, nodeID, err)
+		return fmt.Errorf("instanceResourcesDelete: %w", err)
 	}
 	return nil
 }
