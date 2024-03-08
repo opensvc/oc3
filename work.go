@@ -1,6 +1,10 @@
 package main
 
-import "github.com/opensvc/oc3/worker"
+import (
+	"github.com/spf13/viper"
+
+	"github.com/opensvc/oc3/worker"
+)
 
 func work(queues []string) error {
 	db, err := newDatabase()
@@ -11,6 +15,7 @@ func work(queues []string) error {
 		Redis:  newRedis(),
 		DB:     db,
 		Queues: queues,
+		WithTx: viper.GetBool("feeder.tx"),
 	}
 	if err != nil {
 		return err

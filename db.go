@@ -19,6 +19,7 @@ func newDatabase() (*sql.DB, error) {
 		Addr:                 viper.GetString("db.host") + ":" + viper.GetString("db.port"),
 		DBName:               "opensvc",
 		AllowNativePasswords: true,
+		ParseTime:            true,
 	}
 	slog.Info(fmt.Sprintf("db addr=%s", cfg.Addr))
 	db, err := sql.Open("mysql", cfg.FormatDSN())
