@@ -936,3 +936,87 @@ func (oDb *opensvcDB) deleteByInstanceID(ctx context.Context, tableName string, 
 	}
 	return nil
 }
+
+// getOrphanInstances returns list of InstanceID defined on svcmon for nodeIDs but where
+// the associated services.svcname is not into objectNames
+//
+//	SELECT `svcmon`.`svc_id`, `svcmon`.`node_id`
+//	FROM `services`, `svcmon`
+//	WHERE
+//			`svcmon`.`node_id` IN ('nodeID1','nodeID2')
+//		AND
+//	    	`svcmon`.`svc_id` = `services`.`svc_id`
+//		AND
+//			`services`.`svcname` NOT IN ('obj1','obj2',...)
+func (oDb *opensvcDB) getOrphanInstances(ctx context.Context, nodeIDs, objectNames []string) (instanceIDs []InstanceID, err error) {
+	var (
+		query = "SELECT `svcmon`.`svc_id`, `svcmon`.`node_id` FROM `services`, `svcmon`"
+
+		queryArgs []any
+
+		rows *sql.Rows
+	)
+
+	if len(nodeIDs) == 0 || len(objectNames) == 0 {
+		return
+	}
+	query += " WHERE `svcmon`.`node_id` IN (?"
+	queryArgs = append(queryArgs, nodeIDs[0])
+	for i := 1; i < len(nodeIDs); i++ {
+		query += ", ?"
+		queryArgs = append(queryArgs, nodeIDs[i])
+	}
+	query += " ) AND `svcmon`.`svc_id` = `services`.`svc_id`"
+	query += " AND `services`.`svcname` NOT IN ( ?"
+	queryArgs = append(queryArgs, objectNames[0])
+	for i := 1; i < len(objectNames); i++ {
+		query += ", ?"
+		queryArgs = append(queryArgs, objectNames[i])
+	}
+	query += " )"
+	rows, err = oDb.db.QueryContext(ctx, query, queryArgs...)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var instanceID InstanceID
+		if err = rows.Scan(&instanceID.svcID, &instanceID.nodeID); err != nil {
+			return
+		}
+		instanceIDs = append(instanceIDs, instanceID)
+	}
+	err = rows.Err()
+	return
+}
+
+func (oDb *opensvcDB) purgeInstances(ctx context.Context, id InstanceID) error {
+	const (
+		where = "WHERE `svc_id` = ? and `node_id` = ?"
+	)
+
+	var (
+		tables = []string{
+			"svcmon", "dashboard", "dashboard_events", "svcdisks", "resmon",
+			"checks_live", "comp_status", "action_queue", "resinfo", "saves",
+		}
+
+		err error
+	)
+	slog.Debug(fmt.Sprintf("purging instance %s", id))
+	for _, tableName := range tables {
+		request := fmt.Sprintf("DELETE FROM %s WHERE `svc_id` = ? and `node_id` = ?", tableName)
+		result, err1 := oDb.db.ExecContext(ctx, request, id.svcID, id.nodeID)
+		if err1 != nil {
+			err = errors.Join(err, fmt.Errorf("delete from %s: %w", tableName, err1))
+			continue
+		}
+		if rowAffected, err1 := result.RowsAffected(); err1 != nil {
+			err = errors.Join(err, fmt.Errorf("count delete from %s: %w", tableName, err1))
+		} else if rowAffected > 0 {
+			slog.Debug(fmt.Sprintf("purged table %s instance %s", tableName, id))
+			oDb.tableChange(tableName)
+		}
+	}
+	return err
+}

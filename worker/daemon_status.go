@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -97,7 +98,16 @@ type (
 		byInstanceName map[string]*DBInstance
 		byInstanceID   map[string]*DBInstance
 	}
+
+	InstanceID struct {
+		nodeID string
+		svcID  string
+	}
 )
+
+func (i *InstanceID) String() string {
+	return fmt.Sprintf("instance id: %s@%s", i.svcID, i.nodeID)
+}
 
 func (t *Worker) handleDaemonStatus(nodeID string) error {
 	defer logDurationInfo(fmt.Sprintf("handleDaemonStatus %s with tx %v", nodeID, t.WithTx), time.Now())
@@ -156,6 +166,7 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.dbFindInstance,
 		d.dbUpdateServices,
 		d.dbUpdateInstance,
+		d.dbPurgeInstance,
 	)
 	if err != nil {
 		if tx, ok := d.db.(DBTxer); ok {
@@ -655,6 +666,27 @@ func (d *daemonStatus) instanceStatusUpdate(objID string, nodeID string, iStatus
 		return fmt.Errorf("update instance status log: %w", err)
 	}
 	return nil
+}
+
+func (d *daemonStatus) dbPurgeInstance() error {
+	defer logDuration("dbPurgeInstance", time.Now())
+	var nodeIDs, objectNames []string
+	for objectName := range d.byObjectName {
+		objectNames = append(objectNames, objectName)
+	}
+	for nodeID := range d.byNodeID {
+		nodeIDs = append(nodeIDs, nodeID)
+	}
+	instanceIDs, err := d.oDb.getOrphanInstances(d.ctx, nodeIDs, objectNames)
+	if err != nil {
+		return fmt.Errorf("dbPurgeInstance: getOrphanInstances: %w", err)
+	}
+	for _, instanceID := range instanceIDs {
+		if err1 := d.oDb.purgeInstances(d.ctx, instanceID); err1 != nil {
+			err = errors.Join(err, fmt.Errorf("purge instance %v: %w", instanceID, err1))
+		}
+	}
+	return err
 }
 
 func logDuration(s string, begin time.Time) {
