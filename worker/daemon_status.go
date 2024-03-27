@@ -167,6 +167,7 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.dbUpdateServices,
 		d.dbUpdateInstance,
 		d.dbPurgeInstance,
+		d.dbPurgeService,
 	)
 	if err != nil {
 		if tx, ok := d.db.(DBTxer); ok {
@@ -686,7 +687,28 @@ func (d *daemonStatus) dbPurgeInstance() error {
 			err = errors.Join(err, fmt.Errorf("purge instance %v: %w", instanceID, err1))
 		}
 	}
-	return err
+	if err != nil {
+		return fmt.Errorf("dbPurgeInstance: %w", err)
+	}
+	return nil
+}
+
+func (d *daemonStatus) dbPurgeService() error {
+	defer logDuration("dbPurgeService", time.Now())
+	objectIDs, err := d.oDb.objectIDWithPurgeTag(d.ctx, d.clusterID)
+	if err != nil {
+		err = fmt.Errorf("dbPurgeService: objectIDWithPurgeTag: %w", err)
+		return err
+	}
+	for _, objectID := range objectIDs {
+		if err1 := d.oDb.purgeObject(d.ctx, objectID); err1 != nil {
+			err = errors.Join(err, fmt.Errorf("purge object %s: %%w", objectID, err1))
+		}
+	}
+	if err != nil {
+		return fmt.Errorf("dbPurgeService: %w", err)
+	}
+	return nil
 }
 
 func logDuration(s string, begin time.Time) {

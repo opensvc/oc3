@@ -1020,3 +1020,69 @@ func (oDb *opensvcDB) purgeInstances(ctx context.Context, id InstanceID) error {
 	}
 	return err
 }
+
+func (oDb *opensvcDB) objectIDWithPurgeTag(ctx context.Context, clusterID string) (objectIDs []string, err error) {
+	const (
+		query = "" +
+			"SELECT `svc_tags`.`svc_id`" +
+			" FROM `tags`, `services`, `svc_tags`" +
+			" LEFT JOIN `svcmon` ON `svc_tags`.`svc_id` = `svcmon`.`svc_id`" +
+			" WHERE" +
+			"   `services`.`svc_id`=`svc_tags`.`svc_id`" +
+			"   AND `services`.`cluster_id` = ?" +
+			"   AND `tags`.`tag_id` = `svc_tags`.`tag_id`" +
+			"   AND `tags`.`tag_name` = '@purge'" +
+			"   AND `svcmon`.`id` IS NULL"
+	)
+	var (
+		rows *sql.Rows
+	)
+	rows, err = oDb.db.QueryContext(ctx, query, clusterID)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var ID string
+		if err = rows.Scan(&ID); err != nil {
+			return
+		}
+		objectIDs = append(objectIDs, ID)
+	}
+	err = rows.Err()
+	return
+}
+
+func (oDb *opensvcDB) purgeObject(ctx context.Context, id string) error {
+	const (
+		where = "WHERE `svc_id` = ?"
+	)
+
+	var (
+		tables = []string{
+			"services", "svcactions", "drpservices", "svcmon_log", "resmon_log",
+			"svcmon_log_ack", "checks_settings", "comp_log", "comp_log_daily",
+			"comp_rulesets_services", "comp_modulesets_services", "log",
+			"action_queue", "svc_tags", "form_output_results", "svcmon_log_last",
+			"resmon_log_last",
+		}
+
+		err error
+	)
+	slog.Debug(fmt.Sprintf("purging object %s", id))
+	for _, tableName := range tables {
+		request := fmt.Sprintf("DELETE FROM %s WHERE `svc_id` = ?", tableName)
+		result, err1 := oDb.db.ExecContext(ctx, request, id)
+		if err1 != nil {
+			err = errors.Join(err, fmt.Errorf("delete from %s: %w", tableName, err1))
+			continue
+		}
+		if rowAffected, err1 := result.RowsAffected(); err1 != nil {
+			err = errors.Join(err, fmt.Errorf("count delete from %s: %w", tableName, err1))
+		} else if rowAffected > 0 {
+			slog.Debug(fmt.Sprintf("purged table %s object %s", tableName, id))
+			oDb.tableChange(tableName)
+		}
+	}
+	return err
+}
