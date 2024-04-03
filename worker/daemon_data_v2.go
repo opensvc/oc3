@@ -162,7 +162,7 @@ func (d *daemonDataV2) objectStatus(objectName string) *DBObjStatus {
 }
 
 func mapToA(m map[string]any, defaultValue any, k ...string) any {
-	if v, ok := mapTo(m, k...); ok {
+	if v, ok := mapTo(m, k...); ok && v != nil {
 		return v
 	} else {
 		return defaultValue
@@ -182,11 +182,11 @@ func mapToBoolS(m map[string]any, defaultValue bool, k ...string) string {
 	}
 }
 
-func mapToS(m map[string]any, defaultValue any, k ...string) string {
+func mapToS(m map[string]any, defaultValue string, k ...string) string {
 	return mapToA(m, defaultValue, k...).(string)
 }
 
-func mapToMap(m map[string]any, defaultValue any, k ...string) map[string]any {
+func mapToMap(m map[string]any, defaultValue map[string]any, k ...string) map[string]any {
 	return mapToA(m, defaultValue, k...).(map[string]any)
 }
 
