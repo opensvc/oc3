@@ -1086,3 +1086,25 @@ func (oDb *opensvcDB) purgeObject(ctx context.Context, id string) error {
 	}
 	return err
 }
+
+func (oDb *opensvcDB) tableChanges() []string {
+	var r []string
+	for s := range oDb.tChanges {
+		r = append(r, s)
+	}
+	return r
+}
+
+func (oDb *opensvcDB) updateTableModified(ctx context.Context, tableName string) error {
+	defer logDuration("updateTableModified", time.Now())
+	const (
+		query = "" +
+			"INSERT INTO `table_modified` VALUES (NULL, ?, NOW())" +
+			" ON DUPLICATE KEY UPDATE `table_modified` = NOW()"
+	)
+	_, err := oDb.db.ExecContext(ctx, query, tableName)
+	if err != nil {
+		return fmt.Errorf("updateTableModified %s: %w", tableName, err)
+	}
+	return nil
+}

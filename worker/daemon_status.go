@@ -173,6 +173,7 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.dbUpdateInstance,
 		d.dbPurgeInstance,
 		d.dbPurgeService,
+		d.pushFromTableChanges,
 	)
 	if err != nil {
 		if tx, ok := d.db.(DBTxer); ok {
@@ -719,6 +720,18 @@ func (d *daemonStatus) dbPurgeService() error {
 	}
 	if err != nil {
 		return fmt.Errorf("dbPurgeService: %w", err)
+	}
+	return nil
+}
+
+func (d *daemonStatus) pushFromTableChanges() error {
+	defer logDuration("pushFromTableChanges", time.Now())
+	for _, tableName := range d.oDb.tableChanges() {
+		slog.Debug(fmt.Sprintf("pushFromTableChanges %s", tableName))
+		if err := d.oDb.updateTableModified(d.ctx, tableName); err != nil {
+			return fmt.Errorf("pushFromTableChanges: %w", err)
+		}
+		// TODO: v2 websocket tableNAME+"_change"
 	}
 	return nil
 }
