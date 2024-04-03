@@ -213,9 +213,15 @@ func (d *daemonDataV2) InstanceStatus(objectName string, nodename string) *insta
 	instanceStatus.encap = mapToMap(a, nilMap, "encap")
 	instanceStatus.resources = mapToMap(a, nilMap, "resources")
 
-	switch mapToA(a, 0, "frozen").(type) {
+	switch v := mapToA(a, 0, "frozen").(type) {
 	case int:
-		instanceStatus.monFrozen = 0
+		if v > 0 {
+			instanceStatus.monFrozen = 1
+		}
+	case float64:
+		if v > 0 {
+			instanceStatus.monFrozen = 1
+		}
 	default:
 		instanceStatus.monFrozen = 1
 	}
