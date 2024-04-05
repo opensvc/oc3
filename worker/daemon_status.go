@@ -73,6 +73,7 @@ type (
 		redis *redis.Client
 		db    DBOperater
 		oDb   *opensvcDB
+		ev    EventPublisher
 
 		nodeID      string
 		clusterID   string
@@ -123,6 +124,7 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		ctx:    ctx,
 		redis:  t.Redis,
 		nodeID: nodeID,
+		ev:     t.Ev,
 
 		changes: make(map[string]struct{}),
 
@@ -731,7 +733,9 @@ func (d *daemonStatus) pushFromTableChanges() error {
 		if err := d.oDb.updateTableModified(d.ctx, tableName); err != nil {
 			return fmt.Errorf("pushFromTableChanges: %w", err)
 		}
-		// TODO: v2 websocket tableNAME+"_change"
+		if err := d.ev.EventPublish(tableName+"_change", nil); err != nil {
+			return fmt.Errorf("EventPublish send %s: %w", tableName, err)
+		}
 	}
 	return nil
 }
