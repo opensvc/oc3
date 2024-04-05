@@ -648,12 +648,6 @@ func (d *daemonStatus) dbUpdateInstance() error {
 		}
 	}
 
-	// TODO: purge deleted data for instance (svcmon, dashboard, dashboard_events, svcdisks, resmon, checks_live,
-	//       comp_status, action_queue, resinfo, saves)
-	//
-	// TODO: purge deleted data for service (services, svcactions, drpservices, svcmon_log, resmon_log, svcmon_log_ack,
-	//       checks_settings, comp_log, comp_log_daily, comp_rulesets_services, comp_modulesets_services, log,
-	//       action_queue, svc_tags, form_output_results, svcmon_log_last, resmon_log_last)
 	return nil
 }
 
@@ -717,7 +711,7 @@ func (d *daemonStatus) dbPurgeService() error {
 	}
 	for _, objectID := range objectIDs {
 		if err1 := d.oDb.purgeObject(d.ctx, objectID); err1 != nil {
-			err = errors.Join(err, fmt.Errorf("purge object %s: %%w", objectID, err1))
+			err = errors.Join(err, fmt.Errorf("purge object %s: %w", objectID, err1))
 		}
 	}
 	if err != nil {
