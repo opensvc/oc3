@@ -88,7 +88,7 @@ func (oDb *opensvcDB) dashboardDeleteInstanceNotUpdated(ctx context.Context, obj
 func (oDb *opensvcDB) dashboardDeleteObjectWithType(ctx context.Context, objectID, dashType string) error {
 	defer logDuration("dashboardDeleteObjectWithType: "+dashType, time.Now())
 	const (
-		query = `DELETE FROM dashboard WHERE svc_id = ? AND dash_type = '?'`
+		query = `DELETE FROM dashboard WHERE svc_id = ? AND dash_type = ?`
 	)
 	if result, err := oDb.db.ExecContext(ctx, query, objectID, dashType); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType %s: %w", dashType, err)
