@@ -26,11 +26,13 @@ type (
 	}
 
 	DBObject struct {
-		svcname     string
-		svcID       string
-		clusterID   string
-		availStatus string
-		env         string
+		svcname   string
+		svcID     string
+		clusterID string
+
+		DBObjStatus
+
+		env string
 	}
 
 	DBInstance struct {
@@ -549,8 +551,11 @@ func (d *daemonStatus) dbUpdateServices() error {
 				if d.byObjectID[objectID].availStatus != oStatus.availStatus {
 					// refresh local cache
 					slog.Debug(fmt.Sprintf("dbUpdateServices %s avail status %s -> %s", objectName, d.byObjectID[objectID].availStatus, oStatus.availStatus))
-					d.byObjectID[objectID].availStatus = oStatus.availStatus
 				}
+				d.byObjectID[objectID].availStatus = oStatus.availStatus
+				d.byObjectID[objectID].status = oStatus.status
+				d.byObjectID[objectID].placement = oStatus.placement
+				d.byObjectID[objectID].provisioned = oStatus.provisioned
 			}
 		}
 	}

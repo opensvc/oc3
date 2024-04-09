@@ -500,9 +500,9 @@ func (oDb *opensvcDB) getAppFromNodeAndCandidateApp(ctx context.Context, candida
 }
 
 func (oDb *opensvcDB) objectFromID(ctx context.Context, svcID string) (*DBObject, error) {
-	const query = "SELECT svcname, svc_id, cluster_id, svc_availstatus FROM services WHERE svc_id = ?"
+	const query = "SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_status, svc_placement, svc_provisioned FROM services WHERE svc_id = ?"
 	var o DBObject
-	err := oDb.db.QueryRowContext(ctx, query, svcID).Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus)
+	err := oDb.db.QueryRowContext(ctx, query, svcID).Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.status, &o.placement, &o.provisioned)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
