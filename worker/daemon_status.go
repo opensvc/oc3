@@ -398,7 +398,7 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 func (d *daemonStatus) dbFindServices() error {
 	defer logDuration("dbFindServices", time.Now())
 	const queryFindServicesInfo = "" +
-		"SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env" +
+		"SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env, svc_status, svc_placement, svc_provisioned" +
 		" FROM services" +
 		" WHERE cluster_id = ? AND svcname IN (?"
 	objectNames, err := d.data.objectNames()
@@ -430,8 +430,8 @@ func (d *daemonStatus) dbFindServices() error {
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
-		var o DBObject
-		if err := rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env); err != nil {
+		o := DBObject{DBObjStatus: DBObjStatus{}}
+		if err := rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env, &o.overallStatus, &o.placement, &o.provisioned); err != nil {
 			return fmt.Errorf("dbFindServices scan %s: %w", d.nodeID, err)
 		}
 		d.byObjectName[o.svcname] = &o
@@ -553,10 +553,7 @@ func (d *daemonStatus) dbUpdateServices() error {
 					slog.Debug(fmt.Sprintf("dbUpdateServices %s avail status %s -> %s", objectName, d.byObjectID[objectID].availStatus, oStatus.availStatus))
 				}
 				// refresh local cache
-				d.byObjectID[objectID].availStatus = oStatus.availStatus
-				d.byObjectID[objectID].overallStatus = oStatus.overallStatus
-				d.byObjectID[objectID].placement = oStatus.placement
-				d.byObjectID[objectID].provisioned = oStatus.provisioned
+				d.byObjectID[objectID].DBObjStatus = *oStatus
 			}
 		}
 	}
