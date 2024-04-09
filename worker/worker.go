@@ -19,6 +19,11 @@ type (
 		DB     *sql.DB
 		Queues []string
 		WithTx bool
+		Ev     EventPublisher
+	}
+
+	EventPublisher interface {
+		EventPublish(eventName string, data map[string]any) error
 	}
 )
 

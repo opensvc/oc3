@@ -37,6 +37,8 @@ func initConfig() error {
 	viper.SetDefault("redis.address", "localhost:6379")
 	viper.SetDefault("redis.password", "")
 	viper.SetDefault("feeder.tx", true)
+	viper.SetDefault("websocket.key", "magix123")
+	viper.SetDefault("websocket.url", "http://127.0.0.1:8889")
 
 	// config file
 	viper.SetConfigName("config")

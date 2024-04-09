@@ -130,17 +130,17 @@ func (d *daemonDataV2) objectStatus(objectName string) *DBObjStatus {
 	if i, ok := mapTo(d.data, "services", objectName); ok && i != nil {
 		if o, ok := i.(map[string]any); ok {
 			oStatus := &DBObjStatus{
-				availStatus: "n/a",
-				status:      "n/a",
-				placement:   "n/a",
-				frozen:      "n/a",
-				provisioned: "n/a",
+				availStatus:   "n/a",
+				overallStatus: "n/a",
+				placement:     "n/a",
+				frozen:        "n/a",
+				provisioned:   "n/a",
 			}
 			if s, ok := o["avail"].(string); ok {
 				oStatus.availStatus = s
 			}
 			if s, ok := o["overall"].(string); ok {
-				oStatus.status = s
+				oStatus.overallStatus = s
 			}
 			if s, ok := o["placement"].(string); ok {
 				oStatus.placement = s
@@ -162,7 +162,7 @@ func (d *daemonDataV2) objectStatus(objectName string) *DBObjStatus {
 }
 
 func mapToA(m map[string]any, defaultValue any, k ...string) any {
-	if v, ok := mapTo(m, k...); ok {
+	if v, ok := mapTo(m, k...); ok && v != nil {
 		return v
 	} else {
 		return defaultValue
@@ -182,11 +182,11 @@ func mapToBoolS(m map[string]any, defaultValue bool, k ...string) string {
 	}
 }
 
-func mapToS(m map[string]any, defaultValue any, k ...string) string {
+func mapToS(m map[string]any, defaultValue string, k ...string) string {
 	return mapToA(m, defaultValue, k...).(string)
 }
 
-func mapToMap(m map[string]any, defaultValue any, k ...string) map[string]any {
+func mapToMap(m map[string]any, defaultValue map[string]any, k ...string) map[string]any {
 	return mapToA(m, defaultValue, k...).(map[string]any)
 }
 
@@ -213,9 +213,15 @@ func (d *daemonDataV2) InstanceStatus(objectName string, nodename string) *insta
 	instanceStatus.encap = mapToMap(a, nilMap, "encap")
 	instanceStatus.resources = mapToMap(a, nilMap, "resources")
 
-	switch mapToA(a, 0, "frozen").(type) {
+	switch v := mapToA(a, 0, "frozen").(type) {
 	case int:
-		instanceStatus.monFrozen = 0
+		if v > 0 {
+			instanceStatus.monFrozen = 1
+		}
+	case float64:
+		if v > 0 {
+			instanceStatus.monFrozen = 1
+		}
 	default:
 		instanceStatus.monFrozen = 1
 	}
