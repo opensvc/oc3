@@ -671,7 +671,7 @@ func (d *daemonStatus) dbUpdateInstance() error {
 				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
 			}
 
-			remove = obj.availStatus == "up" && !slices.Contains([]string{"up", "n/a"}, obj.overallStatus)
+			remove = slices.Contains([]string{"up", "n/a"}, obj.availStatus) && slices.Contains([]string{"up", "n/a"}, obj.overallStatus)
 			if err := d.updateDashboardObject(obj, remove, NewDashboardObjectDegraded); err != nil {
 				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
 			}
