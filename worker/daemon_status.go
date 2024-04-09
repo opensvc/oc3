@@ -554,7 +554,7 @@ func (d *daemonStatus) dbUpdateServices() error {
 				}
 				// refresh local cache
 				d.byObjectID[objectID].availStatus = oStatus.availStatus
-				d.byObjectID[objectID].status = oStatus.status
+				d.byObjectID[objectID].overallStatus = oStatus.overallStatus
 				d.byObjectID[objectID].placement = oStatus.placement
 				d.byObjectID[objectID].provisioned = oStatus.provisioned
 			}
@@ -674,7 +674,7 @@ func (d *daemonStatus) dbUpdateInstance() error {
 				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
 			}
 
-			remove = obj.availStatus == "up" && !slices.Contains([]string{"up", "n/a"}, obj.status)
+			remove = obj.availStatus == "up" && !slices.Contains([]string{"up", "n/a"}, obj.overallStatus)
 			if err := d.updateDashboardObject(obj, remove, NewDashboardObjectDegraded); err != nil {
 				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
 			}

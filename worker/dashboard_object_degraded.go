@@ -19,11 +19,11 @@ func (d *DashboardObjectDegraded) Type() string {
 }
 
 func (d *DashboardObjectDegraded) Fmt() string {
-	return fmt.Sprintf("current overall status: %s", d.obj.status)
+	return fmt.Sprintf("current overall status: %s", d.obj.overallStatus)
 }
 
 func (d *DashboardObjectDegraded) Dict() string {
-	return fmt.Sprintf("{\"s\": \"%s\"}", d.obj.status)
+	return fmt.Sprintf("{\"s\": \"%s\"}", d.obj.overallStatus)
 }
 
 func (d *DashboardObjectDegraded) Severity() int {

@@ -114,11 +114,11 @@ type (
 	}
 
 	DBObjStatus struct {
-		availStatus string
-		status      string
-		placement   string
-		frozen      string
-		provisioned string
+		availStatus   string
+		overallStatus string
+		placement     string
+		frozen        string
+		provisioned   string
 	}
 
 	// opensvcDB implements opensvc db functions
@@ -306,7 +306,7 @@ func (oDb *opensvcDB) updateObjectStatus(ctx context.Context, svcID string, o *D
 		" , `svc_provisioned` = ?" +
 		" , `svc_status_updated` = NOW()" +
 		" WHERE `svc_id`= ? "
-	if _, err := oDb.db.ExecContext(ctx, query, o.availStatus, o.status, o.placement, o.frozen, o.provisioned, svcID); err != nil {
+	if _, err := oDb.db.ExecContext(ctx, query, o.availStatus, o.overallStatus, o.placement, o.frozen, o.provisioned, svcID); err != nil {
 		return fmt.Errorf("can't update service status %s: %w", svcID, err)
 	}
 	oDb.tableChange("services")
@@ -502,7 +502,7 @@ func (oDb *opensvcDB) getAppFromNodeAndCandidateApp(ctx context.Context, candida
 func (oDb *opensvcDB) objectFromID(ctx context.Context, svcID string) (*DBObject, error) {
 	const query = "SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_status, svc_placement, svc_provisioned FROM services WHERE svc_id = ?"
 	var o DBObject
-	err := oDb.db.QueryRowContext(ctx, query, svcID).Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.status, &o.placement, &o.provisioned)
+	err := oDb.db.QueryRowContext(ctx, query, svcID).Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.overallStatus, &o.placement, &o.provisioned)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil

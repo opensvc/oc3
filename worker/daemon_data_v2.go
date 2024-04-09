@@ -130,17 +130,17 @@ func (d *daemonDataV2) objectStatus(objectName string) *DBObjStatus {
 	if i, ok := mapTo(d.data, "services", objectName); ok && i != nil {
 		if o, ok := i.(map[string]any); ok {
 			oStatus := &DBObjStatus{
-				availStatus: "n/a",
-				status:      "n/a",
-				placement:   "n/a",
-				frozen:      "n/a",
-				provisioned: "n/a",
+				availStatus:   "n/a",
+				overallStatus: "n/a",
+				placement:     "n/a",
+				frozen:        "n/a",
+				provisioned:   "n/a",
 			}
 			if s, ok := o["avail"].(string); ok {
 				oStatus.availStatus = s
 			}
 			if s, ok := o["overall"].(string); ok {
-				oStatus.status = s
+				oStatus.overallStatus = s
 			}
 			if s, ok := o["placement"].(string); ok {
 				oStatus.placement = s
