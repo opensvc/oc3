@@ -84,16 +84,16 @@ func (oDb *opensvcDB) dashboardDeleteInstanceNotUpdated(ctx context.Context, obj
 	return nil
 }
 
-// dashboardDeleteObjectNotAvailable delete "service unavailable" alerts.
-func (oDb *opensvcDB) dashboardDeleteObjectNotAvailable(ctx context.Context, objectID string) error {
-	defer logDuration("dashboardDeleteObjectNotAvailable", time.Now())
+// dashboardDeleteObjectWithType delete from dashboard where svc_id and dash_type match
+func (oDb *opensvcDB) dashboardDeleteObjectWithType(ctx context.Context, objectID, dashType string) error {
+	defer logDuration("dashboardDeleteObjectWithType: "+dashType, time.Now())
 	const (
-		query = `DELETE FROM dashboard WHERE svc_id = ? AND dash_type = 'service unavailable'`
+		query = `DELETE FROM dashboard WHERE svc_id = ? AND dash_type = '?'`
 	)
-	if result, err := oDb.db.ExecContext(ctx, query, objectID); err != nil {
-		return fmt.Errorf("dashboardDeleteObjectNotAvailable: %w", err)
+	if result, err := oDb.db.ExecContext(ctx, query, objectID, dashType); err != nil {
+		return fmt.Errorf("dashboardDeleteObjectWithType %s: %w", dashType, err)
 	} else if count, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("dashboardDeleteObjectNotAvailable: %w", err)
+		return fmt.Errorf("dashboardDeleteObjectWithType %s: %w", dashType, err)
 	} else if count > 0 {
 		oDb.tableChange("dashboard")
 	}

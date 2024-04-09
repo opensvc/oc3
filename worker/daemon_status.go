@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -549,9 +550,9 @@ func (d *daemonStatus) dbUpdateServices() error {
 					return fmt.Errorf("dbUpdateServices can't update object %s %s: %w", objectName, objectID, err)
 				}
 				if d.byObjectID[objectID].availStatus != oStatus.availStatus {
-					// refresh local cache
 					slog.Debug(fmt.Sprintf("dbUpdateServices %s avail status %s -> %s", objectName, d.byObjectID[objectID].availStatus, oStatus.availStatus))
 				}
+				// refresh local cache
 				d.byObjectID[objectID].availStatus = oStatus.availStatus
 				d.byObjectID[objectID].status = oStatus.status
 				d.byObjectID[objectID].placement = oStatus.placement
@@ -661,50 +662,28 @@ func (d *daemonStatus) dbUpdateInstance() error {
 			//     collector v2 calls update_dash_service_not_on_primary (broken since no DEFAULT.autostart_node values)
 		}
 		if len(instanceMonitorStates) == 1 && instanceMonitorStates["idle"] {
-			if err := d.updateDashboardObjectUnavailable(obj); err != nil {
-				return fmt.Errorf("dbUpdateInstance dashboard object unavailable %s (%s): %w", objID, objectName, err)
+			var remove bool
+
+			remove = slices.Contains([]string{"up", "n/a"}, obj.availStatus)
+			if err := d.updateDashboardObject(obj, remove, NewDashboardObjectUnavailable); err != nil {
+				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
 			}
-			// TODO: update_dash_service_available_but_degraded
+
+			remove = slices.Contains([]string{"optimal", "n/a"}, obj.placement)
+			if err := d.updateDashboardObject(obj, remove, NewDashboardObjectPlacement); err != nil {
+				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
+			}
+
+			remove = obj.availStatus == "up" && !slices.Contains([]string{"up", "n/a"}, obj.status)
+			if err := d.updateDashboardObject(obj, remove, NewDashboardObjectDegraded); err != nil {
+				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
+			}
 			// TODO: update_dash_flex_instances_started
 			// TODO: update_dash_flex_cpu
 		}
 	}
 
 	return nil
-}
-
-func (d *daemonStatus) updateDashboardObjectUnavailable(obj *DBObject) error {
-	// update dashboard "service unavailable"
-	objID := obj.svcID
-	if obj.availStatus == "up" || obj.availStatus == "n/a" {
-		return d.oDb.dashboardDeleteObjectNotAvailable(d.ctx, objID)
-	}
-
-	inAckPeriod, err := d.oDb.ObjectInAckUnavailabilityPeriod(d.ctx, objID)
-	if err != nil {
-		return err
-	}
-	if inAckPeriod {
-		return d.oDb.dashboardDeleteObjectNotAvailable(d.ctx, objID)
-	} else {
-		now := time.Now()
-		dash := Dashboard{
-			ObjectID: objID,
-			Type:     "service unavailable",
-			Fmt:      fmt.Sprintf("current availability status: %s", obj.availStatus),
-			Dict:     fmt.Sprintf("{\"s\": \"%s\"}", obj.availStatus),
-			Env:      obj.env,
-			Created:  now,
-			Updated:  now,
-		}
-		switch obj.env {
-		case "PRD":
-			dash.Severity = 4
-		default:
-			dash.Severity = 3
-		}
-		return d.oDb.dashboardUpdateObject(d.ctx, &dash)
-	}
 }
 
 func (d *daemonStatus) instanceResourceUpdate(objName string, nodename string, iStatus *instanceStatus) error {
