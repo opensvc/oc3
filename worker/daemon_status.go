@@ -430,10 +430,13 @@ func (d *daemonStatus) dbFindServices() error {
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
-		o := DBObject{DBObjStatus: DBObjStatus{}}
-		if err := rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env, &o.overallStatus, &o.placement, &o.provisioned); err != nil {
+		var o DBObject
+		var placement, provisioned sql.NullString
+		if err := rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env, &o.overallStatus, &placement, &provisioned); err != nil {
 			return fmt.Errorf("dbFindServices scan %s: %w", d.nodeID, err)
 		}
+		o.placement = placement.String
+		o.provisioned = provisioned.String
 		d.byObjectName[o.svcname] = &o
 		d.byObjectID[o.svcID] = &o
 		slog.Debug(fmt.Sprintf("dbFindServices %s (%s)", o.svcname, o.svcID))
@@ -676,7 +679,7 @@ func (d *daemonStatus) dbUpdateInstance() error {
 				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
 			}
 			// TODO: update_dash_flex_instances_started
-			// TODO: update_dash_flex_cpu
+			// Dropped feature: update_dash_flex_cpu
 		}
 	}
 
