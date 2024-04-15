@@ -12,17 +12,21 @@ type (
 		Dict() string
 		Severity() int
 	}
-
-	dashboarderCreate func(o *DBObject) dashboarder
 )
 
 const (
-	dashObjFlexError = iota
+	dashObjObjectDegraded = iota
+	dashObjObjectFlexError
+	dashObjObjectPlacement
+	dashObjObjectUnavailable
 )
 
 var (
 	severity = map[int]map[string]int{
-		dashObjFlexError: map[string]int{"DEFAULT": 5, "PRD": 4},
+		dashObjObjectDegraded:    map[string]int{"DEFAULT": 2, "PRD": 3},
+		dashObjObjectFlexError:   map[string]int{"DEFAULT": 5, "PRD": 4},
+		dashObjObjectPlacement:   map[string]int{"DEFAULT": 1},
+		dashObjObjectUnavailable: map[string]int{"DEFAULT": 3, "PRD": 4},
 	}
 )
 
@@ -38,9 +42,9 @@ func severityFromEnv(dashType int, objEnv string) int {
 	}
 }
 
-func (d *daemonStatus) updateDashboardObject(obj *DBObject, doDelete bool, f dashboarderCreate) error {
+// func (d *daemonStatus) updateDashboardObject(obj *DBObject, doDelete bool, f dashboarderCreate) error {
+func (d *daemonStatus) updateDashboardObject(obj *DBObject, doDelete bool, dash dashboarder) error {
 	objID := obj.svcID
-	dash := f(obj)
 	fmtErr := func(err error) error {
 		if err != nil {
 			return fmt.Errorf("updateDashboardObject '%s': %w", dash.Type(), err)

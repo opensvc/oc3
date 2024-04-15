@@ -665,17 +665,17 @@ func (d *daemonStatus) dbUpdateInstance() error {
 			var remove bool
 
 			remove = slices.Contains([]string{"up", "n/a"}, obj.availStatus)
-			if err := d.updateDashboardObject(obj, remove, NewDashboardObjectUnavailable); err != nil {
+			if err := d.updateDashboardObject(obj, remove, &DashboardObjectUnavailable{obj: obj}); err != nil {
 				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
 			}
 
 			remove = slices.Contains([]string{"optimal", "n/a"}, obj.placement)
-			if err := d.updateDashboardObject(obj, remove, NewDashboardObjectPlacement); err != nil {
+			if err := d.updateDashboardObject(obj, remove, &DashboardObjectPlacement{obj: obj}); err != nil {
 				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
 			}
 
 			remove = slices.Contains([]string{"up", "n/a"}, obj.availStatus) && slices.Contains([]string{"up", "n/a"}, obj.overallStatus)
-			if err := d.updateDashboardObject(obj, remove, NewDashboardObjectDegraded); err != nil {
+			if err := d.updateDashboardObject(obj, remove, &DashboardObjectDegraded{obj: obj}); err != nil {
 				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
 			}
 

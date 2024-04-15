@@ -46,7 +46,7 @@ func (oDb *opensvcDB) dashboardUpdateObjectFlexStarted(ctx context.Context, obj 
 		DELETE FROM dashboard
 		WHERE svc_id = ? and dash_type = "flex error" and dash_fmt like "%instances started%"`
 
-	sev := severityFromEnv(dashObjFlexError, obj.env)
+	sev := severityFromEnv(dashObjObjectFlexError, obj.env)
 	if result, err := oDb.db.ExecContext(ctx, query, obj.svcID, sev, obj.env, obj.svcID, obj.svcID); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType flex error: %w", err)
 	} else if count, err := result.RowsAffected(); err != nil {
