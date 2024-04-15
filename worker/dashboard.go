@@ -16,6 +16,28 @@ type (
 	dashboarderCreate func(o *DBObject) dashboarder
 )
 
+const (
+	dashObjFlexError = iota
+)
+
+var (
+	severity = map[int]map[string]int{
+		dashObjFlexError: map[string]int{"DEFAULT": 5, "PRD": 4},
+	}
+)
+
+func severityFromEnv(dashType int, objEnv string) int {
+	severityForType := severity[dashType]
+	if severityForType == nil {
+		return 0
+	}
+	if v, ok := severityForType[objEnv]; ok {
+		return v
+	} else {
+		return severityForType["DEFAULT"]
+	}
+}
+
 func (d *daemonStatus) updateDashboardObject(obj *DBObject, doDelete bool, f dashboarderCreate) error {
 	objID := obj.svcID
 	dash := f(obj)

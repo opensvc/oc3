@@ -678,7 +678,10 @@ func (d *daemonStatus) dbUpdateInstance() error {
 			if err := d.updateDashboardObject(obj, remove, NewDashboardObjectDegraded); err != nil {
 				return fmt.Errorf("dbUpdateInstance on %s (%s): %w", objID, objectName, err)
 			}
-			// TODO: update_dash_flex_instances_started
+
+			if err := d.oDb.dashboardUpdateObjectFlexStarted(d.ctx, obj); err != nil {
+				return fmt.Errorf("dbUpdateInstance %s (%s): %w", objID, objectName, err)
+			}
 			// Dropped feature: update_dash_flex_cpu
 		}
 	}
