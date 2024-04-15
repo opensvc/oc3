@@ -319,54 +319,25 @@ func (d *daemonStatus) dbCheckClusters() error {
 	return nil
 }
 
-func (d *daemonStatus) dbFindNodes() error {
+func (d *daemonStatus) dbFindNodes() (err error) {
 	defer logDuration("dbFindNodes", time.Now())
-	const queryFindClusterNodesInfo = `SELECT nodename, node_id, cluster_id, node_env, app, hv, node_frozen,
-			loc_country, loc_city, loc_addr, loc_building, loc_floor, loc_room, loc_rack, loc_zip,
-		    enclosure, enclosureslot
-		FROM nodes
-		WHERE cluster_id = ? AND nodename IN (?`
-	nodes, err := d.data.nodeNames()
+	var (
+		nodes   []string
+		dbNodes []*DBNode
+	)
+	nodes, err = d.data.nodeNames()
 	if err != nil {
 		return fmt.Errorf("getData %s: %w", d.nodeID, err)
 	}
-	l := make([]string, 0)
-	values := []any{d.clusterID}
-	for _, nodename := range nodes {
-		l = append(l, nodename)
-		values = append(values, nodename)
+	if len(nodes) == 0 {
+		return fmt.Errorf("dbFindNodes: empty nodes for %s", d.nodeID)
 	}
-	if len(l) == 0 {
-		return fmt.Errorf("getData: empty nodes for %s", d.nodeID)
+	if dbNodes, err = d.oDb.findClusterNodesWithNodenames(d.ctx, d.clusterID, nodes); err != nil {
+		return fmt.Errorf("dbFindNodes %s [%s]: %w", nodes, d.nodeID, err)
 	}
-	query := queryFindClusterNodesInfo
-	for i := 1; i < len(l); i++ {
-		query += ", ?"
-	}
-	query += ")"
-
-	rows, err := d.db.QueryContext(d.ctx, query, values...)
-	if err != nil {
-		return fmt.Errorf("dbFindNodes FindClusterNodesInfo %s [%s]: %w", d.nodeID, nodes, err)
-	}
-	if rows == nil {
-		return fmt.Errorf("dbFindNodes query returns nil rows %s", d.nodeID)
-	}
-	defer func() { _ = rows.Close() }()
-	for rows.Next() {
-		n := &DBNode{}
-		err := rows.Scan(
-			&n.nodename, &n.nodeID, &n.clusterID, &n.nodeEnv, &n.app, &n.hv, &n.frozen,
-			&n.locCountry, &n.locCity, &n.locAddr, n.locBuilding, n.locFloor, n.locRoom, &n.locRack, n.locZip,
-			&n.enclosure, &n.enclosureSlot)
-		if err != nil {
-			return fmt.Errorf("dbFindNodes FindClusterNodesInfo scan %s: %w", d.nodeID, err)
-		}
+	for _, n := range dbNodes {
 		d.byNodeID[n.nodeID] = n
 		d.byNodename[n.nodename] = n
-	}
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("dbFindNodes FindClusterNodesInfo %s: %w", d.nodeID, err)
 	}
 	callerNode, ok := d.byNodeID[d.nodeID]
 	if !ok {
