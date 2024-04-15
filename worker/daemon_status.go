@@ -18,12 +18,23 @@ import (
 
 type (
 	DBNode struct {
-		nodename  string
-		frozen    string
-		nodeID    string
-		clusterID string
-		app       string
-		nodeEnv   string
+		nodename      string
+		frozen        string
+		nodeID        string
+		clusterID     string
+		app           string
+		nodeEnv       string
+		locAddr       string
+		locCountry    string
+		locCity       string
+		locZip        string
+		locBuilding   string
+		locFloor      string
+		locRoom       string
+		locRack       string
+		enclosureSlot string
+		enclosure     string
+		hv            string
 	}
 
 	DBObject struct {
@@ -310,10 +321,11 @@ func (d *daemonStatus) dbCheckClusters() error {
 
 func (d *daemonStatus) dbFindNodes() error {
 	defer logDuration("dbFindNodes", time.Now())
-	const queryFindClusterNodesInfo = "" +
-		"SELECT nodename, node_id, node_frozen, cluster_id, app, node_env" +
-		" FROM nodes" +
-		" WHERE cluster_id = ? AND nodename IN (?"
+	const queryFindClusterNodesInfo = `SELECT nodename, node_id, cluster_id, node_env, app, hv, node_frozen,
+			loc_country, loc_city, loc_addr, loc_building, loc_floor, loc_room, loc_rack, loc_zip,
+		    enclosure, enclosureslot
+		FROM nodes
+		WHERE cluster_id = ? AND nodename IN (?`
 	nodes, err := d.data.nodeNames()
 	if err != nil {
 		return fmt.Errorf("getData %s: %w", d.nodeID, err)
@@ -342,20 +354,16 @@ func (d *daemonStatus) dbFindNodes() error {
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
-		var nodename, nodeID, frozen, clusterID, app, nodeEnv string
-		if err := rows.Scan(&nodename, &nodeID, &frozen, &clusterID, &app, &nodeEnv); err != nil {
+		n := &DBNode{}
+		err := rows.Scan(
+			&n.nodename, &n.nodeID, &n.clusterID, &n.nodeEnv, &n.app, &n.hv, &n.frozen,
+			&n.locCountry, &n.locCity, &n.locAddr, n.locBuilding, n.locFloor, n.locRoom, &n.locRack, n.locZip,
+			&n.enclosure, &n.enclosureSlot)
+		if err != nil {
 			return fmt.Errorf("dbFindNodes FindClusterNodesInfo scan %s: %w", d.nodeID, err)
 		}
-		found := &DBNode{
-			nodename:  nodename,
-			frozen:    frozen,
-			nodeID:    nodeID,
-			clusterID: clusterID,
-			app:       app,
-			nodeEnv:   nodeEnv,
-		}
-		d.byNodeID[nodeID] = found
-		d.byNodename[nodename] = found
+		d.byNodeID[n.nodeID] = n
+		d.byNodename[n.nodename] = n
 	}
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("dbFindNodes FindClusterNodesInfo %s: %w", d.nodeID, err)
