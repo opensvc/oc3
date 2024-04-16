@@ -589,6 +589,15 @@ func (d *daemonStatus) dbUpdateInstance() error {
 				} else {
 					resourceObsoleteAt := time.Now()
 					for _, containerStatus := range iStatus.Containers() {
+						if containerStatus.fromOutsideStatus == "up" {
+							slog.Debug(fmt.Sprintf("dbUpdateInstance updateContainerNodeFromParent %s@%s encap hostname %s",
+								objID, nodeID, containerStatus.monVmName))
+							if err := d.oDb.updateContainerNodeFromParent(d.ctx, containerStatus.monVmName, obj.app, node); err != nil {
+								return fmt.Errorf("dbUpdateInstance updateContainerNodeFromParent %s@%s encap hostname %s: %w",
+									objID, nodeID, containerStatus.monVmName, err)
+							}
+						}
+
 						// TODO: update_container_node_fields
 						if err := d.instanceStatusUpdate(objID, nodeID, containerStatus); err != nil {
 							return fmt.Errorf("dbUpdateInstance update container %s %s@%s (%s@%s): %w",

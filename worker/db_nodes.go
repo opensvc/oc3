@@ -73,3 +73,29 @@ func (oDb *opensvcDB) findClusterNodesWithNodenames(ctx context.Context, cluster
 	}
 	return
 }
+
+func (oDb *opensvcDB) updateContainerNodeFromParent(ctx context.Context, cName, cApp string, pn *DBNode) error {
+	const queryUpdate = `UPDATE nodes
+    	SET updated = NOW(),
+    	    loc_addr = ?, loc_country = ?, loc_zip = ?, loc_city = ?, loc_building = ?,
+    	    loc_floor = ?, loc_room = ?, loc_rack = ?, hv = ?, enclosure = ?, enclosureslot = ?
+    	`
+	const queryWhere1 = ` WHERE nodename = ? AND app in (?, ?)`
+
+	result, err := oDb.db.ExecContext(ctx, queryUpdate+queryWhere1,
+		pn.locAddr, pn.locCountry, pn.locZip, pn.locCity, pn.locBuilding,
+		pn.locFloor, pn.locRoom, pn.locRack, pn.hv, pn.enclosure, pn.enclosureSlot,
+		cName, pn.app, cApp)
+	if err != nil {
+		return err
+	}
+	if count, err := result.RowsAffected(); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.tableChange("nodes")
+		return nil
+	} else {
+		// TODO queryWhere2 = ` WHERE nodename = ? AND app in (node_responsibles_apps(pn)`
+	}
+	return nil
+}
