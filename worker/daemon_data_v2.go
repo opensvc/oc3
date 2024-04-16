@@ -294,7 +294,7 @@ func (i *instanceStatus) Container(id string) *instanceStatus {
 		svcID:  i.svcID,
 	}
 	if vmName, ok := encap["hostname"].(string); ok {
-		dbI.monVmType = vmName
+		dbI.monVmName = vmName
 	}
 	if containerType := strings.SplitN(mapToS(i.resources, "", id, "type"), ".", 1); len(containerType) > 1 {
 		dbI.monVmType = containerType[1]
