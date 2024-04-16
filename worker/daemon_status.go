@@ -45,6 +45,7 @@ type (
 		DBObjStatus
 
 		env string
+		app string
 	}
 
 	DBInstance struct {
@@ -376,52 +377,24 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 
 func (d *daemonStatus) dbFindServices() error {
 	defer logDuration("dbFindServices", time.Now())
-	const queryFindServicesInfo = "" +
-		"SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env, svc_status, svc_placement, svc_provisioned" +
-		" FROM services" +
-		" WHERE cluster_id = ? AND svcname IN (?"
+	var (
+		objects []*DBObject
+	)
 	objectNames, err := d.data.objectNames()
 	if err != nil {
 		return fmt.Errorf("dbFindServices %s: %w", d.nodeID, err)
 	}
-	l := make([]string, 0)
-	values := []any{d.clusterID}
-	for _, objectName := range objectNames {
-		l = append(l, objectName)
-		values = append(values, objectName)
-	}
-	if len(l) == 0 {
+	if len(objectNames) == 0 {
 		slog.Info(fmt.Sprintf("dbFindServices: no services for %s", d.nodeID))
 		return nil
 	}
-	query := queryFindServicesInfo
-	for i := 1; i < len(l); i++ {
-		query += ", ?"
+	if objects, err = d.oDb.findClusterObjectsWithObjectNames(d.ctx, d.clusterID, objectNames); err != nil {
+		return fmt.Errorf("dbFindServices query nodeID: %s clusterID: %s [%s]: %w", d.nodeID, d.clusterID, objectNames, err)
 	}
-	query += ")"
-
-	rows, err := d.db.QueryContext(d.ctx, query, values...)
-	if err != nil {
-		return fmt.Errorf("dbFindServices query %s cluster_id: %s [%s]: %w", d.nodeID, d.clusterID, l, err)
-	}
-	if rows == nil {
-		return fmt.Errorf("dbFindServices query returns nil rows %s", d.nodeID)
-	}
-	defer func() { _ = rows.Close() }()
-	for rows.Next() {
-		var o DBObject
-		var placement, provisioned sql.NullString
-		if err := rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env, &o.overallStatus, &placement, &provisioned); err != nil {
-			return fmt.Errorf("dbFindServices scan %s: %w", d.nodeID, err)
-		}
-		o.placement = placement.String
-		o.provisioned = provisioned.String
-		d.byObjectName[o.svcname] = &o
-		d.byObjectID[o.svcID] = &o
+	for _, o := range objects {
+		d.byObjectName[o.svcname] = o
+		d.byObjectID[o.svcID] = o
 		slog.Debug(fmt.Sprintf("dbFindServices %s (%s)", o.svcname, o.svcID))
-	}
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("dbFindServices FindClusterNodesInfo %s: %w", d.nodeID, err)
 	}
 	return nil
 }
