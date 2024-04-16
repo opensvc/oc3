@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -95,7 +96,35 @@ func (oDb *opensvcDB) updateContainerNodeFromParent(ctx context.Context, cName, 
 		oDb.tableChange("nodes")
 		return nil
 	} else {
-		// TODO queryWhere2 = ` WHERE nodename = ? AND app in (node_responsibles_apps(pn)`
+		apps, err := oDb.responsibleAppsForNode(ctx, pn.nodeID)
+		if err != nil {
+			return err
+		}
+		if len(apps) == 0 {
+			slog.Debug(fmt.Sprintf("findClusterNodesWithNodenames responsibleAppsForNode hostname %s on %s no apps",
+				cName, pn.nodeID))
+			return nil
+		}
+		var queryWhere2 = ` WHERE nodename = ? AND app in (?`
+		var args = []any{
+			pn.locAddr, pn.locCountry, pn.locZip, pn.locCity, pn.locBuilding,
+			pn.locFloor, pn.locRoom, pn.locRack, pn.hv, pn.enclosure, pn.enclosureSlot,
+			cName, apps[0]}
+		for i := 1; i < len(apps); i++ {
+			queryWhere2 += `, ?`
+			args = append(args, apps[i])
+		}
+		queryWhere2 += `)`
+		result, err := oDb.db.ExecContext(ctx, queryUpdate+queryWhere2, args...)
+		if err != nil {
+			return err
+		}
+		if count, err := result.RowsAffected(); err != nil {
+			return err
+		} else if count > 0 {
+			oDb.tableChange("nodes")
+			return nil
+		}
 	}
 	return nil
 }
