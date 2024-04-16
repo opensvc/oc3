@@ -51,7 +51,7 @@ type (
 	DBInstance struct {
 		svcID  string
 		nodeID string
-		Frozen int
+		Frozen int64
 	}
 
 	dataLister interface {
@@ -429,9 +429,11 @@ func (d *daemonStatus) dbFindInstance() error {
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var o DBInstance
-		if err := rows.Scan(&o.svcID, &o.nodeID, &o.Frozen); err != nil {
+		var frozen sql.NullInt64
+		if err := rows.Scan(&o.svcID, &o.nodeID, &frozen); err != nil {
 			return fmt.Errorf("dbFindInstance scan %s: %w", d.nodeID, err)
 		}
+		o.Frozen = frozen.Int64
 		if n, ok := d.byNodeID[o.nodeID]; ok {
 			// Only pickup instances from known nodes
 			if s, ok := d.byObjectID[o.svcID]; ok {
