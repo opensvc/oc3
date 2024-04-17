@@ -27,7 +27,10 @@ func initConfig() error {
 	viper.AutomaticEnv()
 
 	// defaults
-	viper.SetDefault("listen", "127.0.0.1:8080")
+	viper.SetDefault("listener.addr", "127.0.0.1:8080")
+	viper.SetDefault("listener.pprof.enable", false)
+	viper.SetDefault("listener.metrics.enable", false)
+	viper.SetDefault("listener.ui.enable", false)
 	viper.SetDefault("db.username", "opensvc")
 	viper.SetDefault("db.host", "127.0.0.1")
 	viper.SetDefault("db.port", "3306")
