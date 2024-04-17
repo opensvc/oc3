@@ -17,6 +17,10 @@ type (
 
 		encap     map[string]any
 		resources map[string]any
+
+		// fromOutsideStatus is the resource status of self from the parent hypervisor:
+		//    nodes.<parent-hypervisor>.services.status.<svc>.resources.<containerID>.status
+		fromOutsideStatus string
 	}
 )
 
@@ -290,7 +294,7 @@ func (i *instanceStatus) Container(id string) *instanceStatus {
 		svcID:  i.svcID,
 	}
 	if vmName, ok := encap["hostname"].(string); ok {
-		dbI.monVmType = vmName
+		dbI.monVmName = vmName
 	}
 	if containerType := strings.SplitN(mapToS(i.resources, "", id, "type"), ".", 1); len(containerType) > 1 {
 		dbI.monVmType = containerType[1]
@@ -344,7 +348,8 @@ func (i *instanceStatus) Container(id string) *instanceStatus {
 
 	var nilMap map[string]any
 	return &instanceStatus{
-		DBInstanceStatus: dbI,
-		resources:        mapToMap(encap, nilMap, "resources"),
+		DBInstanceStatus:  dbI,
+		resources:         mapToMap(encap, nilMap, "resources"),
+		fromOutsideStatus: mapToS(i.resources, "", id, "status"),
 	}
 }

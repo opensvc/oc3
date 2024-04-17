@@ -10,16 +10,12 @@ type (
 	}
 )
 
-func NewDashboardObjectDegraded(o *DBObject) dashboarder {
-	return &DashboardObjectDegraded{obj: o}
-}
-
 func (d *DashboardObjectDegraded) Type() string {
 	return "service available but degraded"
 }
 
 func (d *DashboardObjectDegraded) Fmt() string {
-	return fmt.Sprintf("current overall status: %s", d.obj.overallStatus)
+	return "current overall status: %(s)s"
 }
 
 func (d *DashboardObjectDegraded) Dict() string {
@@ -27,10 +23,5 @@ func (d *DashboardObjectDegraded) Dict() string {
 }
 
 func (d *DashboardObjectDegraded) Severity() int {
-	switch d.obj.env {
-	case "PRD":
-		return 3
-	default:
-		return 2
-	}
+	return severityFromEnv(dashObjObjectDegraded, d.obj.env)
 }
