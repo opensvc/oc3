@@ -181,32 +181,42 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.oDb = &opensvcDB{db: t.DB, tChanges: make(map[string]struct{})}
 	}
 
-	chain := func(f ...func() error) error {
-		for _, f := range f {
-			err := f()
+	type operation struct {
+		name string
+		do   func() error
+	}
+
+	chain := func(ops ...operation) error {
+		for _, op := range ops {
+			begin := time.Now()
+			err := op.do()
 			if err != nil {
 				return err
 			}
+			duration := time.Now().Sub(begin)
+			promDaemonStatusSubOperation.With(prometheus.Labels{"subOperation": op.name}).Observe(duration.Seconds())
+			slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", op.name, duration))
 		}
 		return nil
 	}
 
-	err := chain(d.dropPending,
-		d.getChanges,
-		d.getData,
-		d.dbCheckClusterIDForNodeID,
-		d.dbCheckClusters,
-		d.dbFindNodes,
-		d.dataToNodeFrozen,
-		d.dbFindServices,
-		d.dbCreateServices,
-		d.dbFindInstances,
-		d.dbUpdateServices,
-		d.dbUpdateInstances,
-		d.dbPurgeInstances,
-		d.dbPurgeServices,
-		d.pushFromTableChanges,
-	)
+	err := chain([]operation{
+		{"dropPending", d.dropPending},
+		{"getChanges", d.getChanges},
+		{"getData", d.getData},
+		{"dbCheckClusterIDForNodeID", d.dbCheckClusterIDForNodeID},
+		{"dbCheckClusters", d.dbCheckClusters},
+		{"dbFindNodes", d.dbFindNodes},
+		{"dataToNodeFrozen", d.dataToNodeFrozen},
+		{"dbFindServices", d.dbFindServices},
+		{"dbCreateServices", d.dbCreateServices},
+		{"dbFindInstances", d.dbFindInstances},
+		{"dbUpdateServices", d.dbUpdateServices},
+		{"dbUpdateInstances", d.dbUpdateInstances},
+		{"dbPurgeInstances", d.dbPurgeInstances},
+		{"dbPurgeServices", d.dbPurgeServices},
+		{"pushFromTableChanges", d.pushFromTableChanges},
+	}...)
 	if err != nil {
 		if tx, ok := d.db.(DBTxer); ok {
 			slog.Debug("handleDaemonStatus rollback on error")
@@ -245,8 +255,6 @@ func (d *daemonStatus) dropPending() error {
 }
 
 func (d *daemonStatus) getChanges() error {
-	defer daemonStatusHistoObserve("getChanges", time.Now())
-	defer logDuration("getChanges", time.Now())
 	s, err := d.redis.HGet(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Result()
 	if err == nil {
 		// TODO: fix possible race:
@@ -271,8 +279,6 @@ func (d *daemonStatus) getChanges() error {
 }
 
 func (d *daemonStatus) getData() error {
-	defer daemonStatusHistoObserve("getData", time.Now())
-	defer logDuration("getData", time.Now())
 	var (
 		err  error
 		data map[string]any
@@ -295,8 +301,6 @@ func (d *daemonStatus) getData() error {
 }
 
 func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
-	defer daemonStatusHistoObserve("dbCheckClusterIDForNodeID", time.Now())
-	defer logDuration("dbCheckClusterIDForNodeID", time.Now())
 	const querySearch = "SELECT cluster_id FROM nodes WHERE node_id = ? and cluster_id = ?"
 	const queryUpdate = "UPDATE nodes SET cluster_id = ? WHERE node_id = ?"
 	row := d.db.QueryRowContext(d.ctx, querySearch, d.nodeID, d.clusterID)
@@ -317,9 +321,6 @@ func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
 }
 
 func (d *daemonStatus) dbCheckClusters() error {
-	defer daemonStatusHistoObserve("dbCheckClusters", time.Now())
-	defer logDuration("dbCheckClusters", time.Now())
-
 	// TODO: verify if still needed, we can't assert things here
 	// +--------------+--------------+------+-----+---------+----------------+
 	// | Field        | Type         | Null | Key | Default | Extra          |
@@ -340,8 +341,6 @@ func (d *daemonStatus) dbCheckClusters() error {
 }
 
 func (d *daemonStatus) dbFindNodes() (err error) {
-	defer daemonStatusHistoObserve("dbFindNodes", time.Now())
-	defer logDuration("dbFindNodes", time.Now())
 	var (
 		nodes   []string
 		dbNodes []*DBNode
@@ -376,8 +375,6 @@ func (d *daemonStatus) dbFindNodes() (err error) {
 }
 
 func (d *daemonStatus) dataToNodeFrozen() error {
-	defer daemonStatusHistoObserve("dataToNodeFrozen", time.Now())
-	defer logDuration("dataToNodeFrozen", time.Now())
 	for nodeID, dbNode := range d.byNodeID {
 		nodename := dbNode.nodename
 		frozen, err := d.data.nodeFrozen(nodename)
@@ -397,8 +394,6 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 }
 
 func (d *daemonStatus) dbFindServices() error {
-	defer daemonStatusHistoObserve("dbFindServices", time.Now())
-	defer logDuration("dbFindServices", time.Now())
 	var (
 		objects []*DBObject
 	)
@@ -422,8 +417,6 @@ func (d *daemonStatus) dbFindServices() error {
 }
 
 func (d *daemonStatus) dbFindInstances() error {
-	defer daemonStatusHistoObserve("dbFindInstances", time.Now())
-	defer logDuration("dbFindInstances", time.Now())
 	const querySelect = "" +
 		"SELECT svc_id, node_id, mon_frozen" +
 		" FROM svcmon" +
@@ -476,8 +469,6 @@ func (d *daemonStatus) dbFindInstances() error {
 
 // dbCreateServices creates missing services
 func (d *daemonStatus) dbCreateServices() error {
-	defer daemonStatusHistoObserve("dbCreateServices", time.Now())
-	defer logDuration("dbCreateServices", time.Now())
 	objectNames, err := d.data.objectNames()
 	if err != nil {
 		return fmt.Errorf("dbCreateServices: %w", err)
@@ -508,8 +499,6 @@ func (d *daemonStatus) dbCreateServices() error {
 }
 
 func (d *daemonStatus) dbUpdateServices() error {
-	defer daemonStatusHistoObserve("dbUpdateServices", time.Now())
-	defer logDuration("dbUpdateServices", time.Now())
 	for objectID, obj := range d.byObjectID {
 		objectName := obj.svcname
 		_, isChanged := d.changes[objectName]
@@ -543,8 +532,6 @@ func (d *daemonStatus) dbUpdateServices() error {
 }
 
 func (d *daemonStatus) dbUpdateInstances() error {
-	defer daemonStatusHistoObserve("dbUpdateInstances", time.Now())
-	defer logDuration("dbUpdateInstances", time.Now())
 	for objectName, obj := range d.byObjectName {
 		beginObj := time.Now()
 		objID := obj.svcID
@@ -711,8 +698,6 @@ func (d *daemonStatus) instanceStatusUpdate(objName string, nodename string, iSt
 }
 
 func (d *daemonStatus) dbPurgeInstances() error {
-	defer daemonStatusHistoObserve("dbPurgeInstances", time.Now())
-	defer logDuration("dbPurgeInstances", time.Now())
 	var nodeIDs, objectNames []string
 	for objectName := range d.byObjectName {
 		objectNames = append(objectNames, objectName)
@@ -736,8 +721,6 @@ func (d *daemonStatus) dbPurgeInstances() error {
 }
 
 func (d *daemonStatus) dbPurgeServices() error {
-	defer daemonStatusHistoObserve("dbPurgeServices", time.Now())
-	defer logDuration("dbPurgeServices", time.Now())
 	objectIDs, err := d.oDb.objectIDWithPurgeTag(d.ctx, d.clusterID)
 	if err != nil {
 		err = fmt.Errorf("dbPurgeServices: objectIDWithPurgeTag: %w", err)
@@ -755,8 +738,6 @@ func (d *daemonStatus) dbPurgeServices() error {
 }
 
 func (d *daemonStatus) pushFromTableChanges() error {
-	defer daemonStatusHistoObserve("pushFromTableChanges", time.Now())
-	defer logDuration("pushFromTableChanges", time.Now())
 	for _, tableName := range d.oDb.tableChanges() {
 		slog.Debug(fmt.Sprintf("pushFromTableChanges %s", tableName))
 		if err := d.oDb.updateTableModified(d.ctx, tableName); err != nil {
