@@ -32,7 +32,7 @@ type (
 var (
 	promCounter = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "worker_processed_ops_total",
+			Name: "oc3_worker_processed_ops_total",
 			Help: "The total number of worker processed operations",
 		},
 		[]string{"operation", "status"},
