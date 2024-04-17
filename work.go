@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/oc2websocket"
@@ -44,6 +45,14 @@ func work(queues []string) error {
 				return err
 			}
 		}
+	}
+	if viper.GetBool("worker.metrics.enable") {
+		addr := viper.GetString("worker.metrics.addr")
+		slog.Info(fmt.Sprintf("metrics listener on %s /metrics", addr))
+		http.Handle("/metrics", promhttp.Handler())
+		go func() {
+			_ = http.ListenAndServe(addr, nil)
+		}()
 	}
 	return w.Run()
 }

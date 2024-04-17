@@ -45,6 +45,8 @@ func initConfig() error {
 	viper.SetDefault("worker.pprof.uxsocket", "/var/run/oc3-worker.soc")
 	viper.SetDefault("worker.pprof.addr", "127.0.0.1:9999")
 	viper.SetDefault("worker.pprof.enable", false)
+	viper.SetDefault("worker.metrics.enable", false)
+	viper.SetDefault("worker.metrics.addr", "127.0.0.1:2112")
 
 	// config file
 	viper.SetConfigName("config")
