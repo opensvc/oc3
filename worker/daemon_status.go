@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/opensvc/oc3/cache"
 )
@@ -123,6 +125,17 @@ type (
 	}
 )
 
+var (
+	promDaemonStatusSubOperation = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "oc3_worker_processed_sub_operations_total",
+			Help:    "The total number of worker sub operations",
+			Buckets: prometheus.LinearBuckets(0, 0.05, 61),
+		},
+		[]string{"subOperation"},
+	)
+)
+
 func (n *DBNode) String() string {
 	return fmt.Sprintf("node: {nodename: %s, node_id: %s, cluster_id: %s, app: %s}", n.nodename, n.nodeID, n.clusterID, n.app)
 }
@@ -132,6 +145,7 @@ func (i *InstanceID) String() string {
 }
 
 func (t *Worker) handleDaemonStatus(nodeID string) error {
+	defer daemonStatusHistoObserve("main", time.Now())
 	defer logDurationInfo(fmt.Sprintf("handleDaemonStatus %s with tx %v", nodeID, t.WithTx), time.Now())
 	slog.Info(fmt.Sprintf("handleDaemonStatus starting for node_id %s", nodeID))
 	ctx := context.Background()
@@ -231,6 +245,7 @@ func (d *daemonStatus) dropPending() error {
 }
 
 func (d *daemonStatus) getChanges() error {
+	defer daemonStatusHistoObserve("getChanges", time.Now())
 	defer logDuration("getChanges", time.Now())
 	s, err := d.redis.HGet(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Result()
 	if err == nil {
@@ -256,6 +271,7 @@ func (d *daemonStatus) getChanges() error {
 }
 
 func (d *daemonStatus) getData() error {
+	defer daemonStatusHistoObserve("getData", time.Now())
 	defer logDuration("getData", time.Now())
 	var (
 		err  error
@@ -279,6 +295,7 @@ func (d *daemonStatus) getData() error {
 }
 
 func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
+	defer daemonStatusHistoObserve("dbCheckClusterIDForNodeID", time.Now())
 	defer logDuration("dbCheckClusterIDForNodeID", time.Now())
 	const querySearch = "SELECT cluster_id FROM nodes WHERE node_id = ? and cluster_id = ?"
 	const queryUpdate = "UPDATE nodes SET cluster_id = ? WHERE node_id = ?"
@@ -300,7 +317,9 @@ func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
 }
 
 func (d *daemonStatus) dbCheckClusters() error {
+	defer daemonStatusHistoObserve("dbCheckClusters", time.Now())
 	defer logDuration("dbCheckClusters", time.Now())
+
 	// TODO: verify if still needed, we can't assert things here
 	// +--------------+--------------+------+-----+---------+----------------+
 	// | Field        | Type         | Null | Key | Default | Extra          |
@@ -321,6 +340,7 @@ func (d *daemonStatus) dbCheckClusters() error {
 }
 
 func (d *daemonStatus) dbFindNodes() (err error) {
+	defer daemonStatusHistoObserve("dbFindNodes", time.Now())
 	defer logDuration("dbFindNodes", time.Now())
 	var (
 		nodes   []string
@@ -356,6 +376,7 @@ func (d *daemonStatus) dbFindNodes() (err error) {
 }
 
 func (d *daemonStatus) dataToNodeFrozen() error {
+	defer daemonStatusHistoObserve("dataToNodeFrozen", time.Now())
 	defer logDuration("dataToNodeFrozen", time.Now())
 	for nodeID, dbNode := range d.byNodeID {
 		nodename := dbNode.nodename
@@ -376,6 +397,7 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 }
 
 func (d *daemonStatus) dbFindServices() error {
+	defer daemonStatusHistoObserve("dbFindServices", time.Now())
 	defer logDuration("dbFindServices", time.Now())
 	var (
 		objects []*DBObject
@@ -400,6 +422,7 @@ func (d *daemonStatus) dbFindServices() error {
 }
 
 func (d *daemonStatus) dbFindInstances() error {
+	defer daemonStatusHistoObserve("dbFindInstances", time.Now())
 	defer logDuration("dbFindInstances", time.Now())
 	const querySelect = "" +
 		"SELECT svc_id, node_id, mon_frozen" +
@@ -453,6 +476,7 @@ func (d *daemonStatus) dbFindInstances() error {
 
 // dbCreateServices creates missing services
 func (d *daemonStatus) dbCreateServices() error {
+	defer daemonStatusHistoObserve("dbCreateServices", time.Now())
 	defer logDuration("dbCreateServices", time.Now())
 	objectNames, err := d.data.objectNames()
 	if err != nil {
@@ -484,6 +508,7 @@ func (d *daemonStatus) dbCreateServices() error {
 }
 
 func (d *daemonStatus) dbUpdateServices() error {
+	defer daemonStatusHistoObserve("dbUpdateServices", time.Now())
 	defer logDuration("dbUpdateServices", time.Now())
 	for objectID, obj := range d.byObjectID {
 		objectName := obj.svcname
@@ -518,6 +543,7 @@ func (d *daemonStatus) dbUpdateServices() error {
 }
 
 func (d *daemonStatus) dbUpdateInstances() error {
+	defer daemonStatusHistoObserve("dbUpdateInstances", time.Now())
 	defer logDuration("dbUpdateInstances", time.Now())
 	for objectName, obj := range d.byObjectName {
 		beginObj := time.Now()
@@ -685,6 +711,7 @@ func (d *daemonStatus) instanceStatusUpdate(objName string, nodename string, iSt
 }
 
 func (d *daemonStatus) dbPurgeInstances() error {
+	defer daemonStatusHistoObserve("dbPurgeInstances", time.Now())
 	defer logDuration("dbPurgeInstances", time.Now())
 	var nodeIDs, objectNames []string
 	for objectName := range d.byObjectName {
@@ -709,6 +736,7 @@ func (d *daemonStatus) dbPurgeInstances() error {
 }
 
 func (d *daemonStatus) dbPurgeServices() error {
+	defer daemonStatusHistoObserve("dbPurgeServices", time.Now())
 	defer logDuration("dbPurgeServices", time.Now())
 	objectIDs, err := d.oDb.objectIDWithPurgeTag(d.ctx, d.clusterID)
 	if err != nil {
@@ -727,6 +755,7 @@ func (d *daemonStatus) dbPurgeServices() error {
 }
 
 func (d *daemonStatus) pushFromTableChanges() error {
+	defer daemonStatusHistoObserve("pushFromTableChanges", time.Now())
 	defer logDuration("pushFromTableChanges", time.Now())
 	for _, tableName := range d.oDb.tableChanges() {
 		slog.Debug(fmt.Sprintf("pushFromTableChanges %s", tableName))
@@ -738,6 +767,10 @@ func (d *daemonStatus) pushFromTableChanges() error {
 		}
 	}
 	return nil
+}
+
+func daemonStatusHistoObserve(s string, begin time.Time) {
+	promDaemonStatusSubOperation.With(prometheus.Labels{"subOperation": s}).Observe(time.Now().Sub(begin).Seconds())
 }
 
 func logDuration(s string, begin time.Time) {
