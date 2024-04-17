@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/opensvc/oc3/cache"
 )
@@ -27,6 +29,16 @@ type (
 	}
 )
 
+var (
+	promCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "worker_processed_ops_total",
+			Help: "The total number of worker processed operations",
+		},
+		[]string{"operation", "status"},
+	)
+)
+
 func (t *Worker) Run() error {
 	slog.Info(fmt.Sprintf("work with queues: %s", strings.Join(t.Queues, ", ")))
 	for {
@@ -42,21 +54,27 @@ func (t *Worker) Run() error {
 			continue
 		}
 		begin := time.Now()
+		var workType string
 		slog.Debug(fmt.Sprintf("BLPOP %s -> %s", result[0], result[1]))
 		switch result[0] {
 		case cache.KeySystem:
+			workType = "daemonSystem"
 			err = t.handleSystem(result[1])
 		case cache.KeyDaemonStatus:
+			workType = "daemonStatus"
 			err = t.handleDaemonStatus(result[1])
 		case cache.KeyPackages:
+			workType = "daemonPackage"
 			err = t.handlePackage(result[1])
 		default:
 			slog.Debug(fmt.Sprintf("ignore queue '%s'", result[0]))
 		}
+		status := "success"
 		if err != nil {
+			status = "failed"
 			slog.Error(err.Error())
 		}
+		promCounter.With(prometheus.Labels{"operation": workType, "status": status}).Inc()
 		slog.Debug(fmt.Sprintf("BLPOP %s <- %s: %s", result[0], result[1], time.Now().Sub(begin)))
 	}
-	return nil
 }

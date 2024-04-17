@@ -600,7 +600,6 @@ func (d *daemonStatus) dbUpdateInstances() error {
 							}
 						}
 
-						// TODO: update_container_node_fields
 						if err := d.instanceStatusUpdate(objID, nodeID, containerStatus); err != nil {
 							return fmt.Errorf("dbUpdateInstances update container %s %s@%s (%s@%s): %w",
 								containerStatus.monVmName, objID, nodeID, objectName, nodename, err)
@@ -611,7 +610,6 @@ func (d *daemonStatus) dbUpdateInstances() error {
 						return fmt.Errorf("dbUpdateInstances delete obsolete container resources %s@%s: %w", objID, nodeID, err)
 					}
 				}
-				// TODO:   update_container_node_fields
 			}
 			if err := d.oDb.dashboardInstanceFrozenUpdate(d.ctx, objID, nodeID, obj.env, iStatus.monFrozen > 0); err != nil {
 				return fmt.Errorf("dbUpdateInstances update dashboard instance frozen %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)

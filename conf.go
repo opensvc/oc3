@@ -27,7 +27,10 @@ func initConfig() error {
 	viper.AutomaticEnv()
 
 	// defaults
-	viper.SetDefault("listen", "127.0.0.1:8080")
+	viper.SetDefault("listener.addr", "127.0.0.1:8080")
+	viper.SetDefault("listener.pprof.enable", false)
+	viper.SetDefault("listener.metrics.enable", false)
+	viper.SetDefault("listener.ui.enable", false)
 	viper.SetDefault("db.username", "opensvc")
 	viper.SetDefault("db.host", "127.0.0.1")
 	viper.SetDefault("db.port", "3306")
@@ -39,6 +42,11 @@ func initConfig() error {
 	viper.SetDefault("feeder.tx", true)
 	viper.SetDefault("websocket.key", "magix123")
 	viper.SetDefault("websocket.url", "http://127.0.0.1:8889")
+	viper.SetDefault("worker.pprof.uxsocket", "/var/run/oc3-worker.soc")
+	viper.SetDefault("worker.pprof.addr", "127.0.0.1:9999")
+	viper.SetDefault("worker.pprof.enable", false)
+	viper.SetDefault("worker.metrics.enable", false)
+	viper.SetDefault("worker.metrics.addr", "127.0.0.1:2112")
 
 	// config file
 	viper.SetConfigName("config")
