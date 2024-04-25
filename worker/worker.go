@@ -80,6 +80,9 @@ func (t *Worker) Run() error {
 		var workType string
 		slog.Debug(fmt.Sprintf("BLPOP %s -> %s", result[0], result[1]))
 		switch result[0] {
+		case cache.KeyDaemonPing:
+			workType = "daemonPing"
+			err = t.handleDaemonPing(result[1])
 		case cache.KeySystem:
 			workType = "daemonSystem"
 			err = t.handleSystem(result[1])
@@ -102,4 +105,24 @@ func (t *Worker) Run() error {
 		operationDuration.With(prometheus.Labels{"desc": workType, "status": status}).Observe(duration.Seconds())
 		slog.Debug(fmt.Sprintf("BLPOP %s <- %s: %s", result[0], result[1], duration))
 	}
+}
+
+type (
+	tableTracker interface {
+		tableChanges() []string
+		updateTableModified(context.Context, string) error
+	}
+)
+
+func pushFromTableChanges(ctx context.Context, oDb tableTracker, ev EventPublisher) error {
+	for _, tableName := range oDb.tableChanges() {
+		slog.Debug(fmt.Sprintf("pushFromTableChanges %s", tableName))
+		if err := oDb.updateTableModified(ctx, tableName); err != nil {
+			return fmt.Errorf("pushFromTableChanges: %w", err)
+		}
+		if err := ev.EventPublish(tableName+"_change", nil); err != nil {
+			return fmt.Errorf("EventPublish send %s: %w", tableName, err)
+		}
+	}
+	return nil
 }

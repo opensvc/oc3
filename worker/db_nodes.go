@@ -8,10 +8,71 @@ import (
 	"time"
 )
 
-func (oDb *opensvcDB) findClusterNodesWithNodenames(ctx context.Context, clusterID string, nodes []string) (dbNodes []*DBNode, err error) {
-	defer logDuration("findClusterNodesWithNodenames", time.Now())
+func (oDb *opensvcDB) nodesFromNodeID(ctx context.Context, nodeID string) (dbNodes []*DBNode, err error) {
+	defer logDuration("nodesFromNodeID", time.Now())
+	if nodeID == "" {
+		err = fmt.Errorf("nodesFromNodeID: called with empty node id")
+		return
+	}
+	var (
+		rows *sql.Rows
+
+		query = `SELECT nodename, node_id, cluster_id, node_env, app, hv, node_frozen,
+				loc_country, loc_city, loc_addr, loc_building, loc_floor, loc_room, loc_rack, loc_zip,
+				enclosure, enclosureslot
+			FROM nodes
+			WHERE cluster_id IN (SELECT cluster_id FROM nodes WHERE node_id = ?)`
+	)
+
+	rows, err = oDb.db.QueryContext(ctx, query, nodeID)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var (
+			nodename, nodeID, clusterID, nodeEnv, app, hv, frozen, locCountry sql.NullString
+			locCity, locAddr, locBuilding, locFloor, locRoom, locRack, locZip sql.NullString
+			enclosure, enclosureSlot                                          sql.NullString
+		)
+		err = rows.Scan(
+			&nodename, &nodeID, &clusterID, &nodeEnv, &app, &hv, &frozen,
+			&locCountry, &locCity, &locAddr, &locBuilding, &locFloor, &locRoom, &locRack, &locZip,
+			&enclosure, &enclosureSlot)
+		if err != nil {
+			return
+		}
+
+		dbNodes = append(dbNodes, &DBNode{
+			nodename:      nodename.String,
+			frozen:        frozen.String,
+			nodeID:        nodeID.String,
+			clusterID:     clusterID.String,
+			app:           app.String,
+			nodeEnv:       nodeEnv.String,
+			locAddr:       locAddr.String,
+			locCountry:    locCountry.String,
+			locCity:       locCity.String,
+			locZip:        locZip.String,
+			locBuilding:   locBuilding.String,
+			locFloor:      locFloor.String,
+			locRoom:       locRoom.String,
+			locRack:       locRack.String,
+			enclosure:     enclosure.String,
+			enclosureSlot: enclosureSlot.String,
+			hv:            hv.String,
+		})
+	}
+	if err = rows.Err(); err != nil {
+		return
+	}
+	return
+}
+
+func (oDb *opensvcDB) nodesFromClusterIDWithNodenames(ctx context.Context, clusterID string, nodes []string) (dbNodes []*DBNode, err error) {
+	defer logDuration("nodesFromClusterIDWithNodenames", time.Now())
 	if len(nodes) == 0 {
-		err = fmt.Errorf("findClusterNodesWithNodenames: need nodes")
+		err = fmt.Errorf("nodesFromClusterIDWithNodenames: need nodes")
 		return
 	}
 	var (
@@ -75,7 +136,7 @@ func (oDb *opensvcDB) findClusterNodesWithNodenames(ctx context.Context, cluster
 	return
 }
 
-func (oDb *opensvcDB) updateContainerNodeFromParent(ctx context.Context, cName, cApp string, pn *DBNode) error {
+func (oDb *opensvcDB) nodeContainerUpdateFromParentNode(ctx context.Context, cName, cApp string, pn *DBNode) error {
 	const queryUpdate = `UPDATE nodes
     	SET updated = NOW(),
     	    loc_addr = ?, loc_country = ?, loc_zip = ?, loc_city = ?, loc_building = ?,
@@ -101,7 +162,7 @@ func (oDb *opensvcDB) updateContainerNodeFromParent(ctx context.Context, cName, 
 			return err
 		}
 		if len(apps) == 0 {
-			slog.Debug(fmt.Sprintf("findClusterNodesWithNodenames responsibleAppsForNode hostname %s on %s no apps",
+			slog.Debug(fmt.Sprintf("nodeContainerUpdateFromParentNode responsibleAppsForNode hostname %s on %s no apps",
 				cName, pn.nodeID))
 			return nil
 		}
@@ -127,4 +188,44 @@ func (oDb *opensvcDB) updateContainerNodeFromParent(ctx context.Context, cName, 
 		}
 	}
 	return nil
+}
+
+func (oDb *opensvcDB) nodeUpdateFrozen(ctx context.Context, nodeID, frozen string) error {
+	const query = `UPDATE nodes SET node_frozen = ? WHERE node_id = ?`
+	if _, err := oDb.db.ExecContext(ctx, query, frozen, nodeID); err != nil {
+		return fmt.Errorf("nodeUpdateFrozen: %w", err)
+	}
+	oDb.tableChange("nodes")
+	return nil
+}
+
+// nodeUpdateClusterIDForNodeID update cluster_id value on nodes with node_id. the returned bool indicate table has been updated
+func (oDb *opensvcDB) nodeUpdateClusterIDForNodeID(ctx context.Context, nodeID, clusterID string) (bool, error) {
+	const (
+		querySearch = `SELECT cluster_id FROM nodes WHERE node_id = ? and cluster_id = ? LIMIT 1`
+		queryUpdate = `UPDATE nodes SET cluster_id = ? WHERE node_id = ?`
+	)
+	var (
+		s string
+	)
+	row := oDb.db.QueryRowContext(ctx, querySearch, nodeID, clusterID)
+	err := row.Scan(&s)
+	switch err {
+	case nil:
+		// found node with nodeID and clusterID
+		return false, nil
+	case sql.ErrNoRows:
+		if result, err := oDb.db.ExecContext(ctx, queryUpdate, clusterID, nodeID); err != nil {
+			return false, fmt.Errorf("nodeUpdateClusterIDForNodeID update: %w", err)
+		} else if count, err := result.RowsAffected(); err != nil {
+			return false, fmt.Errorf("nodeUpdateClusterIDForNodeID count updated: %w", err)
+		} else if count > 0 {
+			oDb.tableChange("nodes")
+			return true, nil
+		} else {
+			return false, nil
+		}
+	default:
+		return false, fmt.Errorf("nodeUpdateClusterIDForNodeID check cluster_id: %w", err)
+	}
 }

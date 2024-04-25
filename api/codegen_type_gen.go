@@ -59,3 +59,6 @@ type PostDaemonStatusJSONRequestBody = NodeStatus
 
 // PostDaemonSystemJSONRequestBody defines body for PostDaemonSystem for application/json ContentType.
 type PostDaemonSystemJSONRequestBody = System
+
+// PostDaemonSystemPackageJSONRequestBody defines body for PostDaemonSystemPackage for application/json ContentType.
+type PostDaemonSystemPackageJSONRequestBody = Package

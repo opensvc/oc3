@@ -3,7 +3,15 @@ package worker
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+)
+
+type (
+	DBApp struct {
+		id  int64
+		app string
+	}
 )
 
 // authGroupIdsForNode is the oc3 implementation of oc2 node_responsibles(node_id):
@@ -84,4 +92,66 @@ func (oDb *opensvcDB) responsibleAppsForNode(ctx context.Context, nodeID string)
 		return
 	}
 	return
+}
+
+func (oDb *opensvcDB) appFromAppName(ctx context.Context, app string) (bool, *DBApp, error) {
+	const query = "SELECT id, app FROM apps WHERE app = ?"
+	var (
+		foundID  int64
+		foundApp string
+	)
+	if app == "" {
+		return false, nil, fmt.Errorf("can't find app from empty value")
+	}
+	err := oDb.db.QueryRowContext(ctx, query, app).Scan(&foundID, &foundApp)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return false, nil, nil
+	case err != nil:
+		return false, nil, err
+	default:
+		return true, &DBApp{id: foundID, app: foundApp}, nil
+	}
+}
+
+func (oDb *opensvcDB) isAppAllowedForNodeID(ctx context.Context, nodeID, app string) (bool, error) {
+	// TODO: apps_responsibles PRIMARY KEY (app_id, group_id)
+	const query = "" +
+		"SELECT count(*) FROM (" +
+		"  SELECT COUNT(`t`.`group_id`) AS `c`" +
+		"  FROM (" +
+		"      SELECT `ar`.`group_id` FROM `nodes` `n`, `apps` `a`, `apps_responsibles` `ar`" +
+		"      WHERE `n`.`app` = `a`.`app` AND `ar`.`app_id` = `a`.`id` AND `n`.`node_id` = ?" +
+		"    UNION ALL" +
+		"      SELECT `ar`.`group_id` FROM `apps` `a`, `apps_responsibles` `ar`" +
+		"      WHERE `ar`.`app_id` = `a`.`id` AND `a`.`app` = ?" +
+		"   ) AS `t` GROUP BY `t`.`group_id`) `u`" +
+		"WHERE `u`.`c` = 2"
+	var found int64
+	err := oDb.db.QueryRowContext(ctx, query, nodeID, app).Scan(&found)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return false, nil
+	case err != nil:
+		return false, err
+	default:
+		return found > 0, nil
+	}
+}
+
+func (oDb *opensvcDB) appFromNodeAndCandidateApp(ctx context.Context, candidateApp string, node *DBNode) (string, error) {
+	app := candidateApp
+	if candidateApp == "" {
+		app = node.app
+	} else if ok, err := oDb.isAppAllowedForNodeID(ctx, node.nodeID, candidateApp); err != nil {
+		return "", fmt.Errorf("can't detect if app %s is allowed: %w", candidateApp, err)
+	} else if !ok {
+		app = node.app
+	}
+	if ok, _, err := oDb.appFromAppName(ctx, app); err != nil {
+		return "", fmt.Errorf("can't verify guessed app %s: %w", app, err)
+	} else if !ok {
+		return "", fmt.Errorf("can't verify guessed app %s: app not found", app)
+	}
+	return app, nil
 }

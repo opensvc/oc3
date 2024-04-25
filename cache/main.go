@@ -7,6 +7,8 @@ var (
 	KeySystemHash = "oc3:h:system"
 	KeyGeneric    = "oc3:q:generic"
 
+	KeyDaemonPing              = "oc3:q:daemon_ping"
+	KeyDaemonPingPending       = "oc3:h:daemon_ping_pending"
 	KeyDaemonStatusHash        = "oc3:h:daemon_status"
 	KeyDaemonStatusChangesHash = "oc3:h:daemon_status_changes"
 	KeyDaemonStatus            = "oc3:q:daemon_status"
@@ -15,7 +17,6 @@ var (
 	KeyPackages                = "oc3:q:packages"
 	KeyPackagesPending         = "oc3:h:packages_pending"
 
-	KeydaemonPing             = "osvc:q:daemon_ping"
 	KeyPatchesHash            = "osvc:h:patches"
 	KeyPatches                = "osvc:q:patches"
 	KeyResinfoHash            = "osvc:h:resinfo"
