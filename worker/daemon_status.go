@@ -147,6 +147,7 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 
 		byNodename: make(map[string]*DBNode),
 		byNodeID:   make(map[string]*DBNode),
+		nodes:      make([]string, 0),
 
 		byObjectID:   make(map[string]*DBObject),
 		byObjectName: make(map[string]*DBObject),
@@ -352,9 +353,11 @@ func (d *daemonStatus) dbFindNodes() (err error) {
 	d.callerNode = callerNode
 	d.nodeApp = callerNode.app
 	d.nodeEnv = callerNode.nodeEnv
-	d.nodes = make([]string, 0, len(d.byNodename))
+	d.nodes = make([]string, len(d.byNodename))
+	var i = 0
 	for nodename := range d.byNodename {
-		d.nodes = append(d.nodes, nodename)
+		d.nodes[i] = nodename
+		i++
 	}
 	slog.Info(fmt.Sprintf("handleDaemonStatus run details: %s changes: [%s]", callerNode, d.rawChanges))
 	return nil
