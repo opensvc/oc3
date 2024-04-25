@@ -308,21 +308,8 @@ func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
 }
 
 func (d *daemonStatus) dbCheckClusters() error {
-	// TODO: verify if still needed, we can't assert things here
-	// +--------------+--------------+------+-----+---------+----------------+
-	// | Field        | Type         | Null | Key | Default | Extra          |
-	// +--------------+--------------+------+-----+---------+----------------+
-	// | id           | int(11)      | NO   | PRI | NULL    | auto_increment |
-	// | cluster_id   | char(36)     | YES  | UNI |         |                |
-	// | cluster_name | varchar(128) | NO   |     | NULL    |                |
-	// | cluster_data | longtext     | YES  |     | NULL    |                |
-	// +--------------+--------------+------+-----+---------+----------------+
-	const query = "" +
-		"INSERT INTO clusters (cluster_name, cluster_data, cluster_id) VALUES (?, ?, ?)" +
-		" ON DUPLICATE KEY UPDATE cluster_name = ?, cluster_data = ?"
-	clusterData := string(d.rawData)
-	if _, err := d.db.ExecContext(d.ctx, query, d.clusterName, clusterData, d.clusterID, d.clusterName, clusterData); err != nil {
-		return fmt.Errorf("dbCheckClusters can't update clusters nodeID: %s clusterID: %s: %w", d.nodeID, d.clusterID, err)
+	if err := d.oDb.updateClustersData(d.ctx, d.clusterName, d.clusterName, string(d.rawData)); err != nil {
+		return fmt.Errorf("dbCheckClusters %s (%s): %w", d.nodeID, d.clusterID, err)
 	}
 	return nil
 }
