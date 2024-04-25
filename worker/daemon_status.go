@@ -348,7 +348,7 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 		if frozen != dbNode.frozen {
 			slog.Info(fmt.Sprintf("dataToNodeFrozen: updating node %s: %s frozen from %s -> %s", nodename, nodeID, dbNode.frozen, frozen))
 			if err := d.oDb.nodeUpdateFrozen(d.ctx, frozen, d.nodeID); err != nil {
-				return fmt.Errorf("dataToNodeFrozen node %s (%): %w", nodename, dbNode.nodeID, err)
+				return fmt.Errorf("dataToNodeFrozen node %s (%s): %w", nodename, dbNode.nodeID, err)
 			}
 		}
 	}
