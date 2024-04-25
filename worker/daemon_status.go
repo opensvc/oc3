@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -393,52 +392,31 @@ func (d *daemonStatus) dbFindServices() error {
 }
 
 func (d *daemonStatus) dbFindInstances() error {
-	const querySelect = "" +
-		"SELECT svc_id, node_id, mon_frozen" +
-		" FROM svcmon" +
-		" WHERE svc_id IN (?"
-
-	var values []any
-	for svcID := range d.byObjectID {
-		values = append(values, svcID)
-	}
-	if len(values) == 0 {
+	var (
+		objectIDs = make([]string, 0)
+	)
+	if len(d.byObjectID) == 0 {
 		return nil
 	}
-	query := querySelect
-	for i := 1; i < len(values); i++ {
-		query += ", ?"
+	for objectID := range d.byObjectID {
+		objectIDs = append(objectIDs, objectID)
 	}
-	query += ")"
-
-	rows, err := d.db.QueryContext(d.ctx, query, values...)
+	instances, err := d.oDb.findInstanceWithIDs(d.ctx, objectIDs...)
 	if err != nil {
-		return fmt.Errorf("dbFindInstances query svcIDs: [%s]: %w", values, err)
+		return fmt.Errorf("dbFindInstances: %w", err)
 	}
-	if rows == nil {
-		return fmt.Errorf("dbFindInstances query returns nil rows")
-	}
-	defer func() { _ = rows.Close() }()
-	for rows.Next() {
-		var o DBInstance
-		var frozen sql.NullInt64
-		if err := rows.Scan(&o.svcID, &o.nodeID, &frozen); err != nil {
-			return fmt.Errorf("dbFindInstances scan %s: %w", d.nodeID, err)
-		}
-		o.Frozen = frozen.Int64
-		if n, ok := d.byNodeID[o.nodeID]; ok {
+
+	for _, mon := range instances {
+		if n, ok := d.byNodeID[mon.nodeID]; ok {
 			// Only pickup instances from known nodes
-			if s, ok := d.byObjectID[o.svcID]; ok {
+			if s, ok := d.byObjectID[mon.svcID]; ok {
 				// Only pickup instances from known objects
-				d.byInstanceName[s.svcname+"@"+n.nodename] = &o
-				d.byInstanceID[s.svcID+"@"+n.nodeID] = &o
+				d.byInstanceName[s.svcname+"@"+n.nodename] = mon
+				d.byInstanceID[s.svcID+"@"+n.nodeID] = mon
 				slog.Debug(fmt.Sprintf("dbFindInstances found %s@%s (%s@%s)",
 					s.svcname, n.nodename, s.svcID, n.nodeID))
 			}
 		}
-	}
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("dbFindInstances query rows: %w", err)
 	}
 	return nil
 }

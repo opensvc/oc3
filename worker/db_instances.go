@@ -110,6 +110,47 @@ type (
 	}
 )
 
+func (oDb *opensvcDB) findInstanceWithIDs(ctx context.Context, objectIDs ...string) ([]*DBInstance, error) {
+	if len(objectIDs) == 0 {
+		return nil, nil
+	}
+	var (
+		query  = `SELECT svc_id, node_id, mon_frozen FROM svcmon WHERE svc_id IN (?`
+		values = make([]any, len(objectIDs))
+
+		instances = make([]*DBInstance, 0)
+	)
+
+	values[0] = objectIDs[0]
+	for i := 1; i < len(values); i++ {
+		values[i] = objectIDs[i]
+		query += ", ?"
+	}
+	query += ")"
+
+	rows, err := oDb.db.QueryContext(ctx, query, values...)
+	if err != nil {
+		return nil, fmt.Errorf("findInstanceWithIDs query: %w", err)
+	}
+	if rows == nil {
+		return nil, fmt.Errorf("findInstanceWithIDs query returns nil rows")
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var o DBInstance
+		var frozen sql.NullInt64
+		if err := rows.Scan(&o.svcID, &o.nodeID, &frozen); err != nil {
+			return nil, fmt.Errorf("findInstanceWithIDs scan: %w", err)
+		}
+		o.Frozen = frozen.Int64
+		instances = append(instances, &o)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("findInstanceWithIDs query rows: %w", err)
+	}
+	return instances, nil
+}
+
 // pingInstance updates svcmon.mon_updated, svcmon_log_last.mon_end,
 // resmon.updated and resmon_log_last.res_end
 // when svcmon.mon_updated timestamp for svc_id id older than 30s.
