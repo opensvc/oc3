@@ -27,15 +27,38 @@ type (
 	EventPublisher interface {
 		EventPublish(eventName string, data map[string]any) error
 	}
+
+	operation struct {
+		desc string
+		do   func() error
+	}
+)
+
+const (
+	operationStatusOk     = "ok"
+	operationStatusFailed = "failed"
 )
 
 var (
-	promCounter = promauto.NewCounterVec(
+	processedOperationCounter = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "worker_processed_ops_total",
-			Help: "The total number of worker processed operations",
+			Namespace: "oc3",
+			Subsystem: "worker",
+			Name:      "operation",
+			Help:      "Counter of worker processed feed operations",
 		},
-		[]string{"operation", "status"},
+		[]string{"desc", "status"},
+	)
+
+	operationDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "oc3",
+			Subsystem: "worker",
+			Name:      "operation_duration_seconds",
+			Help:      "feed operation latencies in seconds.",
+			Buckets:   prometheus.DefBuckets,
+		},
+		[]string{"desc", "status"},
 	)
 )
 
@@ -69,12 +92,14 @@ func (t *Worker) Run() error {
 		default:
 			slog.Debug(fmt.Sprintf("ignore queue '%s'", result[0]))
 		}
-		status := "success"
+		status := operationStatusOk
+		duration := time.Now().Sub(begin)
 		if err != nil {
-			status = "failed"
+			status = operationStatusFailed
 			slog.Error(err.Error())
 		}
-		promCounter.With(prometheus.Labels{"operation": workType, "status": status}).Inc()
-		slog.Debug(fmt.Sprintf("BLPOP %s <- %s: %s", result[0], result[1], time.Now().Sub(begin)))
+		processedOperationCounter.With(prometheus.Labels{"desc": workType, "status": status}).Inc()
+		operationDuration.With(prometheus.Labels{"desc": workType, "status": status}).Observe(duration.Seconds())
+		slog.Debug(fmt.Sprintf("BLPOP %s <- %s: %s", result[0], result[1], duration))
 	}
 }
