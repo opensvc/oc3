@@ -94,7 +94,7 @@ func (oDb *opensvcDB) responsibleAppsForNode(ctx context.Context, nodeID string)
 	return
 }
 
-func (oDb *opensvcDB) appByName(ctx context.Context, app string) (bool, *DBApp, error) {
+func (oDb *opensvcDB) appFromAppName(ctx context.Context, app string) (bool, *DBApp, error) {
 	const query = "SELECT id, app FROM apps WHERE app = ?"
 	var (
 		foundID  int64
@@ -139,7 +139,7 @@ func (oDb *opensvcDB) isAppAllowedForNodeID(ctx context.Context, nodeID, app str
 	}
 }
 
-func (oDb *opensvcDB) getAppFromNodeAndCandidateApp(ctx context.Context, candidateApp string, node *DBNode) (string, error) {
+func (oDb *opensvcDB) appFromNodeAndCandidateApp(ctx context.Context, candidateApp string, node *DBNode) (string, error) {
 	app := candidateApp
 	if candidateApp == "" {
 		app = node.app
@@ -148,7 +148,7 @@ func (oDb *opensvcDB) getAppFromNodeAndCandidateApp(ctx context.Context, candida
 	} else if !ok {
 		app = node.app
 	}
-	if ok, _, err := oDb.appByName(ctx, app); err != nil {
+	if ok, _, err := oDb.appFromAppName(ctx, app); err != nil {
 		return "", fmt.Errorf("can't verify guessed app %s: %w", app, err)
 	} else if !ok {
 		return "", fmt.Errorf("can't verify guessed app %s: app not found", app)

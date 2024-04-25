@@ -19,15 +19,66 @@ type (
 	}
 )
 
-func (oDb *opensvcDB) findClusterObjectsWithObjectNames(ctx context.Context, clusterID string, objectNames []string) (dbObjects []*DBObject, err error) {
-	defer logDuration("findClusterObjectsWithObjectNames", time.Now())
+func (oDb *opensvcDB) objectFromID(ctx context.Context, svcID string) (*DBObject, error) {
+	const query = "SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_status, svc_frozen, svc_placement, svc_provisioned FROM services WHERE svc_id = ?"
+	var o DBObject
+	var frozen, placement, provisioned sql.NullString
+	err := oDb.db.QueryRowContext(ctx, query, svcID).Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus,
+		&o.overallStatus, &frozen, &placement, &provisioned)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, err
+	default:
+		o.frozen = placement.String
+		o.placement = placement.String
+		o.provisioned = placement.String
+		return &o, nil
+	}
+}
+
+func (oDb *opensvcDB) objectIDsFromClusterIDWithPurgeTag(ctx context.Context, clusterID string) (objectIDs []string, err error) {
+	const (
+		query = "" +
+			"SELECT `svc_tags`.`svc_id`" +
+			" FROM `tags`, `services`, `svc_tags`" +
+			" LEFT JOIN `svcmon` ON `svc_tags`.`svc_id` = `svcmon`.`svc_id`" +
+			" WHERE" +
+			"   `services`.`svc_id`=`svc_tags`.`svc_id`" +
+			"   AND `services`.`cluster_id` = ?" +
+			"   AND `tags`.`tag_id` = `svc_tags`.`tag_id`" +
+			"   AND `tags`.`tag_name` = '@purge'" +
+			"   AND `svcmon`.`id` IS NULL"
+	)
+	var (
+		rows *sql.Rows
+	)
+	rows, err = oDb.db.QueryContext(ctx, query, clusterID)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var ID string
+		if err = rows.Scan(&ID); err != nil {
+			return
+		}
+		objectIDs = append(objectIDs, ID)
+	}
+	err = rows.Err()
+	return
+}
+
+func (oDb *opensvcDB) objectsFromClusterIDAndObjectNames(ctx context.Context, clusterID string, objectNames []string) (dbObjects []*DBObject, err error) {
+	defer logDuration("objectsFromClusterIDAndObjectNames", time.Now())
 	var query = `
 		SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env, svc_status,
        		svc_placement, svc_provisioned, svc_app
 		FROM services
 		WHERE cluster_id = ? AND svcname IN (?`
 	if len(objectNames) == 0 {
-		err = fmt.Errorf("findClusterObjectsWithObjectNames called with empty object name list")
+		err = fmt.Errorf("objectsFromClusterIDAndObjectNames called with empty object name list")
 		return
 	}
 	args := []any{clusterID, objectNames[0]}
@@ -58,8 +109,8 @@ func (oDb *opensvcDB) findClusterObjectsWithObjectNames(ctx context.Context, clu
 	return
 }
 
-func (oDb *opensvcDB) findClusterObjects(ctx context.Context, clusterID string) (dbObjects []*DBObject, err error) {
-	defer logDuration("findClusterObjects", time.Now())
+func (oDb *opensvcDB) objectsFromClusterID(ctx context.Context, clusterID string) (dbObjects []*DBObject, err error) {
+	defer logDuration("objectsFromClusterID", time.Now())
 	var query = `
 		SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env, svc_status,
        		svc_placement, svc_provisioned, svc_app
@@ -87,12 +138,12 @@ func (oDb *opensvcDB) findClusterObjects(ctx context.Context, clusterID string) 
 	return
 }
 
-// createNewObject creates missing object in database and returns *DBObject.
+// objectCreate creates missing object in database and returns *DBObject.
 //
-// uniq svcID is found thew findOrCreateObjectID to ensure uniq svcID on concurrent calls
+// uniq svcID is found thew objectIDFindOrCreate to ensure uniq svcID on concurrent calls
 // for same object.
-func (oDb *opensvcDB) createNewObject(ctx context.Context, objectName, clusterID, candidateApp string, node *DBNode) (*DBObject, error) {
-	created, svcID, err := oDb.findOrCreateObjectID(ctx, objectName, clusterID)
+func (oDb *opensvcDB) objectCreate(ctx context.Context, objectName, clusterID, candidateApp string, node *DBNode) (*DBObject, error) {
+	created, svcID, err := oDb.objectIDFindOrCreate(ctx, objectName, clusterID)
 	if err != nil {
 		return nil, fmt.Errorf("can't find or create object: %w", err)
 	}
@@ -113,7 +164,7 @@ func (oDb *opensvcDB) createNewObject(ctx context.Context, objectName, clusterID
 		if obj, err := oDb.objectFromID(ctx, svcID); err != nil {
 			return nil, err
 		} else if obj == nil {
-			return nil, fmt.Errorf("createNewObject %s: can't retrieve service with svc_id %s", objectName, svcID)
+			return nil, fmt.Errorf("objectCreate %s: can't retrieve service with svc_id %s", objectName, svcID)
 		} else {
 			return obj, nil
 		}
@@ -122,10 +173,10 @@ func (oDb *opensvcDB) createNewObject(ctx context.Context, objectName, clusterID
 	}
 }
 
-// pingObject updates services.svc_status_updated and services_log_last.svc_end
+// objectPing updates services.svc_status_updated and services_log_last.svc_end
 // when services.svc_status_updated timestamp for svc_id id older than 30s.
-func (oDb *opensvcDB) pingObject(ctx context.Context, svcID string) (updates bool, err error) {
-	defer logDuration("pingObject "+svcID, time.Now())
+func (oDb *opensvcDB) objectPing(ctx context.Context, svcID string) (updates bool, err error) {
+	defer logDuration("objectPing "+svcID, time.Now())
 	const UpdateServicesSvcStatusUpdated = "" +
 		"UPDATE `services` SET `svc_status_updated` = NOW()" +
 		" WHERE `svc_id`= ? " +
@@ -157,7 +208,7 @@ func (oDb *opensvcDB) pingObject(ctx context.Context, svcID string) (updates boo
 	return
 }
 
-func (oDb *opensvcDB) updateObjectStatus(ctx context.Context, svcID string, o *DBObjStatus) error {
+func (oDb *opensvcDB) objectUpdateStatus(ctx context.Context, svcID string, o *DBObjStatus) error {
 	const query = "" +
 		"UPDATE `services` SET `svc_availstatus` = ?" +
 		" , `svc_status` = ?" +
@@ -173,12 +224,12 @@ func (oDb *opensvcDB) updateObjectStatus(ctx context.Context, svcID string, o *D
 	return nil
 }
 
-// updateObjectLog handle services_log_last and services_log avail value changes.
+// objectUpdateLog handle services_log_last and services_log avail value changes.
 //
 // services_log_last tracks the current avail value from begin to now.
 // services_log tracks avail values changes with begin and end: [(avail, begin, end), ...]
-func (oDb *opensvcDB) updateObjectLog(ctx context.Context, svcID string, avail string) error {
-	defer logDuration("updateObjectLog "+svcID, time.Now())
+func (oDb *opensvcDB) objectUpdateLog(ctx context.Context, svcID string, avail string) error {
+	defer logDuration("objectUpdateLog "+svcID, time.Now())
 	/*
 		CREATE TABLE `services_log_last` (
 		  `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -221,7 +272,7 @@ func (oDb *opensvcDB) updateObjectLog(ctx context.Context, svcID string, avail s
 	setLogLast := func() error {
 		_, err := oDb.db.ExecContext(ctx, qSetLogLast, svcID, avail, avail)
 		if err != nil {
-			return fmt.Errorf("updateObjectLog can't update services_log_last %s: %w", svcID, err)
+			return fmt.Errorf("objectUpdateLog can't update services_log_last %s: %w", svcID, err)
 		}
 		return nil
 	}
@@ -232,19 +283,19 @@ func (oDb *opensvcDB) updateObjectLog(ctx context.Context, svcID string, avail s
 		defer oDb.tableChange("service_log")
 		return setLogLast()
 	case err != nil:
-		return fmt.Errorf("updateObjectLog can't get services_log_last %s: %w", svcID, err)
+		return fmt.Errorf("objectUpdateLog can't get services_log_last %s: %w", svcID, err)
 	default:
 		defer oDb.tableChange("service_log")
 		if previousAvail == avail {
 			// no change, extend last interval
 			if _, err := oDb.db.ExecContext(ctx, qExtendIntervalOfCurrentAvail, svcID); err != nil {
-				return fmt.Errorf("updateObjectLog can't set services_log_last.svc_end %s: %w", svcID, err)
+				return fmt.Errorf("objectUpdateLog can't set services_log_last.svc_end %s: %w", svcID, err)
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of previous avail value before change
 			if _, err := oDb.db.ExecContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, svcID, previousBegin, previousAvail); err != nil {
-				return fmt.Errorf("updateObjectLog can't save services_log change %s: %w", svcID, err)
+				return fmt.Errorf("objectUpdateLog can't save services_log change %s: %w", svcID, err)
 			}
 			// reset begin and end interval for new avail
 			return setLogLast()
@@ -254,14 +305,14 @@ func (oDb *opensvcDB) updateObjectLog(ctx context.Context, svcID string, avail s
 
 // insertOrUpdateObjectForNodeAndCandidateApp will insert or update object with svcID.
 //
-// If candidate app is not valid, node app will be used (see getAppFromNodeAndCandidateApp)
+// If candidate app is not valid, node app will be used (see appFromNodeAndCandidateApp)
 func (oDb *opensvcDB) insertOrUpdateObjectForNodeAndCandidateApp(ctx context.Context, objectName string, svcID, candidateApp string, node *DBNode) error {
 	const query = "" +
 		"INSERT INTO `services` (`svcname`, `cluster_id`, `svc_id`, `svc_app`, `svc_env`, `updated`)" +
 		" VALUES (?, ?, ?, ?, ?, NOW())" +
 		" ON DUPLICATE KEY UPDATE" +
 		"    `svcname` = ?, `cluster_id` = ?, `svc_app` = ?, `svc_env` = ?, `updated` = Now()"
-	app, err := oDb.getAppFromNodeAndCandidateApp(ctx, candidateApp, node)
+	app, err := oDb.appFromNodeAndCandidateApp(ctx, candidateApp, node)
 	if err != nil {
 		return fmt.Errorf("get application from candidate %s with node_id %s: %w", candidateApp, node.nodeID, err)
 	}
@@ -272,9 +323,9 @@ func (oDb *opensvcDB) insertOrUpdateObjectForNodeAndCandidateApp(ctx context.Con
 	return nil
 }
 
-// findOrCreateObjectID returns uniq svcID for svcname on clusterID. When svcID is not found it creates new svcID row.
+// objectIDFindOrCreate returns uniq svcID for svcname on clusterID. When svcID is not found it creates new svcID row.
 // isNew bool is set to true when a new svcID has been allocated.
-func (oDb *opensvcDB) findOrCreateObjectID(ctx context.Context, svcname, clusterID string) (isNew bool, svcID string, err error) {
+func (oDb *opensvcDB) objectIDFindOrCreate(ctx context.Context, svcname, clusterID string) (isNew bool, svcID string, err error) {
 	const (
 		queryInsertID = "INSERT IGNORE INTO `service_ids` (`svcname`, `cluster_id`) VALUES (?, ?)"
 		querySearchID = "SELECT `svc_id` FROM `service_ids` WHERE `svcname` = ? AND `cluster_id` = ? LIMIT 1"
@@ -297,72 +348,7 @@ func (oDb *opensvcDB) findOrCreateObjectID(ctx context.Context, svcname, cluster
 	return
 }
 
-func (oDb *opensvcDB) objectFromID(ctx context.Context, svcID string) (*DBObject, error) {
-	const query = "SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_status, svc_frozen, svc_placement, svc_provisioned FROM services WHERE svc_id = ?"
-	var o DBObject
-	var frozen, placement, provisioned sql.NullString
-	err := oDb.db.QueryRowContext(ctx, query, svcID).Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus,
-		&o.overallStatus, &frozen, &placement, &provisioned)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return nil, nil
-	case err != nil:
-		return nil, err
-	default:
-		o.frozen = placement.String
-		o.placement = placement.String
-		o.provisioned = placement.String
-		return &o, nil
-	}
-}
-
-func (oDb *opensvcDB) deleteByObject(ctx context.Context, tableName string, objID string) error {
-	const (
-		query = "DELETE from ? WHERE svc_id = ?"
-	)
-	if result, err := oDb.db.ExecContext(ctx, query, tableName, objID); err != nil {
-		return fmt.Errorf("deleteByObject: %w", err)
-	} else if count, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("deleteByObject affected: %w", err)
-	} else if count > 0 {
-		oDb.tableChange(tableName)
-	}
-	return nil
-}
-
-func (oDb *opensvcDB) objectIDWithPurgeTag(ctx context.Context, clusterID string) (objectIDs []string, err error) {
-	const (
-		query = "" +
-			"SELECT `svc_tags`.`svc_id`" +
-			" FROM `tags`, `services`, `svc_tags`" +
-			" LEFT JOIN `svcmon` ON `svc_tags`.`svc_id` = `svcmon`.`svc_id`" +
-			" WHERE" +
-			"   `services`.`svc_id`=`svc_tags`.`svc_id`" +
-			"   AND `services`.`cluster_id` = ?" +
-			"   AND `tags`.`tag_id` = `svc_tags`.`tag_id`" +
-			"   AND `tags`.`tag_name` = '@purge'" +
-			"   AND `svcmon`.`id` IS NULL"
-	)
-	var (
-		rows *sql.Rows
-	)
-	rows, err = oDb.db.QueryContext(ctx, query, clusterID)
-	if err != nil {
-		return
-	}
-	defer func() { _ = rows.Close() }()
-	for rows.Next() {
-		var ID string
-		if err = rows.Scan(&ID); err != nil {
-			return
-		}
-		objectIDs = append(objectIDs, ID)
-	}
-	err = rows.Err()
-	return
-}
-
-func (oDb *opensvcDB) purgeObject(ctx context.Context, id string) error {
+func (oDb *opensvcDB) purgeTablesFromObjectID(ctx context.Context, id string) error {
 	const (
 		where = "WHERE `svc_id` = ?"
 	)

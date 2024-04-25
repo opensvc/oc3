@@ -120,7 +120,7 @@ func (d *daemonPing) dbFetchNodes() (err error) {
 	var (
 		dbNodes []*DBNode
 	)
-	if dbNodes, err = d.oDb.findClusterNodesFromNodeID(d.ctx, d.nodeID); err != nil {
+	if dbNodes, err = d.oDb.nodesFromNodeID(d.ctx, d.nodeID); err != nil {
 		return fmt.Errorf("dbFetchNodes %s: %w", d.nodeID, err)
 	}
 	for _, n := range dbNodes {
@@ -139,7 +139,7 @@ func (d *daemonPing) dbFetchObjects() (err error) {
 	var (
 		objects []*DBObject
 	)
-	if objects, err = d.oDb.findClusterObjects(d.ctx, d.clusterID); err != nil {
+	if objects, err = d.oDb.objectsFromClusterID(d.ctx, d.clusterID); err != nil {
 		return fmt.Errorf("dbFetchObjects query node %s (%s) clusterID: %s: %w",
 			d.callerNode.nodename, d.nodeID, d.clusterID, err)
 	}
@@ -150,10 +150,10 @@ func (d *daemonPing) dbFetchObjects() (err error) {
 	return nil
 }
 
-// dbPingInstances call opensvcDB.pingNodeInstances for all db fetched nodes
+// dbPingInstances call opensvcDB.instancePingFromNodeID for all db fetched nodes
 func (d *daemonPing) dbPingInstances() error {
 	for nodeID := range d.byNodeID {
-		if ok, err := d.oDb.pingNodeInstances(d.ctx, nodeID); err != nil {
+		if ok, err := d.oDb.instancePingFromNodeID(d.ctx, nodeID); err != nil {
 			return fmt.Errorf("dbPingInstances: %w", err)
 		} else if ok {
 			continue
@@ -162,13 +162,13 @@ func (d *daemonPing) dbPingInstances() error {
 	return nil
 }
 
-// dbPingObjects call opensvcDB.pingObject for all db fetched objects
+// dbPingObjects call opensvcDB.objectPing for all db fetched objects
 func (d *daemonPing) dbPingObjects() (err error) {
 	for objectID, obj := range d.byObjectID {
 		objectName := obj.svcname
 		if obj.availStatus != "undef" {
 			slog.Debug(fmt.Sprintf("ping svc %s %s", objectName, objectID))
-			if _, err := d.oDb.pingObject(d.ctx, objectID); err != nil {
+			if _, err := d.oDb.objectPing(d.ctx, objectID); err != nil {
 				return fmt.Errorf("dbPingObjects can't ping object %s %s: %w", objectName, objectID, err)
 			}
 		}

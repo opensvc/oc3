@@ -110,7 +110,7 @@ type (
 	}
 )
 
-func (oDb *opensvcDB) findInstanceWithIDs(ctx context.Context, objectIDs ...string) ([]*DBInstance, error) {
+func (oDb *opensvcDB) instancesFromObjectIDs(ctx context.Context, objectIDs ...string) ([]*DBInstance, error) {
 	if len(objectIDs) == 0 {
 		return nil, nil
 	}
@@ -130,32 +130,32 @@ func (oDb *opensvcDB) findInstanceWithIDs(ctx context.Context, objectIDs ...stri
 
 	rows, err := oDb.db.QueryContext(ctx, query, values...)
 	if err != nil {
-		return nil, fmt.Errorf("findInstanceWithIDs query: %w", err)
+		return nil, fmt.Errorf("instancesFromObjectIDs query: %w", err)
 	}
 	if rows == nil {
-		return nil, fmt.Errorf("findInstanceWithIDs query returns nil rows")
+		return nil, fmt.Errorf("instancesFromObjectIDs query returns nil rows")
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var o DBInstance
 		var frozen sql.NullInt64
 		if err := rows.Scan(&o.svcID, &o.nodeID, &frozen); err != nil {
-			return nil, fmt.Errorf("findInstanceWithIDs scan: %w", err)
+			return nil, fmt.Errorf("instancesFromObjectIDs scan: %w", err)
 		}
 		o.Frozen = frozen.Int64
 		instances = append(instances, &o)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("findInstanceWithIDs query rows: %w", err)
+		return nil, fmt.Errorf("instancesFromObjectIDs query rows: %w", err)
 	}
 	return instances, nil
 }
 
-// pingInstance updates svcmon.mon_updated, svcmon_log_last.mon_end,
+// instancePing updates svcmon.mon_updated, svcmon_log_last.mon_end,
 // resmon.updated and resmon_log_last.res_end
 // when svcmon.mon_updated timestamp for svc_id id older than 30s.
-func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (updates bool, err error) {
-	defer logDuration("pingInstance "+svcID+"@"+nodeID, time.Now())
+func (oDb *opensvcDB) instancePing(ctx context.Context, svcID, nodeID string) (updates bool, err error) {
+	defer logDuration("instancePing "+svcID+"@"+nodeID, time.Now())
 	const (
 		qHasInstance  = "SELECT count(*) FROM `svcmon` WHERE `svc_id` = ? AND `node_id` = ?"
 		qUpdateSvcmon = "" +
@@ -188,7 +188,7 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 	)
 	begin := time.Now()
 	err = oDb.db.QueryRowContext(ctx, qHasInstance, svcID, nodeID).Scan(&count)
-	slog.Debug(fmt.Sprintf("pingInstance qHasInstance %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("instancePing qHasInstance %s", time.Now().Sub(begin)))
 	begin = time.Now()
 
 	switch {
@@ -207,7 +207,7 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 	} else if count == 0 {
 		return
 	}
-	slog.Debug(fmt.Sprintf("pingInstance qUpdateSvcmon %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("instancePing qUpdateSvcmon %s", time.Now().Sub(begin)))
 	begin = time.Now()
 	updates = true
 
@@ -215,7 +215,7 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 	if _, err = oDb.db.ExecContext(ctx, qUpdateSvcmonLogLast, svcID, nodeID); err != nil {
 		return
 	}
-	slog.Debug(fmt.Sprintf("pingInstance qUpdateSvcmonLogLast %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("instancePing qUpdateSvcmonLogLast %s", time.Now().Sub(begin)))
 	begin = time.Now()
 
 	if result, err = oDb.db.ExecContext(ctx, qUpdateResmon, svcID, nodeID); err != nil {
@@ -225,7 +225,7 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 	} else if count == 0 {
 		return
 	}
-	slog.Debug(fmt.Sprintf("pingInstance qUpdateResmon %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("instancePing qUpdateResmon %s", time.Now().Sub(begin)))
 	begin = time.Now()
 	oDb.tableChange("resmon")
 
@@ -233,16 +233,16 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 		return
 	}
 
-	slog.Debug(fmt.Sprintf("pingInstance qUpdateResmonLogLast %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("instancePing qUpdateResmonLogLast %s", time.Now().Sub(begin)))
 	begin = time.Now()
 	return
 }
 
-// pingNodeInstances updates match svcmon.mon_updated, svcmon_log_last.mon_end,
+// instancePingFromNodeID updates match svcmon.mon_updated, svcmon_log_last.mon_end,
 // resmon.updated and resmon_log_last.res_end when svcmon.mon_updated timestamp
 // for node_id id older than 30s.
-func (oDb *opensvcDB) pingNodeInstances(ctx context.Context, nodeID string) (updates bool, err error) {
-	defer logDuration("pingInstance "+nodeID, time.Now())
+func (oDb *opensvcDB) instancePingFromNodeID(ctx context.Context, nodeID string) (updates bool, err error) {
+	defer logDuration("instancePing "+nodeID, time.Now())
 	const (
 		qUpdateSvcmon = `UPDATE svcmon SET mon_updated = NOW()
 			WHERE node_id = ? AND mon_updated < DATE_SUB(NOW(), INTERVAL 30 SECOND)`
@@ -288,18 +288,18 @@ func (oDb *opensvcDB) pingNodeInstances(ctx context.Context, nodeID string) (upd
 	return
 }
 
-func (oDb *opensvcDB) instanceStatusDelete(ctx context.Context, svcID, nodeID string) error {
-	defer logDuration("instanceStatusDelete "+svcID+"@"+nodeID, time.Now())
+func (oDb *opensvcDB) instanceDeleteStatus(ctx context.Context, svcID, nodeID string) error {
+	defer logDuration("instanceDeleteStatus "+svcID+"@"+nodeID, time.Now())
 	const (
 		queryDelete = "" +
 			"DELETE FROM `svcmon` WHERE `svc_id` = ? AND `node_id` = ?"
 	)
 	result, err := oDb.db.ExecContext(ctx, queryDelete, svcID, nodeID)
 	if err != nil {
-		return fmt.Errorf("instanceStatusDelete %s@%s: %w", svcID, nodeID, err)
+		return fmt.Errorf("instanceDeleteStatus %s@%s: %w", svcID, nodeID, err)
 	}
 	if changes, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("instanceStatusDelete %s@%s can't get deleted count: %w", svcID, nodeID, err)
+		return fmt.Errorf("instanceDeleteStatus %s@%s can't get deleted count: %w", svcID, nodeID, err)
 	} else if changes > 0 {
 		oDb.tableChange("svcmon")
 	}
@@ -629,20 +629,6 @@ func (oDb *opensvcDB) instanceResourceUpdate(ctx context.Context, res *DBInstanc
 		return fmt.Errorf("instanceResourceUpdate %s: %w", res.rid, err)
 	}
 	oDb.tableChange("resmon")
-	return nil
-}
-
-func (oDb *opensvcDB) deleteByInstanceID(ctx context.Context, tableName string, objID, nodeId string) error {
-	const (
-		query = "DELETE from ? WHERE svc_id = ? AND node_id = ?"
-	)
-	if result, err := oDb.db.ExecContext(ctx, query, tableName, objID, nodeId); err != nil {
-		return fmt.Errorf("deleteByInstanceID: %w", err)
-	} else if count, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("deleteByInstanceID affected: %w", err)
-	} else if count > 0 {
-		oDb.tableChange(tableName)
-	}
 	return nil
 }
 

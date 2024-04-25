@@ -287,7 +287,7 @@ func (d *daemonStatus) getData() error {
 }
 
 func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
-	if ok, err := d.oDb.updateNodeClusterIDForNodeID(d.ctx, d.nodeID, d.clusterID); err != nil {
+	if ok, err := d.oDb.nodeUpdateClusterIDForNodeID(d.ctx, d.nodeID, d.clusterID); err != nil {
 		return fmt.Errorf("dbCheckClusterIDForNodeID for %s (%s): %w", d.callerNode.nodename, d.nodeID, err)
 	} else if ok {
 		slog.Info("dbCheckClusterIDForNodeID change cluster id value")
@@ -314,7 +314,7 @@ func (d *daemonStatus) dbFindNodes() (err error) {
 	if len(nodes) == 0 {
 		return fmt.Errorf("dbFindNodes: empty nodes for %s", d.nodeID)
 	}
-	if dbNodes, err = d.oDb.findClusterNodesWithNodenames(d.ctx, d.clusterID, nodes); err != nil {
+	if dbNodes, err = d.oDb.nodesFromClusterIDWithNodenames(d.ctx, d.clusterID, nodes); err != nil {
 		return fmt.Errorf("dbFindNodes %s [%s]: %w", nodes, d.nodeID, err)
 	}
 	for _, n := range dbNodes {
@@ -347,7 +347,7 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 		}
 		if frozen != dbNode.frozen {
 			slog.Info(fmt.Sprintf("dataToNodeFrozen: updating node %s: %s frozen from %s -> %s", nodename, nodeID, dbNode.frozen, frozen))
-			if err := d.oDb.updateNodeFrozenValue(d.ctx, frozen, d.nodeID); err != nil {
+			if err := d.oDb.nodeUpdateFrozen(d.ctx, frozen, d.nodeID); err != nil {
 				return fmt.Errorf("dataToNodeFrozen node %s (%): %w", nodename, dbNode.nodeID, err)
 			}
 		}
@@ -367,7 +367,7 @@ func (d *daemonStatus) dbFindServices() error {
 		slog.Info(fmt.Sprintf("dbFindServices: no services for %s", d.nodeID))
 		return nil
 	}
-	if objects, err = d.oDb.findClusterObjectsWithObjectNames(d.ctx, d.clusterID, objectNames); err != nil {
+	if objects, err = d.oDb.objectsFromClusterIDAndObjectNames(d.ctx, d.clusterID, objectNames); err != nil {
 		return fmt.Errorf("dbFindServices query nodeID: %s clusterID: %s [%s]: %w", d.nodeID, d.clusterID, objectNames, err)
 	}
 	for _, o := range objects {
@@ -388,7 +388,7 @@ func (d *daemonStatus) dbFindInstances() error {
 	for objectID := range d.byObjectID {
 		objectIDs = append(objectIDs, objectID)
 	}
-	instances, err := d.oDb.findInstanceWithIDs(d.ctx, objectIDs...)
+	instances, err := d.oDb.instancesFromObjectIDs(d.ctx, objectIDs...)
 	if err != nil {
 		return fmt.Errorf("dbFindInstances: %w", err)
 	}
@@ -428,9 +428,9 @@ func (d *daemonStatus) dbCreateServices() error {
 	for _, objectName := range missing {
 		app := d.data.appFromObjectName(objectName, d.nodes...)
 		slog.Debug(fmt.Sprintf("dbCreateServices: creating service %s with app %s", objectName, app))
-		obj, err := d.oDb.createNewObject(d.ctx, objectName, d.clusterID, app, d.byNodeID[d.nodeID])
+		obj, err := d.oDb.objectCreate(d.ctx, objectName, d.clusterID, app, d.byNodeID[d.nodeID])
 		if err != nil {
-			return fmt.Errorf("dbCreateServices createNewObject %s: %w", objectName, err)
+			return fmt.Errorf("dbCreateServices objectCreate %s: %w", objectName, err)
 		}
 		slog.Debug(fmt.Sprintf("created service %s with app %s new id: %s", objectName, app, obj.svcID))
 		d.byObjectName[objectName] = obj
@@ -447,18 +447,18 @@ func (d *daemonStatus) dbUpdateServices() error {
 		// even if not present in changes
 		if !isChanged && obj.availStatus != "undef" {
 			slog.Debug(fmt.Sprintf("ping svc %s %s", objectName, objectID))
-			if _, err := d.oDb.pingObject(d.ctx, objectID); err != nil {
+			if _, err := d.oDb.objectPing(d.ctx, objectID); err != nil {
 				return fmt.Errorf("dbUpdateServices can't ping object %s %s: %w", objectName, objectID, err)
 			}
 		} else {
 			oStatus := d.data.objectStatus(objectName)
 			if oStatus != nil {
 				slog.Debug(fmt.Sprintf("update svc log %s %s %#v", objectName, objectID, oStatus))
-				if err := d.oDb.updateObjectLog(d.ctx, objectID, oStatus.availStatus); err != nil {
+				if err := d.oDb.objectUpdateLog(d.ctx, objectID, oStatus.availStatus); err != nil {
 					return fmt.Errorf("dbUpdateServices can't update object log %s %s: %w", objectName, objectID, err)
 				}
 				slog.Debug(fmt.Sprintf("update svc %s %s %#v", objectName, objectID, *oStatus))
-				if err := d.oDb.updateObjectStatus(d.ctx, objectID, oStatus); err != nil {
+				if err := d.oDb.objectUpdateStatus(d.ctx, objectID, oStatus); err != nil {
 					return fmt.Errorf("dbUpdateServices can't update object %s %s: %w", objectName, objectID, err)
 				}
 				if d.byObjectID[objectID].availStatus != oStatus.availStatus {
@@ -490,7 +490,7 @@ func (d *daemonStatus) dbUpdateInstances() error {
 			_, isChanged := d.changes[objectName+"@"+nodename]
 			if !isChanged && obj.availStatus != "undef" {
 				slog.Debug(fmt.Sprintf("ping instance %s@%s", objectName, nodename))
-				changes, err := d.oDb.pingInstance(d.ctx, objID, nodeID)
+				changes, err := d.oDb.instancePing(d.ctx, objID, nodeID)
 				if err != nil {
 					return fmt.Errorf("dbUpdateInstances can't ping instance %s@%s: %w", objectName, nodename, err)
 				} else if changes {
@@ -511,7 +511,7 @@ func (d *daemonStatus) dbUpdateInstances() error {
 				}
 				if iStatus.resources == nil {
 					// scaler or wrapper, for example
-					if err := d.oDb.instanceStatusDelete(d.ctx, objID, nodeID); err != nil {
+					if err := d.oDb.instanceDeleteStatus(d.ctx, objID, nodeID); err != nil {
 						return fmt.Errorf("dbUpdateInstances delete status %s@%s: %w", objID, nodeID, err)
 					}
 					if err := d.oDb.instanceResourcesDelete(d.ctx, objID, nodeID); err != nil {
@@ -536,7 +536,7 @@ func (d *daemonStatus) dbUpdateInstances() error {
 			} else {
 				if iStatus.resources == nil {
 					// scaler or wrapper, for example
-					if err := d.oDb.instanceStatusDelete(d.ctx, objID, nodeID); err != nil {
+					if err := d.oDb.instanceDeleteStatus(d.ctx, objID, nodeID); err != nil {
 						return fmt.Errorf("dbUpdateInstances delete status %s@%s: %w", objID, nodeID, err)
 					}
 					if err := d.oDb.instanceResourcesDelete(d.ctx, objID, nodeID); err != nil {
@@ -546,10 +546,10 @@ func (d *daemonStatus) dbUpdateInstances() error {
 					resourceObsoleteAt := time.Now()
 					for _, containerStatus := range iStatus.Containers() {
 						if containerStatus.fromOutsideStatus == "up" {
-							slog.Debug(fmt.Sprintf("dbUpdateInstances updateContainerNodeFromParent %s@%s encap hostname %s",
+							slog.Debug(fmt.Sprintf("dbUpdateInstances nodeContainerUpdateFromParentNode %s@%s encap hostname %s",
 								objID, nodeID, containerStatus.monVmName))
-							if err := d.oDb.updateContainerNodeFromParent(d.ctx, containerStatus.monVmName, obj.app, node); err != nil {
-								return fmt.Errorf("dbUpdateInstances updateContainerNodeFromParent %s@%s encap hostname %s: %w",
+							if err := d.oDb.nodeContainerUpdateFromParentNode(d.ctx, containerStatus.monVmName, obj.app, node); err != nil {
+								return fmt.Errorf("dbUpdateInstances nodeContainerUpdateFromParentNode %s@%s encap hostname %s: %w",
 									objID, nodeID, containerStatus.monVmName, err)
 							}
 						}
@@ -662,13 +662,13 @@ func (d *daemonStatus) dbPurgeInstances() error {
 }
 
 func (d *daemonStatus) dbPurgeServices() error {
-	objectIDs, err := d.oDb.objectIDWithPurgeTag(d.ctx, d.clusterID)
+	objectIDs, err := d.oDb.objectIDsFromClusterIDWithPurgeTag(d.ctx, d.clusterID)
 	if err != nil {
-		err = fmt.Errorf("dbPurgeServices: objectIDWithPurgeTag: %w", err)
+		err = fmt.Errorf("dbPurgeServices objectIDsFromClusterIDWithPurgeTag: %w", err)
 		return err
 	}
 	for _, objectID := range objectIDs {
-		if err1 := d.oDb.purgeObject(d.ctx, objectID); err1 != nil {
+		if err1 := d.oDb.purgeTablesFromObjectID(d.ctx, objectID); err1 != nil {
 			err = errors.Join(err, fmt.Errorf("purge object %s: %w", objectID, err1))
 		}
 	}
