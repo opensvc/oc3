@@ -24,6 +24,22 @@ paths:
         500:
           $ref: '#/components/responses/500'
 
+  /daemon/ping:
+    post:
+      description: |
+        Refresh existing daemon status timestamps for node
+      operationId: PostDaemonPing
+      responses:
+        202:
+          description: refresh daemon status timestamps will be refreshed for node
+        204:
+          description: missing daemon status for node, POST /daemon/status is required
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /daemon/system:
     post:
       description: |
