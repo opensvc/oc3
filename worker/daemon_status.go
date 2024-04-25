@@ -287,23 +287,12 @@ func (d *daemonStatus) getData() error {
 }
 
 func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
-	const querySearch = "SELECT cluster_id FROM nodes WHERE node_id = ? and cluster_id = ?"
-	const queryUpdate = "UPDATE nodes SET cluster_id = ? WHERE node_id = ?"
-	row := d.db.QueryRowContext(d.ctx, querySearch, d.nodeID, d.clusterID)
-	var s string
-	err := row.Scan(&s)
-	switch err {
-	case nil:
-		return nil
-	case sql.ErrNoRows:
-		slog.Info(fmt.Sprintf("dbCheckClusterIDForNodeID update cluster for %s", d.nodeID))
-		if _, err := d.db.ExecContext(d.ctx, queryUpdate, d.clusterID, d.nodeID); err != nil {
-			return fmt.Errorf("dbCheckClusterIDForNodeID can't update cluster_id for node %s: %w", d.nodeID, err)
-		}
-		return nil
-	default:
-		return fmt.Errorf("dbCheckClusterIDForNodeID can't verify cluster_id for node %s: %w", d.nodeID, err)
+	if ok, err := d.oDb.updateNodeClusterIDForNodeID(d.ctx, d.nodeID, d.clusterID); err != nil {
+		return fmt.Errorf("dbCheckClusterIDForNodeID for %s (%s): %w", d.callerNode.nodename, d.nodeID, err)
+	} else if ok {
+		slog.Info("dbCheckClusterIDForNodeID change cluster id value")
 	}
+	return nil
 }
 
 func (d *daemonStatus) dbCheckClusters() error {
@@ -357,12 +346,10 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 			return fmt.Errorf("dataToNodeFrozen %s: %w", nodename, err)
 		}
 		if frozen != dbNode.frozen {
-			const query = "UPDATE nodes SET node_frozen = ? WHERE node_id = ?"
 			slog.Info(fmt.Sprintf("dataToNodeFrozen: updating node %s: %s frozen from %s -> %s", nodename, nodeID, dbNode.frozen, frozen))
-			if _, err := d.db.ExecContext(d.ctx, query, frozen, nodeID); err != nil {
-				return fmt.Errorf("dataToNodeFrozen ExecContext: %w", err)
+			if err := d.oDb.updateNodeFrozenValue(d.ctx, frozen, d.nodeID); err != nil {
+				return fmt.Errorf("dataToNodeFrozen node %s (%): %w", nodename, dbNode.nodeID, err)
 			}
-			d.oDb.tableChange("nodes")
 		}
 	}
 	return nil
