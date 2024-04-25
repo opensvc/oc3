@@ -42,7 +42,6 @@ func severityFromEnv(dashType int, objEnv string) int {
 	}
 }
 
-// func (d *daemonStatus) updateDashboardObject(obj *DBObject, doDelete bool, f dashboarderCreate) error {
 func (d *daemonStatus) updateDashboardObject(obj *DBObject, doDelete bool, dash dashboarder) error {
 	objID := obj.svcID
 	fmtErr := func(err error) error {
