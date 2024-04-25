@@ -45,3 +45,32 @@ func (oDb *opensvcDB) findClusterObjectsWithObjectNames(ctx context.Context, clu
 	err = rows.Err()
 	return
 }
+
+func (oDb *opensvcDB) findClusterObjects(ctx context.Context, clusterID string) (dbObjects []*DBObject, err error) {
+	defer logDuration("findClusterObjects", time.Now())
+	var query = `
+		SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env, svc_status,
+       		svc_placement, svc_provisioned, svc_app
+		FROM services
+		WHERE cluster_id = ?`
+
+	var rows *sql.Rows
+	rows, err = oDb.db.QueryContext(ctx, query, clusterID)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var o DBObject
+		var placement, provisioned, app sql.NullString
+		if err = rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env, &o.overallStatus, &placement, &provisioned, &app); err != nil {
+			return
+		}
+		o.placement = placement.String
+		o.provisioned = provisioned.String
+		o.app = app.String
+		dbObjects = append(dbObjects, &o)
+	}
+	err = rows.Err()
+	return
+}
