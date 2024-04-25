@@ -13,7 +13,6 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/opensvc/oc3/cache"
 )
@@ -125,17 +124,6 @@ type (
 	}
 )
 
-var (
-	promDaemonStatusSubOperation = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "oc3_worker_processed_sub_operations_total",
-			Help:    "The total number of worker sub operations",
-			Buckets: prometheus.LinearBuckets(0, 0.05, 61),
-		},
-		[]string{"subOperation"},
-	)
-)
-
 func (n *DBNode) String() string {
 	return fmt.Sprintf("node: {nodename: %s, node_id: %s, cluster_id: %s, app: %s}", n.nodename, n.nodeID, n.clusterID, n.app)
 }
@@ -145,7 +133,6 @@ func (i *InstanceID) String() string {
 }
 
 func (t *Worker) handleDaemonStatus(nodeID string) error {
-	defer daemonStatusHistoObserve("main", time.Now())
 	defer logDurationInfo(fmt.Sprintf("handleDaemonStatus %s with tx %v", nodeID, t.WithTx), time.Now())
 	slog.Info(fmt.Sprintf("handleDaemonStatus starting for node_id %s", nodeID))
 	ctx := context.Background()
@@ -181,41 +168,41 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		d.oDb = &opensvcDB{db: t.DB, tChanges: make(map[string]struct{})}
 	}
 
-	type operation struct {
-		name string
-		do   func() error
-	}
-
 	chain := func(ops ...operation) error {
 		for _, op := range ops {
 			begin := time.Now()
 			err := op.do()
+			duration := time.Now().Sub(begin)
 			if err != nil {
+				operationDuration.
+					With(prometheus.Labels{"desc": op.desc, "status": operationStatusFailed}).
+					Observe(duration.Seconds())
 				return err
 			}
-			duration := time.Now().Sub(begin)
-			promDaemonStatusSubOperation.With(prometheus.Labels{"subOperation": op.name}).Observe(duration.Seconds())
-			slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", op.name, duration))
+			operationDuration.
+				With(prometheus.Labels{"desc": op.desc, "status": operationStatusOk}).
+				Observe(duration.Seconds())
+			slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", op.desc, duration))
 		}
 		return nil
 	}
 
 	err := chain([]operation{
-		{"dropPending", d.dropPending},
-		{"getChanges", d.getChanges},
-		{"getData", d.getData},
-		{"dbCheckClusterIDForNodeID", d.dbCheckClusterIDForNodeID},
-		{"dbCheckClusters", d.dbCheckClusters},
-		{"dbFindNodes", d.dbFindNodes},
-		{"dataToNodeFrozen", d.dataToNodeFrozen},
-		{"dbFindServices", d.dbFindServices},
-		{"dbCreateServices", d.dbCreateServices},
-		{"dbFindInstances", d.dbFindInstances},
-		{"dbUpdateServices", d.dbUpdateServices},
-		{"dbUpdateInstances", d.dbUpdateInstances},
-		{"dbPurgeInstances", d.dbPurgeInstances},
-		{"dbPurgeServices", d.dbPurgeServices},
-		{"pushFromTableChanges", d.pushFromTableChanges},
+		{"daemonStatus/dropPending", d.dropPending},
+		{"daemonStatus/getChanges", d.getChanges},
+		{"daemonStatus/getData", d.getData},
+		{"daemonStatus/dbCheckClusterIDForNodeID", d.dbCheckClusterIDForNodeID},
+		{"daemonStatus/dbCheckClusters", d.dbCheckClusters},
+		{"daemonStatus/dbFindNodes", d.dbFindNodes},
+		{"daemonStatus/dataToNodeFrozen", d.dataToNodeFrozen},
+		{"daemonStatus/dbFindServices", d.dbFindServices},
+		{"daemonStatus/dbCreateServices", d.dbCreateServices},
+		{"daemonStatus/dbFindInstances", d.dbFindInstances},
+		{"daemonStatus/dbUpdateServices", d.dbUpdateServices},
+		{"daemonStatus/dbUpdateInstances", d.dbUpdateInstances},
+		{"daemonStatus/dbPurgeInstances", d.dbPurgeInstances},
+		{"daemonStatus/dbPurgeServices", d.dbPurgeServices},
+		{"daemonStatus/pushFromTableChanges", d.pushFromTableChanges},
 	}...)
 	if err != nil {
 		if tx, ok := d.db.(DBTxer); ok {
@@ -247,9 +234,8 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 }
 
 func (d *daemonStatus) dropPending() error {
-	defer logDuration("dropPending", time.Now())
 	if err := d.redis.HDel(d.ctx, cache.KeyDaemonStatusPending, d.nodeID).Err(); err != nil {
-		return fmt.Errorf("dropPening: HDEL %s %s: %w", cache.KeyDaemonStatusPending, d.nodeID, err)
+		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonStatusPending, d.nodeID, err)
 	}
 	return nil
 }
@@ -748,10 +734,6 @@ func (d *daemonStatus) pushFromTableChanges() error {
 		}
 	}
 	return nil
-}
-
-func daemonStatusHistoObserve(s string, begin time.Time) {
-	promDaemonStatusSubOperation.With(prometheus.Labels{"subOperation": s}).Observe(time.Now().Sub(begin).Seconds())
 }
 
 func logDuration(s string, begin time.Time) {
