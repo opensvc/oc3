@@ -128,3 +128,64 @@ func (oDb *opensvcDB) updateContainerNodeFromParent(ctx context.Context, cName, 
 	}
 	return nil
 }
+
+func (oDb *opensvcDB) findClusterNodesFromNodeID(ctx context.Context, nodeID string) (dbNodes []*DBNode, err error) {
+	defer logDuration("findClusterNodesFromNodeID", time.Now())
+	if nodeID == "" {
+		err = fmt.Errorf("findClusterNodesFromNodeID: called with empty node id")
+		return
+	}
+	var (
+		rows *sql.Rows
+
+		query = `SELECT nodename, node_id, cluster_id, node_env, app, hv, node_frozen,
+				loc_country, loc_city, loc_addr, loc_building, loc_floor, loc_room, loc_rack, loc_zip,
+				enclosure, enclosureslot
+			FROM nodes
+			WHERE cluster_id IN (SELECT cluster_id FROM nodes WHERE node_id = ?)`
+	)
+
+	rows, err = oDb.db.QueryContext(ctx, query, nodeID)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var (
+			nodename, nodeID, clusterID, nodeEnv, app, hv, frozen, locCountry sql.NullString
+			locCity, locAddr, locBuilding, locFloor, locRoom, locRack, locZip sql.NullString
+			enclosure, enclosureSlot                                          sql.NullString
+		)
+		err = rows.Scan(
+			&nodename, &nodeID, &clusterID, &nodeEnv, &app, &hv, &frozen,
+			&locCountry, &locCity, &locAddr, &locBuilding, &locFloor, &locRoom, &locRack, &locZip,
+			&enclosure, &enclosureSlot)
+		if err != nil {
+			return
+		}
+
+		dbNodes = append(dbNodes, &DBNode{
+			nodename:      nodename.String,
+			frozen:        frozen.String,
+			nodeID:        nodeID.String,
+			clusterID:     clusterID.String,
+			app:           app.String,
+			nodeEnv:       nodeEnv.String,
+			locAddr:       locAddr.String,
+			locCountry:    locCountry.String,
+			locCity:       locCity.String,
+			locZip:        locZip.String,
+			locBuilding:   locBuilding.String,
+			locFloor:      locFloor.String,
+			locRoom:       locRoom.String,
+			locRack:       locRack.String,
+			enclosure:     enclosure.String,
+			enclosureSlot: enclosureSlot.String,
+			hv:            hv.String,
+		})
+	}
+	if err = rows.Err(); err != nil {
+		return
+	}
+	return
+}
