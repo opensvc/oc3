@@ -197,6 +197,56 @@ func (oDb *opensvcDB) pingInstance(ctx context.Context, svcID, nodeID string) (u
 	return
 }
 
+// pingNodeInstances updates match svcmon.mon_updated, svcmon_log_last.mon_end,
+// resmon.updated and resmon_log_last.res_end when svcmon.mon_updated timestamp
+// for node_id id older than 30s.
+func (oDb *opensvcDB) pingNodeInstances(ctx context.Context, nodeID string) (updates bool, err error) {
+	defer logDuration("pingInstance "+nodeID, time.Now())
+	const (
+		qUpdateSvcmon = `UPDATE svcmon SET mon_updated = NOW()
+			WHERE node_id = ? AND mon_updated < DATE_SUB(NOW(), INTERVAL 30 SECOND)`
+
+		qUpdateSvcmonLogLast = `UPDATE svcmon_log_last SET mon_end = NOW()
+			WHERE node_id = ? AND mon_end < DATE_SUB(NOW(), INTERVAL 30 SECOND)`
+
+		qUpdateResmon = `UPDATE resmon SET updated = NOW()
+			WHERE node_id = ? AND updated < DATE_SUB(NOW(), INTERVAL 30 SECOND)`
+
+		qUpdateResmonLogLast = `UPDATE resmon_log_last SET res_end = NOW()
+			WHERE node_id = ? AND res_end < DATE_SUB(NOW(), INTERVAL 30 SECOND)`
+	)
+	var (
+		count  int64
+		result sql.Result
+	)
+
+	if result, err = oDb.db.ExecContext(ctx, qUpdateSvcmon, nodeID); err != nil {
+		return
+	} else if count, err = result.RowsAffected(); err != nil {
+		return
+	} else if count == 0 {
+		return
+	}
+	updates = true
+	oDb.tableChange("svcmon")
+
+	if _, err = oDb.db.ExecContext(ctx, qUpdateSvcmonLogLast, nodeID); err != nil {
+		return
+	}
+
+	if result, err = oDb.db.ExecContext(ctx, qUpdateResmon, nodeID); err != nil {
+		return
+	} else if count, err = result.RowsAffected(); err != nil {
+		return
+	} else if count == 0 {
+		return
+	}
+	oDb.tableChange("resmon")
+
+	_, err = oDb.db.ExecContext(ctx, qUpdateResmonLogLast, nodeID)
+	return
+}
+
 func (oDb *opensvcDB) instanceStatusDelete(ctx context.Context, svcID, nodeID string) error {
 	defer logDuration("instanceStatusDelete "+svcID+"@"+nodeID, time.Now())
 	const (
