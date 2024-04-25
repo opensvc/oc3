@@ -80,6 +80,9 @@ func (t *Worker) Run() error {
 		var workType string
 		slog.Debug(fmt.Sprintf("BLPOP %s -> %s", result[0], result[1]))
 		switch result[0] {
+		case cache.KeyDaemonPing:
+			workType = "daemonPing"
+			err = t.handleDaemonPing(result[1])
 		case cache.KeySystem:
 			workType = "daemonSystem"
 			err = t.handleSystem(result[1])
