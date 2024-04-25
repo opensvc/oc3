@@ -727,16 +727,7 @@ func (d *daemonStatus) dbPurgeServices() error {
 }
 
 func (d *daemonStatus) pushFromTableChanges() error {
-	for _, tableName := range d.oDb.tableChanges() {
-		slog.Debug(fmt.Sprintf("pushFromTableChanges %s", tableName))
-		if err := d.oDb.updateTableModified(d.ctx, tableName); err != nil {
-			return fmt.Errorf("pushFromTableChanges: %w", err)
-		}
-		if err := d.ev.EventPublish(tableName+"_change", nil); err != nil {
-			return fmt.Errorf("EventPublish send %s: %w", tableName, err)
-		}
-	}
-	return nil
+	return pushFromTableChanges(d.ctx, d.oDb, d.ev)
 }
 
 func logDuration(s string, begin time.Time) {

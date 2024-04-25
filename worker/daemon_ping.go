@@ -85,6 +85,7 @@ func (t *Worker) handleDaemonPing(nodeID string) error {
 
 	err := chain([]operation{
 		{"daemonPing/dropPending", d.dropPending},
+		{"daemonPing/pushFromTableChanges", d.pushFromTableChanges},
 	}...)
 	if err != nil {
 		if tx, ok := d.db.(DBTxer); ok {
@@ -109,4 +110,8 @@ func (d *daemonPing) dropPending() error {
 		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonStatusPending, d.nodeID, err)
 	}
 	return nil
+}
+
+func (d *daemonPing) pushFromTableChanges() error {
+	return pushFromTableChanges(d.ctx, d.oDb, d.ev)
 }
