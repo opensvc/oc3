@@ -44,7 +44,7 @@ var (
 		prometheus.CounterOpts{
 			Namespace: "oc3",
 			Subsystem: "worker",
-			Name:      "operation",
+			Name:      "operation_count",
 			Help:      "Counter of worker processed feed operations",
 		},
 		[]string{"desc", "status"},
