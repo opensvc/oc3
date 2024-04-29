@@ -1,5 +1,8 @@
 openapi: 3.0.0
 
+servers:
+  - url: /oc3
+
 info:
   title: opensvc collector api
   version: 0.0.3
@@ -110,7 +113,7 @@ paths:
       tags:
         - agent
 
-  /oc3/version:
+  /version:
     get:
       operationId: GetVersion
       description: return api version
