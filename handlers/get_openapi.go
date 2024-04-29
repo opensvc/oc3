@@ -4,14 +4,11 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-
-	"github.com/opensvc/oc3/api"
 )
 
 func (a *Api) GetSwagger(ctx echo.Context) error {
-	swagger, err := api.GetSwagger()
-	if err != nil {
-		return nil
+	if !a.UI {
+		return JSONProblem(ctx, http.StatusUnauthorized, "serve schema is disabled by configuration.", "listener.ui.enable = false")
 	}
-	return ctx.JSON(http.StatusOK, swagger)
+	return ctx.JSON(http.StatusOK, SCHEMA)
 }

@@ -25,6 +25,8 @@ func listen() error {
 }
 
 func listenAndServe(addr string) error {
+	enableUI := viper.GetBool("listener.ui.enable")
+
 	db, err := newDatabase()
 	if err != nil {
 		return err
@@ -55,8 +57,9 @@ func listenAndServe(addr string) error {
 	api.RegisterHandlers(e, &handlers.Api{
 		DB:    db,
 		Redis: redisClient,
+		UI:    enableUI,
 	})
-	if viper.GetBool("listener.ui.enable") {
+	if enableUI {
 		registerAPIUI(e)
 	}
 	slog.Info("listen on " + addr)
