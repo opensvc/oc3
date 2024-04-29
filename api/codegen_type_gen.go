@@ -34,6 +34,11 @@ type Package = map[string]interface{}
 // System defines model for system.
 type System = map[string]interface{}
 
+// Version defines model for version.
+type Version struct {
+	Version string `json:"version"`
+}
+
 // N200 defines model for 200.
 type N200 = Problem
 

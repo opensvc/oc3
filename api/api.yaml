@@ -2,28 +2,9 @@ openapi: 3.0.0
 
 info:
   title: opensvc collector api
-  version: 0.0.1
+  version: 0.0.3
 
 paths:
-  /public/openapi:
-    get:
-      operationId: GetSwagger
-      tags:
-        - public
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-        401:
-          $ref: '#/components/responses/401'
-        403:
-          $ref: '#/components/responses/403'
-        500:
-          $ref: '#/components/responses/500'
-
   /daemon/ping:
     post:
       description: |
@@ -129,6 +110,41 @@ paths:
       tags:
         - agent
 
+  /oc3/version:
+    get:
+      operationId: GetVersion
+      description: return api version
+      tags:
+        - capabilities
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/version'
+        500:
+          $ref: '#/components/responses/500'
+
+  /public/openapi:
+    get:
+      operationId: GetSwagger
+      tags:
+        - public
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+
 components:
   schemas:
     NodeStatus:
@@ -164,6 +180,15 @@ components:
 
     package:
       type: object
+
+    version:
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          type: string
+          example: "0.0.1"
 
   parameters:
 
