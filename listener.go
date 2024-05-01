@@ -39,26 +39,27 @@ func listenAndServe(addr string) error {
 	e.HidePort = true
 
 	if viper.GetBool("listener.pprof.enable") {
-		slog.Info("add handler /public/pprof")
+		slog.Info("add handler /oc3/public/pprof")
 		// TODO: move to authenticated path
-		pprof.Register(e, "/public/pprof")
+		pprof.Register(e, "/oc3/public/pprof")
 	}
 
 	strategy := union.New(
-		xauth.NewPublicStrategy("/public/"),
+		xauth.NewPublicStrategy("/oc3/public/"),
 		xauth.NewBasicNode(db),
 	)
 	if viper.GetBool("listener.metrics.enable") {
-		slog.Info("add handler /public/metrics")
+		slog.Info("add handler /oc3/public/metrics")
 		e.Use(mwProm)
-		e.GET("/public/metrics", echoprometheus.NewHandler())
+		e.GET("/oc3/public/metrics", echoprometheus.NewHandler())
 	}
 	e.Use(handlers.AuthMiddleware(strategy))
-	api.RegisterHandlers(e, &handlers.Api{
+	slog.Info("register openapi handlers with base url: /oc3")
+	api.RegisterHandlersWithBaseURL(e, &handlers.Api{
 		DB:    db,
 		Redis: redisClient,
 		UI:    enableUI,
-	})
+	}, "/oc3")
 	if enableUI {
 		registerAPIUI(e)
 	}
@@ -67,7 +68,7 @@ func listenAndServe(addr string) error {
 }
 
 func registerAPIUI(e *echo.Echo) {
-	slog.Info("add handler /public/ui")
-	g := e.Group("/public/ui")
+	slog.Info("add handler /oc3/public/ui")
+	g := e.Group("/oc3/public/ui")
 	g.Use(handlers.UIMiddleware(context.Background()))
 }
