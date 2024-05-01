@@ -3,9 +3,7 @@ package cache
 var (
 	clientKey = "redisClient"
 
-	KeySystem     = "oc3:q:system"
-	KeySystemHash = "oc3:h:system"
-	KeyGeneric    = "oc3:q:generic"
+	KeyGeneric = "oc3:q:generic"
 
 	KeyDaemonPing              = "oc3:q:daemon_ping"
 	KeyDaemonPingPending       = "oc3:h:daemon_ping_pending"
@@ -13,6 +11,9 @@ var (
 	KeyDaemonStatusChangesHash = "oc3:h:daemon_status_changes"
 	KeyDaemonStatus            = "oc3:q:daemon_status"
 	KeyDaemonStatusPending     = "oc3:h:daemon_status_pending"
+	KeyDaemonSystem            = "oc3:q:daemon_system"
+	KeyDaemonSystemHash        = "oc3:h:daemon_system"
+	KeyDaemonSystemPending     = "oc3:h:daemon_system_pending"
 	KeyPackagesHash            = "oc3:h:packages"
 	KeyPackages                = "oc3:q:packages"
 	KeyPackagesPending         = "oc3:h:packages_pending"
