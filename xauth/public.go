@@ -24,7 +24,7 @@ func NewPublicStrategy(s string) auth.Strategy {
 }
 
 func (p *public) Authenticate(_ context.Context, r *http.Request) (auth.Info, error) {
-	if strings.HasPrefix(r.RequestURI, "/public/") {
+	if strings.HasPrefix(r.RequestURI, "/oc3/public/") {
 		return auth.NewUserInfo("public", "", nil, nil), nil
 	}
 	return nil, ErrPrivatePath
