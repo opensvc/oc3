@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+
 	"github.com/opensvc/oc3/cache"
 	"github.com/opensvc/oc3/mariadb"
 )
@@ -363,7 +364,11 @@ func (t *Worker) handleSystem(nodeID string) error {
 	ctx := context.Background()
 	ctx, _ = context.WithTimeout(ctx, time.Second*5)
 
-	cmd := t.Redis.HGet(ctx, cache.KeySystemHash, nodeID)
+	if err := t.Redis.HDel(ctx, cache.KeyDaemonSystemPending, nodeID).Err(); err != nil {
+		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonSystemPending, nodeID, err)
+	}
+
+	cmd := t.Redis.HGet(ctx, cache.KeyDaemonSystemHash, nodeID)
 	result, err := cmd.Result()
 	switch err {
 	case nil:

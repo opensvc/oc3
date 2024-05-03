@@ -109,7 +109,7 @@ func (t *Worker) handleDaemonPing(nodeID string) error {
 
 func (d *daemonPing) dropPending() error {
 	if err := d.redis.HDel(d.ctx, cache.KeyDaemonPingPending, d.nodeID).Err(); err != nil {
-		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonStatusPending, d.nodeID, err)
+		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonPingPending, d.nodeID, err)
 	}
 	return nil
 }

@@ -83,7 +83,7 @@ func (t *Worker) Run() error {
 		case cache.KeyDaemonPing:
 			workType = "daemonPing"
 			err = t.handleDaemonPing(result[1])
-		case cache.KeySystem:
+		case cache.KeyDaemonSystem:
 			workType = "daemonSystem"
 			err = t.handleSystem(result[1])
 		case cache.KeyDaemonStatus:
