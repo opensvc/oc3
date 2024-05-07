@@ -13,7 +13,7 @@ import (
 	"github.com/opensvc/oc3/mariadb"
 )
 
-func (t *Worker) handleSystemTargets(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemTargets(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system targets data format")
@@ -55,7 +55,7 @@ func (t *Worker) handleSystemTargets(ctx context.Context, nodeID string, i any, 
 	return nil
 }
 
-func (t *Worker) handleSystemHBA(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemHBA(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system hba data format")
@@ -97,7 +97,7 @@ func (t *Worker) handleSystemHBA(ctx context.Context, nodeID string, i any, now 
 	return nil
 }
 
-func (t *Worker) handleSystemLAN(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemLAN(ctx context.Context, nodeID string, i any, now time.Time) error {
 	var l []any
 	data, ok := i.(map[string]any)
 	if !ok {
@@ -152,7 +152,7 @@ func (t *Worker) handleSystemLAN(ctx context.Context, nodeID string, i any, now 
 	return nil
 }
 
-func (t *Worker) handleSystemGroups(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemGroups(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system groups data format")
@@ -195,7 +195,7 @@ func (t *Worker) handleSystemGroups(ctx context.Context, nodeID string, i any, n
 	return nil
 }
 
-func (t *Worker) handleSystemUsers(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemUsers(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system users data format")
@@ -238,7 +238,7 @@ func (t *Worker) handleSystemUsers(ctx context.Context, nodeID string, i any, no
 	return nil
 }
 
-func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system hardware data format")
@@ -284,7 +284,7 @@ func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any,
 	return nil
 }
 
-func (t *Worker) handleSystemProperties(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemProperties(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.(map[string]any)
 	if !ok {
 		slog.Warn("unsupported system properties format")
