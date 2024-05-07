@@ -4,23 +4,24 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 )
 
-func Now(ctx context.Context, db *sql.DB) (string, error) {
+func Now(ctx context.Context, db *sql.DB) (time.Time, error) {
+	var t time.Time
 	rows, err := db.QueryContext(ctx, "SELECT NOW()")
 	if err != nil {
-		return "", err
+		return t, err
 	}
 	if rows == nil {
-		return "", fmt.Errorf("no result rows for SELECT NOW()")
+		return t, fmt.Errorf("no result rows for SELECT NOW()")
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		return "", fmt.Errorf("no result rows next for SELECT NOW()")
+		return t, fmt.Errorf("no result rows next for SELECT NOW()")
 	}
-	var s string
-	if err := rows.Scan(&s); err != nil {
-		return "", err
+	if err := rows.Scan(&t); err != nil {
+		return t, err
 	}
-	return s, nil
+	return t, nil
 }
