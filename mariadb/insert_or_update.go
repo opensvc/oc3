@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
 )
@@ -14,6 +15,9 @@ type (
 		Keys     []string
 		Mappings Mappings
 		Data     any
+
+		// Log enable query logging
+		Log bool
 
 		names        []string
 		placeholders []string
@@ -100,9 +104,11 @@ func (t *InsertOrUpdate) QueryContext(ctx context.Context, db *sql.DB) (*sql.Row
 	if len(t.values) == 0 {
 		return nil, nil
 	}
-	sql := t.SQL()
-	//slog.Debug(fmt.Sprint(sql, t.values))
-	return db.QueryContext(ctx, sql, t.values...)
+	query := t.SQL()
+	if t.Log {
+		slog.Info(fmt.Sprintf("InsertOrUpdate.QueryContext table: %s SQL: %s VALUES:%#v", t.Table, query, t.values))
+	}
+	return db.QueryContext(ctx, query, t.values...)
 }
 
 func (t *InsertOrUpdate) SQL() string {
