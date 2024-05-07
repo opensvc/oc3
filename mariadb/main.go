@@ -23,6 +23,11 @@ type (
 
 		// Modify modifies the placeholder and value (ex: datetimes rfc change)
 		Modify func(v any) (string, []any, error)
+
+		// Optional may be set to true to ignore missing key during load data map
+		// during InsertOrUpdate.QueryContext calls. It has no effect when loaded data is not
+		// a map[string] any.
+		Optional bool
 	}
 )
 
