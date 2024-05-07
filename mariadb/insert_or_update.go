@@ -43,6 +43,9 @@ func (t *InsertOrUpdate) loadLines(data []any) error {
 	}
 
 	for _, mapping := range t.Mappings {
+		if mapping.To == "" {
+			return fmt.Errorf("invalid mapping definition (To is empty): %#v", mapping)
+		}
 		t.names = append(t.names, mapping.To)
 		if !slices.Contains(t.Keys, mapping.To) {
 			t.updates = append(t.updates, fmt.Sprintf("%s = VALUES(%s)", mapping.To, mapping.To))
