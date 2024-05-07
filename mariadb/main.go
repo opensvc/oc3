@@ -3,6 +3,7 @@ package mariadb
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 type (
@@ -25,19 +26,31 @@ type (
 	}
 )
 
-func ModifyDatetime(v any) (placeholder string, values []any, err error) {
-	s := fmt.Sprint(v)
-	if i := strings.Index(s, "+"); i > 0 {
-		placeholder = "CONVERT_TZ(?, ?, \"SYSTEM\")"
-		values = append(values, s[:i], s[i:])
+// ModifyDatetime returns placeholder for time.Time like objects
+func ModifyDatetime(a any) (placeholder string, values []any, err error) {
+	switch v := a.(type) {
+	case string:
+		// TODO: use default time.Parse instead to append time.Time value ?
+		s := fmt.Sprint(v)
+		if i := strings.LastIndex(s, "+"); i > 0 {
+			placeholder = "CONVERT_TZ(?, ?, \"SYSTEM\")"
+			values = append(values, s[:i], s[i:])
+			return
+		}
+		if i := strings.LastIndex(s, "-"); i > 0 {
+			placeholder = "CONVERT_TZ(?, ?, \"SYSTEM\")"
+			values = append(values, s[:i], s[i:])
+			return
+		}
+		placeholder = "?"
+		values = append(values, s)
+		return
+	case time.Time:
+		placeholder = "?"
+		values = append(values, v)
+		return
+	default:
+		err = fmt.Errorf("ModifyDatetime can't analyse %v", a)
 		return
 	}
-	if i := strings.Index(s, "-"); i > 0 {
-		placeholder = "CONVERT_TZ(?, ?, \"SYSTEM\")"
-		values = append(values, s[:i], s[i:])
-		return
-	}
-	placeholder = "?"
-	values = append(values, s)
-	return
 }
