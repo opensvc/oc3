@@ -32,6 +32,12 @@ func ModifyDatetime(a any) (placeholder string, values []any, err error) {
 	case string:
 		// TODO: use default time.Parse instead to append time.Time value ?
 		s := fmt.Sprint(v)
+		if len(s) < 11 {
+			// 2024-04-02
+			placeholder = "?"
+			values = append(values, s)
+			return
+		}
 		if i := strings.LastIndex(s, "+"); i > 0 {
 			placeholder = "CONVERT_TZ(?, ?, \"SYSTEM\")"
 			values = append(values, s[:i], s[i:])
