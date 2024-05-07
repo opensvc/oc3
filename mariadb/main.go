@@ -60,3 +60,23 @@ func ModifyDatetime(a any) (placeholder string, values []any, err error) {
 		return
 	}
 }
+
+func ModifierMaxLen(maxLen int) func(a any) (placeholder string, values []any, err error) {
+	return func(a any) (placeholder string, values []any, err error) {
+		switch v := a.(type) {
+		case string:
+			var value string
+			if len(v) > maxLen {
+				value = v[:maxLen]
+			} else {
+				value = v
+			}
+			placeholder = "?"
+			values = append(values, value)
+			return
+		default:
+			err = fmt.Errorf("ModifyStringLen can't analyse %v", a)
+			return
+		}
+	}
+}
