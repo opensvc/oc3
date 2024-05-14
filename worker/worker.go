@@ -28,9 +28,24 @@ type (
 		EventPublish(eventName string, data map[string]any) error
 	}
 
-	operation struct {
-		desc string
-		do   func() error
+	PrepareDBer interface {
+		PrepareDB(ctx context.Context, db *sql.DB, withTx bool) error
+	}
+
+	RedisSetter interface {
+		SetRedis(r *redis.Client)
+	}
+
+	EvSetter interface {
+		SetEv(ev EventPublisher)
+	}
+
+	JobRunner interface {
+		Operationer
+
+		DBGetter
+		Name() string
+		Detail() string
 	}
 )
 
@@ -77,25 +92,39 @@ func (t *Worker) Run() error {
 			continue
 		}
 		begin := time.Now()
-		var workType string
+		var j JobRunner
 		slog.Debug(fmt.Sprintf("BLPOP %s -> %s", result[0], result[1]))
+		ctx := context.Background()
 		switch result[0] {
 		case cache.KeyDaemonPing:
-			workType = "daemonPing"
-			err = t.handleDaemonPing(result[1])
-		case cache.KeyDaemonSystem:
-			workType = "daemonSystem"
-			err = t.handleSystem(result[1])
+			j = newDaemonPing(result[1])
 		case cache.KeyDaemonStatus:
-			workType = "daemonStatus"
-			err = t.handleDaemonStatus(result[1])
+			j = newDaemonStatus(result[1])
+		case cache.KeyDaemonSystem:
+			j = newDaemonSystem(result[1])
 		case cache.KeyPackages:
-			workType = "daemonPackage"
-			err = t.handlePackage(result[1])
+			j = newJobPackage(result[1])
 		default:
 			slog.Debug(fmt.Sprintf("ignore queue '%s'", result[0]))
+			continue
+		}
+		workType := j.Name()
+		if a, ok := j.(PrepareDBer); ok {
+			if err = a.PrepareDB(ctx, t.DB, t.WithTx); err != nil {
+				slog.Error(fmt.Sprintf("can't get db for %s: %s", workType, err))
+				continue
+			}
+		}
+
+		if a, ok := j.(RedisSetter); ok {
+			a.SetRedis(t.Redis)
+		}
+
+		if a, ok := j.(EvSetter); ok {
+			a.SetEv(t.Ev)
 		}
 		status := operationStatusOk
+		err = RunJob(j)
 		duration := time.Now().Sub(begin)
 		if err != nil {
 			status = operationStatusFailed

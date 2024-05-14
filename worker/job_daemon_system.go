@@ -1,11 +1,9 @@
 package worker
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/go-redis/redis/v8"
 
@@ -13,12 +11,34 @@ import (
 	"github.com/opensvc/oc3/mariadb"
 )
 
-func (t *Worker) handleSystemTargets(ctx context.Context, nodeID string, i any, now time.Time) error {
-	data, ok := i.([]any)
+type (
+	jobSystem struct {
+		*BaseJob
+
+		nodeID string
+		data   map[string]any
+	}
+)
+
+func newDaemonSystem(nodeID string) *jobSystem {
+	return &jobSystem{
+		BaseJob: &BaseJob{
+			name:   "daemonSystem",
+			detail: "nodeID: " + nodeID,
+		},
+		nodeID: nodeID,
+	}
+}
+
+func (d *jobSystem) targets() error {
+	data, ok := d.data["targets"].([]any)
 	if !ok {
 		slog.Warn("unsupported system targets data format")
 		return nil
 	}
+
+	nodeID := d.nodeID
+	now := d.now
 	for i, _ := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
@@ -42,11 +62,11 @@ func (t *Worker) handleSystemTargets(ctx context.Context, nodeID string, i any, 
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM stor_zone WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM stor_zone WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
 		defer rows.Close()
@@ -55,12 +75,15 @@ func (t *Worker) handleSystemTargets(ctx context.Context, nodeID string, i any, 
 	return nil
 }
 
-func (t *Worker) handleSystemHBA(ctx context.Context, nodeID string, i any, now time.Time) error {
-	data, ok := i.([]any)
+func (d *jobSystem) hba() error {
+	data, ok := d.data["hba"].([]any)
 	if !ok {
 		slog.Warn("unsupported system hba data format")
 		return nil
 	}
+
+	nodeID := d.nodeID
+	now := d.now
 	for i, _ := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
@@ -84,11 +107,11 @@ func (t *Worker) handleSystemHBA(ctx context.Context, nodeID string, i any, now 
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM node_hba WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM node_hba WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
 		defer rows.Close()
@@ -97,13 +120,16 @@ func (t *Worker) handleSystemHBA(ctx context.Context, nodeID string, i any, now 
 	return nil
 }
 
-func (t *Worker) handleSystemLAN(ctx context.Context, nodeID string, i any, now time.Time) error {
+func (d *jobSystem) lan() error {
 	var l []any
-	data, ok := i.(map[string]any)
+	data, ok := d.data["lan"].(map[string]any)
 	if !ok {
 		slog.Warn("unsupported system lan data format")
 		return nil
 	}
+
+	nodeID := d.nodeID
+	now := d.now
 	for mac, addressesInterface := range data {
 		addresses, ok := addressesInterface.([]any)
 		if !ok {
@@ -139,11 +165,11 @@ func (t *Worker) handleSystemLAN(ctx context.Context, nodeID string, i any, now 
 		Data: l,
 	}
 
-	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM node_ip WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM node_ip WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
 		defer rows.Close()
@@ -152,13 +178,15 @@ func (t *Worker) handleSystemLAN(ctx context.Context, nodeID string, i any, now 
 	return nil
 }
 
-func (t *Worker) handleSystemGroups(ctx context.Context, nodeID string, i any, now time.Time) error {
-	data, ok := i.([]any)
+func (d *jobSystem) groups() error {
+	data, ok := d.data["gids"].([]any)
 	if !ok {
 		slog.Warn("unsupported system groups data format")
 		return nil
 	}
 
+	nodeID := d.nodeID
+	now := d.now
 	for i, _ := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
@@ -182,11 +210,11 @@ func (t *Worker) handleSystemGroups(ctx context.Context, nodeID string, i any, n
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM node_groups WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM node_groups WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
 		defer rows.Close()
@@ -195,13 +223,15 @@ func (t *Worker) handleSystemGroups(ctx context.Context, nodeID string, i any, n
 	return nil
 }
 
-func (t *Worker) handleSystemUsers(ctx context.Context, nodeID string, i any, now time.Time) error {
-	data, ok := i.([]any)
+func (d *jobSystem) users() error {
+	data, ok := d.data["uids"].([]any)
 	if !ok {
 		slog.Warn("unsupported system users data format")
 		return nil
 	}
 
+	nodeID := d.nodeID
+	now := d.now
 	for i, _ := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
@@ -225,11 +255,11 @@ func (t *Worker) handleSystemUsers(ctx context.Context, nodeID string, i any, no
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM node_users WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM node_users WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
 		defer rows.Close()
@@ -238,13 +268,14 @@ func (t *Worker) handleSystemUsers(ctx context.Context, nodeID string, i any, no
 	return nil
 }
 
-func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any, now time.Time) error {
-	data, ok := i.([]any)
+func (d *jobSystem) hardware() error {
+	data, ok := d.data["hardware"].([]any)
 	if !ok {
 		slog.Warn("unsupported system hardware data format")
 		return nil
 	}
-
+	nodeID := d.nodeID
+	now := d.now
 	for i, _ := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
@@ -271,11 +302,11 @@ func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any,
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(ctx, t.DB); err != nil {
+	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM node_hw WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM node_hw WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
 		defer rows.Close()
@@ -284,13 +315,15 @@ func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any,
 	return nil
 }
 
-func (t *Worker) handleSystemProperties(ctx context.Context, nodeID string, i any, now time.Time) error {
-	data, ok := i.(map[string]any)
+func (d *jobSystem) properties() error {
+	data, ok := d.data["properties"].(map[string]any)
 	if !ok {
 		slog.Warn("unsupported system properties format")
 		return nil
 	}
 
+	nodeID := d.nodeID
+	now := d.now
 	data["node_id"] = map[string]any{"value": nodeID}
 	data["updated"] = map[string]any{"value": now}
 
@@ -355,62 +388,63 @@ func (t *Worker) handleSystemProperties(ctx context.Context, nodeID string, i an
 		Data: data,
 	}
 
-	_, err := request.QueryContext(ctx, t.DB)
+	_, err := request.QueryContext(d.ctx, d.db)
 
 	return err
 }
 
-func (t *Worker) handleSystem(nodeID string) error {
-	ctx := context.Background()
-	ctx, _ = context.WithTimeout(ctx, time.Second*5)
-
-	if err := t.Redis.HDel(ctx, cache.KeyDaemonSystemPending, nodeID).Err(); err != nil {
-		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonSystemPending, nodeID, err)
+func (d *jobSystem) Operations() []operation {
+	hasProp := func(s string) func() bool {
+		return func() bool {
+			_, ok := d.data[s]
+			return ok
+		}
 	}
+	return []operation{
+		{desc: "handleSystem/dropPending", do: d.dropPending},
+		{desc: "handleSystem/getData", do: d.getData},
+		{desc: "handleSystem/dbNow", do: d.dbNow},
+		{desc: "handleSystem/hardware", do: d.hardware, skipOp: hasProp("hardware")},
+		{desc: "handleSystem/properties", do: d.properties, skipOp: hasProp("properties")},
+		{desc: "handleSystem/groups", do: d.groups, skipOp: hasProp("gids")},
+		{desc: "handleSystem/users", do: d.users, skipOp: hasProp("uids")},
+		{desc: "handleSystem/lan", do: d.lan, skipOp: hasProp("lan")},
+		{desc: "handleSystem/hba", do: d.hba, skipOp: hasProp("hba")},
+		{desc: "handleSystem/targets", do: d.targets, skipOp: hasProp("targets")},
+	}
+}
 
-	cmd := t.Redis.HGet(ctx, cache.KeyDaemonSystemHash, nodeID)
+func (d *jobSystem) dropPending() error {
+	if err := d.redis.HDel(d.ctx, cache.KeyDaemonSystemPending, d.nodeID).Err(); err != nil {
+		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonSystemPending, d.nodeID, err)
+	}
+	return nil
+}
+
+func (d *jobSystem) getData() error {
+	cmd := d.redis.HGet(d.ctx, cache.KeyDaemonSystemHash, d.nodeID)
 	result, err := cmd.Result()
 	switch err {
 	case nil:
 	case redis.Nil:
-		return nil
+		return fmt.Errorf("HGET: no results")
 	default:
-		return fmt.Errorf("system: HGET: %w", err)
+		return fmt.Errorf("HGET: %w", err)
 	}
-
-	var v map[string]any
-	if err := json.Unmarshal([]byte(result), &v); err != nil {
-		return fmt.Errorf("system: unmarshal: %w", err)
+	if err := json.Unmarshal([]byte(result), &d.data); err != nil {
+		return fmt.Errorf("unmarshal: %w", err)
 	}
-
-	now, err := mariadb.Now(ctx, t.DB)
-	if err != nil {
-		return fmt.Errorf("system: now: %w", err)
-	}
-
-	for k, i := range v {
+	for k := range d.data {
 		switch k {
 		case "hardware":
-			err = t.handleSystemHardware(ctx, nodeID, i, now)
 		case "properties":
-			err = t.handleSystemProperties(ctx, nodeID, i, now)
 		case "gids":
-			err = t.handleSystemGroups(ctx, nodeID, i, now)
 		case "uids":
-			err = t.handleSystemUsers(ctx, nodeID, i, now)
 		case "lan":
-			err = t.handleSystemLAN(ctx, nodeID, i, now)
 		case "hba":
-			err = t.handleSystemHBA(ctx, nodeID, i, now)
 		case "targets":
-			err = t.handleSystemTargets(ctx, nodeID, i, now)
 		default:
-			slog.Info(fmt.Sprintf("system: %s: ignore key '%s'", nodeID, k))
-		}
-		if err != nil {
-			slog.Warn(fmt.Sprintf("system: %s: %s: %s", nodeID, k, err))
-		} else {
-			slog.Info(fmt.Sprintf("system: %s: %s", nodeID, k))
+			slog.Info(fmt.Sprintf("parse data: ignore key '%s'", k))
 		}
 	}
 	return nil
