@@ -1,11 +1,9 @@
 package worker
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/go-redis/redis/v8"
 
@@ -13,43 +11,42 @@ import (
 	"github.com/opensvc/oc3/mariadb"
 )
 
-func (t *Worker) handlePackage(nodeID string) error {
-	ctx := context.Background()
-	ctx, _ = context.WithTimeout(ctx, time.Second*5)
+type (
+	jobPackage struct {
+		*BaseJob
 
-	_, err := t.Redis.HDel(ctx, cache.KeyPackagesPending, nodeID).Result()
-	if err != nil {
-		slog.Error(fmt.Sprintf("can't HDEL %s: %s", cache.KeyPackagesPending, nodeID))
-		return err
+		nodeID string
+		data   map[string][]any
 	}
+)
 
-	cmd := t.Redis.HGet(ctx, cache.KeyPackagesHash, nodeID)
-	result, err := cmd.Bytes()
-	switch err {
-	case nil:
-	case redis.Nil:
-		return nil
-	default:
-		return err
+func newJobPackage(nodeID string) *jobPackage {
+	return &jobPackage{
+		BaseJob: &BaseJob{
+			name:   "package",
+			detail: "nodeID: " + nodeID,
+		},
+		nodeID: nodeID,
 	}
+}
 
-	var data map[string][]any
-	if err := json.Unmarshal(result, &data); err != nil {
-		slog.Error(fmt.Sprintf("unmarshalled data: %#v\n", data))
-		return err
+func (d *jobPackage) Operations() []operation {
+	return []operation{
+		{desc: "package/dropPending", do: d.dropPending},
+		{desc: "package/getData", do: d.getData},
+		{desc: "package/dbNow", do: d.dbNow},
+		{desc: "package/dbUpdate", do: d.dbUpdate},
 	}
+}
 
-	now, err := mariadb.Now(ctx, t.DB)
-	if err != nil {
-		return fmt.Errorf("system: now: %w", err)
-	}
-
-	if _, ok := data["packages"]; !ok {
+func (d *jobPackage) dbUpdate() error {
+	pkgList, ok := d.data["packages"]
+	if !ok {
 		slog.Warn(fmt.Sprint("unsupported json format for packages"))
 		return nil
 	}
-
-	pkgList := data["packages"]
+	nodeID := d.nodeID
+	now := d.now
 
 	for i := range pkgList {
 		line, ok := pkgList[i].(map[string]any)
@@ -72,21 +69,46 @@ func (t *Worker) handlePackage(nodeID string) error {
 			mariadb.Mapping{To: "pkg_arch", From: "arch"},
 			mariadb.Mapping{To: "pkg_type", From: "type"},
 			mariadb.Mapping{To: "pkg_sig", From: "sig"},
-			mariadb.Mapping{To: "pkg_install_date", From: "install_date"},
+			mariadb.Mapping{To: "pkg_install_date", From: "installed_at", Modify: mariadb.ModifyDatetime},
 		},
 		Keys: []string{"node_id", "pkg_name", "pkg_arch", "pkg_version", "pkg_type"},
 		Data: pkgList,
 	}
 
-	if _, err = request.QueryContext(ctx, t.DB); err != nil {
+	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := t.DB.QueryContext(ctx, "DELETE FROM packages WHERE node_id = ? AND pkg_updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM packages WHERE node_id = ? AND pkg_updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
 		defer rows.Close()
 	}
 
+	return nil
+}
+
+func (d *jobPackage) dropPending() error {
+	if err := d.redis.HDel(d.ctx, cache.KeyPackagesPending, d.nodeID).Err(); err != nil {
+		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonSystemPending, d.nodeID, err)
+	}
+	return nil
+}
+
+func (d *jobPackage) getData() error {
+	cmd := d.redis.HGet(d.ctx, cache.KeyPackagesHash, d.nodeID)
+	result, err := cmd.Bytes()
+	switch err {
+	case nil:
+	case redis.Nil:
+		return nil
+	default:
+		return err
+	}
+
+	if err := json.Unmarshal(result, &d.data); err != nil {
+		slog.Error(fmt.Sprintf("unmarshalled data: %#v\n", d.data))
+		return err
+	}
 	return nil
 }

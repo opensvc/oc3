@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,7 +10,6 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/opensvc/oc3/cache"
 )
@@ -85,11 +83,7 @@ type (
 	}
 
 	daemonStatus struct {
-		ctx   context.Context
-		redis *redis.Client
-		db    DBOperater
-		oDb   *opensvcDB
-		ev    EventPublisher
+		*BaseJob
 
 		nodeID      string
 		clusterID   string
@@ -131,16 +125,13 @@ func (i *InstanceID) String() string {
 	return fmt.Sprintf("instance id: %s@%s", i.svcID, i.nodeID)
 }
 
-func (t *Worker) handleDaemonStatus(nodeID string) error {
-	defer logDurationInfo(fmt.Sprintf("handleDaemonStatus %s with tx %v", nodeID, t.WithTx), time.Now())
-	slog.Info(fmt.Sprintf("handleDaemonStatus starting for node_id %s", nodeID))
-	ctx := context.Background()
-
-	d := daemonStatus{
-		ctx:    ctx,
-		redis:  t.Redis,
+func newDaemonStatus(nodeID string) *daemonStatus {
+	return &daemonStatus{
+		BaseJob: &BaseJob{
+			name:   "daemonStatus",
+			detail: "nodeID: " + nodeID,
+		},
 		nodeID: nodeID,
-		ev:     t.Ev,
 
 		changes: make(map[string]struct{}),
 
@@ -154,70 +145,29 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 		byInstanceID:   make(map[string]*DBInstance),
 		byInstanceName: make(map[string]*DBInstance),
 	}
+}
 
-	switch t.WithTx {
-	case true:
-		if tx, err := t.DB.BeginTx(ctx, nil); err != nil {
-			return err
-		} else {
-			d.db = tx
-			d.oDb = &opensvcDB{db: tx, tChanges: make(map[string]struct{})}
-		}
-	case false:
-		d.db = t.DB
-		d.oDb = &opensvcDB{db: t.DB, tChanges: make(map[string]struct{})}
+func (d *daemonStatus) Operations() []operation {
+	return []operation{
+		{desc: "daemonStatus/dropPending", do: d.dropPending},
+		{desc: "daemonStatus/getChanges", do: d.getChanges},
+		{desc: "daemonStatus/getData", do: d.getData},
+		{desc: "daemonStatus/dbCheckClusterIDForNodeID", do: d.dbCheckClusterIDForNodeID},
+		{desc: "daemonStatus/dbCheckClusters", do: d.dbCheckClusters},
+		{desc: "daemonStatus/dbFindNodes", do: d.dbFindNodes},
+		{desc: "daemonStatus/dataToNodeFrozen", do: d.dataToNodeFrozen},
+		{desc: "daemonStatus/dbFindServices", do: d.dbFindServices},
+		{desc: "daemonStatus/dbCreateServices", do: d.dbCreateServices},
+		{desc: "daemonStatus/dbFindInstances", do: d.dbFindInstances},
+		{desc: "daemonStatus/dbUpdateServices", do: d.dbUpdateServices},
+		{desc: "daemonStatus/dbUpdateInstances", do: d.dbUpdateInstances},
+		{desc: "daemonStatus/dbPurgeInstances", do: d.dbPurgeInstances},
+		{desc: "daemonStatus/dbPurgeServices", do: d.dbPurgeServices},
+		{desc: "daemonStatus/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
+}
 
-	chain := func(ops ...operation) error {
-		for _, op := range ops {
-			begin := time.Now()
-			err := op.do()
-			duration := time.Now().Sub(begin)
-			if err != nil {
-				operationDuration.
-					With(prometheus.Labels{"desc": op.desc, "status": operationStatusFailed}).
-					Observe(duration.Seconds())
-				return err
-			}
-			operationDuration.
-				With(prometheus.Labels{"desc": op.desc, "status": operationStatusOk}).
-				Observe(duration.Seconds())
-			slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", op.desc, duration))
-		}
-		return nil
-	}
-
-	err := chain([]operation{
-		{"daemonStatus/dropPending", d.dropPending},
-		{"daemonStatus/getChanges", d.getChanges},
-		{"daemonStatus/getData", d.getData},
-		{"daemonStatus/dbCheckClusterIDForNodeID", d.dbCheckClusterIDForNodeID},
-		{"daemonStatus/dbCheckClusters", d.dbCheckClusters},
-		{"daemonStatus/dbFindNodes", d.dbFindNodes},
-		{"daemonStatus/dataToNodeFrozen", d.dataToNodeFrozen},
-		{"daemonStatus/dbFindServices", d.dbFindServices},
-		{"daemonStatus/dbCreateServices", d.dbCreateServices},
-		{"daemonStatus/dbFindInstances", d.dbFindInstances},
-		{"daemonStatus/dbUpdateServices", d.dbUpdateServices},
-		{"daemonStatus/dbUpdateInstances", d.dbUpdateInstances},
-		{"daemonStatus/dbPurgeInstances", d.dbPurgeInstances},
-		{"daemonStatus/dbPurgeServices", d.dbPurgeServices},
-		{"daemonStatus/pushFromTableChanges", d.pushFromTableChanges},
-	}...)
-	if err != nil {
-		if tx, ok := d.db.(DBTxer); ok {
-			slog.Debug("handleDaemonStatus rollback on error")
-			if err := tx.Rollback(); err != nil {
-				slog.Error(fmt.Sprintf("handleDaemonStatus rollback failed: %s", err))
-			}
-		}
-		return fmt.Errorf("handleDaemonStatus node_id %s cluster_id %s: %w", nodeID, d.clusterID, err)
-	} else if tx, ok := d.db.(DBTxer); ok {
-		slog.Debug("handleDaemonStatus commit")
-		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("handleDaemonStatus commit: %w", err)
-		}
-	}
+func (d *daemonStatus) LogResult() {
 	slog.Info(fmt.Sprintf("handleDaemonStatus done for %s", d.byNodeID[d.nodeID]))
 	for k, v := range d.byNodename {
 		slog.Debug(fmt.Sprintf("found db node %s: %#v", k, v))
@@ -230,7 +180,6 @@ func (t *Worker) handleDaemonStatus(nodeID string) error {
 	for k, v := range d.byInstanceName {
 		slog.Debug(fmt.Sprintf("found db instance %s: %#v", k, v))
 	}
-	return nil
 }
 
 func (d *daemonStatus) dropPending() error {

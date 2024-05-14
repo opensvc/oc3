@@ -1,12 +1,18 @@
 package mariadb
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
 )
 
 type (
+	QueryContexter interface {
+		QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	}
+
 	Mappings []Mapping
 	Mapping  struct {
 		// To is the table column name

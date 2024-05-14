@@ -158,7 +158,7 @@ func (t *InsertOrUpdate) loadSlice(data []any) error {
 	return nil
 }
 
-func (t *InsertOrUpdate) QueryContext(ctx context.Context, db *sql.DB) (*sql.Rows, error) {
+func (t *InsertOrUpdate) QueryContext(ctx context.Context, db QueryContexter) (*sql.Rows, error) {
 	if err := t.load(); err != nil {
 		return nil, err
 	}
