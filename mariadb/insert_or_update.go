@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
 )
@@ -15,6 +16,9 @@ type (
 		Mappings Mappings
 		Data     any
 
+		// Log enable query logging
+		Log bool
+
 		names        []string
 		placeholders []string
 		updates      []string
@@ -25,20 +29,81 @@ type (
 func (t *InsertOrUpdate) load() error {
 	switch v := t.Data.(type) {
 	case map[string]any:
-		return t.loadLines([]any{v})
+		return t.loadMap(v)
 	case []any:
-		return t.loadLines(v)
+		return t.loadSlice(v)
 	default:
 		return fmt.Errorf("unsupported data format")
 	}
 }
 
-func (t *InsertOrUpdate) loadLines(data []any) error {
+func (t *InsertOrUpdate) loadMap(data map[string]any) error {
+	var placeholders []string
+
 	if len(data) == 0 {
 		return nil
 	}
 
 	for _, mapping := range t.Mappings {
+		if mapping.To == "" {
+			return fmt.Errorf("invalid mapping definition (To is empty): %#v", mapping)
+		}
+		var key string
+		var value any
+		if mapping.From != "" {
+			key = mapping.From
+		} else if mapping.To != "" {
+			key = mapping.To
+		} else {
+			return fmt.Errorf("unsupported mapping definition: %#v", mapping)
+		}
+
+		if v, ok := data[key]; !ok {
+			if mapping.Optional {
+				continue
+			} else {
+				return fmt.Errorf("key '%s' not found", key)
+			}
+		} else {
+			t.names = append(t.names, mapping.To)
+			if !slices.Contains(t.Keys, mapping.To) {
+				t.updates = append(t.updates, fmt.Sprintf("%s = VALUES(%s)", mapping.To, mapping.To))
+			}
+			value = v
+		}
+
+		if mapping.Get != nil {
+			if v, err := mapping.Get(value); err != nil {
+				return err
+			} else {
+				value = v
+			}
+		}
+		if mapping.Modify != nil {
+			if placeholder, values, err := mapping.Modify(value); err != nil {
+				return err
+			} else {
+				placeholders = append(placeholders, placeholder)
+				t.values = append(t.values, values...)
+			}
+		} else {
+			placeholders = append(placeholders, "?")
+			t.values = append(t.values, value)
+		}
+	}
+	t.placeholders = append(t.placeholders, fmt.Sprintf("(%s)", strings.Join(placeholders, ", ")))
+	return nil
+}
+
+func (t *InsertOrUpdate) loadSlice(data []any) error {
+	if len(data) == 0 {
+		return nil
+	}
+
+	for _, mapping := range t.Mappings {
+		if mapping.To == "" {
+			return fmt.Errorf("invalid mapping definition (To is empty): %#v", mapping)
+		}
 		t.names = append(t.names, mapping.To)
 		if !slices.Contains(t.Keys, mapping.To) {
 			t.updates = append(t.updates, fmt.Sprintf("%s = VALUES(%s)", mapping.To, mapping.To))
@@ -100,9 +165,11 @@ func (t *InsertOrUpdate) QueryContext(ctx context.Context, db *sql.DB) (*sql.Row
 	if len(t.values) == 0 {
 		return nil, nil
 	}
-	sql := t.SQL()
-	//slog.Debug(fmt.Sprint(sql, t.values))
-	return db.QueryContext(ctx, sql, t.values...)
+	query := t.SQL()
+	if t.Log {
+		slog.Info(fmt.Sprintf("InsertOrUpdate.QueryContext table: %s SQL: %s VALUES:%#v", t.Table, query, t.values))
+	}
+	return db.QueryContext(ctx, query, t.values...)
 }
 
 func (t *InsertOrUpdate) SQL() string {

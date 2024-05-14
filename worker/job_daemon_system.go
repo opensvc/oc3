@@ -13,7 +13,7 @@ import (
 	"github.com/opensvc/oc3/mariadb"
 )
 
-func (t *Worker) handleSystemTargets(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemTargets(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system targets data format")
@@ -55,7 +55,7 @@ func (t *Worker) handleSystemTargets(ctx context.Context, nodeID string, i any, 
 	return nil
 }
 
-func (t *Worker) handleSystemHBA(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemHBA(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system hba data format")
@@ -97,7 +97,7 @@ func (t *Worker) handleSystemHBA(ctx context.Context, nodeID string, i any, now 
 	return nil
 }
 
-func (t *Worker) handleSystemLAN(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemLAN(ctx context.Context, nodeID string, i any, now time.Time) error {
 	var l []any
 	data, ok := i.(map[string]any)
 	if !ok {
@@ -152,7 +152,7 @@ func (t *Worker) handleSystemLAN(ctx context.Context, nodeID string, i any, now 
 	return nil
 }
 
-func (t *Worker) handleSystemGroups(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemGroups(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system groups data format")
@@ -195,7 +195,7 @@ func (t *Worker) handleSystemGroups(ctx context.Context, nodeID string, i any, n
 	return nil
 }
 
-func (t *Worker) handleSystemUsers(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemUsers(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system users data format")
@@ -238,7 +238,7 @@ func (t *Worker) handleSystemUsers(ctx context.Context, nodeID string, i any, no
 	return nil
 }
 
-func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.([]any)
 	if !ok {
 		slog.Warn("unsupported system hardware data format")
@@ -263,7 +263,7 @@ func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any,
 			mariadb.Mapping{To: "hw_type", From: "type"},
 			mariadb.Mapping{To: "hw_path", From: "path"},
 			mariadb.Mapping{To: "hw_class", From: "class"},
-			mariadb.Mapping{To: "hw_description", From: "description"},
+			mariadb.Mapping{To: "hw_description", From: "description", Modify: mariadb.ModifierMaxLen(128)},
 			mariadb.Mapping{To: "hw_driver", From: "driver"},
 			mariadb.Mapping{To: "updated"},
 		},
@@ -284,7 +284,7 @@ func (t *Worker) handleSystemHardware(ctx context.Context, nodeID string, i any,
 	return nil
 }
 
-func (t *Worker) handleSystemProperties(ctx context.Context, nodeID string, i any, now string) error {
+func (t *Worker) handleSystemProperties(ctx context.Context, nodeID string, i any, now time.Time) error {
 	data, ok := i.(map[string]any)
 	if !ok {
 		slog.Warn("unsupported system properties format")
@@ -309,10 +309,10 @@ func (t *Worker) handleSystemProperties(ctx context.Context, nodeID string, i an
 	request := mariadb.InsertOrUpdate{
 		Table: "nodes",
 		Mappings: mariadb.Mappings{
-			mariadb.Mapping{To: "asset_env", Get: get},
+			mariadb.Mapping{To: "asset_env", Get: get, Optional: true},
 			mariadb.Mapping{To: "bios_version", Get: get},
 			mariadb.Mapping{To: "cluster_id", Get: get},
-			mariadb.Mapping{To: "connect_to", Get: get},
+			mariadb.Mapping{To: "connect_to", Get: get, Optional: true},
 			mariadb.Mapping{To: "cpu_cores", Get: get},
 			mariadb.Mapping{To: "cpu_dies", Get: get},
 			mariadb.Mapping{To: "cpu_freq", Get: get},
@@ -322,14 +322,14 @@ func (t *Worker) handleSystemProperties(ctx context.Context, nodeID string, i an
 			mariadb.Mapping{To: "fqdn", Get: get},
 			mariadb.Mapping{To: "last_boot", Get: get, Modify: mariadb.ModifyDatetime},
 			mariadb.Mapping{To: "listener_port", Get: get},
-			mariadb.Mapping{To: "loc_addr", Get: get},
-			mariadb.Mapping{To: "loc_building", Get: get},
-			mariadb.Mapping{To: "loc_city", Get: get},
-			mariadb.Mapping{To: "loc_country", Get: get},
-			mariadb.Mapping{To: "loc_floor", Get: get},
-			mariadb.Mapping{To: "loc_rack", Get: get},
-			mariadb.Mapping{To: "loc_room", Get: get},
-			mariadb.Mapping{To: "loc_zip", Get: get},
+			mariadb.Mapping{To: "loc_addr", Get: get, Optional: true},
+			mariadb.Mapping{To: "loc_building", Get: get, Optional: true},
+			mariadb.Mapping{To: "loc_city", Get: get, Optional: true},
+			mariadb.Mapping{To: "loc_country", Get: get, Optional: true},
+			mariadb.Mapping{To: "loc_floor", Get: get, Optional: true},
+			mariadb.Mapping{To: "loc_rack", Get: get, Optional: true},
+			mariadb.Mapping{To: "loc_room", Get: get, Optional: true},
+			mariadb.Mapping{To: "loc_zip", Get: get, Optional: true},
 			mariadb.Mapping{To: "manufacturer", Get: get},
 			mariadb.Mapping{To: "mem_banks", Get: get},
 			mariadb.Mapping{To: "mem_bytes", Get: get},
@@ -342,14 +342,14 @@ func (t *Worker) handleSystemProperties(ctx context.Context, nodeID string, i an
 			mariadb.Mapping{To: "os_kernel", Get: get},
 			mariadb.Mapping{To: "os_name", Get: get},
 			mariadb.Mapping{To: "os_vendor", Get: get},
-			mariadb.Mapping{To: "sec_zone", Get: get},
+			mariadb.Mapping{To: "sec_zone", Get: get, Optional: true},
 			mariadb.Mapping{To: "serial", Get: get},
 			mariadb.Mapping{To: "sp_version", Get: get},
-			mariadb.Mapping{To: "team_integ", Get: get},
-			mariadb.Mapping{To: "team_support", Get: get},
+			mariadb.Mapping{To: "team_integ", Get: get, Optional: true},
+			mariadb.Mapping{To: "team_support", Get: get, Optional: true},
 			mariadb.Mapping{To: "tz", Get: get},
 			mariadb.Mapping{To: "updated", Get: get},
-			mariadb.Mapping{To: "version", Get: get},
+			mariadb.Mapping{To: "version", Get: get, Modify: mariadb.ModifierMaxLen(20)},
 		},
 		Keys: []string{"node_id"},
 		Data: data,
