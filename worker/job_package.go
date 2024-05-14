@@ -72,7 +72,7 @@ func (t *Worker) handlePackage(nodeID string) error {
 			mariadb.Mapping{To: "pkg_arch", From: "arch"},
 			mariadb.Mapping{To: "pkg_type", From: "type"},
 			mariadb.Mapping{To: "pkg_sig", From: "sig"},
-			mariadb.Mapping{To: "pkg_install_date", From: "install_date"},
+			mariadb.Mapping{To: "pkg_install_date", From: "installed_at", Modify: mariadb.ModifyDatetime},
 		},
 		Keys: []string{"node_id", "pkg_name", "pkg_arch", "pkg_version", "pkg_type"},
 		Data: pkgList,
