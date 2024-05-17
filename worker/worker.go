@@ -102,8 +102,6 @@ func (t *Worker) Run() error {
 			j = newDaemonStatus(result[1])
 		case cache.KeyDaemonSystem:
 			j = newDaemonSystem(result[1])
-		case cache.KeyPackages:
-			j = newJobPackage(result[1])
 		default:
 			slog.Debug(fmt.Sprintf("ignore queue '%s'", result[0]))
 			continue

@@ -12,7 +12,7 @@ import (
 )
 
 type (
-	jobSystem struct {
+	jobFeedSystem struct {
 		*BaseJob
 
 		nodeID string
@@ -20,8 +20,8 @@ type (
 	}
 )
 
-func newDaemonSystem(nodeID string) *jobSystem {
-	return &jobSystem{
+func newDaemonSystem(nodeID string) *jobFeedSystem {
+	return &jobFeedSystem{
 		BaseJob: &BaseJob{
 			name:   "daemonSystem",
 			detail: "nodeID: " + nodeID,
@@ -30,7 +30,78 @@ func newDaemonSystem(nodeID string) *jobSystem {
 	}
 }
 
-func (d *jobSystem) targets() error {
+func (d *jobFeedSystem) Operations() []operation {
+	hasProp := func(s string) func() bool {
+		return func() bool {
+			_, ok := d.data[s]
+			return ok
+		}
+	}
+	return []operation{
+		{desc: "system/dropPending", do: d.dropPending},
+		{desc: "system/getData", do: d.getData},
+		{desc: "system/dbNow", do: d.dbNow},
+		{desc: "system/hardware", do: d.hardware, condition: hasProp("hardware"), blocking: true},
+		{desc: "system/properties", do: d.properties, condition: hasProp("properties"), blocking: true},
+		{desc: "system/groups", do: d.groups, condition: hasProp("gids"), blocking: true},
+		{desc: "system/users", do: d.users, condition: hasProp("uids"), blocking: true},
+		{desc: "system/lan", do: d.lan, condition: hasProp("lan"), blocking: true},
+		{desc: "system/hba", do: d.hba, condition: hasProp("hba"), blocking: true},
+		{desc: "system/targets", do: d.targets, condition: hasProp("targets"), blocking: true},
+		{desc: "system/package", do: d.pkg, condition: hasProp("package"), blocking: true},
+	}
+}
+
+func (d *jobFeedSystem) pkg() error {
+	pkgList, ok := d.data["package"].([]any)
+	if !ok {
+		slog.Warn(fmt.Sprint("unsupported json format for packages"))
+		return nil
+	}
+	nodeID := d.nodeID
+	now := d.now
+
+	for i := range pkgList {
+		line, ok := pkgList[i].(map[string]any)
+		if !ok {
+			slog.Warn(fmt.Sprint("unsupported package entry format"))
+			return nil
+		}
+		line["node_id"] = nodeID
+		line["pkg_updated"] = now
+		pkgList[i] = line
+	}
+
+	request := mariadb.InsertOrUpdate{
+		Table: "packages",
+		Mappings: mariadb.Mappings{
+			mariadb.Mapping{To: "node_id"},
+			mariadb.Mapping{To: "pkg_updated"},
+			mariadb.Mapping{To: "pkg_name", From: "name"},
+			mariadb.Mapping{To: "pkg_version", From: "version"},
+			mariadb.Mapping{To: "pkg_arch", From: "arch"},
+			mariadb.Mapping{To: "pkg_type", From: "type"},
+			mariadb.Mapping{To: "pkg_sig", From: "sig"},
+			mariadb.Mapping{To: "pkg_install_date", From: "installed_at", Modify: mariadb.ModifyDatetime},
+		},
+		Keys: []string{"node_id", "pkg_name", "pkg_arch", "pkg_version", "pkg_type"},
+		Data: pkgList,
+	}
+
+	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
+		return err
+	}
+
+	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM packages WHERE node_id = ? AND pkg_updated < ?", nodeID, now); err != nil {
+		return err
+	} else {
+		defer rows.Close()
+	}
+
+	return nil
+}
+
+func (d *jobFeedSystem) targets() error {
 	data, ok := d.data["targets"].([]any)
 	if !ok {
 		slog.Warn("unsupported system targets data format")
@@ -75,7 +146,7 @@ func (d *jobSystem) targets() error {
 	return nil
 }
 
-func (d *jobSystem) hba() error {
+func (d *jobFeedSystem) hba() error {
 	data, ok := d.data["hba"].([]any)
 	if !ok {
 		slog.Warn("unsupported system hba data format")
@@ -120,7 +191,7 @@ func (d *jobSystem) hba() error {
 	return nil
 }
 
-func (d *jobSystem) lan() error {
+func (d *jobFeedSystem) lan() error {
 	var l []any
 	data, ok := d.data["lan"].(map[string]any)
 	if !ok {
@@ -178,7 +249,7 @@ func (d *jobSystem) lan() error {
 	return nil
 }
 
-func (d *jobSystem) groups() error {
+func (d *jobFeedSystem) groups() error {
 	data, ok := d.data["gids"].([]any)
 	if !ok {
 		slog.Warn("unsupported system groups data format")
@@ -223,7 +294,7 @@ func (d *jobSystem) groups() error {
 	return nil
 }
 
-func (d *jobSystem) users() error {
+func (d *jobFeedSystem) users() error {
 	data, ok := d.data["uids"].([]any)
 	if !ok {
 		slog.Warn("unsupported system users data format")
@@ -268,7 +339,7 @@ func (d *jobSystem) users() error {
 	return nil
 }
 
-func (d *jobSystem) hardware() error {
+func (d *jobFeedSystem) hardware() error {
 	data, ok := d.data["hardware"].([]any)
 	if !ok {
 		slog.Warn("unsupported system hardware data format")
@@ -315,7 +386,7 @@ func (d *jobSystem) hardware() error {
 	return nil
 }
 
-func (d *jobSystem) properties() error {
+func (d *jobFeedSystem) properties() error {
 	data, ok := d.data["properties"].(map[string]any)
 	if !ok {
 		slog.Warn("unsupported system properties format")
@@ -393,35 +464,14 @@ func (d *jobSystem) properties() error {
 	return err
 }
 
-func (d *jobSystem) Operations() []operation {
-	hasProp := func(s string) func() bool {
-		return func() bool {
-			_, ok := d.data[s]
-			return ok
-		}
-	}
-	return []operation{
-		{desc: "handleSystem/dropPending", do: d.dropPending},
-		{desc: "handleSystem/getData", do: d.getData},
-		{desc: "handleSystem/dbNow", do: d.dbNow},
-		{desc: "handleSystem/hardware", do: d.hardware, skipOp: hasProp("hardware")},
-		{desc: "handleSystem/properties", do: d.properties, skipOp: hasProp("properties")},
-		{desc: "handleSystem/groups", do: d.groups, skipOp: hasProp("gids")},
-		{desc: "handleSystem/users", do: d.users, skipOp: hasProp("uids")},
-		{desc: "handleSystem/lan", do: d.lan, skipOp: hasProp("lan")},
-		{desc: "handleSystem/hba", do: d.hba, skipOp: hasProp("hba")},
-		{desc: "handleSystem/targets", do: d.targets, skipOp: hasProp("targets")},
-	}
-}
-
-func (d *jobSystem) dropPending() error {
+func (d *jobFeedSystem) dropPending() error {
 	if err := d.redis.HDel(d.ctx, cache.KeyDaemonSystemPending, d.nodeID).Err(); err != nil {
 		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonSystemPending, d.nodeID, err)
 	}
 	return nil
 }
 
-func (d *jobSystem) getData() error {
+func (d *jobFeedSystem) getData() error {
 	cmd := d.redis.HGet(d.ctx, cache.KeyDaemonSystemHash, d.nodeID)
 	result, err := cmd.Result()
 	switch err {
@@ -443,6 +493,7 @@ func (d *jobSystem) getData() error {
 		case "lan":
 		case "hba":
 		case "targets":
+		case "package":
 		default:
 			slog.Info(fmt.Sprintf("parse data: ignore key '%s'", k))
 		}

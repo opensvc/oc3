@@ -29,8 +29,11 @@ type (
 		desc string
 		do   func() error
 
-		continueOnError bool
-		skipOp          func() bool
+		// blocking stops the operation chain on operation error
+		blocking bool
+
+		// condition skips operation if condition returns false
+		condition func() bool
 	}
 
 	LogResulter interface {
@@ -133,7 +136,7 @@ func (j *BaseJob) dbNow() (err error) {
 
 func runOps(ops ...operation) error {
 	for _, op := range ops {
-		if op.skipOp != nil && op.skipOp() {
+		if op.condition != nil && !op.condition() {
 			continue
 		}
 		begin := time.Now()
@@ -143,7 +146,7 @@ func runOps(ops ...operation) error {
 			operationDuration.
 				With(prometheus.Labels{"desc": op.desc, "status": operationStatusFailed}).
 				Observe(duration.Seconds())
-			if op.continueOnError {
+			if op.blocking {
 				continue
 			}
 			return err
