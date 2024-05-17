@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/opensvc/oc3/cache"
+	"github.com/opensvc/oc3/cachekeys"
 )
 
 type (
@@ -96,11 +96,11 @@ func (t *Worker) Run() error {
 		slog.Debug(fmt.Sprintf("BLPOP %s -> %s", result[0], result[1]))
 		ctx := context.Background()
 		switch result[0] {
-		case cache.KeyDaemonPing:
+		case cachekeys.FeedDaemonPingQ:
 			j = newDaemonPing(result[1])
-		case cache.KeyDaemonStatus:
+		case cachekeys.FeedDaemonStatusQ:
 			j = newDaemonStatus(result[1])
-		case cache.KeyDaemonSystem:
+		case cachekeys.FeedSystemQ:
 			j = newDaemonSystem(result[1])
 		default:
 			slog.Debug(fmt.Sprintf("ignore queue '%s'", result[0]))

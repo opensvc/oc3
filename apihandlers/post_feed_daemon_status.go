@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/opensvc/oc3/api"
-	"github.com/opensvc/oc3/cache"
+	"github.com/opensvc/oc3/cachekeys"
 )
 
 func (a *Api) PostFeedDaemonStatus(c echo.Context, params api.PostFeedDaemonStatusParams) error {
@@ -49,25 +49,25 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context, params api.PostFeedDaemonStat
 	}
 
 	ctx := c.Request().Context()
-	log.Info(fmt.Sprintf("HSET %s %s", cache.KeyDaemonStatusHash, nodeID))
-	if err := a.Redis.HSet(ctx, cache.KeyDaemonStatusHash, nodeID, string(b)).Err(); err != nil {
-		log.Error(fmt.Sprintf("HSET %s %s", cache.KeyDaemonStatusHash, nodeID))
-		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't HSET %s: %s", cache.KeyDaemonStatusHash, err)
+	log.Info(fmt.Sprintf("HSET %s %s", cachekeys.FeedDaemonStatusH, nodeID))
+	if err := a.Redis.HSet(ctx, cachekeys.FeedDaemonStatusH, nodeID, string(b)).Err(); err != nil {
+		log.Error(fmt.Sprintf("HSET %s %s", cachekeys.FeedDaemonStatusH, nodeID))
+		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't HSET %s: %s", cachekeys.FeedDaemonStatusH, err)
 	}
 	if len(mChange) > 0 {
 		// request contains changes, merge them to not yet applied changes
-		log.Info(fmt.Sprintf("HSET %s %s", cache.KeyDaemonStatusChangesHash, nodeID))
-		redisChanges, err := a.Redis.HGet(ctx, cache.KeyDaemonStatusChangesHash, nodeID).Result()
+		log.Info(fmt.Sprintf("HSET %s %s", cachekeys.FeedDaemonStatusChangesH, nodeID))
+		redisChanges, err := a.Redis.HGet(ctx, cachekeys.FeedDaemonStatusChangesH, nodeID).Result()
 		switch err {
 		case nil:
 			// merge existing changes
 			if err := mergeChanges(redisChanges); err != nil {
-				log.Warn(fmt.Sprintf("ignore invalid value %s %s", cache.KeyDaemonStatusChangesHash, nodeID))
+				log.Warn(fmt.Sprintf("ignore invalid value %s %s", cachekeys.FeedDaemonStatusChangesH, nodeID))
 			}
 		case redis.Nil:
 			// no existing changes to merge
 		default:
-			return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't HGet %s: %s", cache.KeyDaemonStatusChangesHash, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't HGet %s: %s", cachekeys.FeedDaemonStatusChangesH, err)
 		}
 		l := make([]string, len(mChange))
 		i := 0
@@ -77,14 +77,14 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context, params api.PostFeedDaemonStat
 		}
 		mergedChanges := strings.Join(l, " ")
 		// push changes
-		log.Info(fmt.Sprintf("HSET %s[%s] with %s", cache.KeyDaemonStatusChangesHash, nodeID, mergedChanges))
-		if err := a.Redis.HSet(ctx, cache.KeyDaemonStatusChangesHash, nodeID, mergedChanges).Err(); err != nil {
-			return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't HSET %s: %s", cache.KeyDaemonStatusHash, err)
+		log.Info(fmt.Sprintf("HSET %s[%s] with %s", cachekeys.FeedDaemonStatusChangesH, nodeID, mergedChanges))
+		if err := a.Redis.HSet(ctx, cachekeys.FeedDaemonStatusChangesH, nodeID, mergedChanges).Err(); err != nil {
+			return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't HSET %s: %s", cachekeys.FeedDaemonStatusH, err)
 		}
 	}
-	if err := a.pushNotPending(ctx, cache.KeyDaemonStatusPending, cache.KeyDaemonStatus, nodeID); err != nil {
-		log.Error(fmt.Sprintf("can't push %s %s: %s", cache.KeyDaemonStatus, nodeID, err))
-		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", cache.KeyDaemonStatus, nodeID, err)
+	if err := a.pushNotPending(ctx, cachekeys.FeedDaemonStatusPendingH, cachekeys.FeedDaemonStatusQ, nodeID); err != nil {
+		log.Error(fmt.Sprintf("can't push %s %s: %s", cachekeys.FeedDaemonStatusQ, nodeID, err))
+		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", cachekeys.FeedDaemonStatusQ, nodeID, err)
 	}
 	return c.JSON(http.StatusOK, nil)
 }

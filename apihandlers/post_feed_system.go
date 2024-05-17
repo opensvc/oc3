@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/opensvc/oc3/cache"
+	"github.com/opensvc/oc3/cachekeys"
 )
 
 func (a *Api) PostFeedSystem(c echo.Context) error {
@@ -24,17 +24,17 @@ func (a *Api) PostFeedSystem(c echo.Context) error {
 
 	reqCtx := c.Request().Context()
 
-	s := fmt.Sprintf("HSET %s %s", cache.KeyDaemonSystemHash, nodeID)
+	s := fmt.Sprintf("HSET %s %s", cachekeys.FeedSystemH, nodeID)
 	log.Info(s)
-	if _, err := a.Redis.HSet(reqCtx, cache.KeyDaemonSystemHash, nodeID, string(b)).Result(); err != nil {
+	if _, err := a.Redis.HSet(reqCtx, cachekeys.FeedSystemH, nodeID, string(b)).Result(); err != nil {
 		s = fmt.Sprintf("%s: %s", s, err)
 		log.Error(s)
 		return JSONProblem(c, http.StatusInternalServerError, "", s)
 	}
 
-	if err := a.pushNotPending(reqCtx, cache.KeyDaemonSystemPending, cache.KeyDaemonSystem, nodeID); err != nil {
-		log.Error(fmt.Sprintf("can't push %s %s: %s", cache.KeyDaemonSystem, nodeID, err))
-		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", cache.KeyDaemonSystem, nodeID, err)
+	if err := a.pushNotPending(reqCtx, cachekeys.FeedSystemPendingH, cachekeys.FeedSystemQ, nodeID); err != nil {
+		log.Error(fmt.Sprintf("can't push %s %s: %s", cachekeys.FeedSystemQ, nodeID, err))
+		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", cachekeys.FeedSystemQ, nodeID, err)
 	}
 
 	return c.JSON(http.StatusAccepted, nil)

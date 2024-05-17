@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/opensvc/oc3/cache"
+	"github.com/opensvc/oc3/cachekeys"
 )
 
 type (
@@ -45,8 +45,8 @@ func (d *jobFeedDaemonPing) Operations() []operation {
 }
 
 func (d *jobFeedDaemonPing) dropPending() error {
-	if err := d.redis.HDel(d.ctx, cache.KeyDaemonPingPending, d.nodeID).Err(); err != nil {
-		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonPingPending, d.nodeID, err)
+	if err := d.redis.HDel(d.ctx, cachekeys.FeedDaemonPingPendingH, d.nodeID).Err(); err != nil {
+		return fmt.Errorf("dropPending: HDEL %s %s: %w", cachekeys.FeedDaemonPingPendingH, d.nodeID, err)
 	}
 	return nil
 }

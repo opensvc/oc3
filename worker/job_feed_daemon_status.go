@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 
-	"github.com/opensvc/oc3/cache"
+	"github.com/opensvc/oc3/cachekeys"
 )
 
 type (
@@ -183,14 +183,14 @@ func (d *jobFeedDaemonStatus) LogResult() {
 }
 
 func (d *jobFeedDaemonStatus) dropPending() error {
-	if err := d.redis.HDel(d.ctx, cache.KeyDaemonStatusPending, d.nodeID).Err(); err != nil {
-		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonStatusPending, d.nodeID, err)
+	if err := d.redis.HDel(d.ctx, cachekeys.FeedDaemonStatusPendingH, d.nodeID).Err(); err != nil {
+		return fmt.Errorf("dropPending: HDEL %s %s: %w", cachekeys.FeedDaemonStatusPendingH, d.nodeID, err)
 	}
 	return nil
 }
 
 func (d *jobFeedDaemonStatus) getChanges() error {
-	s, err := d.redis.HGet(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Result()
+	s, err := d.redis.HGet(d.ctx, cachekeys.FeedDaemonStatusChangesH, d.nodeID).Result()
 	if err == nil {
 		// TODO: fix possible race:
 		// worker iteration 1: pickup changes 'a'
@@ -200,11 +200,11 @@ func (d *jobFeedDaemonStatus) getChanges() error {
 		// worker iteration 1: delete changes the 'b' => 'b' change is lost
 		// worker iteration 1: ... done
 		// worker iteration 2: pickup changes: empty instead of expected 'b'
-		if err := d.redis.HDel(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Err(); err != nil {
-			return fmt.Errorf("getChanges: HDEL %s %s: %w", cache.KeyDaemonStatusChangesHash, d.nodeID, err)
+		if err := d.redis.HDel(d.ctx, cachekeys.FeedDaemonStatusChangesH, d.nodeID).Err(); err != nil {
+			return fmt.Errorf("getChanges: HDEL %s %s: %w", cachekeys.FeedDaemonStatusChangesH, d.nodeID, err)
 		}
 	} else if err != redis.Nil {
-		return fmt.Errorf("getChanges: HGET %s %s: %w", cache.KeyDaemonStatusChangesHash, d.nodeID, err)
+		return fmt.Errorf("getChanges: HGET %s %s: %w", cachekeys.FeedDaemonStatusChangesH, d.nodeID, err)
 	}
 	d.rawChanges = s
 	for _, change := range strings.Fields(s) {
@@ -218,10 +218,10 @@ func (d *jobFeedDaemonStatus) getData() error {
 		err  error
 		data map[string]any
 	)
-	if b, err := d.redis.HGet(d.ctx, cache.KeyDaemonStatusHash, d.nodeID).Bytes(); err != nil {
-		return fmt.Errorf("getChanges: HGET %s %s: %w", cache.KeyDaemonStatusHash, d.nodeID, err)
+	if b, err := d.redis.HGet(d.ctx, cachekeys.FeedDaemonStatusH, d.nodeID).Bytes(); err != nil {
+		return fmt.Errorf("getChanges: HGET %s %s: %w", cachekeys.FeedDaemonStatusH, d.nodeID, err)
 	} else if err = json.Unmarshal(b, &data); err != nil {
-		return fmt.Errorf("getChanges: unexpected data from %s %s: %w", cache.KeyDaemonStatusHash, d.nodeID, err)
+		return fmt.Errorf("getChanges: unexpected data from %s %s: %w", cachekeys.FeedDaemonStatusH, d.nodeID, err)
 	} else {
 		d.rawData = b
 		d.data = &daemonDataV2{data: data}

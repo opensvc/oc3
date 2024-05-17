@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 
-	"github.com/opensvc/oc3/cache"
+	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/mariadb"
 )
 
@@ -465,14 +465,14 @@ func (d *jobFeedSystem) properties() error {
 }
 
 func (d *jobFeedSystem) dropPending() error {
-	if err := d.redis.HDel(d.ctx, cache.KeyDaemonSystemPending, d.nodeID).Err(); err != nil {
-		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonSystemPending, d.nodeID, err)
+	if err := d.redis.HDel(d.ctx, cachekeys.FeedSystemPendingH, d.nodeID).Err(); err != nil {
+		return fmt.Errorf("dropPending: HDEL %s %s: %w", cachekeys.FeedSystemPendingH, d.nodeID, err)
 	}
 	return nil
 }
 
 func (d *jobFeedSystem) getData() error {
-	cmd := d.redis.HGet(d.ctx, cache.KeyDaemonSystemHash, d.nodeID)
+	cmd := d.redis.HGet(d.ctx, cachekeys.FeedSystemH, d.nodeID)
 	result, err := cmd.Result()
 	switch err {
 	case nil:

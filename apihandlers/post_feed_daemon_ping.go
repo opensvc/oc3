@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/opensvc/oc3/cache"
+	"github.com/opensvc/oc3/cachekeys"
 )
 
 func (a *Api) PostFeedDaemonPing(c echo.Context) error {
@@ -18,17 +18,17 @@ func (a *Api) PostFeedDaemonPing(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	if hasStatus, err := a.Redis.HExists(ctx, cache.KeyDaemonStatusHash, nodeID).Result(); err != nil {
-		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't HGet %s: %s", cache.KeyDaemonStatusChangesHash, err)
+	if hasStatus, err := a.Redis.HExists(ctx, cachekeys.FeedDaemonStatusH, nodeID).Result(); err != nil {
+		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't HGet %s: %s", cachekeys.FeedDaemonStatusChangesH, err)
 	} else if !hasStatus {
 		// no daemon status for node. We need first POST /daemon/status
 		log.Debug(fmt.Sprintf("need resync %s", nodeID))
 		return c.NoContent(http.StatusNoContent)
 	}
 
-	if err := a.pushNotPending(ctx, cache.KeyDaemonPingPending, cache.KeyDaemonPing, nodeID); err != nil {
-		log.Error(fmt.Sprintf("can't push %s %s: %s", cache.KeyDaemonPing, nodeID, err))
-		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", cache.KeyDaemonPing, nodeID, err)
+	if err := a.pushNotPending(ctx, cachekeys.FeedDaemonPingPendingH, cachekeys.FeedDaemonPingQ, nodeID); err != nil {
+		log.Error(fmt.Sprintf("can't push %s %s: %s", cachekeys.FeedDaemonPingQ, nodeID, err))
+		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", cachekeys.FeedDaemonPingQ, nodeID, err)
 	}
 	log.Debug(fmt.Sprintf("accepted %s", nodeID))
 	return c.JSON(http.StatusAccepted, nil)
