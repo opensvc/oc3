@@ -8,7 +8,7 @@ info:
   version: 1.0.0
 
 paths:
-  /daemon/ping:
+  /feed/daemon/ping:
     post:
       description: |
         Refresh existing daemon status timestamps for node
@@ -24,7 +24,7 @@ paths:
       tags:
         - agent
 
-  /daemon/system:
+  /feed/daemon/status:
     post:
       description: |
         Post daemon system discovery
@@ -87,7 +87,7 @@ paths:
       tags:
         - agent
 
-  /daemon/system/package:
+  /feed/system:
     post:
       operationId: PostDaemonSystemPackage
       requestBody:
