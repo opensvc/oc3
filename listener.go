@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/api"
-	"github.com/opensvc/oc3/handlers"
+	"github.com/opensvc/oc3/apihandlers"
 	"github.com/opensvc/oc3/xauth"
 )
 
@@ -53,9 +53,9 @@ func listenAndServe(addr string) error {
 		e.Use(mwProm)
 		e.GET("/oc3/public/metrics", echoprometheus.NewHandler())
 	}
-	e.Use(handlers.AuthMiddleware(strategy))
+	e.Use(apihandlers.AuthMiddleware(strategy))
 	slog.Info("register openapi handlers with base url: /oc3")
-	api.RegisterHandlersWithBaseURL(e, &handlers.Api{
+	api.RegisterHandlersWithBaseURL(e, &apihandlers.Api{
 		DB:    db,
 		Redis: redisClient,
 		UI:    enableUI,
@@ -70,5 +70,5 @@ func listenAndServe(addr string) error {
 func registerAPIUI(e *echo.Echo) {
 	slog.Info("add handler /oc3/public/ui")
 	g := e.Group("/oc3/public/ui")
-	g.Use(handlers.UIMiddleware(context.Background()))
+	g.Use(apihandlers.UIMiddleware(context.Background()))
 }

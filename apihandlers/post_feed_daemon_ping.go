@@ -1,4 +1,4 @@
-package handlers
+package apihandlers
 
 import (
 	"fmt"
@@ -9,8 +9,8 @@ import (
 	"github.com/opensvc/oc3/cache"
 )
 
-func (a *Api) PostDaemonPing(c echo.Context) error {
-	log := getLog(c).With("handler", "PostDaemonPing")
+func (a *Api) PostFeedDaemonPing(c echo.Context) error {
+	log := getLog(c).With("handler", "PostFeedDaemonPing")
 	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {
 		log.Debug("node auth problem")

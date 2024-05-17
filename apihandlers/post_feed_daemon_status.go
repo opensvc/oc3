@@ -1,4 +1,4 @@
-package handlers
+package apihandlers
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/opensvc/oc3/cache"
 )
 
-func (a *Api) PostDaemonStatus(c echo.Context, params api.PostDaemonStatusParams) error {
+func (a *Api) PostFeedDaemonStatus(c echo.Context, params api.PostFeedDaemonStatusParams) error {
 	log := getLog(c)
 	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {

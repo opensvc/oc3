@@ -1,4 +1,4 @@
-package handlers
+package apihandlers
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/opensvc/oc3/cache"
 )
 
-func (a *Api) PostDaemonSystem(c echo.Context) error {
+func (a *Api) PostFeedSystem(c echo.Context) error {
 	log := getLog(c)
 	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {
@@ -37,5 +37,5 @@ func (a *Api) PostDaemonSystem(c echo.Context) error {
 		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", cache.KeyDaemonSystem, nodeID, err)
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	return c.JSON(http.StatusAccepted, nil)
 }
