@@ -57,7 +57,7 @@ func (d *jobFeedDaemonPing) dbFetchNodes() (err error) {
 	var (
 		dbNodes []*DBNode
 	)
-	if dbNodes, err = d.oDb.nodesFromNodeID(d.ctx, d.nodeID); err != nil {
+	if dbNodes, err = d.oDb.clusterNodesFromNodeID(d.ctx, d.nodeID); err != nil {
 		return fmt.Errorf("dbFetchNodes %s: %w", d.nodeID, err)
 	}
 	for _, n := range dbNodes {

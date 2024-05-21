@@ -256,6 +256,22 @@ func (d *jobFeedDaemonStatus) dbFindNodes() (err error) {
 		nodes   []string
 		dbNodes []*DBNode
 	)
+
+	// search caller node from its node_id: we can't trust yet search from
+	// d.data.nodeNames() because initial push daemon status may omit caller node.
+	if callerNode, err := d.oDb.nodeByNodeID(d.ctx, d.nodeID); err != nil {
+		return fmt.Errorf("dbFindNodes nodeByNodeID %s: %s", d.nodeID, err)
+	} else if callerNode == nil {
+		return fmt.Errorf("dbFindNodes can't find caller node %s", d.nodeID)
+	} else {
+		d.callerNode = callerNode
+		d.nodeApp = callerNode.app
+		d.nodeEnv = callerNode.nodeEnv
+		d.byNodeID[d.nodeID] = callerNode
+		d.byNodename[callerNode.nodename] = callerNode
+	}
+
+	// search all cluster nodes
 	nodes, err = d.data.nodeNames()
 	if err != nil {
 		return fmt.Errorf("getData %s: %w", d.nodeID, err)
@@ -267,23 +283,20 @@ func (d *jobFeedDaemonStatus) dbFindNodes() (err error) {
 		return fmt.Errorf("dbFindNodes %s [%s]: %w", nodes, d.nodeID, err)
 	}
 	for _, n := range dbNodes {
+		if n.nodeID == d.nodeID {
+			// already processed
+			continue
+		}
 		d.byNodeID[n.nodeID] = n
 		d.byNodename[n.nodename] = n
 	}
-	callerNode, ok := d.byNodeID[d.nodeID]
-	if !ok {
-		return fmt.Errorf("dbFindNodes source node has been removed")
-	}
-	d.callerNode = callerNode
-	d.nodeApp = callerNode.app
-	d.nodeEnv = callerNode.nodeEnv
 	d.nodes = make([]string, len(d.byNodename))
 	var i = 0
 	for nodename := range d.byNodename {
 		d.nodes[i] = nodename
 		i++
 	}
-	slog.Info(fmt.Sprintf("handleDaemonStatus run details: %s changes: [%s]", callerNode, d.rawChanges))
+	slog.Info(fmt.Sprintf("handleDaemonStatus run details: %s changes: [%s]", d.callerNode, d.rawChanges))
 	return nil
 }
 

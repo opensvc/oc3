@@ -3,15 +3,66 @@ package worker
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 )
 
-func (oDb *opensvcDB) nodesFromNodeID(ctx context.Context, nodeID string) (dbNodes []*DBNode, err error) {
-	defer logDuration("nodesFromNodeID", time.Now())
+func (oDb *opensvcDB) nodeByNodeID(ctx context.Context, nodeID string) (*DBNode, error) {
+	defer logDuration("nodeByNodeID", time.Now())
 	if nodeID == "" {
-		err = fmt.Errorf("nodesFromNodeID: called with empty node id")
+		return nil, fmt.Errorf("nodeByNodeID: called with empty node id")
+	}
+	var (
+		query = `SELECT nodename, cluster_id, node_env, app, hv, node_frozen,
+				loc_country, loc_city, loc_addr, loc_building, loc_floor, loc_room,
+				loc_rack, loc_zip, enclosure, enclosureslot
+			FROM nodes WHERE node_id = ? LIMIT 1`
+
+		nodename, clusterID, nodeEnv, app, hv, frozen, locCountry sql.NullString
+		locCity, locAddr, locBuilding, locFloor, locRoom, locRack sql.NullString
+		locZip, enclosure, enclosureSlot                          sql.NullString
+	)
+	err := oDb.db.
+		QueryRowContext(ctx, query, nodeID).
+		Scan(
+			&nodename, &clusterID, &nodeEnv, &app, &hv, &frozen,
+			&locCountry, &locCity, &locAddr, &locBuilding, &locFloor, &locRoom,
+			&locRack, &locZip, &enclosure, &enclosureSlot)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, err
+	default:
+		node := DBNode{
+			nodename:      nodename.String,
+			frozen:        frozen.String,
+			nodeID:        nodeID,
+			clusterID:     clusterID.String,
+			app:           app.String,
+			nodeEnv:       nodeEnv.String,
+			locAddr:       locAddr.String,
+			locCountry:    locCountry.String,
+			locCity:       locCity.String,
+			locZip:        locZip.String,
+			locBuilding:   locBuilding.String,
+			locFloor:      locFloor.String,
+			locRoom:       locRoom.String,
+			locRack:       locRack.String,
+			enclosure:     enclosure.String,
+			enclosureSlot: enclosureSlot.String,
+			hv:            hv.String,
+		}
+		return &node, nil
+	}
+}
+
+func (oDb *opensvcDB) clusterNodesFromNodeID(ctx context.Context, nodeID string) (dbNodes []*DBNode, err error) {
+	defer logDuration("clusterNodesFromNodeID", time.Now())
+	if nodeID == "" {
+		err = fmt.Errorf("clusterNodesFromNodeID: called with empty node id")
 		return
 	}
 	var (
