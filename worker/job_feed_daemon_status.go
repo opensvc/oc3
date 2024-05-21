@@ -305,7 +305,12 @@ func (d *jobFeedDaemonStatus) dataToNodeFrozen() error {
 		nodename := dbNode.nodename
 		frozen, err := d.data.nodeFrozen(nodename)
 		if err != nil {
-			return fmt.Errorf("dataToNodeFrozen %s: %w", nodename, err)
+			if nodeID == d.nodeID {
+				// accept missing caller node in initial data
+				continue
+			} else {
+				return fmt.Errorf("dataToNodeFrozen %s (%s): %w", nodename, nodeID, err)
+			}
 		}
 		if frozen != dbNode.frozen {
 			slog.Info(fmt.Sprintf("dataToNodeFrozen: updating node %s: %s frozen from %s -> %s", nodename, nodeID, dbNode.frozen, frozen))
