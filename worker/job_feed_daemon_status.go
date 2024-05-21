@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 
-	"github.com/opensvc/oc3/cache"
+	"github.com/opensvc/oc3/cachekeys"
 )
 
 type (
@@ -82,7 +82,7 @@ type (
 		instancer
 	}
 
-	daemonStatus struct {
+	jobFeedDaemonStatus struct {
 		*BaseJob
 
 		nodeID      string
@@ -125,8 +125,8 @@ func (i *InstanceID) String() string {
 	return fmt.Sprintf("instance id: %s@%s", i.svcID, i.nodeID)
 }
 
-func newDaemonStatus(nodeID string) *daemonStatus {
-	return &daemonStatus{
+func newDaemonStatus(nodeID string) *jobFeedDaemonStatus {
+	return &jobFeedDaemonStatus{
 		BaseJob: &BaseJob{
 			name:   "daemonStatus",
 			detail: "nodeID: " + nodeID,
@@ -147,7 +147,7 @@ func newDaemonStatus(nodeID string) *daemonStatus {
 	}
 }
 
-func (d *daemonStatus) Operations() []operation {
+func (d *jobFeedDaemonStatus) Operations() []operation {
 	return []operation{
 		{desc: "daemonStatus/dropPending", do: d.dropPending},
 		{desc: "daemonStatus/getChanges", do: d.getChanges},
@@ -167,7 +167,7 @@ func (d *daemonStatus) Operations() []operation {
 	}
 }
 
-func (d *daemonStatus) LogResult() {
+func (d *jobFeedDaemonStatus) LogResult() {
 	slog.Info(fmt.Sprintf("handleDaemonStatus done for %s", d.byNodeID[d.nodeID]))
 	for k, v := range d.byNodename {
 		slog.Debug(fmt.Sprintf("found db node %s: %#v", k, v))
@@ -182,15 +182,15 @@ func (d *daemonStatus) LogResult() {
 	}
 }
 
-func (d *daemonStatus) dropPending() error {
-	if err := d.redis.HDel(d.ctx, cache.KeyDaemonStatusPending, d.nodeID).Err(); err != nil {
-		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonStatusPending, d.nodeID, err)
+func (d *jobFeedDaemonStatus) dropPending() error {
+	if err := d.redis.HDel(d.ctx, cachekeys.FeedDaemonStatusPendingH, d.nodeID).Err(); err != nil {
+		return fmt.Errorf("dropPending: HDEL %s %s: %w", cachekeys.FeedDaemonStatusPendingH, d.nodeID, err)
 	}
 	return nil
 }
 
-func (d *daemonStatus) getChanges() error {
-	s, err := d.redis.HGet(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Result()
+func (d *jobFeedDaemonStatus) getChanges() error {
+	s, err := d.redis.HGet(d.ctx, cachekeys.FeedDaemonStatusChangesH, d.nodeID).Result()
 	if err == nil {
 		// TODO: fix possible race:
 		// worker iteration 1: pickup changes 'a'
@@ -200,11 +200,11 @@ func (d *daemonStatus) getChanges() error {
 		// worker iteration 1: delete changes the 'b' => 'b' change is lost
 		// worker iteration 1: ... done
 		// worker iteration 2: pickup changes: empty instead of expected 'b'
-		if err := d.redis.HDel(d.ctx, cache.KeyDaemonStatusChangesHash, d.nodeID).Err(); err != nil {
-			return fmt.Errorf("getChanges: HDEL %s %s: %w", cache.KeyDaemonStatusChangesHash, d.nodeID, err)
+		if err := d.redis.HDel(d.ctx, cachekeys.FeedDaemonStatusChangesH, d.nodeID).Err(); err != nil {
+			return fmt.Errorf("getChanges: HDEL %s %s: %w", cachekeys.FeedDaemonStatusChangesH, d.nodeID, err)
 		}
 	} else if err != redis.Nil {
-		return fmt.Errorf("getChanges: HGET %s %s: %w", cache.KeyDaemonStatusChangesHash, d.nodeID, err)
+		return fmt.Errorf("getChanges: HGET %s %s: %w", cachekeys.FeedDaemonStatusChangesH, d.nodeID, err)
 	}
 	d.rawChanges = s
 	for _, change := range strings.Fields(s) {
@@ -213,15 +213,15 @@ func (d *daemonStatus) getChanges() error {
 	return nil
 }
 
-func (d *daemonStatus) getData() error {
+func (d *jobFeedDaemonStatus) getData() error {
 	var (
 		err  error
 		data map[string]any
 	)
-	if b, err := d.redis.HGet(d.ctx, cache.KeyDaemonStatusHash, d.nodeID).Bytes(); err != nil {
-		return fmt.Errorf("getChanges: HGET %s %s: %w", cache.KeyDaemonStatusHash, d.nodeID, err)
+	if b, err := d.redis.HGet(d.ctx, cachekeys.FeedDaemonStatusH, d.nodeID).Bytes(); err != nil {
+		return fmt.Errorf("getChanges: HGET %s %s: %w", cachekeys.FeedDaemonStatusH, d.nodeID, err)
 	} else if err = json.Unmarshal(b, &data); err != nil {
-		return fmt.Errorf("getChanges: unexpected data from %s %s: %w", cache.KeyDaemonStatusHash, d.nodeID, err)
+		return fmt.Errorf("getChanges: unexpected data from %s %s: %w", cachekeys.FeedDaemonStatusH, d.nodeID, err)
 	} else {
 		d.rawData = b
 		d.data = &daemonDataV2{data: data}
@@ -235,7 +235,7 @@ func (d *daemonStatus) getData() error {
 	return nil
 }
 
-func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
+func (d *jobFeedDaemonStatus) dbCheckClusterIDForNodeID() error {
 	if ok, err := d.oDb.nodeUpdateClusterIDForNodeID(d.ctx, d.nodeID, d.clusterID); err != nil {
 		return fmt.Errorf("dbCheckClusterIDForNodeID for %s (%s): %w", d.callerNode.nodename, d.nodeID, err)
 	} else if ok {
@@ -244,18 +244,34 @@ func (d *daemonStatus) dbCheckClusterIDForNodeID() error {
 	return nil
 }
 
-func (d *daemonStatus) dbCheckClusters() error {
+func (d *jobFeedDaemonStatus) dbCheckClusters() error {
 	if err := d.oDb.updateClustersData(d.ctx, d.clusterName, d.clusterName, string(d.rawData)); err != nil {
 		return fmt.Errorf("dbCheckClusters %s (%s): %w", d.nodeID, d.clusterID, err)
 	}
 	return nil
 }
 
-func (d *daemonStatus) dbFindNodes() (err error) {
+func (d *jobFeedDaemonStatus) dbFindNodes() (err error) {
 	var (
 		nodes   []string
 		dbNodes []*DBNode
 	)
+
+	// search caller node from its node_id: we can't trust yet search from
+	// d.data.nodeNames() because initial push daemon status may omit caller node.
+	if callerNode, err := d.oDb.nodeByNodeID(d.ctx, d.nodeID); err != nil {
+		return fmt.Errorf("dbFindNodes nodeByNodeID %s: %s", d.nodeID, err)
+	} else if callerNode == nil {
+		return fmt.Errorf("dbFindNodes can't find caller node %s", d.nodeID)
+	} else {
+		d.callerNode = callerNode
+		d.nodeApp = callerNode.app
+		d.nodeEnv = callerNode.nodeEnv
+		d.byNodeID[d.nodeID] = callerNode
+		d.byNodename[callerNode.nodename] = callerNode
+	}
+
+	// search all cluster nodes
 	nodes, err = d.data.nodeNames()
 	if err != nil {
 		return fmt.Errorf("getData %s: %w", d.nodeID, err)
@@ -267,32 +283,34 @@ func (d *daemonStatus) dbFindNodes() (err error) {
 		return fmt.Errorf("dbFindNodes %s [%s]: %w", nodes, d.nodeID, err)
 	}
 	for _, n := range dbNodes {
+		if n.nodeID == d.nodeID {
+			// already processed
+			continue
+		}
 		d.byNodeID[n.nodeID] = n
 		d.byNodename[n.nodename] = n
 	}
-	callerNode, ok := d.byNodeID[d.nodeID]
-	if !ok {
-		return fmt.Errorf("dbFindNodes source node has been removed")
-	}
-	d.callerNode = callerNode
-	d.nodeApp = callerNode.app
-	d.nodeEnv = callerNode.nodeEnv
 	d.nodes = make([]string, len(d.byNodename))
 	var i = 0
 	for nodename := range d.byNodename {
 		d.nodes[i] = nodename
 		i++
 	}
-	slog.Info(fmt.Sprintf("handleDaemonStatus run details: %s changes: [%s]", callerNode, d.rawChanges))
+	slog.Info(fmt.Sprintf("handleDaemonStatus run details: %s changes: [%s]", d.callerNode, d.rawChanges))
 	return nil
 }
 
-func (d *daemonStatus) dataToNodeFrozen() error {
+func (d *jobFeedDaemonStatus) dataToNodeFrozen() error {
 	for nodeID, dbNode := range d.byNodeID {
 		nodename := dbNode.nodename
 		frozen, err := d.data.nodeFrozen(nodename)
 		if err != nil {
-			return fmt.Errorf("dataToNodeFrozen %s: %w", nodename, err)
+			if nodeID == d.nodeID {
+				// accept missing caller node in initial data
+				continue
+			} else {
+				return fmt.Errorf("dataToNodeFrozen %s (%s): %w", nodename, nodeID, err)
+			}
 		}
 		if frozen != dbNode.frozen {
 			slog.Info(fmt.Sprintf("dataToNodeFrozen: updating node %s: %s frozen from %s -> %s", nodename, nodeID, dbNode.frozen, frozen))
@@ -304,7 +322,7 @@ func (d *daemonStatus) dataToNodeFrozen() error {
 	return nil
 }
 
-func (d *daemonStatus) dbFindServices() error {
+func (d *jobFeedDaemonStatus) dbFindServices() error {
 	var (
 		objects []*DBObject
 	)
@@ -327,7 +345,7 @@ func (d *daemonStatus) dbFindServices() error {
 	return nil
 }
 
-func (d *daemonStatus) dbFindInstances() error {
+func (d *jobFeedDaemonStatus) dbFindInstances() error {
 	var (
 		objectIDs = make([]string, 0)
 	)
@@ -358,7 +376,7 @@ func (d *daemonStatus) dbFindInstances() error {
 }
 
 // dbCreateServices creates missing services
-func (d *daemonStatus) dbCreateServices() error {
+func (d *jobFeedDaemonStatus) dbCreateServices() error {
 	objectNames, err := d.data.objectNames()
 	if err != nil {
 		return fmt.Errorf("dbCreateServices: %w", err)
@@ -388,7 +406,7 @@ func (d *daemonStatus) dbCreateServices() error {
 	return nil
 }
 
-func (d *daemonStatus) dbUpdateServices() error {
+func (d *jobFeedDaemonStatus) dbUpdateServices() error {
 	for objectID, obj := range d.byObjectID {
 		objectName := obj.svcname
 		_, isChanged := d.changes[objectName]
@@ -421,7 +439,7 @@ func (d *daemonStatus) dbUpdateServices() error {
 	return nil
 }
 
-func (d *daemonStatus) dbUpdateInstances() error {
+func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 	for objectName, obj := range d.byObjectName {
 		beginObj := time.Now()
 		objID := obj.svcID
@@ -560,7 +578,7 @@ func (d *daemonStatus) dbUpdateInstances() error {
 	return nil
 }
 
-func (d *daemonStatus) instanceResourceUpdate(objName string, nodename string, iStatus *instanceStatus) error {
+func (d *jobFeedDaemonStatus) instanceResourceUpdate(objName string, nodename string, iStatus *instanceStatus) error {
 	for _, res := range iStatus.InstanceResources() {
 		slog.Debug(fmt.Sprintf("updating instance resource %s@%s %s (%s@%s)", objName, nodename, res.rid, iStatus.svcID, iStatus.nodeID))
 		if err := d.oDb.instanceResourceUpdate(d.ctx, res); err != nil {
@@ -574,7 +592,7 @@ func (d *daemonStatus) instanceResourceUpdate(objName string, nodename string, i
 	return nil
 }
 
-func (d *daemonStatus) instanceStatusUpdate(objName string, nodename string, iStatus *instanceStatus) error {
+func (d *jobFeedDaemonStatus) instanceStatusUpdate(objName string, nodename string, iStatus *instanceStatus) error {
 	slog.Debug(fmt.Sprintf("updating instance status %s@%s (%s@%s)", objName, nodename, iStatus.svcID, iStatus.nodeID))
 	if err := d.oDb.instanceStatusUpdate(d.ctx, &iStatus.DBInstanceStatus); err != nil {
 		return fmt.Errorf("update instance status: %w", err)
@@ -587,7 +605,7 @@ func (d *daemonStatus) instanceStatusUpdate(objName string, nodename string, iSt
 	return nil
 }
 
-func (d *daemonStatus) dbPurgeInstances() error {
+func (d *jobFeedDaemonStatus) dbPurgeInstances() error {
 	var nodeIDs, objectNames []string
 	for objectName := range d.byObjectName {
 		objectNames = append(objectNames, objectName)
@@ -610,7 +628,7 @@ func (d *daemonStatus) dbPurgeInstances() error {
 	return nil
 }
 
-func (d *daemonStatus) dbPurgeServices() error {
+func (d *jobFeedDaemonStatus) dbPurgeServices() error {
 	objectIDs, err := d.oDb.objectIDsFromClusterIDWithPurgeTag(d.ctx, d.clusterID)
 	if err != nil {
 		err = fmt.Errorf("dbPurgeServices objectIDsFromClusterIDWithPurgeTag: %w", err)
@@ -627,7 +645,7 @@ func (d *daemonStatus) dbPurgeServices() error {
 	return nil
 }
 
-func (d *daemonStatus) pushFromTableChanges() error {
+func (d *jobFeedDaemonStatus) pushFromTableChanges() error {
 	return pushFromTableChanges(d.ctx, d.oDb, d.ev)
 }
 

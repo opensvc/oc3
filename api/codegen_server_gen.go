@@ -21,17 +21,14 @@ import (
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (POST /daemon/ping)
-	PostDaemonPing(ctx echo.Context) error
+	// (POST /feed/daemon/ping)
+	PostFeedDaemonPing(ctx echo.Context) error
 
-	// (POST /daemon/status)
-	PostDaemonStatus(ctx echo.Context, params PostDaemonStatusParams) error
+	// (POST /feed/daemon/status)
+	PostFeedDaemonStatus(ctx echo.Context, params PostFeedDaemonStatusParams) error
 
-	// (POST /daemon/system)
-	PostDaemonSystem(ctx echo.Context) error
-
-	// (POST /daemon/system/package)
-	PostDaemonSystemPackage(ctx echo.Context) error
+	// (POST /feed/system)
+	PostFeedSystem(ctx echo.Context) error
 
 	// (GET /public/openapi)
 	GetSwagger(ctx echo.Context) error
@@ -45,8 +42,8 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
-// PostDaemonPing converts echo context to params.
-func (w *ServerInterfaceWrapper) PostDaemonPing(ctx echo.Context) error {
+// PostFeedDaemonPing converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFeedDaemonPing(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -54,12 +51,12 @@ func (w *ServerInterfaceWrapper) PostDaemonPing(ctx echo.Context) error {
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostDaemonPing(ctx)
+	err = w.Handler.PostFeedDaemonPing(ctx)
 	return err
 }
 
-// PostDaemonStatus converts echo context to params.
-func (w *ServerInterfaceWrapper) PostDaemonStatus(ctx echo.Context) error {
+// PostFeedDaemonStatus converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFeedDaemonStatus(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -67,7 +64,7 @@ func (w *ServerInterfaceWrapper) PostDaemonStatus(ctx echo.Context) error {
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params PostDaemonStatusParams
+	var params PostFeedDaemonStatusParams
 
 	headers := ctx.Request().Header
 	// ------------- Optional header parameter "XDaemonChange" -------------
@@ -87,12 +84,12 @@ func (w *ServerInterfaceWrapper) PostDaemonStatus(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostDaemonStatus(ctx, params)
+	err = w.Handler.PostFeedDaemonStatus(ctx, params)
 	return err
 }
 
-// PostDaemonSystem converts echo context to params.
-func (w *ServerInterfaceWrapper) PostDaemonSystem(ctx echo.Context) error {
+// PostFeedSystem converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFeedSystem(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -100,20 +97,7 @@ func (w *ServerInterfaceWrapper) PostDaemonSystem(ctx echo.Context) error {
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostDaemonSystem(ctx)
-	return err
-}
-
-// PostDaemonSystemPackage converts echo context to params.
-func (w *ServerInterfaceWrapper) PostDaemonSystemPackage(ctx echo.Context) error {
-	var err error
-
-	ctx.Set(BasicAuthScopes, []string{})
-
-	ctx.Set(BearerAuthScopes, []string{})
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostDaemonSystemPackage(ctx)
+	err = w.Handler.PostFeedSystem(ctx)
 	return err
 }
 
@@ -163,10 +147,9 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.POST(baseURL+"/daemon/ping", wrapper.PostDaemonPing)
-	router.POST(baseURL+"/daemon/status", wrapper.PostDaemonStatus)
-	router.POST(baseURL+"/daemon/system", wrapper.PostDaemonSystem)
-	router.POST(baseURL+"/daemon/system/package", wrapper.PostDaemonSystemPackage)
+	router.POST(baseURL+"/feed/daemon/ping", wrapper.PostFeedDaemonPing)
+	router.POST(baseURL+"/feed/daemon/status", wrapper.PostFeedDaemonStatus)
+	router.POST(baseURL+"/feed/system", wrapper.PostFeedSystem)
 	router.GET(baseURL+"/public/openapi", wrapper.GetSwagger)
 	router.GET(baseURL+"/version", wrapper.GetVersion)
 
@@ -175,24 +158,25 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/opensvc/oc3/cache"
+	"github.com/opensvc/oc3/cachekeys"
 )
 
 type (
-	daemonPing struct {
+	jobFeedDaemonPing struct {
 		*BaseJob
 
 		nodeID     string
@@ -20,8 +20,8 @@ type (
 	}
 )
 
-func newDaemonPing(nodeID string) *daemonPing {
-	return &daemonPing{
+func newDaemonPing(nodeID string) *jobFeedDaemonPing {
+	return &jobFeedDaemonPing{
 		BaseJob: &BaseJob{
 			name:   "daemonPing",
 			detail: "nodeID: " + nodeID,
@@ -33,7 +33,7 @@ func newDaemonPing(nodeID string) *daemonPing {
 	}
 }
 
-func (d *daemonPing) Operations() []operation {
+func (d *jobFeedDaemonPing) Operations() []operation {
 	return []operation{
 		{desc: "daemonPing/dropPending", do: d.dropPending},
 		{desc: "daemonPing/dbFetchNodes", do: d.dbFetchNodes},
@@ -44,20 +44,20 @@ func (d *daemonPing) Operations() []operation {
 	}
 }
 
-func (d *daemonPing) dropPending() error {
-	if err := d.redis.HDel(d.ctx, cache.KeyDaemonPingPending, d.nodeID).Err(); err != nil {
-		return fmt.Errorf("dropPending: HDEL %s %s: %w", cache.KeyDaemonPingPending, d.nodeID, err)
+func (d *jobFeedDaemonPing) dropPending() error {
+	if err := d.redis.HDel(d.ctx, cachekeys.FeedDaemonPingPendingH, d.nodeID).Err(); err != nil {
+		return fmt.Errorf("dropPending: HDEL %s %s: %w", cachekeys.FeedDaemonPingPendingH, d.nodeID, err)
 	}
 	return nil
 }
 
 // dbFetchNodes fetch nodes (that are associated with caller node ID) from database
 // and sets d.byNodeID and d.clusterID.
-func (d *daemonPing) dbFetchNodes() (err error) {
+func (d *jobFeedDaemonPing) dbFetchNodes() (err error) {
 	var (
 		dbNodes []*DBNode
 	)
-	if dbNodes, err = d.oDb.nodesFromNodeID(d.ctx, d.nodeID); err != nil {
+	if dbNodes, err = d.oDb.clusterNodesFromNodeID(d.ctx, d.nodeID); err != nil {
 		return fmt.Errorf("dbFetchNodes %s: %w", d.nodeID, err)
 	}
 	for _, n := range dbNodes {
@@ -72,7 +72,7 @@ func (d *daemonPing) dbFetchNodes() (err error) {
 	return nil
 }
 
-func (d *daemonPing) dbFetchObjects() (err error) {
+func (d *jobFeedDaemonPing) dbFetchObjects() (err error) {
 	var (
 		objects []*DBObject
 	)
@@ -88,7 +88,7 @@ func (d *daemonPing) dbFetchObjects() (err error) {
 }
 
 // dbPingInstances call opensvcDB.instancePingFromNodeID for all db fetched nodes
-func (d *daemonPing) dbPingInstances() error {
+func (d *jobFeedDaemonPing) dbPingInstances() error {
 	for nodeID := range d.byNodeID {
 		if ok, err := d.oDb.instancePingFromNodeID(d.ctx, nodeID); err != nil {
 			return fmt.Errorf("dbPingInstances: %w", err)
@@ -100,7 +100,7 @@ func (d *daemonPing) dbPingInstances() error {
 }
 
 // dbPingObjects call opensvcDB.objectPing for all db fetched objects
-func (d *daemonPing) dbPingObjects() (err error) {
+func (d *jobFeedDaemonPing) dbPingObjects() (err error) {
 	for objectID, obj := range d.byObjectID {
 		objectName := obj.svcname
 		if obj.availStatus != "undef" {
@@ -113,6 +113,6 @@ func (d *daemonPing) dbPingObjects() (err error) {
 	return nil
 }
 
-func (d *daemonPing) pushFromTableChanges() error {
+func (d *jobFeedDaemonPing) pushFromTableChanges() error {
 	return pushFromTableChanges(d.ctx, d.oDb, d.ev)
 }

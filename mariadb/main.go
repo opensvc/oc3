@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -37,39 +36,21 @@ type (
 	}
 )
 
-// ModifyDatetime returns placeholder for time.Time like objects
-func ModifyDatetime(a any) (placeholder string, values []any, err error) {
+// ModifyFromRFC3339 returns placeholder from optional RFC3339 datetime
+func ModifyFromRFC3339(a any) (placeholder string, values []any, err error) {
 	switch v := a.(type) {
 	case string:
-		// TODO: use default time.Parse instead to append time.Time value ?
-		s := fmt.Sprint(v)
-		if len(s) < 11 {
-			// 2024-04-02
-			placeholder = "?"
-			values = append(values, s)
-			return
-		}
-		if i := strings.LastIndex(s, "+"); i > 0 {
-			placeholder = "CONVERT_TZ(?, ?, \"SYSTEM\")"
-			values = append(values, s[:i], s[i:])
-			return
-		}
-		if i := strings.LastIndex(s, "-"); i > 0 {
-			placeholder = "CONVERT_TZ(?, ?, \"SYSTEM\")"
-			values = append(values, s[:i], s[i:])
-			return
-		}
+		var t time.Time
+		t, err = time.Parse(time.RFC3339Nano, v)
 		placeholder = "?"
-		values = append(values, s)
-		return
-	case time.Time:
+		values = append(values, t)
+	case nil:
 		placeholder = "?"
 		values = append(values, v)
-		return
 	default:
 		err = fmt.Errorf("ModifyDatetime can't analyse %v", a)
-		return
 	}
+	return
 }
 
 func ModifierMaxLen(maxLen int) func(a any) (placeholder string, values []any, err error) {

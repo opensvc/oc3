@@ -5,17 +5,17 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.0
+  version: 1.0.2
 
 paths:
-  /daemon/ping:
+  /feed/daemon/ping:
     post:
       description: |
         Refresh existing daemon status timestamps for node
-      operationId: PostDaemonPing
+      operationId: PostFeedDaemonPing
       responses:
         202:
-          description: refresh daemon status timestamps will be refreshed for node
+          description: daemon status timestamps will be refreshed for node
         204:
           description: missing daemon status for node, POST /daemon/status is required
       security:
@@ -24,39 +24,11 @@ paths:
       tags:
         - agent
 
-  /daemon/system:
+  /feed/daemon/status:
     post:
       description: |
-        Post daemon system discovery
-      operationId: PostDaemonSystem
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/system'
-      responses:
-        200:
-          $ref: '#/components/responses/200'
-        400:
-          $ref: '#/components/responses/400'
-        401:
-          $ref: '#/components/responses/401'
-        403:
-          $ref: '#/components/responses/403'
-        500:
-          $ref: '#/components/responses/500'
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
-  /daemon/status:
-    post:
-      description: |
-        Post daemon status view from node.
-      operationId: PostDaemonStatus
+        Refresh daemon status for node
+      operationId: PostFeedDaemonStatus
       parameters:
         - in: header
           name: XDaemonChange
@@ -71,8 +43,8 @@ paths:
             schema:
               $ref: '#/components/schemas/NodeStatus'
       responses:
-        200:
-          $ref: '#/components/responses/200'
+        202:
+          description: daemon status will be refreshed for node
         400:
           $ref: '#/components/responses/400'
         401:
@@ -87,18 +59,20 @@ paths:
       tags:
         - agent
 
-  /daemon/system/package:
+  /feed/system:
     post:
-      operationId: PostDaemonSystemPackage
+      description: |
+        Post system discovery
+      operationId: PostFeedSystem
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/package'
+              $ref: '#/components/schemas/system'
       responses:
-        200:
-          $ref: '#/components/responses/200'
+        202:
+          description: system data will be refreshed for node
         400:
           $ref: '#/components/responses/400'
         401:
@@ -180,9 +154,34 @@ components:
 
     system:
       type: object
+      properties:
+        package:
+          type: array
+          items:
+            $ref: '#/components/schemas/package'
 
     package:
       type: object
+      required:
+        - name
+        - version
+        - arch
+        - type
+        - sig
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        arch:
+          type: string
+        type:
+          type: string
+        sig:
+          type: string
+        installed_at:
+          type: string
+          format: date-time
 
     version:
       type: object
