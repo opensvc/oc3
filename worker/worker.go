@@ -126,7 +126,7 @@ func (t *Worker) Run() error {
 		duration := time.Now().Sub(begin)
 		if err != nil {
 			status = operationStatusFailed
-			slog.Error(err.Error())
+			slog.Error(fmt.Sprintf("job %s %s: %s", workType, j.Detail(), err))
 		}
 		processedOperationCounter.With(prometheus.Labels{"desc": workType, "status": status}).Inc()
 		operationDuration.With(prometheus.Labels{"desc": workType, "status": status}).Observe(duration.Seconds())
