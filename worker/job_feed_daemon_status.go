@@ -224,7 +224,12 @@ func (d *jobFeedDaemonStatus) getData() error {
 		return fmt.Errorf("getChanges: unexpected data from %s %s: %w", cachekeys.FeedDaemonStatusH, d.nodeID, err)
 	} else {
 		d.rawData = b
-		d.data = &daemonDataV2{data: data}
+		if _, ok := data["previous_updated_at"]; ok {
+			var nilMap map[string]any
+			d.data = &daemonDataV3{data: data, cluster: mapToMap(data, nilMap, "data", "cluster")}
+		} else {
+			d.data = &daemonDataV2{data: data}
+		}
 	}
 	if d.clusterID, err = d.data.clusterID(); err != nil {
 		return fmt.Errorf("getData %s: %w", d.nodeID, err)
