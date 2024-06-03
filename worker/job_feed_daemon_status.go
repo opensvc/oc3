@@ -63,7 +63,7 @@ type (
 	}
 
 	instancer interface {
-		InstanceStatus(objectName string, nodename string) *instanceStatus
+		InstanceStatus(objectName string, nodename string) *instanceData
 	}
 
 	nodeInfoer interface {
@@ -578,7 +578,7 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 	return nil
 }
 
-func (d *jobFeedDaemonStatus) instanceResourceUpdate(objName string, nodename string, iStatus *instanceStatus) error {
+func (d *jobFeedDaemonStatus) instanceResourceUpdate(objName string, nodename string, iStatus *instanceData) error {
 	for _, res := range iStatus.InstanceResources() {
 		slog.Debug(fmt.Sprintf("updating instance resource %s@%s %s (%s@%s)", objName, nodename, res.rid, iStatus.svcID, iStatus.nodeID))
 		if err := d.oDb.instanceResourceUpdate(d.ctx, res); err != nil {
@@ -592,7 +592,7 @@ func (d *jobFeedDaemonStatus) instanceResourceUpdate(objName string, nodename st
 	return nil
 }
 
-func (d *jobFeedDaemonStatus) instanceStatusUpdate(objName string, nodename string, iStatus *instanceStatus) error {
+func (d *jobFeedDaemonStatus) instanceStatusUpdate(objName string, nodename string, iStatus *instanceData) error {
 	slog.Debug(fmt.Sprintf("updating instance status %s@%s (%s@%s)", objName, nodename, iStatus.svcID, iStatus.nodeID))
 	if err := d.oDb.instanceStatusUpdate(d.ctx, &iStatus.DBInstanceStatus); err != nil {
 		return fmt.Errorf("update instance status: %w", err)
