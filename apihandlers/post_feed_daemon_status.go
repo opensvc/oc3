@@ -86,5 +86,5 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context, params api.PostFeedDaemonStat
 		log.Error(fmt.Sprintf("can't push %s %s: %s", cachekeys.FeedDaemonStatusQ, nodeID, err))
 		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", cachekeys.FeedDaemonStatusQ, nodeID, err)
 	}
-	return c.JSON(http.StatusOK, nil)
+	return c.JSON(http.StatusAccepted, nil)
 }
