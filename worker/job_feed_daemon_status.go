@@ -63,7 +63,7 @@ type (
 	}
 
 	instancer interface {
-		InstanceStatus(objectName string, nodename string) *instanceStatus
+		InstanceStatus(objectName string, nodename string) *instanceData
 	}
 
 	nodeInfoer interface {
@@ -224,7 +224,12 @@ func (d *jobFeedDaemonStatus) getData() error {
 		return fmt.Errorf("getChanges: unexpected data from %s %s: %w", cachekeys.FeedDaemonStatusH, d.nodeID, err)
 	} else {
 		d.rawData = b
-		d.data = &daemonDataV2{data: data}
+		if _, ok := data["previous_updated_at"]; ok {
+			var nilMap map[string]any
+			d.data = &daemonDataV3{data: data, cluster: mapToMap(data, nilMap, "data", "cluster")}
+		} else {
+			d.data = &daemonDataV2{data: data}
+		}
 	}
 	if d.clusterID, err = d.data.clusterID(); err != nil {
 		return fmt.Errorf("getData %s: %w", d.nodeID, err)
@@ -314,7 +319,7 @@ func (d *jobFeedDaemonStatus) dataToNodeFrozen() error {
 		}
 		if frozen != dbNode.frozen {
 			slog.Info(fmt.Sprintf("dataToNodeFrozen: updating node %s: %s frozen from %s -> %s", nodename, nodeID, dbNode.frozen, frozen))
-			if err := d.oDb.nodeUpdateFrozen(d.ctx, frozen, d.nodeID); err != nil {
+			if err := d.oDb.nodeUpdateFrozen(d.ctx, nodeID, frozen); err != nil {
 				return fmt.Errorf("dataToNodeFrozen node %s (%s): %w", nodename, dbNode.nodeID, err)
 			}
 		}
@@ -578,7 +583,7 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 	return nil
 }
 
-func (d *jobFeedDaemonStatus) instanceResourceUpdate(objName string, nodename string, iStatus *instanceStatus) error {
+func (d *jobFeedDaemonStatus) instanceResourceUpdate(objName string, nodename string, iStatus *instanceData) error {
 	for _, res := range iStatus.InstanceResources() {
 		slog.Debug(fmt.Sprintf("updating instance resource %s@%s %s (%s@%s)", objName, nodename, res.rid, iStatus.svcID, iStatus.nodeID))
 		if err := d.oDb.instanceResourceUpdate(d.ctx, res); err != nil {
@@ -592,7 +597,7 @@ func (d *jobFeedDaemonStatus) instanceResourceUpdate(objName string, nodename st
 	return nil
 }
 
-func (d *jobFeedDaemonStatus) instanceStatusUpdate(objName string, nodename string, iStatus *instanceStatus) error {
+func (d *jobFeedDaemonStatus) instanceStatusUpdate(objName string, nodename string, iStatus *instanceData) error {
 	slog.Debug(fmt.Sprintf("updating instance status %s@%s (%s@%s)", objName, nodename, iStatus.svcID, iStatus.nodeID))
 	if err := d.oDb.instanceStatusUpdate(d.ctx, &iStatus.DBInstanceStatus); err != nil {
 		return fmt.Errorf("update instance status: %w", err)
