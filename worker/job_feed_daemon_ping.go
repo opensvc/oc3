@@ -25,6 +25,9 @@ func newDaemonPing(nodeID string) *jobFeedDaemonPing {
 		BaseJob: &BaseJob{
 			name:   "daemonPing",
 			detail: "nodeID: " + nodeID,
+
+			cachePendingH:   cachekeys.FeedDaemonPingPendingH,
+			cachePendingIDX: nodeID,
 		},
 		nodeID: nodeID,
 
@@ -42,13 +45,6 @@ func (d *jobFeedDaemonPing) Operations() []operation {
 		{desc: "daemonPing/dbPingObjects", do: d.dbPingObjects},
 		{desc: "daemonPing/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
-}
-
-func (d *jobFeedDaemonPing) dropPending() error {
-	if err := d.redis.HDel(d.ctx, cachekeys.FeedDaemonPingPendingH, d.nodeID).Err(); err != nil {
-		return fmt.Errorf("dropPending: HDEL %s %s: %w", cachekeys.FeedDaemonPingPendingH, d.nodeID, err)
-	}
-	return nil
 }
 
 // dbFetchNodes fetch nodes (that are associated with caller node ID) from database
