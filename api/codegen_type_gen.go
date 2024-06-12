@@ -15,6 +15,20 @@ const (
 // NodeStatus defines model for NodeStatus.
 type NodeStatus = map[string]interface{}
 
+// ObjectConfig defines model for ObjectConfig.
+type ObjectConfig struct {
+	App        *string   `json:"app,omitempty"`
+	Comment    *string   `json:"comment,omitempty"`
+	Env        *string   `json:"env,omitempty"`
+	FlexMax    *int      `json:"flex_max,omitempty"`
+	FlexMin    *int      `json:"flex_min,omitempty"`
+	FlexTarget *int      `json:"flex_target,omitempty"`
+	Path       string    `json:"path"`
+	RawConfig  *[]byte   `json:"raw_config,omitempty"`
+	Scope      *[]string `json:"scope,omitempty"`
+	Topology   *string   `json:"topology,omitempty"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	// Detail A human-readable explanation specific to this occurrence of the
@@ -71,6 +85,9 @@ type PostFeedDaemonStatusParams struct {
 
 // PostFeedDaemonStatusJSONRequestBody defines body for PostFeedDaemonStatus for application/json ContentType.
 type PostFeedDaemonStatusJSONRequestBody = NodeStatus
+
+// PostFeedObjectConfigJSONRequestBody defines body for PostFeedObjectConfig for application/json ContentType.
+type PostFeedObjectConfigJSONRequestBody = ObjectConfig
 
 // PostFeedSystemJSONRequestBody defines body for PostFeedSystem for application/json ContentType.
 type PostFeedSystemJSONRequestBody = System

@@ -5,9 +5,29 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.2
+  version: 1.0.3
 
 paths:
+  /feed/object/config:
+    post:
+      description: |
+        Update or create object configuration
+      operationId: PostFeedObjectConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObjectConfig'
+      responses:
+        202:
+          description: instance configuration will be refreshed
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /feed/daemon/ping:
     post:
       description: |
@@ -124,6 +144,35 @@ paths:
 
 components:
   schemas:
+    ObjectConfig:
+      type: object
+      required:
+        - path
+      properties:
+        app:
+          type: string
+        path:
+          type: string
+        topology:
+          type: string
+        scope:
+          type: array
+          items:
+            type: string
+        env:
+          type: string
+        flex_max:
+          type: integer
+        flex_min:
+          type: integer
+        flex_target:
+          type: integer
+        raw_config:
+          type: string
+          format: byte
+        comment:
+          type: string
+
     NodeStatus:
       type: object
 
