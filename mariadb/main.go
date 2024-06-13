@@ -15,6 +15,10 @@ type (
 		QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 	}
 
+	ExecContexter interface {
+		ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	}
+
 	Mappings []Mapping
 	Mapping  struct {
 		// To is the table column name

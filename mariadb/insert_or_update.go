@@ -172,6 +172,20 @@ func (t *InsertOrUpdate) QueryContext(ctx context.Context, db QueryContexter) (*
 	return db.QueryContext(ctx, query, t.values...)
 }
 
+func (t *InsertOrUpdate) ExecContext(ctx context.Context, db ExecContexter) (sql.Result, error) {
+	if err := t.load(); err != nil {
+		return nil, err
+	}
+	if len(t.values) == 0 {
+		return nil, nil
+	}
+	query := t.SQL()
+	if t.Log {
+		slog.Info(fmt.Sprintf("InsertOrUpdate.ExecContext table: %s SQL: %s VALUES:%#v", t.Table, query, t.values))
+	}
+	return db.ExecContext(ctx, query, t.values...)
+}
+
 func (t *InsertOrUpdate) SQL() string {
 	s := fmt.Sprintf(
 		"INSERT INTO %s (%s) VALUES %s",
