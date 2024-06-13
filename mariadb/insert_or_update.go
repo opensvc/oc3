@@ -186,6 +186,15 @@ func (t *InsertOrUpdate) ExecContext(ctx context.Context, db ExecContexter) (sql
 	return db.ExecContext(ctx, query, t.values...)
 }
 
+// ExecContextAndCountRowsAffected will ExecContext and returns the result.RowsAffected
+func (t *InsertOrUpdate) ExecContextAndCountRowsAffected(ctx context.Context, db ExecContexter) (int64, error) {
+	result, err := t.ExecContext(ctx, db)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 func (t *InsertOrUpdate) SQL() string {
 	s := fmt.Sprintf(
 		"INSERT INTO %s (%s) VALUES %s",
