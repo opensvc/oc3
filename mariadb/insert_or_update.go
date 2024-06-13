@@ -26,6 +26,59 @@ type (
 	}
 )
 
+func (t *InsertOrUpdate) ExecContext(ctx context.Context, db ExecContexter) (sql.Result, error) {
+	if err := t.load(); err != nil {
+		return nil, err
+	}
+	if len(t.values) == 0 {
+		return nil, nil
+	}
+	query := t.SQL()
+	if t.Log {
+		slog.Info(fmt.Sprintf("InsertOrUpdate.ExecContext table: %s SQL: %s VALUES:%#v", t.Table, query, t.values))
+	}
+	return db.ExecContext(ctx, query, t.values...)
+}
+
+// ExecContextAndCountRowsAffected will ExecContext and returns the result.RowsAffected
+func (t *InsertOrUpdate) ExecContextAndCountRowsAffected(ctx context.Context, db ExecContexter) (int64, error) {
+	result, err := t.ExecContext(ctx, db)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+func (t *InsertOrUpdate) QueryContext(ctx context.Context, db QueryContexter) (*sql.Rows, error) {
+	if err := t.load(); err != nil {
+		return nil, err
+	}
+	if len(t.values) == 0 {
+		return nil, nil
+	}
+	query := t.SQL()
+	if t.Log {
+		slog.Info(fmt.Sprintf("InsertOrUpdate.QueryContext table: %s SQL: %s VALUES:%#v", t.Table, query, t.values))
+	}
+	return db.QueryContext(ctx, query, t.values...)
+}
+
+func (t *InsertOrUpdate) SQL() string {
+	s := fmt.Sprintf(
+		"INSERT INTO %s (%s) VALUES %s",
+		t.Table,
+		strings.Join(t.names, ", "),
+		strings.Join(t.placeholders, ", "),
+	)
+	if len(t.updates) > 0 {
+		s += fmt.Sprintf(
+			" ON DUPLICATE KEY UPDATE %s",
+			strings.Join(t.updates, ", "),
+		)
+	}
+	return s
+}
+
 func (t *InsertOrUpdate) load() error {
 	switch v := t.Data.(type) {
 	case map[string]any:
@@ -156,57 +209,4 @@ func (t *InsertOrUpdate) loadSlice(data []any) error {
 		t.placeholders = append(t.placeholders, fmt.Sprintf("(%s)", strings.Join(placeholders, ", ")))
 	}
 	return nil
-}
-
-func (t *InsertOrUpdate) QueryContext(ctx context.Context, db QueryContexter) (*sql.Rows, error) {
-	if err := t.load(); err != nil {
-		return nil, err
-	}
-	if len(t.values) == 0 {
-		return nil, nil
-	}
-	query := t.SQL()
-	if t.Log {
-		slog.Info(fmt.Sprintf("InsertOrUpdate.QueryContext table: %s SQL: %s VALUES:%#v", t.Table, query, t.values))
-	}
-	return db.QueryContext(ctx, query, t.values...)
-}
-
-func (t *InsertOrUpdate) ExecContext(ctx context.Context, db ExecContexter) (sql.Result, error) {
-	if err := t.load(); err != nil {
-		return nil, err
-	}
-	if len(t.values) == 0 {
-		return nil, nil
-	}
-	query := t.SQL()
-	if t.Log {
-		slog.Info(fmt.Sprintf("InsertOrUpdate.ExecContext table: %s SQL: %s VALUES:%#v", t.Table, query, t.values))
-	}
-	return db.ExecContext(ctx, query, t.values...)
-}
-
-// ExecContextAndCountRowsAffected will ExecContext and returns the result.RowsAffected
-func (t *InsertOrUpdate) ExecContextAndCountRowsAffected(ctx context.Context, db ExecContexter) (int64, error) {
-	result, err := t.ExecContext(ctx, db)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected()
-}
-
-func (t *InsertOrUpdate) SQL() string {
-	s := fmt.Sprintf(
-		"INSERT INTO %s (%s) VALUES %s",
-		t.Table,
-		strings.Join(t.names, ", "),
-		strings.Join(t.placeholders, ", "),
-	)
-	if len(t.updates) > 0 {
-		s += fmt.Sprintf(
-			" ON DUPLICATE KEY UPDATE %s",
-			strings.Join(t.updates, ", "),
-		)
-	}
-	return s
 }
