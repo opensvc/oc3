@@ -74,6 +74,30 @@ func (d *jobFeedObjectConfig) getData() error {
 }
 
 func (d *jobFeedObjectConfig) updateDB() (err error) {
+	// expected data
+	//instanceConfigPost struct {
+	//	Path string `json:"path"`
+	//
+	//	Topology string `json:"topology"`
+	//
+	//	Orchestrate string `json:"orchestrate"`
+	//
+	//	FlexMin    int `json:"flex_min"`
+	//	FlexMax    int `json:"flex_max"`
+	//	FlexTarget int `json:"flex_target"`
+	//
+	//	App string `json:"app"`
+	//
+	//	Env string `json:"env"`
+	//
+	//	Scope    []string `json:"scope"`
+	//	DrpNode  string   `json:"drp_node"`
+	//	DrpNodes []string `json:"drp_nodes"`
+	//
+	//	Comment string `json:"comment"`
+	//
+	//	RawConfig []byte `json:"raw_config"`
+	//}
 	if _, objectID, err := d.oDb.objectIDFindOrCreate(d.ctx, d.objectName, d.clusterID); err != nil {
 		return err
 	} else {
@@ -82,25 +106,29 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 
 	d.data["updated"] = d.now
 
-	if v, ok := d.data["topology"]; ok {
-		if topology, ok := v.(string); ok && topology == "ha" {
-			d.data["svc_ha"] = 1
-		} else {
-			d.data["svc_ha"] = 0
-		}
+	// Rules for svc_ha == 1: orchestrate is "ha" or topology == "flex" or monitored_resource_count > 0
+	if mapToS(d.data, "", "orchestrate") == "ha" ||
+		mapToS(d.data, "", "topology") == "flex" ||
+		mapToInt(d.data, 0, "monitored_resource_count") > 0 {
+		d.data["svc_ha"] = 1
+	} else {
+		d.data["svc_ha"] = 0
 	}
+
 	request := mariadb.InsertOrUpdate{
 		Table: "services",
 		Mappings: mariadb.Mappings{
 			mariadb.Mapping{From: "path", To: "svcname"},
 			mariadb.Mapping{To: "svc_id"},
 			mariadb.Mapping{From: "scope", To: "svc_nodes", Optional: true, Modify: mariadb.ModifierToString(" ")},
+			mariadb.Mapping{To: "drpnodes", Optional: true, Modify: mariadb.ModifierToString(" ")},
+			mariadb.Mapping{To: "drpnode", Optional: true},
 			mariadb.Mapping{From: "app", To: "svc_app", Optional: true},
 			mariadb.Mapping{From: "env", To: "svc_env", Optional: true},
 			mariadb.Mapping{From: "comment", To: "svc_comment", Optional: true},
-			mariadb.Mapping{From: "FlexMin", To: "svc_flex_min_nodes", Optional: true},
-			mariadb.Mapping{From: "FlexMax", To: "svc_flex_max_nodes", Optional: true},
-			mariadb.Mapping{To: "svc_ha", Optional: true},
+			mariadb.Mapping{From: "flex_min", To: "svc_flex_min_nodes", Optional: true},
+			mariadb.Mapping{From: "flex_max", To: "svc_flex_max_nodes", Optional: true},
+			mariadb.Mapping{From: "HA", To: "svc_ha"},
 			mariadb.Mapping{From: "raw_config", To: "svc_config", Optional: true, Modify: mariadb.ModifyFromBase64ToString},
 			mariadb.Mapping{To: "updated"},
 		},
