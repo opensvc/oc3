@@ -25,9 +25,6 @@ type (
 		// clusterID is the db cluster ID of the node that have posted object config
 		clusterID string
 
-		// objectID is db ID of the service with objectName and clusterID
-		objectID string
-
 		// data is the posted object config
 		data map[string]any
 	}
@@ -56,6 +53,7 @@ func (d *jobFeedObjectConfig) Operations() []operation {
 		{desc: "objectConfig/getData", do: d.getData},
 		{desc: "objectConfig/dbNow", do: d.dbNow},
 		{desc: "objectConfig/updateDB", do: d.updateDB},
+		{desc: "objectConfig/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 
@@ -76,11 +74,12 @@ func (d *jobFeedObjectConfig) getData() error {
 }
 
 func (d *jobFeedObjectConfig) updateDB() (err error) {
-	_, d.objectID, err = d.oDb.objectIDFindOrCreate(d.ctx, d.objectName, d.clusterID)
-	if err != nil {
+	if _, objectID, err := d.oDb.objectIDFindOrCreate(d.ctx, d.objectName, d.clusterID); err != nil {
 		return err
+	} else {
+		d.data["svc_id"] = objectID
 	}
-	d.data["svc_id"] = d.objectID
+
 	d.data["updated"] = d.now
 
 	if v, ok := d.data["topology"]; ok {
@@ -108,6 +107,10 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 		Keys: []string{"svc_id"},
 		Data: d.data,
 	}
-	_, err = request.QueryContext(d.ctx, d.db)
-	return err
+	if affected, err := request.ExecContextAndCountRowsAffected(d.ctx, d.db); err != nil {
+		return err
+	} else if affected > 0 {
+		d.oDb.tableChange("services")
+	}
+	return nil
 }
