@@ -149,29 +149,39 @@ components:
       required:
         - path
       properties:
-        app:
-          type: string
         path:
           type: string
+        orchestrate:
+            type: string
         topology:
           type: string
         scope:
           type: array
           items:
             type: string
-        env:
+        drp_node:
           type: string
-        flex_max:
-          type: integer
+        drp_nodes:
+          type: array
+          items:
+            type: string
         flex_min:
+          type: integer
+        flex_max:
           type: integer
         flex_target:
           type: integer
+        monitored_resource_count:
+          type: integer
+        app:
+          type: string
+        env:
+          type: string
+        comment:
+          type: string
         raw_config:
           type: string
           format: byte
-        comment:
-          type: string
 
     NodeStatus:
       type: object

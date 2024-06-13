@@ -17,16 +17,20 @@ type NodeStatus = map[string]interface{}
 
 // ObjectConfig defines model for ObjectConfig.
 type ObjectConfig struct {
-	App        *string   `json:"app,omitempty"`
-	Comment    *string   `json:"comment,omitempty"`
-	Env        *string   `json:"env,omitempty"`
-	FlexMax    *int      `json:"flex_max,omitempty"`
-	FlexMin    *int      `json:"flex_min,omitempty"`
-	FlexTarget *int      `json:"flex_target,omitempty"`
-	Path       string    `json:"path"`
-	RawConfig  *[]byte   `json:"raw_config,omitempty"`
-	Scope      *[]string `json:"scope,omitempty"`
-	Topology   *string   `json:"topology,omitempty"`
+	App                    *string   `json:"app,omitempty"`
+	Comment                *string   `json:"comment,omitempty"`
+	DrpNode                *string   `json:"drp_node,omitempty"`
+	DrpNodes               *[]string `json:"drp_nodes,omitempty"`
+	Env                    *string   `json:"env,omitempty"`
+	FlexMax                *int      `json:"flex_max,omitempty"`
+	FlexMin                *int      `json:"flex_min,omitempty"`
+	FlexTarget             *int      `json:"flex_target,omitempty"`
+	MonitoredResourceCount *int      `json:"monitored_resource_count,omitempty"`
+	Orchestrate            *string   `json:"orchestrate,omitempty"`
+	Path                   string    `json:"path"`
+	RawConfig              *[]byte   `json:"raw_config,omitempty"`
+	Scope                  *[]string `json:"scope,omitempty"`
+	Topology               *string   `json:"topology,omitempty"`
 }
 
 // Problem defines model for Problem.
