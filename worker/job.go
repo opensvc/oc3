@@ -173,3 +173,7 @@ func (j *BaseJob) dropPending() error {
 	}
 	return nil
 }
+
+func (d *BaseJob) pushFromTableChanges() error {
+	return pushFromTableChanges(d.ctx, d.oDb, d.ev)
+}

@@ -108,7 +108,3 @@ func (d *jobFeedDaemonPing) dbPingObjects() (err error) {
 	}
 	return nil
 }
-
-func (d *jobFeedDaemonPing) pushFromTableChanges() error {
-	return pushFromTableChanges(d.ctx, d.oDb, d.ev)
-}

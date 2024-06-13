@@ -646,10 +646,6 @@ func (d *jobFeedDaemonStatus) dbPurgeServices() error {
 	return nil
 }
 
-func (d *jobFeedDaemonStatus) pushFromTableChanges() error {
-	return pushFromTableChanges(d.ctx, d.oDb, d.ev)
-}
-
 func logDuration(s string, begin time.Time) {
 	slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", s, time.Now().Sub(begin)))
 }
