@@ -9,6 +9,28 @@ import (
 	"time"
 )
 
+type (
+	DBNode struct {
+		nodename      string
+		frozen        string
+		nodeID        string
+		clusterID     string
+		app           string
+		nodeEnv       string
+		locAddr       string
+		locCountry    string
+		locCity       string
+		locZip        string
+		locBuilding   string
+		locFloor      string
+		locRoom       string
+		locRack       string
+		enclosureSlot string
+		enclosure     string
+		hv            string
+	}
+)
+
 func (oDb *opensvcDB) nodeByNodeID(ctx context.Context, nodeID string) (*DBNode, error) {
 	defer logDuration("nodeByNodeID", time.Now())
 	if nodeID == "" {

@@ -15,32 +15,6 @@ import (
 )
 
 type (
-	DBNode struct {
-		nodename      string
-		frozen        string
-		nodeID        string
-		clusterID     string
-		app           string
-		nodeEnv       string
-		locAddr       string
-		locCountry    string
-		locCity       string
-		locZip        string
-		locBuilding   string
-		locFloor      string
-		locRoom       string
-		locRack       string
-		enclosureSlot string
-		enclosure     string
-		hv            string
-	}
-
-	DBInstance struct {
-		svcID  string
-		nodeID string
-		Frozen int64
-	}
-
 	dataLister interface {
 		objectNames() ([]string, error)
 		nodeNames() ([]string, error)
