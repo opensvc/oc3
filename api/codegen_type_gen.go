@@ -82,6 +82,12 @@ type N403 = Problem
 // N500 defines model for 500.
 type N500 = Problem
 
+// FeedDaemonPingAccepted defines model for FeedDaemonPingAccepted.
+type FeedDaemonPingAccepted struct {
+	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/object/config
+	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
+}
+
 // PostFeedDaemonStatusParams defines parameters for PostFeedDaemonStatus.
 type PostFeedDaemonStatusParams struct {
 	XDaemonChange *string `json:"XDaemonChange,omitempty"`

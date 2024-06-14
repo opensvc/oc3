@@ -3,6 +3,7 @@ package worker
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/opensvc/oc3/cachekeys"
 )
@@ -43,6 +44,7 @@ func (d *jobFeedDaemonPing) Operations() []operation {
 		{desc: "daemonPing/dbFetchObjects", do: d.dbFetchObjects},
 		{desc: "daemonPing/dbPingInstances", do: d.dbPingInstances},
 		{desc: "daemonPing/dbPingObjects", do: d.dbPingObjects},
+		{desc: "daemonPing/dbObjectsWithoutConfig", do: d.dbObjectsWithoutConfig},
 		{desc: "daemonPing/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
@@ -104,6 +106,42 @@ func (d *jobFeedDaemonPing) dbPingObjects() (err error) {
 			if _, err := d.oDb.objectPing(d.ctx, objectID); err != nil {
 				return fmt.Errorf("dbPingObjects can't ping object %s %s: %w", objectName, objectID, err)
 			}
+		}
+	}
+	return nil
+}
+
+// dbObjectsWithoutConfig populate FeedObjectConfigForClusterIDH with
+// name of objects without config
+func (d *jobFeedDaemonPing) dbObjectsWithoutConfig() error {
+	needConfig := make(map[string]struct{})
+	for _, obj := range d.byObjectID {
+		if obj.nullConfig {
+			objName := obj.svcname
+			// TODO: import om3 naming ?
+			if strings.Contains(objName, "/svc/") ||
+				strings.Contains(objName, "/vol/") ||
+				strings.HasPrefix(objName, "svc/") ||
+				strings.HasPrefix(objName, "vol/") ||
+				!strings.Contains(objName, "/") {
+				needConfig[objName] = struct{}{}
+			}
+		}
+	}
+
+	keyName := cachekeys.FeedObjectConfigForClusterIDH
+
+	if len(needConfig) > 0 {
+		l := make([]string, 0, len(needConfig))
+		for k := range needConfig {
+			l = append(l, k)
+		}
+		if err := d.redis.HSet(d.ctx, keyName, d.clusterID, strings.Join(l, " ")).Err(); err != nil {
+			return fmt.Errorf("detectObjectWithoutConfig: HSet %s %s: %w", keyName, d.clusterID, err)
+		}
+	} else {
+		if err := d.redis.HDel(d.ctx, keyName, d.clusterID).Err(); err != nil {
+			return fmt.Errorf("detectObjectWithoutConfig: HDEL %s %s: %w", keyName, d.clusterID, err)
 		}
 	}
 	return nil

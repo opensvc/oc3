@@ -35,7 +35,7 @@ paths:
       operationId: PostFeedDaemonPing
       responses:
         202:
-          description: daemon status timestamps will be refreshed for node
+          $ref: '#/components/responses/FeedDaemonPingAccepted'
         204:
           description: missing daemon status for node, POST /daemon/status is required
       security:
@@ -325,3 +325,17 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Problem"
+
+    FeedDaemonPingAccepted:
+      description: daemon status timestamps will be refreshed for node
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              object_without_config:
+                type: array
+                description: list of object names that requires POST /oc3/feed/object/config
+                items:
+                  type: string
+                  description: object name
