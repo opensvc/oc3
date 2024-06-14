@@ -25,11 +25,15 @@ func (a *Api) PostFeedObjectConfig(c echo.Context) error {
 	}
 	clusterID := clusterIDFromContext(c)
 	if clusterID == "" {
-		return JSONProblemf(c, http.StatusConflict, "refused", "authenticated node doesn't define cluster id")
+		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
 	var payload api.PostFeedObjectConfigJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
+	}
+	if payload.Path == "" {
+		log.Debug("bad request: empty path")
+		return JSONProblem(c, http.StatusBadRequest, "Got object empty path", "")
 	}
 	b, err := json.Marshal(payload)
 	if err != nil {
