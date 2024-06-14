@@ -35,17 +35,6 @@ type (
 		hv            string
 	}
 
-	DBObject struct {
-		svcname   string
-		svcID     string
-		clusterID string
-
-		DBObjStatus
-
-		env string
-		app string
-	}
-
 	DBInstance struct {
 		svcID  string
 		nodeID string
@@ -74,6 +63,7 @@ type (
 		clusterID() (s string, err error)
 		clusterName() (s string, err error)
 	}
+
 	dataProvider interface {
 		dataLister
 		clusterer
