@@ -66,6 +66,18 @@ func mapToS(m map[string]any, defaultValue string, k ...string) string {
 	return mapToA(m, defaultValue, k...).(string)
 }
 
+func mapToInt(m map[string]any, defaultValue int, k ...string) int {
+	a := mapToA(m, defaultValue, k...)
+	switch v := a.(type) {
+	case int:
+		return v
+	case float64:
+		return int(v)
+	default:
+		return defaultValue
+	}
+}
+
 func mapToMap(m map[string]any, defaultValue map[string]any, k ...string) map[string]any {
 	return mapToA(m, defaultValue, k...).(map[string]any)
 }

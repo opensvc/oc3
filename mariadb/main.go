@@ -3,13 +3,20 @@ package mariadb
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"fmt"
+	"reflect"
+	"strings"
 	"time"
 )
 
 type (
 	QueryContexter interface {
 		QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	}
+
+	ExecContexter interface {
+		ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	}
 
 	Mappings []Mapping
@@ -71,4 +78,49 @@ func ModifierMaxLen(maxLen int) func(a any) (placeholder string, values []any, e
 			return
 		}
 	}
+}
+
+// ModifierToString return is a modify function that prepares string.
+// sep is used to join []string results to string.
+func ModifierToString(sep string) func(a any) (placeholder string, values []any, err error) {
+	return func(a any) (placeholder string, values []any, err error) {
+		switch v := a.(type) {
+		case string:
+			placeholder = "?"
+			values = append(values, v)
+		case []string:
+			placeholder = "?"
+			values = append(values, strings.Join(v, sep))
+		case []interface{}:
+			placeholder = "?"
+			var l []string
+			for _, i := range v {
+				l = append(l, i.(string))
+			}
+			values = append(values, strings.Join(l, sep))
+		case []byte:
+			placeholder = "?"
+			values = append(values, string(v))
+		default:
+			err = fmt.Errorf("ModifierToString can't analyse type %s", reflect.TypeOf(a))
+		}
+		return
+	}
+}
+
+func ModifyFromBase64ToString(a any) (placeholder string, values []any, err error) {
+	switch v := a.(type) {
+	case string:
+		var b []byte
+		b, err = base64.StdEncoding.DecodeString(v)
+		if err != nil {
+			err = fmt.Errorf("ModifyFromBase64ToString can't decode")
+			return
+		}
+		placeholder = "?"
+		values = append(values, string(b))
+	default:
+		err = fmt.Errorf("ModifyFromBase64ToString can't analyse type %s", reflect.TypeOf(a))
+	}
+	return
 }

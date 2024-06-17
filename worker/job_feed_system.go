@@ -25,6 +25,9 @@ func newDaemonSystem(nodeID string) *jobFeedSystem {
 		BaseJob: &BaseJob{
 			name:   "daemonSystem",
 			detail: "nodeID: " + nodeID,
+
+			cachePendingH:   cachekeys.FeedSystemPendingH,
+			cachePendingIDX: nodeID,
 		},
 		nodeID: nodeID,
 	}
@@ -462,13 +465,6 @@ func (d *jobFeedSystem) properties() error {
 	_, err := request.QueryContext(d.ctx, d.db)
 
 	return err
-}
-
-func (d *jobFeedSystem) dropPending() error {
-	if err := d.redis.HDel(d.ctx, cachekeys.FeedSystemPendingH, d.nodeID).Err(); err != nil {
-		return fmt.Errorf("dropPending: HDEL %s %s: %w", cachekeys.FeedSystemPendingH, d.nodeID, err)
-	}
-	return nil
 }
 
 func (d *jobFeedSystem) getData() error {

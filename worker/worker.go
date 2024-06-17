@@ -100,6 +100,14 @@ func (t *Worker) Run() error {
 			j = newDaemonPing(result[1])
 		case cachekeys.FeedDaemonStatusQ:
 			j = newDaemonStatus(result[1])
+		case cachekeys.FeedObjectConfigQ:
+			// expected result[1]: foo@<nodeID>@<clusterID>
+			l := strings.Split(result[1], "@")
+			if len(l) != 3 || l[0] == "" || l[1] == "" || l[2] == "" {
+				slog.Warn(fmt.Sprintf("invalid feed instance config index: %s", result[1]))
+				continue
+			}
+			j = newFeedObjectConfig(l[0], l[1], l[2])
 		case cachekeys.FeedSystemQ:
 			j = newDaemonSystem(result[1])
 		default:

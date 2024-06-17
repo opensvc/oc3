@@ -10,6 +10,11 @@ import (
 )
 
 type (
+	DBInstance struct {
+		svcID  string
+		nodeID string
+		Frozen int64
+	}
 
 	// DBInstanceStatus
 	//

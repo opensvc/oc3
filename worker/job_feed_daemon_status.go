@@ -15,43 +15,6 @@ import (
 )
 
 type (
-	DBNode struct {
-		nodename      string
-		frozen        string
-		nodeID        string
-		clusterID     string
-		app           string
-		nodeEnv       string
-		locAddr       string
-		locCountry    string
-		locCity       string
-		locZip        string
-		locBuilding   string
-		locFloor      string
-		locRoom       string
-		locRack       string
-		enclosureSlot string
-		enclosure     string
-		hv            string
-	}
-
-	DBObject struct {
-		svcname   string
-		svcID     string
-		clusterID string
-
-		DBObjStatus
-
-		env string
-		app string
-	}
-
-	DBInstance struct {
-		svcID  string
-		nodeID string
-		Frozen int64
-	}
-
 	dataLister interface {
 		objectNames() ([]string, error)
 		nodeNames() ([]string, error)
@@ -74,6 +37,7 @@ type (
 		clusterID() (s string, err error)
 		clusterName() (s string, err error)
 	}
+
 	dataProvider interface {
 		dataLister
 		clusterer
@@ -130,6 +94,9 @@ func newDaemonStatus(nodeID string) *jobFeedDaemonStatus {
 		BaseJob: &BaseJob{
 			name:   "daemonStatus",
 			detail: "nodeID: " + nodeID,
+
+			cachePendingH:   cachekeys.FeedDaemonStatusPendingH,
+			cachePendingIDX: nodeID,
 		},
 		nodeID: nodeID,
 
@@ -180,13 +147,6 @@ func (d *jobFeedDaemonStatus) LogResult() {
 	for k, v := range d.byInstanceName {
 		slog.Debug(fmt.Sprintf("found db instance %s: %#v", k, v))
 	}
-}
-
-func (d *jobFeedDaemonStatus) dropPending() error {
-	if err := d.redis.HDel(d.ctx, cachekeys.FeedDaemonStatusPendingH, d.nodeID).Err(); err != nil {
-		return fmt.Errorf("dropPending: HDEL %s %s: %w", cachekeys.FeedDaemonStatusPendingH, d.nodeID, err)
-	}
-	return nil
 }
 
 func (d *jobFeedDaemonStatus) getChanges() error {
@@ -648,10 +608,6 @@ func (d *jobFeedDaemonStatus) dbPurgeServices() error {
 		return fmt.Errorf("dbPurgeServices: %w", err)
 	}
 	return nil
-}
-
-func (d *jobFeedDaemonStatus) pushFromTableChanges() error {
-	return pushFromTableChanges(d.ctx, d.oDb, d.ev)
 }
 
 func logDuration(s string, begin time.Time) {

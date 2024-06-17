@@ -15,6 +15,24 @@ const (
 // NodeStatus defines model for NodeStatus.
 type NodeStatus = map[string]interface{}
 
+// ObjectConfig defines model for ObjectConfig.
+type ObjectConfig struct {
+	App                    *string   `json:"app,omitempty"`
+	Comment                *string   `json:"comment,omitempty"`
+	DrpNode                *string   `json:"drp_node,omitempty"`
+	DrpNodes               *[]string `json:"drp_nodes,omitempty"`
+	Env                    *string   `json:"env,omitempty"`
+	FlexMax                *int      `json:"flex_max,omitempty"`
+	FlexMin                *int      `json:"flex_min,omitempty"`
+	FlexTarget             *int      `json:"flex_target,omitempty"`
+	MonitoredResourceCount *int      `json:"monitored_resource_count,omitempty"`
+	Orchestrate            *string   `json:"orchestrate,omitempty"`
+	Path                   string    `json:"path"`
+	RawConfig              *[]byte   `json:"raw_config,omitempty"`
+	Scope                  *[]string `json:"scope,omitempty"`
+	Topology               *string   `json:"topology,omitempty"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	// Detail A human-readable explanation specific to this occurrence of the
@@ -64,6 +82,12 @@ type N403 = Problem
 // N500 defines model for 500.
 type N500 = Problem
 
+// FeedDaemonPingAccepted defines model for FeedDaemonPingAccepted.
+type FeedDaemonPingAccepted struct {
+	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/object/config
+	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
+}
+
 // PostFeedDaemonStatusParams defines parameters for PostFeedDaemonStatus.
 type PostFeedDaemonStatusParams struct {
 	XDaemonChange *string `json:"XDaemonChange,omitempty"`
@@ -71,6 +95,9 @@ type PostFeedDaemonStatusParams struct {
 
 // PostFeedDaemonStatusJSONRequestBody defines body for PostFeedDaemonStatus for application/json ContentType.
 type PostFeedDaemonStatusJSONRequestBody = NodeStatus
+
+// PostFeedObjectConfigJSONRequestBody defines body for PostFeedObjectConfig for application/json ContentType.
+type PostFeedObjectConfigJSONRequestBody = ObjectConfig
 
 // PostFeedSystemJSONRequestBody defines body for PostFeedSystem for application/json ContentType.
 type PostFeedSystemJSONRequestBody = System

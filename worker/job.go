@@ -23,6 +23,14 @@ type (
 		name   string
 		detail string
 		now    time.Time
+
+		// cachePendingH is the cache hash used by BaseJob.dropPending:
+		// HDEL <cachePendingH> <cachePendingIDX>
+		cachePendingH string
+
+		// cachePendingIDX is the cache id used by BaseJob.dropPending:
+		// HDEL <cachePendingH> <cachePendingIDX>
+		cachePendingIDX string
 	}
 
 	operation struct {
@@ -157,4 +165,15 @@ func runOps(ops ...operation) error {
 		slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", op.desc, duration))
 	}
 	return nil
+}
+
+func (j *BaseJob) dropPending() error {
+	if err := j.redis.HDel(j.ctx, j.cachePendingH, j.cachePendingIDX).Err(); err != nil {
+		return fmt.Errorf("dropPending: HDEL %s %s: %w", j.cachePendingH, j.cachePendingIDX, err)
+	}
+	return nil
+}
+
+func (d *BaseJob) pushFromTableChanges() error {
+	return pushFromTableChanges(d.ctx, d.oDb, d.ev)
 }
