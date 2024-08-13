@@ -184,11 +184,15 @@ func (d *jobFeedDaemonStatus) getData() error {
 		return fmt.Errorf("getChanges: unexpected data from %s %s: %w", cachekeys.FeedDaemonStatusH, d.nodeID, err)
 	} else {
 		d.rawData = b
-		if _, ok := data["previous_updated_at"]; ok {
-			var nilMap map[string]any
+		var nilMap map[string]any
+		clientVersion := mapToS(data, "", "version")
+		switch {
+		case strings.HasPrefix(clientVersion, "3."):
 			d.data = &daemonDataV3{data: data, cluster: mapToMap(data, nilMap, "data", "cluster")}
-		} else {
-			d.data = &daemonDataV2{data: data}
+		case strings.HasPrefix(clientVersion, "2."):
+			d.data = &daemonDataV2{data: mapToMap(data, nilMap, "data")}
+		default:
+			return fmt.Errorf("no mapper for version %s", clientVersion)
 		}
 	}
 	if d.clusterID, err = d.data.clusterID(); err != nil {

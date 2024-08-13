@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.3
+  version: 1.0.4
 
 paths:
   /feed/object/config:
@@ -49,19 +49,12 @@ paths:
       description: |
         Refresh daemon status for node
       operationId: PostFeedDaemonStatus
-      parameters:
-        - in: header
-          name: XDaemonChange
-          schema:
-            type: string
-            description: list of changes separated with space
-          required: false
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NodeStatus'
+              $ref: '#/components/schemas/PostFeedDaemonStatus'
       responses:
         202:
           description: daemon status will be refreshed for node
@@ -183,8 +176,29 @@ components:
           type: string
           format: byte
 
-    NodeStatus:
+    PostFeedDaemonStatus:
       type: object
+      required:
+        - data
+        - changes
+        - version
+      properties:
+        previous_updated_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        data:
+          type: object
+        changes:
+          type: array
+          items:
+            type: string
+            description: object or instance
+        version:
+          type: string
+          description: the opensvc client data version
 
     Problem:
       type: object
@@ -253,13 +267,6 @@ components:
 
   parameters:
 
-    inPathNodeName:
-      in: path
-      name: nodename
-      required: true
-      schema:
-        type: string
-        example: localhost
   securitySchemes:
     basicAuth:
       type: http
@@ -268,6 +275,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
   responses:
     '200':
       description: OK
