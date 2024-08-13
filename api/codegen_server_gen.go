@@ -8,14 +8,12 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"fmt"
-	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
-	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
@@ -25,7 +23,7 @@ type ServerInterface interface {
 	PostFeedDaemonPing(ctx echo.Context) error
 
 	// (POST /feed/daemon/status)
-	PostFeedDaemonStatus(ctx echo.Context, params PostFeedDaemonStatusParams) error
+	PostFeedDaemonStatus(ctx echo.Context) error
 
 	// (POST /feed/object/config)
 	PostFeedObjectConfig(ctx echo.Context) error
@@ -66,28 +64,8 @@ func (w *ServerInterfaceWrapper) PostFeedDaemonStatus(ctx echo.Context) error {
 
 	ctx.Set(BearerAuthScopes, []string{})
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params PostFeedDaemonStatusParams
-
-	headers := ctx.Request().Header
-	// ------------- Optional header parameter "XDaemonChange" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("XDaemonChange")]; found {
-		var XDaemonChange string
-		n := len(valueList)
-		if n != 1 {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for XDaemonChange, got %d", n))
-		}
-
-		err = runtime.BindStyledParameterWithLocation("simple", false, "XDaemonChange", runtime.ParamLocationHeader, valueList[0], &XDaemonChange)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter XDaemonChange: %s", err))
-		}
-
-		params.XDaemonChange = &XDaemonChange
-	}
-
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostFeedDaemonStatus(ctx, params)
+	err = w.Handler.PostFeedDaemonStatus(ctx)
 	return err
 }
 
@@ -175,28 +153,30 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"9VX9ZwAAAP//P3UWmf8VAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

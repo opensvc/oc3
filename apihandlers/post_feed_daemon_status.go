@@ -1,6 +1,7 @@
 package apihandlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 	"github.com/opensvc/oc3/cachekeys"
 )
 
-func (a *Api) PostFeedDaemonStatus(c echo.Context, params api.PostFeedDaemonStatusParams) error {
+func (a *Api) PostFeedDaemonStatus(c echo.Context) error {
 	log := getLog(c)
 	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {
@@ -23,17 +24,9 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context, params api.PostFeedDaemonStat
 
 	mChange := make(map[string]struct{})
 
-	mergeChanges := func(s string) error {
+	mergeChanges := func(s string) {
 		for _, v := range strings.Fields(s) {
 			mChange[v] = struct{}{}
-		}
-		return nil
-	}
-
-	if params.XDaemonChange != nil {
-		changes := *params.XDaemonChange
-		if err := mergeChanges(changes); err != nil {
-			return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "unexpected changes %s: %s", changes, err)
 		}
 	}
 
@@ -47,7 +40,15 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context, params api.PostFeedDaemonStat
 	if err != nil {
 		return JSONProblemf(c, http.StatusInternalServerError, "", "read request body: %s", err)
 	}
-
+	postData := &api.PostFeedDaemonStatus{}
+	if err := json.Unmarshal(b, postData); err != nil {
+		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "unexpected body: %s", err)
+	} else {
+		mergeChanges(strings.Join(postData.Changes, " "))
+	}
+	if !strings.HasPrefix(postData.Version, "2.") || !strings.HasPrefix(postData.Version, "3.") {
+		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "unsupported data client version: %s", postData.Version)
+	}
 	ctx := c.Request().Context()
 	log.Info(fmt.Sprintf("HSET %s %s", cachekeys.FeedDaemonStatusH, nodeID))
 	if err := a.Redis.HSet(ctx, cachekeys.FeedDaemonStatusH, nodeID, string(b)).Err(); err != nil {
@@ -61,9 +62,7 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context, params api.PostFeedDaemonStat
 		switch err {
 		case nil:
 			// merge existing changes
-			if err := mergeChanges(redisChanges); err != nil {
-				log.Warn(fmt.Sprintf("ignore invalid value %s %s", cachekeys.FeedDaemonStatusChangesH, nodeID))
-			}
+			mergeChanges(redisChanges)
 		case redis.Nil:
 			// no existing changes to merge
 		default:

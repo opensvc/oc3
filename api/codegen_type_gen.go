@@ -12,9 +12,6 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
-// NodeStatus defines model for NodeStatus.
-type NodeStatus = map[string]interface{}
-
 // ObjectConfig defines model for ObjectConfig.
 type ObjectConfig struct {
 	App                    *string   `json:"app,omitempty"`
@@ -31,6 +28,17 @@ type ObjectConfig struct {
 	RawConfig              *[]byte   `json:"raw_config,omitempty"`
 	Scope                  *[]string `json:"scope,omitempty"`
 	Topology               *string   `json:"topology,omitempty"`
+}
+
+// PostFeedDaemonStatus defines model for PostFeedDaemonStatus.
+type PostFeedDaemonStatus struct {
+	Changes           []string               `json:"changes"`
+	Data              map[string]interface{} `json:"data"`
+	PreviousUpdatedAt *time.Time             `json:"previous_updated_at,omitempty"`
+	UpdatedAt         *time.Time             `json:"updated_at,omitempty"`
+
+	// Version the opensvc client data version
+	Version string `json:"version"`
 }
 
 // Problem defines model for Problem.
@@ -88,13 +96,8 @@ type FeedDaemonPingAccepted struct {
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
 }
 
-// PostFeedDaemonStatusParams defines parameters for PostFeedDaemonStatus.
-type PostFeedDaemonStatusParams struct {
-	XDaemonChange *string `json:"XDaemonChange,omitempty"`
-}
-
 // PostFeedDaemonStatusJSONRequestBody defines body for PostFeedDaemonStatus for application/json ContentType.
-type PostFeedDaemonStatusJSONRequestBody = NodeStatus
+type PostFeedDaemonStatusJSONRequestBody = PostFeedDaemonStatus
 
 // PostFeedObjectConfigJSONRequestBody defines body for PostFeedObjectConfig for application/json ContentType.
 type PostFeedObjectConfigJSONRequestBody = ObjectConfig
