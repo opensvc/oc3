@@ -1,12 +1,9 @@
 package apihandlers
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 
 	"github.com/opensvc/oc3/api"
@@ -37,20 +34,19 @@ func (a *Api) PostFeedDaemonPing(c echo.Context) error {
 	clusterID := clusterIDFromContext(c)
 
 	if clusterID != "" {
-		keyName := cachekeys.FeedObjectConfigForClusterIDH
-		if s, err := a.Redis.HGet(ctx, keyName, clusterID).Result(); err != nil {
-			if !errors.Is(err, redis.Nil) {
-				log.Error(fmt.Sprintf("HGET %s %s: %s", keyName, clusterID, err))
-			}
-		} else if l := strings.Fields(s); len(l) > 0 {
-			log.Debug(fmt.Sprintf("accepted %s, cluster id %s needs objects %#v", nodeID, clusterID, l))
+		objects, err := a.getObjectConfigToFeed(ctx, clusterID)
+		if err != nil {
+			log.Error("%s", err)
+		} else {
 			defer func() {
-				// Cleanup, client has been notified
-				if err := a.Redis.HDel(ctx, keyName, clusterID).Err(); err != nil {
-					log.Error(fmt.Sprintf("HDEL %s %s: %s", keyName, clusterID, err))
+				if err := a.removeObjectConfigToFeed(ctx, clusterID); err != nil {
+					log.Error("%s", err)
 				}
 			}()
-			return c.JSON(http.StatusAccepted, api.FeedDaemonPingAccepted{ObjectWithoutConfig: &l})
+			if len(objects) > 0 {
+				log.Debug(fmt.Sprintf("accepted %s, cluster id %s needs objects %#v", nodeID, clusterID, objects))
+				return c.JSON(http.StatusAccepted, api.FeedDaemonPingAccepted{ObjectWithoutConfig: &objects})
+			}
 		}
 	}
 	log.Debug(fmt.Sprintf("accepted %s", nodeID))

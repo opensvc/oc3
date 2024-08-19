@@ -85,5 +85,23 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context) error {
 		log.Error(fmt.Sprintf("can't push %s %s: %s", cachekeys.FeedDaemonStatusQ, nodeID, err))
 		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", cachekeys.FeedDaemonStatusQ, nodeID, err)
 	}
-	return c.JSON(http.StatusAccepted, nil)
+
+	clusterID := clusterIDFromContext(c)
+	if clusterID != "" {
+		objects, err := a.getObjectConfigToFeed(ctx, clusterID)
+		if err != nil {
+			log.Error("%s", err)
+		} else {
+			defer func() {
+				if err := a.removeObjectConfigToFeed(ctx, clusterID); err != nil {
+					log.Error("%s", err)
+				}
+			}()
+			if len(objects) > 0 {
+				log.Debug(fmt.Sprintf("accepted %s, cluster id %s needs objects %#v", nodeID, clusterID, objects))
+				return c.JSON(http.StatusAccepted, api.FeedDaemonStatusAccepted{ObjectWithoutConfig: &objects})
+			}
+		}
+	}
+	return c.JSON(http.StatusAccepted, api.FeedDaemonStatusAccepted{})
 }

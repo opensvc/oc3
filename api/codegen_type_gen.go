@@ -96,6 +96,12 @@ type FeedDaemonPingAccepted struct {
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
 }
 
+// FeedDaemonStatusAccepted defines model for FeedDaemonStatusAccepted.
+type FeedDaemonStatusAccepted struct {
+	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/object/config
+	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
+}
+
 // PostFeedDaemonStatusJSONRequestBody defines body for PostFeedDaemonStatus for application/json ContentType.
 type PostFeedDaemonStatusJSONRequestBody = PostFeedDaemonStatus
 
