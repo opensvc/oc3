@@ -130,6 +130,7 @@ func (d *jobFeedDaemonStatus) Operations() []operation {
 		{desc: "daemonStatus/dbUpdateInstances", do: d.dbUpdateInstances},
 		{desc: "daemonStatus/dbPurgeInstances", do: d.dbPurgeInstances},
 		{desc: "daemonStatus/dbPurgeServices", do: d.dbPurgeServices},
+		{desc: "daemonStatus/cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
 		{desc: "daemonStatus/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
@@ -612,6 +613,11 @@ func (d *jobFeedDaemonStatus) dbPurgeServices() error {
 		return fmt.Errorf("dbPurgeServices: %w", err)
 	}
 	return nil
+}
+
+// cacheObjectsWithoutConfig populate FeedObjectConfigForClusterIDH with names of objects without config
+func (d *jobFeedDaemonStatus) cacheObjectsWithoutConfig() error {
+	return d.populateFeedObjectConfigForClusterIDH(d.clusterID, d.byObjectID)
 }
 
 func logDuration(s string, begin time.Time) {
