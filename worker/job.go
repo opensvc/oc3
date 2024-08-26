@@ -183,7 +183,7 @@ func (d *BaseJob) pushFromTableChanges() error {
 
 // populateFeedObjectConfigForClusterIDH HSET FeedObjectConfigForClusterIDH <clusterID> with the names of objects
 // without config or HDEL FeedObjectConfigForClusterIDH <clusterID> if there are no missing configs.
-func (d *BaseJob) populateFeedObjectConfigForClusterIDH(clusterID string, byObjectID map[string]*DBObject) error {
+func (d *BaseJob) populateFeedObjectConfigForClusterIDH(clusterID string, byObjectID map[string]*DBObject) ([]string, error) {
 	needConfig := make(map[string]struct{})
 	for _, obj := range byObjectID {
 		if obj.nullConfig {
@@ -207,12 +207,13 @@ func (d *BaseJob) populateFeedObjectConfigForClusterIDH(clusterID string, byObje
 			l = append(l, k)
 		}
 		if err := d.redis.HSet(d.ctx, keyName, clusterID, strings.Join(l, " ")).Err(); err != nil {
-			return fmt.Errorf("populateFeedObjectConfigForClusterIDH: HSet %s %s: %w", keyName, clusterID, err)
+			return l, fmt.Errorf("populateFeedObjectConfigForClusterIDH: HSet %s %s: %w", keyName, clusterID, err)
 		}
+		return l, nil
 	} else {
 		if err := d.redis.HDel(d.ctx, keyName, clusterID).Err(); err != nil {
-			return fmt.Errorf("populateFeedObjectConfigForClusterIDH: HDEL %s %s: %w", keyName, clusterID, err)
+			return nil, fmt.Errorf("populateFeedObjectConfigForClusterIDH: HDEL %s %s: %w", keyName, clusterID, err)
 		}
 	}
-	return nil
+	return nil, nil
 }
