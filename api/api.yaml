@@ -31,8 +31,14 @@ paths:
   /feed/daemon/ping:
     post:
       description: |
-        Refresh existing daemon status timestamps for node
+        Refresh cluster daemon status timestamps
       operationId: PostFeedDaemonPing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostFeedDaemonPing'
       responses:
         202:
           $ref: '#/components/responses/FeedDaemonPingAccepted'
@@ -47,7 +53,7 @@ paths:
   /feed/daemon/status:
     post:
       description: |
-        Refresh daemon status for node
+        Refresh cluster daemon status
       operationId: PostFeedDaemonStatus
       requestBody:
         required: true
@@ -175,6 +181,29 @@ components:
         raw_config:
           type: string
           format: byte
+
+    PostFeedDaemonPing:
+      type: object
+      required:
+        - nodes
+        - objects
+        - version
+      properties:
+        nodes:
+          type: array
+          description: list of cluster node
+          items:
+            type: string
+            description: cluster node name
+        objects:
+          type: array
+          description: list of cluster object names
+          items:
+            type: string
+            description: object name
+        version:
+          type: string
+          description: the opensvc client data version
 
     PostFeedDaemonStatus:
       type: object
