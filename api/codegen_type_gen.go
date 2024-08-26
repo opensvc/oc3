@@ -30,6 +30,18 @@ type ObjectConfig struct {
 	Topology               *string   `json:"topology,omitempty"`
 }
 
+// PostFeedDaemonPing defines model for PostFeedDaemonPing.
+type PostFeedDaemonPing struct {
+	// Nodes list of cluster node
+	Nodes []string `json:"nodes"`
+
+	// Objects list of cluster object names
+	Objects []string `json:"objects"`
+
+	// Version the opensvc client data version
+	Version string `json:"version"`
+}
+
 // PostFeedDaemonStatus defines model for PostFeedDaemonStatus.
 type PostFeedDaemonStatus struct {
 	Changes           []string               `json:"changes"`
@@ -95,6 +107,15 @@ type FeedDaemonPingAccepted struct {
 	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/object/config
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
 }
+
+// FeedDaemonStatusAccepted defines model for FeedDaemonStatusAccepted.
+type FeedDaemonStatusAccepted struct {
+	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/object/config
+	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
+}
+
+// PostFeedDaemonPingJSONRequestBody defines body for PostFeedDaemonPing for application/json ContentType.
+type PostFeedDaemonPingJSONRequestBody = PostFeedDaemonPing
 
 // PostFeedDaemonStatusJSONRequestBody defines body for PostFeedDaemonStatus for application/json ContentType.
 type PostFeedDaemonStatusJSONRequestBody = PostFeedDaemonStatus

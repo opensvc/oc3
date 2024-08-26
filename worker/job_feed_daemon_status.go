@@ -130,6 +130,7 @@ func (d *jobFeedDaemonStatus) Operations() []operation {
 		{desc: "daemonStatus/dbUpdateInstances", do: d.dbUpdateInstances},
 		{desc: "daemonStatus/dbPurgeInstances", do: d.dbPurgeInstances},
 		{desc: "daemonStatus/dbPurgeServices", do: d.dbPurgeServices},
+		{desc: "daemonStatus/cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
 		{desc: "daemonStatus/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
@@ -179,9 +180,9 @@ func (d *jobFeedDaemonStatus) getData() error {
 		data map[string]any
 	)
 	if b, err := d.redis.HGet(d.ctx, cachekeys.FeedDaemonStatusH, d.nodeID).Bytes(); err != nil {
-		return fmt.Errorf("getChanges: HGET %s %s: %w", cachekeys.FeedDaemonStatusH, d.nodeID, err)
+		return fmt.Errorf("getData: HGET %s %s: %w", cachekeys.FeedDaemonStatusH, d.nodeID, err)
 	} else if err = json.Unmarshal(b, &data); err != nil {
-		return fmt.Errorf("getChanges: unexpected data from %s %s: %w", cachekeys.FeedDaemonStatusH, d.nodeID, err)
+		return fmt.Errorf("getData: unexpected data from %s %s: %w", cachekeys.FeedDaemonStatusH, d.nodeID, err)
 	} else {
 		d.rawData = b
 		var nilMap map[string]any
@@ -612,6 +613,15 @@ func (d *jobFeedDaemonStatus) dbPurgeServices() error {
 		return fmt.Errorf("dbPurgeServices: %w", err)
 	}
 	return nil
+}
+
+// cacheObjectsWithoutConfig populate FeedObjectConfigForClusterIDH with names of objects without config
+func (d *jobFeedDaemonStatus) cacheObjectsWithoutConfig() error {
+	objects, err := d.populateFeedObjectConfigForClusterIDH(d.clusterID, d.byObjectID)
+	if len(objects) > 0 {
+		slog.Info(fmt.Sprintf("daemonStatus nodeID: %s need object config: %s", d.nodeID, objects))
+	}
+	return err
 }
 
 func logDuration(s string, begin time.Time) {

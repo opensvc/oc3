@@ -2,6 +2,7 @@ package cachekeys
 
 var (
 	FeedDaemonPingQ        = "oc3:q:feed_daemon_ping"
+	FeedDaemonPingH        = "oc3:h:feed_daemon_ping"
 	FeedDaemonPingPendingH = "oc3:h:feed_daemon_ping_pending"
 
 	FeedDaemonStatusChangesH = "oc3:h:feed_daemon_status_changes"

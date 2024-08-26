@@ -88,7 +88,7 @@ func (oDb *opensvcDB) objectsFromClusterIDAndObjectNames(ctx context.Context, cl
 	defer logDuration("objectsFromClusterIDAndObjectNames", time.Now())
 	var query = `
 		SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env, svc_status,
-       		svc_placement, svc_provisioned, svc_app
+       		svc_placement, svc_provisioned, svc_app, svc_config IS NULL
 		FROM services
 		WHERE cluster_id = ? AND svcname IN (?`
 	if len(objectNames) == 0 {
@@ -111,12 +111,14 @@ func (oDb *opensvcDB) objectsFromClusterIDAndObjectNames(ctx context.Context, cl
 	for rows.Next() {
 		var o DBObject
 		var placement, provisioned, app sql.NullString
-		if err = rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env, &o.overallStatus, &placement, &provisioned, &app); err != nil {
+		var hasConfig sql.NullBool
+		if err = rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env, &o.overallStatus, &placement, &provisioned, &app, &hasConfig); err != nil {
 			return
 		}
 		o.placement = placement.String
 		o.provisioned = provisioned.String
 		o.app = app.String
+		o.nullConfig = hasConfig.Bool
 		dbObjects = append(dbObjects, &o)
 	}
 	err = rows.Err()
@@ -127,7 +129,7 @@ func (oDb *opensvcDB) objectsFromClusterID(ctx context.Context, clusterID string
 	defer logDuration("objectsFromClusterID", time.Now())
 	var query = `
 		SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env, svc_status,
-       		svc_placement, svc_provisioned, svc_app, svc_config is NULL
+       		svc_placement, svc_provisioned, svc_app, svc_config IS NULL
 		FROM services
 		WHERE cluster_id = ?`
 
@@ -140,12 +142,14 @@ func (oDb *opensvcDB) objectsFromClusterID(ctx context.Context, clusterID string
 	for rows.Next() {
 		var o DBObject
 		var placement, provisioned, app sql.NullString
-		if err = rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env, &o.overallStatus, &placement, &provisioned, &app, &o.nullConfig); err != nil {
+		var hasNullConfig sql.NullBool
+		if err = rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env, &o.overallStatus, &placement, &provisioned, &app, &hasNullConfig); err != nil {
 			return
 		}
 		o.placement = placement.String
 		o.provisioned = provisioned.String
 		o.app = app.String
+		o.nullConfig = hasNullConfig.Bool
 		dbObjects = append(dbObjects, &o)
 	}
 	err = rows.Err()

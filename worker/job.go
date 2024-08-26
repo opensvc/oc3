@@ -5,10 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/opensvc/oc3/cachekeys"
 )
 
 type (
@@ -176,4 +179,41 @@ func (j *BaseJob) dropPending() error {
 
 func (d *BaseJob) pushFromTableChanges() error {
 	return pushFromTableChanges(d.ctx, d.oDb, d.ev)
+}
+
+// populateFeedObjectConfigForClusterIDH HSET FeedObjectConfigForClusterIDH <clusterID> with the names of objects
+// without config or HDEL FeedObjectConfigForClusterIDH <clusterID> if there are no missing configs.
+func (d *BaseJob) populateFeedObjectConfigForClusterIDH(clusterID string, byObjectID map[string]*DBObject) ([]string, error) {
+	needConfig := make(map[string]struct{})
+	for _, obj := range byObjectID {
+		if obj.nullConfig {
+			objName := obj.svcname
+			// TODO: import om3 naming ?
+			if strings.Contains(objName, "/svc/") ||
+				strings.Contains(objName, "/vol/") ||
+				strings.HasPrefix(objName, "svc/") ||
+				strings.HasPrefix(objName, "vol/") ||
+				!strings.Contains(objName, "/") {
+				needConfig[objName] = struct{}{}
+			}
+		}
+	}
+
+	keyName := cachekeys.FeedObjectConfigForClusterIDH
+
+	if len(needConfig) > 0 {
+		l := make([]string, 0, len(needConfig))
+		for k := range needConfig {
+			l = append(l, k)
+		}
+		if err := d.redis.HSet(d.ctx, keyName, clusterID, strings.Join(l, " ")).Err(); err != nil {
+			return l, fmt.Errorf("populateFeedObjectConfigForClusterIDH: HSet %s %s: %w", keyName, clusterID, err)
+		}
+		return l, nil
+	} else {
+		if err := d.redis.HDel(d.ctx, keyName, clusterID).Err(); err != nil {
+			return nil, fmt.Errorf("populateFeedObjectConfigForClusterIDH: HDEL %s %s: %w", keyName, clusterID, err)
+		}
+	}
+	return nil, nil
 }

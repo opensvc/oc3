@@ -1,12 +1,10 @@
 package apihandlers
 
 import (
-	"errors"
 	"fmt"
+	"io"
 	"net/http"
-	"strings"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 
 	"github.com/opensvc/oc3/api"
@@ -30,6 +28,21 @@ func (a *Api) PostFeedDaemonPing(c echo.Context) error {
 		return c.NoContent(http.StatusNoContent)
 	}
 
+	body := c.Request().Body
+	b, err := io.ReadAll(body)
+	defer func() {
+		if err := body.Close(); err != nil {
+			log.Error("close body failed: " + err.Error())
+		}
+	}()
+	if err := a.Redis.HSet(ctx, cachekeys.FeedDaemonPingH, nodeID, string(b)).Err(); err != nil {
+		log.Error(fmt.Sprintf("HSET %s %s", cachekeys.FeedDaemonPingH, nodeID))
+		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't HSET %s: %s", cachekeys.FeedDaemonPingH, err)
+	}
+
+	if err != nil {
+		return JSONProblemf(c, http.StatusInternalServerError, "", "read request body: %s", err)
+	}
 	if err := a.pushNotPending(ctx, cachekeys.FeedDaemonPingPendingH, cachekeys.FeedDaemonPingQ, nodeID); err != nil {
 		log.Error(fmt.Sprintf("can't push %s %s: %s", cachekeys.FeedDaemonPingQ, nodeID, err))
 		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", cachekeys.FeedDaemonPingQ, nodeID, err)
@@ -37,22 +50,19 @@ func (a *Api) PostFeedDaemonPing(c echo.Context) error {
 	clusterID := clusterIDFromContext(c)
 
 	if clusterID != "" {
-		keyName := cachekeys.FeedObjectConfigForClusterIDH
-		if s, err := a.Redis.HGet(ctx, keyName, clusterID).Result(); err != nil {
-			if !errors.Is(err, redis.Nil) {
-				log.Error(fmt.Sprintf("HGET %s %s: %s", keyName, clusterID, err))
-			}
-		} else if l := strings.Fields(s); len(l) > 0 {
-			log.Debug(fmt.Sprintf("accepted %s, cluster id %s needs objects %#v", nodeID, clusterID, l))
-			defer func() {
-				// Cleanup, client has been notified
-				if err := a.Redis.HDel(ctx, keyName, clusterID).Err(); err != nil {
-					log.Error(fmt.Sprintf("HDEL %s %s: %s", keyName, clusterID, err))
+		objects, err := a.getObjectConfigToFeed(ctx, clusterID)
+		if err != nil {
+			log.Error("%s", err)
+		} else {
+			if len(objects) > 0 {
+				if err := a.removeObjectConfigToFeed(ctx, clusterID); err != nil {
+					log.Error("%s", err)
 				}
-			}()
-			return c.JSON(http.StatusAccepted, api.FeedDaemonPingAccepted{ObjectWithoutConfig: &l})
+				log.Info(fmt.Sprintf("accepted %s, cluster id %s need object config: %s", nodeID, clusterID, objects))
+				return c.JSON(http.StatusAccepted, api.FeedDaemonPingAccepted{ObjectWithoutConfig: &objects})
+			}
 		}
 	}
-	log.Debug(fmt.Sprintf("accepted %s", nodeID))
+	log.Info(fmt.Sprintf("accepted %s", nodeID))
 	return c.JSON(http.StatusAccepted, api.FeedDaemonPingAccepted{})
 }
