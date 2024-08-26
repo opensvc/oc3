@@ -15,7 +15,7 @@ import (
 )
 
 func (a *Api) PostFeedDaemonStatus(c echo.Context) error {
-	log := getLog(c)
+	log := getLog(c).With("handler", "PostFeedDaemonStatus")
 	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {
 		log.Debug("node auth problem")
@@ -42,11 +42,13 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context) error {
 	}
 	postData := &api.PostFeedDaemonStatus{}
 	if err := json.Unmarshal(b, postData); err != nil {
+		log.Error(fmt.Sprintf("Unmarshal %s", err))
 		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "unexpected body: %s", err)
 	} else {
 		mergeChanges(strings.Join(postData.Changes, " "))
 	}
-	if !strings.HasPrefix(postData.Version, "2.") || !strings.HasPrefix(postData.Version, "3.") {
+	if !strings.HasPrefix(postData.Version, "2.") && !strings.HasPrefix(postData.Version, "3.") {
+		log.Error(fmt.Sprintf("unexpected version %s", postData.Version))
 		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "unsupported data client version: %s", postData.Version)
 	}
 	ctx := c.Request().Context()
