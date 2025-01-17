@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
@@ -20,6 +21,7 @@ func newDatabase() (*sql.DB, error) {
 		DBName:               "opensvc",
 		AllowNativePasswords: true,
 		ParseTime:            true,
+		Loc:                  time.Local,
 	}
 	slog.Info(fmt.Sprintf("db addr=%s", cfg.Addr))
 	db, err := sql.Open("mysql", cfg.FormatDSN())

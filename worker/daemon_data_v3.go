@@ -225,6 +225,7 @@ func (d *daemonDataV3) InstanceStatus(objectName string, nodename string) *insta
 
 	if frozenAt, _ := time.Parse(time.RFC3339Nano, status["frozen_at"].(string)); frozenAt.After(time.Time{}) {
 		instanceStatus.monFrozen = 1
+		instanceStatus.monFrozenAt = frozenAt
 	}
 
 	// TODO: verify defaults
