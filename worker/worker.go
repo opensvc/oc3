@@ -100,6 +100,14 @@ func (t *Worker) Run() error {
 			j = newDaemonPing(result[1])
 		case cachekeys.FeedDaemonStatusQ:
 			j = newDaemonStatus(result[1])
+		case cachekeys.FeedNodeDiskQ:
+			// expected result[1]: <nodename>@<nodeID>@<clusterID>
+			l := strings.Split(result[1], "@")
+			if len(l) != 3 || l[0] == "" || l[1] == "" || l[2] == "" {
+				slog.Warn(fmt.Sprintf("invalid feed node disk index expected `nodename`@`nodeID`@`clusterID` found: %s", result[1]))
+				continue
+			}
+			j = newNodeDisk(l[0], l[1], l[2])
 		case cachekeys.FeedObjectConfigQ:
 			// expected result[1]: foo@<nodeID>@<clusterID>
 			l := strings.Split(result[1], "@")

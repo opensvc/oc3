@@ -124,3 +124,23 @@ func ModifyFromBase64ToString(a any) (placeholder string, values []any, err erro
 	}
 	return
 }
+
+// ModifyToString converts any `a` input to a string representation for database operations.
+// Supported types for the `a` are string, int, and float64.
+// Returns a placeholder, a list of converted values, and an error if the input type is unsupported.
+func ModifyToString(a any) (placeholder string, values []any, err error) {
+	switch v := a.(type) {
+	case int:
+		placeholder = "?"
+		values = append(values, string(v))
+	case float64:
+		placeholder = "?"
+		values = append(values, string(int(v)))
+	case string:
+		placeholder = "?"
+		values = append(values, v)
+	default:
+		err = fmt.Errorf("ModifyFromIntToString can't analyse type %s", reflect.TypeOf(a))
+	}
+	return
+}

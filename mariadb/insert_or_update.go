@@ -46,6 +46,10 @@ func (t *InsertOrUpdate) ExecContextAndCountRowsAffected(ctx context.Context, db
 	if err != nil {
 		return 0, err
 	}
+	if result == nil {
+		// len data may be 0, so no rows affected.
+		return 0, nil
+	}
 	return result.RowsAffected()
 }
 
