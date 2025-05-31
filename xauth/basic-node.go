@@ -15,17 +15,19 @@ type (
 		id        string
 		app       string
 		clusterID string
+		nodeName  string
 	}
 )
 
 const (
 	XNodeID    string = "node_id"
+	XNodename  string = "nodename"
 	XClusterID string = "cluster_id"
 	XApp       string = "app"
 )
 
 const (
-	queryAuthNode = `SELECT nodes.node_id, nodes.app, nodes.cluster_id
+	queryAuthNode = `SELECT nodes.node_id, nodes.app, nodes.cluster_id, auth_node.nodename
 		FROM auth_node 
 		JOIN nodes ON nodes.node_id = auth_node.node_id 
 		WHERE auth_node.nodename = ? and auth_node.uuid = ?`
@@ -46,7 +48,7 @@ func authenticateNode(ctx context.Context, db *sql.DB, nodename, password string
 	var node authNode
 	err := db.
 		QueryRowContext(ctx, queryAuthNode, nodename, password).
-		Scan(&node.id, &node.app, &node.clusterID)
+		Scan(&node.id, &node.app, &node.clusterID, &node.nodeName)
 	if err != nil {
 		return nil, fmt.Errorf("invalid Credentials for node %s", nodename)
 	}
@@ -58,6 +60,7 @@ func (n *authNode) extensions() auth.Extensions {
 	ext.Set(XNodeID, n.id)
 	ext.Set(XApp, n.app)
 	ext.Set(XClusterID, n.clusterID)
+	ext.Set(XNodename, n.nodeName)
 	return ext
 }
 
