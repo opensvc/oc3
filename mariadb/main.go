@@ -132,10 +132,10 @@ func ModifyToString(a any) (placeholder string, values []any, err error) {
 	switch v := a.(type) {
 	case int:
 		placeholder = "?"
-		values = append(values, string(v))
+		values = append(values, fmt.Sprintf("%d", v))
 	case float64:
 		placeholder = "?"
-		values = append(values, string(int(v)))
+		values = append(values, fmt.Sprintf("%d", int(v)))
 	case string:
 		placeholder = "?"
 		values = append(values, v)
