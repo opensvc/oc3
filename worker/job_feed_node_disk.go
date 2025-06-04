@@ -145,6 +145,13 @@ func (d *jobFeedNodeDisk) updateDB() error {
 		} else {
 			line["local"] = "F"
 		}
+
+		if line["model"] == "OPEN-V" {
+			// TODO: add test with hds data
+			if err := d.oDb.updateDiskinfoDiskIDForOpenV(d.ctx, diskID); err != nil {
+				return fmt.Errorf("update diskinfo disk_id from hds disk id %s: %w", diskID, err)
+			}
+		}
 		line["id"] = diskID
 		line["node_id"] = nodeID
 		line["updated"] = now
