@@ -131,11 +131,13 @@ func (d *jobFeedNodeDisk) updateDB() error {
 			slog.Warn("unsupported disk entry format")
 			return nil
 		}
-		diskID := line["id"].(string)
-		if strings.HasPrefix(diskID, d.nodename+".") {
-			diskID = strings.Replace(diskID, d.nodename+".", d.nodeID+".", 1)
-		}
-		if strings.HasPrefix(diskID, d.nodename+".") {
+		line["model"] = strings.Trim(line["model"].(string), "'")
+		line["object_path"] = strings.Trim(line["object_path"].(string), "'")
+		diskID := strings.Trim(line["id"].(string), "'")
+		if len(diskID) == 17 && diskID[0] == '2' {
+			// fix naa-16
+			diskID = diskID[1:]
+		} else if strings.HasPrefix(diskID, d.nodename+".") {
 			diskID = strings.Replace(diskID, d.nodename+".", d.nodeID+".", 1)
 		}
 		if strings.HasPrefix(diskID, d.nodeID+".") {
