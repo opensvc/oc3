@@ -140,11 +140,6 @@ func (d *jobFeedNodeDisk) updateDB() error {
 		} else if strings.HasPrefix(diskID, d.nodename+".") {
 			diskID = strings.Replace(diskID, d.nodename+".", d.nodeID+".", 1)
 		}
-		if strings.HasPrefix(diskID, d.nodeID+".") {
-			line["local"] = "T"
-		} else {
-			line["local"] = "F"
-		}
 
 		if line["model"] == "OPEN-V" {
 			// update the `diskinfo`.`disk_id` for hds disks
@@ -162,6 +157,54 @@ func (d *jobFeedNodeDisk) updateDB() error {
 				}
 			}
 		}
+
+		diskL, err := d.oDb.diskinfoByDiskID(d.ctx, diskID)
+		if err != nil {
+			return fmt.Errorf("diskinfoByDiskID: %w", err)
+		}
+
+		if len(diskL) > 0 {
+			disk0 := diskL[0]
+			// TODO: ensure check arrayID == "NULL" is still valid
+			if disk0.arrayID == nodeID || disk0.arrayID == "" || disk0.arrayID == "NULL" {
+				// diskinfo registered as a stub for a local disk
+				line["local"] = "T"
+				if len(diskL) == 1 {
+					// TODO: port oc2
+					// # update diskinfo timestamp
+					// vars = ['disk_id', 'disk_arrayid', 'disk_updated']
+					// vals = [repr(disk_id), node_id, h['disk_updated']]
+					// generic_insert('diskinfo', vars, vals, commit=False, notify=False)
+				}
+			} else {
+				// diskinfo registered by a array parser or an hv pushdisks
+				line["local"] = "F"
+			}
+		}
+		if strings.HasPrefix(diskID, d.nodeID+".") && len(diskL) == 0 {
+			line["local"] = "T"
+			devID := strings.TrimPrefix(diskID, d.nodeID+".")
+			if changed, err := d.oDb.updateDiskinfoForNodeID(d.ctx, diskID, nodeID, devID, line["size"].(int32)); err != nil {
+				return fmt.Errorf("updateDiskinfoForNodeID: %w", err)
+			} else if changed {
+				d.oDb.tableChange("diskinfo")
+			}
+		} else if len(diskL) == 0 {
+			line["local"] = "F"
+			if changed, err := d.oDb.updateDiskinfoForDiskSize(d.ctx, diskID, int32(line["size"].(float64))); err != nil {
+				return fmt.Errorf("updateDiskinfoForDiskSize: %w", err)
+			} else if changed {
+				d.oDb.tableChange("diskinfo")
+			}
+
+			if changed, err := d.oDb.updateDiskinfoSetMissingArrayID(d.ctx, diskID, nodeID); err != nil {
+				return fmt.Errorf("updateDiskinfoSetMissingArrayID: %w", err)
+			} else if changed {
+				d.oDb.tableChange("diskinfo")
+			}
+		}
+
+		// TODO: add app id
 		line["id"] = diskID
 		line["node_id"] = nodeID
 		line["updated"] = now

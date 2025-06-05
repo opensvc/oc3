@@ -7,6 +7,13 @@ import (
 	"fmt"
 )
 
+type (
+	DBDiskinfo struct {
+		diskID  string
+		arrayID string
+	}
+)
+
 // diskIDFromDiskinfoWithDevIDAndTargetID retrieves a disk ID from the database
 // based on device ID, target ID prefix, and exclusion criteria.
 // It queries the `diskinfo`, `stor_array`, and `stor_array_tgtid` tables,
@@ -40,4 +47,71 @@ func (oDb *opensvcDB) updateDiskinfoDiskID(ctx context.Context, previousDiskID, 
 		return fmt.Errorf("update diskinfo disk_id failed: %w", err)
 	}
 	return nil
+}
+
+func (oDb *opensvcDB) diskinfoByDiskID(ctx context.Context, diskID string) ([]DBDiskinfo, error) {
+	var query = "SELECT `disk_id`, `disk_arrayid` FROM `diskinfo` WHERE `disk_id` = ?"
+	if rows, err := oDb.db.QueryContext(ctx, query, diskID); err != nil {
+		return nil, fmt.Errorf("diskinfoByDiskID: %w", err)
+	} else {
+		defer func() { _ = rows.Close() }()
+		diskL := make([]DBDiskinfo, 0)
+		for rows.Next() {
+			var (
+				diskinfo DBDiskinfo
+				arrayID  sql.NullString
+			)
+
+			if err := rows.Scan(&diskinfo.diskID, &arrayID); err != nil {
+				return nil, fmt.Errorf("scan diskinfo: %w", err)
+			}
+			diskinfo.arrayID = arrayID.String
+			diskL = append(diskL, diskinfo)
+		}
+		return diskL, nil
+	}
+}
+
+func (oDb *opensvcDB) updateDiskinfoForNodeID(ctx context.Context, diskID, arrayID, devID string, size int32) (bool, error) {
+	var (
+		query = "INSERT INTO `diskinfo` (`disk_id`, `disk_arrayid`, `disk_devid`, `disk_size`, `disk_updated`)" +
+			" VALUES (?, ?, ?, ?, NOW())" +
+			" ON DUPLICATE KEY UPDATE `disk_arrayid` = VALUES(`disk_arrayid`), `disk_devid` = VALUES(`disk_devid`), `disk_size` = VALUES(`disk_size`), `disk_updated` = VALUES(disk_updated)"
+	)
+	if result, err := oDb.db.ExecContext(ctx, query, diskID, arrayID, devID, size); err != nil {
+		return false, fmt.Errorf("update diskinfo: %w", err)
+	} else if affected, err := result.RowsAffected(); err != nil {
+		return false, fmt.Errorf("count diskinfo updated: %w", err)
+	} else {
+		return affected > 0, nil
+	}
+}
+
+func (oDb *opensvcDB) updateDiskinfoForDiskSize(ctx context.Context, diskID string, size int32) (bool, error) {
+	var (
+		query = "INSERT INTO `diskinfo` (`disk_id`, `disk_size`, `disk_updated`)" +
+			" VALUES (?, ?, NOW())" +
+			" ON DUPLICATE KEY UPDATE `disk_size` = VALUES(`disk_size`), `disk_updated` = VALUES(disk_updated)"
+	)
+	if result, err := oDb.db.ExecContext(ctx, query, diskID, size); err != nil {
+		return false, fmt.Errorf("update diskinfo: %w", err)
+	} else if affected, err := result.RowsAffected(); err != nil {
+		return false, fmt.Errorf("count diskinfo updated: %w", err)
+	} else {
+		return affected > 0, nil
+	}
+}
+
+func (oDb *opensvcDB) updateDiskinfoSetMissingArrayID(ctx context.Context, diskID, arrayID string) (bool, error) {
+	var (
+		query = "UPDATE `diskinfo` SET `disk_arrayid` = ?" +
+			" WHERE `disk_id` = ? AND (`disk_arrayid` = '' OR `disk_arrayid` is NULL)"
+	)
+	if result, err := oDb.db.ExecContext(ctx, query, arrayID, diskID); err != nil {
+		return false, fmt.Errorf("update diskinfo: %w", err)
+	} else if affected, err := result.RowsAffected(); err != nil {
+		return false, fmt.Errorf("count diskinfo updated: %w", err)
+	} else {
+		return affected > 0, nil
+	}
 }
