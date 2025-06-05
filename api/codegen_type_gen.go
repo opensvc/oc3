@@ -19,7 +19,7 @@ type Disk struct {
 	Model      string  `json:"model"`
 	ObjectPath string  `json:"object_path"`
 	Region     *string `json:"region,omitempty"`
-	Size       int     `json:"size"`
+	Size       int32   `json:"size"`
 	Used       int     `json:"used"`
 	Vendor     string  `json:"vendor"`
 }

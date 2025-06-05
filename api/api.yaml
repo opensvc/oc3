@@ -180,6 +180,7 @@ components:
           type: string
         size:
           type: integer
+          format: int32
         used:
           type: integer
         vendor:
