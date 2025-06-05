@@ -125,7 +125,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 	nodeID := d.nodeID
 	now := d.now
 	pathToObjectID := make(map[string]string)
-	for i, _ := range data {
+	for i := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
 			slog.Warn("unsupported disk entry format")
@@ -147,9 +147,19 @@ func (d *jobFeedNodeDisk) updateDB() error {
 		}
 
 		if line["model"] == "OPEN-V" {
+			// update the `diskinfo`.`disk_id` for hds disks
 			// TODO: add test with hds data
-			if err := d.oDb.updateDiskinfoDiskIDForOpenV(d.ctx, diskID); err != nil {
-				return fmt.Errorf("update diskinfo disk_id from hds disk id %s: %w", diskID, err)
+			if len(diskID) < 30 {
+				return fmt.Errorf("refuse too short diskid len for OPEN-V disk: %d for %s", len(diskID), diskID)
+			}
+			devID := strings.ToUpper(diskID[26:28] + ":" + diskID[28:30] + ":" + diskID[30:])
+			portnamePrefix := "50" + devID[2:12] + `%`
+			if newDiskID, err := d.oDb.diskIDFromDiskinfoWithDevIDAndTargetID(d.ctx, devID, portnamePrefix, diskID); err != nil {
+				return fmt.Errorf("search diskinfo on OPEN-V disk with diskID %s: %w", diskID, err)
+			} else if newDiskID != "" {
+				if err := d.oDb.updateDiskinfoDiskID(d.ctx, diskID, newDiskID); err != nil {
+					return fmt.Errorf("updateDiskinfoDiskID on OPEN-V disk: %w", err)
+				}
 			}
 		}
 		line["id"] = diskID
