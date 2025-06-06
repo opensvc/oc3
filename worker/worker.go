@@ -125,7 +125,7 @@ func (t *Worker) Run() error {
 		workType := j.Name()
 		if a, ok := j.(PrepareDBer); ok {
 			if err = a.PrepareDB(ctx, t.DB, t.WithTx); err != nil {
-				slog.Error(fmt.Sprintf("can't get db for %s: %s", workType, err))
+				slog.Error(fmt.Sprintf("🔴can't get db for %s: %s", workType, err))
 				continue
 			}
 		}
@@ -142,7 +142,7 @@ func (t *Worker) Run() error {
 		duration := time.Now().Sub(begin)
 		if err != nil {
 			status = operationStatusFailed
-			slog.Error(fmt.Sprintf("job %s %s: %s", workType, j.Detail(), err))
+			slog.Error(fmt.Sprintf("🔴job %s %s: %s", workType, j.Detail(), err))
 		}
 		processedOperationCounter.With(prometheus.Labels{"desc": workType, "status": status}).Inc()
 		operationDuration.With(prometheus.Labels{"desc": workType, "status": status}).Observe(duration.Seconds())
