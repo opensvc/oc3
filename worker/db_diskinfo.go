@@ -72,7 +72,22 @@ func (oDb *opensvcDB) diskinfoByDiskID(ctx context.Context, diskID string) ([]DB
 	}
 }
 
-func (oDb *opensvcDB) updateDiskinfoForNodeID(ctx context.Context, diskID, arrayID, devID string, size int32) (bool, error) {
+func (oDb *opensvcDB) updateDiskinfoArrayID(ctx context.Context, diskID, arrayID string) (bool, error) {
+	var (
+		query = "INSERT INTO `diskinfo` (`disk_id`, `disk_arrayid`, `disk_updated`)" +
+			" VALUES (?, ?, NOW())" +
+			" ON DUPLICATE KEY UPDATE `disk_arrayid` = VALUES(`disk_arrayid`), `disk_updated` = VALUES(disk_updated)"
+	)
+	if result, err := oDb.db.ExecContext(ctx, query, diskID, arrayID); err != nil {
+		return false, fmt.Errorf("update diskinfo: %w", err)
+	} else if affected, err := result.RowsAffected(); err != nil {
+		return false, fmt.Errorf("count diskinfo updated: %w", err)
+	} else {
+		return affected > 0, nil
+	}
+}
+
+func (oDb *opensvcDB) updateDiskinfoArrayAndDevIDsAndSize(ctx context.Context, diskID, arrayID, devID string, size int32) (bool, error) {
 	var (
 		query = "INSERT INTO `diskinfo` (`disk_id`, `disk_arrayid`, `disk_devid`, `disk_size`, `disk_updated`)" +
 			" VALUES (?, ?, ?, ?, NOW())" +

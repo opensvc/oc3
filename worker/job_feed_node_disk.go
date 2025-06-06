@@ -170,11 +170,11 @@ func (d *jobFeedNodeDisk) updateDB() error {
 				// diskinfo registered as a stub for a local disk
 				line["local"] = "T"
 				if len(diskL) == 1 {
-					// TODO: port oc2
-					// # update diskinfo timestamp
-					// vars = ['disk_id', 'disk_arrayid', 'disk_updated']
-					// vals = [repr(disk_id), node_id, h['disk_updated']]
-					// generic_insert('diskinfo', vars, vals, commit=False, notify=False)
+					if changed, err := d.oDb.updateDiskinfoArrayID(d.ctx, diskID, nodeID); err != nil {
+						return fmt.Errorf("updateDiskinfoArrayID: %w", err)
+					} else if changed {
+						d.oDb.tableChange("diskinfo")
+					}
 				}
 			} else {
 				// diskinfo registered by a array parser or an hv pushdisks
@@ -184,8 +184,8 @@ func (d *jobFeedNodeDisk) updateDB() error {
 		if strings.HasPrefix(diskID, d.nodeID+".") && len(diskL) == 0 {
 			line["local"] = "T"
 			devID := strings.TrimPrefix(diskID, d.nodeID+".")
-			if changed, err := d.oDb.updateDiskinfoForNodeID(d.ctx, diskID, nodeID, devID, line["size"].(int32)); err != nil {
-				return fmt.Errorf("updateDiskinfoForNodeID: %w", err)
+			if changed, err := d.oDb.updateDiskinfoArrayAndDevIDsAndSize(d.ctx, diskID, nodeID, devID, line["size"].(int32)); err != nil {
+				return fmt.Errorf("updateDiskinfoArrayAndDevIDsAndSize: %w", err)
 			} else if changed {
 				d.oDb.tableChange("diskinfo")
 			}
