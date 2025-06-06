@@ -155,3 +155,79 @@ func (oDb *opensvcDB) appFromNodeAndCandidateApp(ctx context.Context, candidateA
 	}
 	return app, nil
 }
+
+// appIDFromNodeID retrieves the application ID associated with a given node ID from the database.
+// Returns the app ID, a boolean indicating if the app exists, and an error if applicable.
+// If the node ID is empty, it returns an error.
+func (oDb *opensvcDB) appIDFromNodeID(ctx context.Context, nodeID string) (int64, bool, error) {
+	const query = "SELECT `apps`.`id` FROM `apps` JOIN `nodes` ON `apps`.`app` = `nodes`.`app` WHERE `nodes`.`node_id`  = ? LIMIT 1"
+	var (
+		appID sql.NullInt64
+	)
+	if nodeID == "" {
+		return appID.Int64, false, fmt.Errorf("can't find app from empty node id value")
+	}
+	err := oDb.db.QueryRowContext(ctx, query, nodeID).Scan(&appID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return appID.Int64, false, nil
+	case err != nil:
+		return appID.Int64, false, err
+	default:
+		return appID.Int64, true, nil
+	}
+}
+
+// appIDFromNodeID retrieves the application ID associated with a given node ID from the database.
+// Returns the app ID, a boolean indicating if the app exists, and an error if applicable.
+// If the node ID is empty, it returns an error.
+func (oDb *opensvcDB) appIDFromObjectID(ctx context.Context, objectID string) (int64, bool, error) {
+	const query = "SELECT `apps`.`id` FROM `apps` JOIN `services` ON `apps`.`app` = `services`.`svc_app` WHERE `services`.`svc_id`  = ? LIMIT 1"
+	var (
+		appID sql.NullInt64
+	)
+	if objectID == "" {
+		return appID.Int64, false, fmt.Errorf("can't find app from empty object id value")
+	}
+	err := oDb.db.QueryRowContext(ctx, query, objectID).Scan(&appID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return appID.Int64, false, nil
+	case err != nil:
+		return appID.Int64, false, err
+	default:
+		return appID.Int64, true, nil
+	}
+}
+
+// appIDFromObjectOrNodeIDs retrieves the application ID associated with the given objectID or nodeID in the database.
+// It first attempts to find the application ID based on the objectID. If unsuccessful, it falls back to using the nodeID.
+// Returns the application ID, a boolean indicating success, and an error if any issue occurs during retrieval.
+//
+// It is a port from oc2 `get_preferred_app`
+//
+//	    def get_preferred_app(node_id, svc_id):
+//		       if svc_id is None:
+//		           q = db.nodes.node_id == node_id
+//		           q &= db.apps.app == db.nodes.app
+//		           return db(q).select(db.apps.ALL).first()
+//		       else:
+//		           q = db.services.svc_id == svc_id
+//		           q &= db.services.svc_app == db.apps.app
+//		           row = db(q).select(db.apps.ALL).first()
+//		           if row is None:
+//		               q = db.nodes.node_id == node_id
+//		               q &= db.apps.app == db.nodes.app
+//		               return db(q).select(db.apps.ALL).first()
+//		           return row
+func (odb *opensvcDB) appIDFromObjectOrNodeIDs(ctx context.Context, nodeID, objectID string) (int64, bool, error) {
+	if objectID != "" {
+		if found, ok, err := odb.appIDFromObjectID(ctx, objectID); err == nil {
+			// abort on error
+			return found, ok, err
+		} else if ok {
+			return found, ok, err
+		}
+	}
+	return odb.appIDFromNodeID(ctx, nodeID)
+}
