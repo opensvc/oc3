@@ -231,19 +231,28 @@ func (d *jobFeedNodeDisk) updateDB() error {
 			line["svc_id"] = ""
 		}
 
-		// defines line["app_id"] if appID is detected
+		// Assigns line["app_id"] with appID, or nil if appID is not detected
+		// line["app_id"] must be defined (mapping doesn't support Optional when its data
+		// is []any.
 		objectID := line["svc_id"].(string)
 		if appID, ok := appIDM[objectID+"@"+nodeID]; ok {
 			if appID != 0 {
 				line["app_id"] = appID
+			} else {
+				line["app_id"] = nil
 			}
 		} else if appID, ok, err := d.oDb.appIDFromObjectOrNodeIDs(d.ctx, nodeID, objectID); err != nil {
 			return fmt.Errorf("appIDFromObjectOrNodeIDs: %w", err)
 		} else if !ok {
 			appIDM[objectID+"@"+nodeID] = 0
+			line["app_id"] = nil
 		} else {
 			appIDM[objectID+"@"+nodeID] = appID
-			line["app_id"] = appID
+			if appID != 0 {
+				line["app_id"] = appID
+			} else {
+				line["app_id"] = nil
+			}
 		}
 
 		data[i] = line
@@ -262,6 +271,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 			mariadb.Mapping{To: "disk_size", From: "size"},
 			mariadb.Mapping{To: "disk_used", From: "used"},
 			mariadb.Mapping{To: "disk_local", From: "local"},
+			mariadb.Mapping{To: "app_id"},
 			mariadb.Mapping{To: "disk_updated", From: "updated"},
 		},
 		Keys: []string{"disk_id", "svc_id", "node_id", "disk_dg"},

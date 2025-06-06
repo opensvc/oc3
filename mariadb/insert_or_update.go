@@ -119,7 +119,7 @@ func (t *InsertOrUpdate) loadMap(data map[string]any) error {
 			if mapping.Optional {
 				continue
 			} else {
-				return fmt.Errorf("key '%s' not found", key)
+				return fmt.Errorf("load map: key '%s' not found", key)
 			}
 		} else {
 			t.names = append(t.names, mapping.To)
@@ -186,7 +186,7 @@ func (t *InsertOrUpdate) loadSlice(data []any) error {
 				key = mapping.To
 			}
 			if v, ok := d[key]; !ok {
-				return fmt.Errorf("key '%s' not found", key)
+				return fmt.Errorf("load slice: key '%s' not found", key)
 			} else {
 				value = v
 			}
