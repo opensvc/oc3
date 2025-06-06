@@ -117,6 +117,13 @@ func (d *jobFeedNodeDisk) getData() error {
 //			   KEY `k_svcdisks_1` (`svc_id`,`node_id`)
 //			) ENGINE=InnoDB AUTO_INCREMENT=4641237 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
 func (d *jobFeedNodeDisk) updateDB() error {
+	var (
+		// pathToObjectID is a map of object path to object ID, to cache db results
+		pathToObjectID = make(map[string]string)
+
+		// appIDM is a map of objectID@nodeID to app ID, to cache appIDFromObjectOrNodeIDs results
+		appIDM = make(map[string]int64)
+	)
 	data, ok := d.data["data"].([]any)
 	if !ok {
 		slog.Warn("unsupported node disk data format")
@@ -124,7 +131,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 	}
 	nodeID := d.nodeID
 	now := d.now
-	pathToObjectID := make(map[string]string)
+
 	for i := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
@@ -132,7 +139,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 			return nil
 		}
 		line["model"] = strings.Trim(line["model"].(string), "'")
-		line["object_path"] = strings.Trim(line["object_path"].(string), "'")
+		objectPath := strings.Trim(line["object_path"].(string), "'")
 		diskID := strings.Trim(line["id"].(string), "'")
 		if len(diskID) == 17 && diskID[0] == '2' {
 			// fix naa-16
@@ -204,24 +211,41 @@ func (d *jobFeedNodeDisk) updateDB() error {
 			}
 		}
 
-		// TODO: add app id
 		line["id"] = diskID
 		line["node_id"] = nodeID
 		line["updated"] = now
-		if objectPath, ok := line["object_path"].(string); ok && objectPath != "" {
+
+		// defines prepare line["svc_id"]
+		if objectPath != "" {
 			if objectID, ok := pathToObjectID[objectPath]; ok {
-				if objectID != "" {
-					line["svc_id"] = objectID
-				}
+				line["svc_id"] = objectID
 			} else if _, objectID, err := d.oDb.objectIDFindOrCreate(d.ctx, objectPath, d.clusterID); err != nil {
 				return fmt.Errorf("objectIDFindOrCreate: %w", err)
-			} else if objectID != "" {
+			} else {
 				line["svc_id"] = objectID
-				pathToObjectID[objectPath] = objectID
+				if objectID != "" {
+					pathToObjectID[objectPath] = objectID
+				}
 			}
 		} else {
 			line["svc_id"] = ""
 		}
+
+		// defines line["app_id"] if appID is detected
+		objectID := line["svc_id"].(string)
+		if appID, ok := appIDM[objectID+"@"+nodeID]; ok {
+			if appID != 0 {
+				line["app_id"] = appID
+			}
+		} else if appID, ok, err := d.oDb.appIDFromObjectOrNodeIDs(d.ctx, nodeID, objectID); err != nil {
+			return fmt.Errorf("appIDFromObjectOrNodeIDs: %w", err)
+		} else if !ok {
+			appIDM[objectID+"@"+nodeID] = 0
+		} else {
+			appIDM[objectID+"@"+nodeID] = appID
+			line["app_id"] = appID
+		}
+
 		data[i] = line
 	}
 
