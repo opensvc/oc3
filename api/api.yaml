@@ -5,9 +5,29 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.4
+  version: 1.0.5
 
 paths:
+  /feed/node/disk:
+    post:
+      description: |
+        Update or create node disks configuration
+      operationId: PostFeedNodeDisk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeDisks'
+      responses:
+        202:
+          description: node disks configuration will be refreshed
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /feed/object/config:
     post:
       description: |
@@ -143,6 +163,43 @@ paths:
 
 components:
   schemas:
+    Disk:
+      type: object
+      required:
+        - id
+        - object_path
+        - size
+        - used
+        - vendor
+        - model
+        - dg
+      properties:
+        id:
+          type: string
+        object_path:
+          type: string
+        size:
+          type: integer
+          format: int32
+        used:
+          type: integer
+        vendor:
+          type: string
+        model:
+          type: string
+        dg:
+          type: string
+        region:
+          type: string
+
+    NodeDisks:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Disk'
+
     ObjectConfig:
       type: object
       required:

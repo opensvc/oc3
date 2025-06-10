@@ -10,6 +10,10 @@ var (
 	FeedDaemonStatusQ        = "oc3:q:feed_daemon_status"
 	FeedDaemonStatusPendingH = "oc3:h:feed_daemon_status_pending"
 
+	FeedNodeDiskH        = "oc3:h:feed_node_disk"
+	FeedNodeDiskQ        = "oc3:q:feed_node_disk"
+	FeedNodeDiskPendingH = "oc3:h:feed_node_disk_pending"
+
 	FeedObjectConfigForClusterIDH = "oc3:h:feed_object_config_for_cluster_id"
 
 	FeedObjectConfigH        = "oc3:h:feed_object_config"

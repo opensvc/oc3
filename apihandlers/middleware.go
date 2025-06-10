@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	XNodeID    = "XNodeID"
 	XClusterID = "XClusterID"
+	XNodeID    = "XNodeID"
+	XNodename  = "XNodename"
 )
 
 // AuthMiddleware returns auth middleware that authenticate requests from strategies.
@@ -28,6 +29,10 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 			if nodeID := ext.Get(xauth.XNodeID); nodeID != "" {
 				// request user is a node, sets node ID in echo context
 				c.Set(XNodeID, nodeID)
+
+				if nodename := ext.Get(xauth.XNodename); nodename != "" {
+					c.Set(XNodename, nodename)
+				}
 
 				if clusterID := ext.Get(xauth.XClusterID); clusterID != "" {
 					// request user is a node with a cluster ID, sets cluster ID in echo context
@@ -47,6 +52,16 @@ func nodeIDFromContext(c echo.Context) string {
 	user, ok := c.Get(XNodeID).(string)
 	if ok {
 		return user
+	}
+	return ""
+}
+
+// nodenameFromContext returns the nodename from context or zero string
+// if not found.
+func nodenameFromContext(c echo.Context) string {
+	nodename, ok := c.Get(XNodename).(string)
+	if ok {
+		return nodename
 	}
 	return ""
 }

@@ -100,6 +100,14 @@ func (t *Worker) Run() error {
 			j = newDaemonPing(result[1])
 		case cachekeys.FeedDaemonStatusQ:
 			j = newDaemonStatus(result[1])
+		case cachekeys.FeedNodeDiskQ:
+			// expected result[1]: <nodename>@<nodeID>@<clusterID>
+			l := strings.Split(result[1], "@")
+			if len(l) != 3 || l[0] == "" || l[1] == "" || l[2] == "" {
+				slog.Warn(fmt.Sprintf("invalid feed node disk index expected `nodename`@`nodeID`@`clusterID` found: %s", result[1]))
+				continue
+			}
+			j = newNodeDisk(l[0], l[1], l[2])
 		case cachekeys.FeedObjectConfigQ:
 			// expected result[1]: foo@<nodeID>@<clusterID>
 			l := strings.Split(result[1], "@")
@@ -117,7 +125,7 @@ func (t *Worker) Run() error {
 		workType := j.Name()
 		if a, ok := j.(PrepareDBer); ok {
 			if err = a.PrepareDB(ctx, t.DB, t.WithTx); err != nil {
-				slog.Error(fmt.Sprintf("can't get db for %s: %s", workType, err))
+				slog.Error(fmt.Sprintf("🔴can't get db for %s: %s", workType, err))
 				continue
 			}
 		}
@@ -134,7 +142,7 @@ func (t *Worker) Run() error {
 		duration := time.Now().Sub(begin)
 		if err != nil {
 			status = operationStatusFailed
-			slog.Error(fmt.Sprintf("job %s %s: %s", workType, j.Detail(), err))
+			slog.Error(fmt.Sprintf("🔴job %s %s: %s", workType, j.Detail(), err))
 		}
 		processedOperationCounter.With(prometheus.Labels{"desc": workType, "status": status}).Inc()
 		operationDuration.With(prometheus.Labels{"desc": workType, "status": status}).Observe(duration.Seconds())
