@@ -31,6 +31,7 @@ type (
 
 	nodeInfoer interface {
 		nodeFrozen(string) (string, error)
+		nodeHeartbeat(string) ([]heartbeatData, error)
 	}
 
 	clusterer interface {
@@ -73,6 +74,8 @@ type (
 
 		byInstanceName map[string]*DBInstance
 		byInstanceID   map[string]*DBInstance
+
+		heartbeats []heartbeatData
 	}
 
 	InstanceID struct {
@@ -117,12 +120,15 @@ func newDaemonStatus(nodeID string) *jobFeedDaemonStatus {
 func (d *jobFeedDaemonStatus) Operations() []operation {
 	return []operation{
 		{desc: "daemonStatus/dropPending", do: d.dropPending},
+		{desc: "daemonStatus/dbNow", do: d.dbNow},
 		{desc: "daemonStatus/getChanges", do: d.getChanges},
 		{desc: "daemonStatus/getData", do: d.getData},
 		{desc: "daemonStatus/dbCheckClusterIDForNodeID", do: d.dbCheckClusterIDForNodeID},
 		{desc: "daemonStatus/dbCheckClusters", do: d.dbCheckClusters},
 		{desc: "daemonStatus/dbFindNodes", do: d.dbFindNodes},
 		{desc: "daemonStatus/dataToNodeFrozen", do: d.dataToNodeFrozen},
+		{desc: "daemonStatus/dataToNodeHeartbeat", do: d.dataToNodeHeartbeat},
+		{desc: "daemonStatus/heartbeatToDB", do: d.heartbeatToDB},
 		{desc: "daemonStatus/dbFindServices", do: d.dbFindServices},
 		{desc: "daemonStatus/dbCreateServices", do: d.dbCreateServices},
 		{desc: "daemonStatus/dbFindInstances", do: d.dbFindInstances},
@@ -288,6 +294,50 @@ func (d *jobFeedDaemonStatus) dataToNodeFrozen() error {
 				return fmt.Errorf("dataToNodeFrozen node %s (%s): %w", nodename, dbNode.nodeID, err)
 			}
 		}
+	}
+	return nil
+}
+
+func (d *jobFeedDaemonStatus) dataToNodeHeartbeat() error {
+	for nodeID, dbNode := range d.byNodeID {
+		nodename := dbNode.nodename
+		l, err := d.data.nodeHeartbeat(nodename)
+		if err != nil {
+			if nodeID == d.nodeID {
+				// accept missing caller node in initial data
+				continue
+			} else {
+				return fmt.Errorf("dataToNodeHeartbeat %s (%s): %w", nodename, nodeID, err)
+			}
+		}
+		for _, hb := range l {
+			if n := d.byNodename[hb.nodename]; n != nil {
+				hb.DBHeartbeat.nodeID = n.nodeID
+			}
+			if n := d.byNodename[hb.peerNodename]; n != nil {
+				hb.DBHeartbeat.peerNodeID = n.nodeID
+			}
+			hb.DBHeartbeat.clusterID = d.clusterID
+			slog.Debug(fmt.Sprintf("dataToNodeHeartbeat: found %s", hb))
+			d.heartbeats = append(d.heartbeats, hb)
+		}
+	}
+	return nil
+}
+
+func (d *jobFeedDaemonStatus) heartbeatToDB() error {
+	//now := time.Now()
+	for _, hb := range d.heartbeats {
+		slog.Debug(fmt.Sprintf("inserting: %s", hb))
+		if err := d.oDb.hbUpdate(d.ctx, hb.DBHeartbeat); err != nil {
+			return fmt.Errorf("1 heartbeatToDB hbUpdate %s: %w", hb, err)
+		}
+		if err := d.oDb.hbLogUpdate(d.ctx, hb.DBHeartbeat); err != nil {
+			return fmt.Errorf("heartbeatToDB hbLogUpdate %s: %w", hb, err)
+		}
+	}
+	if err := d.oDb.hbDeleteOutDatedByClusterID(d.ctx, d.clusterID, d.now); err != nil {
+		return fmt.Errorf("heartbeatToDB purge outdated %s: %w", d.clusterID, err)
 	}
 	return nil
 }
