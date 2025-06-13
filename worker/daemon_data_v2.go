@@ -61,6 +61,10 @@ func (d *daemonDataV2) nodeFrozen(nodename string) (s string, err error) {
 	}
 }
 
+func (d *daemonDataV2) nodeHeartbeat(nodename string) ([]heartbeatData, error) {
+	return nil, nil
+}
+
 func (d *daemonDataV2) getFromKeys(keys ...string) (v any, err error) {
 	if v, ok := mapTo(d.data, keys...); !ok {
 		return v, fmt.Errorf("getFromKeys can't expand from %v", keys)

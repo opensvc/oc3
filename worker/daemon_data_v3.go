@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -73,6 +74,73 @@ func (d *daemonDataV3) nodeFrozen(nodename string) (string, error) {
 			return "", fmt.Errorf("data v3 got unexpected node frozen at value: %s", nodename)
 		}
 	}
+}
+
+func (d *daemonDataV3) nodeHeartbeat(nodename string) ([]heartbeatData, error) {
+	i, ok := mapTo(d.cluster, "node", nodename, "daemon", "heartbeat", "streams")
+	if !ok {
+		return nil, fmt.Errorf("data v3 no such key: node.%s.daemon.heartbeat.streams", nodename)
+	}
+	iL, ok := i.([]any)
+	if !ok {
+		return nil, fmt.Errorf("data v3 unexpected value for key node.%s.daemon.heartbeat.streams", nodename)
+	}
+	l := make([]heartbeatData, 0, len(iL))
+	var nilMap map[string]any
+	for _, v := range iL {
+		stream, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		name := mapToS(stream, "", "id")
+		if name == "" {
+			return nil, fmt.Errorf("data v3 unexpected empty stream id for key node.%s.daemon.heartbeat.streams", nodename)
+		}
+		name = strings.TrimPrefix(name, "hb#")
+		family := mapToS(stream, "", "type")
+		state := mapToS(stream, "", "state")
+
+		// Add entry for the node hb state itself regardless of its peers
+		l = append(l, heartbeatData{
+			DBHeartbeat: DBHeartbeat{
+				nodeID: "",
+				driver: family,
+				name:   name,
+				state:  state,
+			},
+			nodename: nodename,
+		})
+
+		if state != "running" {
+			continue
+		}
+		for peer, i := range mapToMap(stream, nilMap, "peers") {
+			v, ok := i.(map[string]any)
+			if !ok {
+				continue
+			}
+			var beating int8
+			if mapToBool(v, false, "is_beating") {
+				beating = 1
+			} else {
+				beating = 2
+			}
+			lastBeating, _ := time.Parse(time.RFC3339Nano, mapToS(v, "", "last_at"))
+			l = append(l, heartbeatData{
+				DBHeartbeat: DBHeartbeat{
+					driver:      family,
+					name:        name,
+					state:       state,
+					beating:     beating,
+					desc:        mapToS(v, "", "desc"),
+					lastBeating: lastBeating,
+				},
+				nodename:     nodename,
+				peerNodename: peer,
+			})
+		}
+	}
+	return l, nil
 }
 
 func (d *daemonDataV3) appFromObjectName(objectName string, nodes ...string) string {
