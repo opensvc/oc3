@@ -166,7 +166,7 @@ func (oDb *opensvcDB) objectCreate(ctx context.Context, objectName, clusterID, c
 		return nil, fmt.Errorf("can't find or create object: %w", err)
 	}
 	if created {
-		slog.Debug(fmt.Sprintf("will create service %s with new svc_id: %s", objectName, svcID))
+		slog.Info(fmt.Sprintf("objectCreate will create service %s@%s with new svc_id: %s", objectName, clusterID, svcID))
 		if err := oDb.insertOrUpdateObjectForNodeAndCandidateApp(ctx, objectName, svcID, candidateApp, node); err != nil {
 			return nil, err
 		}

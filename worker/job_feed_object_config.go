@@ -99,9 +99,12 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 	//
 	//	RawConfig []byte `json:"raw_config"`
 	//}
-	if _, objectID, err := d.oDb.objectIDFindOrCreate(d.ctx, d.objectName, d.clusterID); err != nil {
+	if created, objectID, err := d.oDb.objectIDFindOrCreate(d.ctx, d.objectName, d.clusterID); err != nil {
 		return err
 	} else {
+		if created {
+			slog.Info(fmt.Sprintf("obFeedObjectConfig will create service %s@%s with new svc_id: %s", d.objectName, d.clusterID, objectID))
+		}
 		slog.Debug(fmt.Sprintf("%s updateDB %s@%s will update found svc_id:%s", d.name, d.objectName, d.clusterID, objectID))
 		d.data["svc_id"] = objectID
 	}
