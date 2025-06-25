@@ -1,14 +1,16 @@
 package worker
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"reflect"
+	"strings"
 
 	"github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cachekeys"
-	"github.com/opensvc/oc3/mariadb"
 )
 
 type (
@@ -99,6 +101,7 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 	//
 	//	RawConfig []byte `json:"raw_config"`
 	//}
+	var cfg *DBObjectConfig
 	if created, objectID, err := d.oDb.objectIDFindOrCreate(d.ctx, d.objectName, d.clusterID); err != nil {
 		return err
 	} else {
@@ -106,44 +109,74 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 			slog.Info(fmt.Sprintf("obFeedObjectConfig will create service %s@%s with new svc_id: %s", d.objectName, d.clusterID, objectID))
 		}
 		slog.Debug(fmt.Sprintf("%s updateDB %s@%s will update found svc_id:%s", d.name, d.objectName, d.clusterID, objectID))
-		d.data["svc_id"] = objectID
+
+		var ha bool
+		// Rules for svc_ha == 1: orchestrate is "ha" or topology == "flex" or monitored_resource_count > 0
+		if mapToS(d.data, "", "orchestrate") == "ha" ||
+			mapToS(d.data, "", "topology") == "flex" ||
+			mapToInt(d.data, 0, "monitored_resource_count") > 0 {
+			ha = true
+		}
+		cfg = &DBObjectConfig{
+			name:      d.objectName,
+			svcID:     objectID,
+			clusterID: d.clusterID,
+			updated:   d.now,
+			comment:   mapToS(d.data, "", "comment"),
+			flexMin:   mapToInt(d.data, 1, "flex_min"),
+			flexMax:   mapToInt(d.data, 0, "flex_max"),
+			ha:        ha,
+		}
 	}
 
-	d.data["updated"] = d.now
-
-	// Rules for svc_ha == 1: orchestrate is "ha" or topology == "flex" or monitored_resource_count > 0
-	if mapToS(d.data, "", "orchestrate") == "ha" ||
-		mapToS(d.data, "", "topology") == "flex" ||
-		mapToInt(d.data, 0, "monitored_resource_count") > 0 {
-		d.data["svc_ha"] = 1
-	} else {
-		d.data["svc_ha"] = 0
+	if s := mapToS(d.data, "", "raw_config"); s != "" {
+		if b, err := base64.StdEncoding.DecodeString(s); err != nil {
+			return fmt.Errorf("can't decode raw_config: %w", err)
+		} else {
+			cfg.config = string(b)
+		}
+	}
+	var nilVal any
+	if v, err := toString(mapToA(d.data, &nilVal, "scope"), " "); err == nil {
+		cfg.nodes = &v
 	}
 
-	request := mariadb.InsertOrUpdate{
-		Table: "services",
-		Mappings: mariadb.Mappings{
-			mariadb.Mapping{From: "path", To: "svcname"},
-			mariadb.Mapping{To: "svc_id"},
-			mariadb.Mapping{From: "scope", To: "svc_nodes", Optional: true, Modify: mariadb.ModifierToString(" ")},
-			mariadb.Mapping{From: "drpnode", To: "svc_drpnode", Optional: true},
-			mariadb.Mapping{From: "drpnodes", To: "svc_drpnodes", Optional: true, Modify: mariadb.ModifierToString(" ")},
-			mariadb.Mapping{From: "app", To: "svc_app", Optional: true},
-			mariadb.Mapping{From: "env", To: "svc_env", Optional: true},
-			mariadb.Mapping{From: "comment", To: "svc_comment", Optional: true},
-			mariadb.Mapping{From: "flex_min", To: "svc_flex_min_nodes", Optional: true},
-			mariadb.Mapping{From: "flex_max", To: "svc_flex_max_nodes", Optional: true},
-			mariadb.Mapping{To: "svc_ha", Optional: true},
-			mariadb.Mapping{From: "raw_config", To: "svc_config", Optional: true, Modify: mariadb.ModifyFromBase64ToString},
-			mariadb.Mapping{To: "updated"},
-		},
-		Keys: []string{"svc_id"},
-		Data: d.data,
+	if v, err := toString(mapToA(d.data, &nilVal, "drpnodes"), " "); err == nil {
+		cfg.drpNodes = &v
 	}
-	if affected, err := request.ExecContextAndCountRowsAffected(d.ctx, d.db); err != nil {
+	if s := mapToS(d.data, "", "drpnode"); s != "" {
+		cfg.drpNode = &s
+	}
+	if s := mapToS(d.data, "", "app"); s != "" {
+		cfg.app = &s
+	}
+	if s := mapToS(d.data, "", "env"); s != "" {
+		cfg.env = &s
+	}
+	slog.Info(fmt.Sprintf("insertOrUpdateObjectConfig %s@%s@%sconfig: %s", cfg.name, cfg.svcID, cfg.clusterID, cfg.config))
+	if hasRowAffected, err := d.oDb.insertOrUpdateObjectConfig(d.ctx, cfg); err != nil {
 		return err
-	} else if affected > 0 {
+	} else if hasRowAffected {
 		d.oDb.tableChange("services")
 	}
 	return nil
+}
+
+func toString(a any, sep string) (string, error) {
+	switch v := a.(type) {
+	case string:
+		return v, nil
+	case []string:
+		return strings.Join(v, sep), nil
+	case []interface{}:
+		var l []string
+		for _, i := range v {
+			l = append(l, i.(string))
+		}
+		return strings.Join(l, sep), nil
+	case []byte:
+		return string(v), nil
+	default:
+		return "", fmt.Errorf("to string can't analyse type %s", reflect.TypeOf(a))
+	}
 }

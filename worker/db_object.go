@@ -31,6 +31,70 @@ type (
 		frozen        string
 		provisioned   string
 	}
+
+	// DBObjectConfig
+	//
+	//CREATE TABLE `services` (
+	//  `svc_hostid` varchar(30) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+	//  `svcname` varchar(60) DEFAULT NULL,
+	//  `svc_nodes` varchar(1000) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+	//  `svc_drpnode` varchar(30) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+	//  `svc_drptype` varchar(7) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+	//  `svc_autostart` varchar(60) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT '',
+	//  `svc_env` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+	//  `svc_drpnodes` varchar(1000) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+	//  `svc_comment` varchar(1000) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+	//  `svc_app` varchar(64) DEFAULT NULL,
+	//  `svc_drnoaction` varchar(1) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT 'F',
+	//  `svc_created` timestamp NOT NULL DEFAULT current_timestamp(),
+	//  `svc_config_updated` datetime DEFAULT NULL,
+	//  `svc_metrocluster` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+	//  `id` int(11) NOT NULL AUTO_INCREMENT,
+	//  `svc_wave` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT '3',
+	//  `svc_config` mediumtext DEFAULT NULL,
+	//  `updated` datetime NOT NULL,
+	//  `svc_topology` varchar(20) DEFAULT 'failover',
+	//  `svc_flex_min_nodes` int(11) DEFAULT 1,
+	//  `svc_flex_max_nodes` int(11) DEFAULT 0,
+	//  `svc_flex_cpu_low_threshold` int(11) DEFAULT 0,
+	//  `svc_flex_cpu_high_threshold` int(11) DEFAULT 100,
+	//  `svc_status` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT 'undef',
+	//  `svc_availstatus` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT 'undef',
+	//  `svc_ha` tinyint(1) DEFAULT 0,
+	//  `svc_status_updated` datetime DEFAULT NULL,
+	//  `svc_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
+	//  `svc_frozen` varchar(9) DEFAULT NULL,
+	//  `svc_provisioned` varchar(6) DEFAULT NULL,
+	//  `svc_placement` varchar(12) DEFAULT NULL,
+	//  `svc_notifications` varchar(1) DEFAULT 'T',
+	//  `svc_snooze_till` datetime DEFAULT NULL,
+	//  `cluster_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
+	//  `svc_flex_target` int(11) DEFAULT NULL,
+	//  PRIMARY KEY (`id`),
+	//  UNIQUE KEY `k_svc_id` (`svc_id`),
+	//  KEY `svc_hostid` (`svc_hostid`),
+	//  KEY `svc_drpnode` (`svc_drpnode`),
+	//  KEY `idx2` (`svc_topology`),
+	//  KEY `services_svc_app` (`svc_app`),
+	//  KEY `k_svc_name` (`svcname`),
+	//  KEY `k_cluster_id` (`cluster_id`)
+	//) ENGINE=InnoDB AUTO_INCREMENT=2491471 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
+	DBObjectConfig struct {
+		svcID     string
+		name      string
+		nodes     *string
+		clusterID string
+		drpNode   *string
+		drpNodes  *string
+		app       *string
+		env       *string
+		comment   string
+		flexMin   int
+		flexMax   int
+		ha        bool
+		config    string
+		updated   time.Time
+	}
 )
 
 func (oDb *opensvcDB) objectFromID(ctx context.Context, svcID string) (*DBObject, error) {
@@ -110,14 +174,15 @@ func (oDb *opensvcDB) objectsFromClusterIDAndObjectNames(ctx context.Context, cl
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var o DBObject
-		var placement, provisioned, app sql.NullString
+		var placement, provisioned, env, app sql.NullString
 		var hasConfig sql.NullBool
-		if err = rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env, &o.overallStatus, &placement, &provisioned, &app, &hasConfig); err != nil {
+		if err = rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &env, &o.overallStatus, &placement, &provisioned, &app, &hasConfig); err != nil {
 			return
 		}
 		o.placement = placement.String
 		o.provisioned = provisioned.String
 		o.app = app.String
+		o.env = env.String
 		o.nullConfig = hasConfig.Bool
 		dbObjects = append(dbObjects, &o)
 	}
@@ -141,14 +206,15 @@ func (oDb *opensvcDB) objectsFromClusterID(ctx context.Context, clusterID string
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var o DBObject
-		var placement, provisioned, app sql.NullString
+		var placement, provisioned, env, app sql.NullString
 		var hasNullConfig sql.NullBool
-		if err = rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &o.env, &o.overallStatus, &placement, &provisioned, &app, &hasNullConfig); err != nil {
+		if err = rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &env, &o.overallStatus, &placement, &provisioned, &app, &hasNullConfig); err != nil {
 			return
 		}
 		o.placement = placement.String
 		o.provisioned = provisioned.String
 		o.app = app.String
+		o.env = env.String
 		o.nullConfig = hasNullConfig.Bool
 		dbObjects = append(dbObjects, &o)
 	}
@@ -339,6 +405,46 @@ func (oDb *opensvcDB) insertOrUpdateObjectForNodeAndCandidateApp(ctx context.Con
 		return fmt.Errorf("createServiceFromObjectAndCandidateApp %s %s: %w", objectName, svcID, err)
 	}
 	return nil
+}
+
+// insertOrUpdateObjectConfig will insert or update object config with svcID.
+func (oDb *opensvcDB) insertOrUpdateObjectConfig(ctx context.Context, c *DBObjectConfig) (bool, error) {
+	const query = "" +
+		"INSERT INTO `services` (`svcname`, `cluster_id`, `svc_id`, `svc_nodes`, `svc_drpnode`, `svc_drpnodes`" +
+		" ,  `svc_app`, `svc_env`, `svc_comment`, `svc_flex_min_nodes`, `svc_flex_max_nodes`" +
+		" , `svc_ha`, `svc_config`, `updated`)" +
+		" VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())" +
+		" ON DUPLICATE KEY UPDATE  `svcname`=VALUES(`svcname`), `cluster_id`=VALUES(`cluster_id`)" + "" +
+		"   , `svc_nodes`=VALUES(`svc_nodes`), `svc_drpnode`=VALUES(`svc_drpnode`), `svc_drpnodes`=VALUES(`svc_drpnodes`)" +
+		"   , `svc_app`=VALUES(`svc_app`), `svc_env`=VALUES(`svc_env`), `svc_comment`=VALUES(`svc_comment`)" + "" +
+		"   , `svc_flex_min_nodes`=VALUES(`svc_flex_min_nodes`), `svc_flex_max_nodes`=VALUES(`svc_flex_max_nodes`)" +
+		"   , `svc_ha`=VALUES(`svc_ha`), `svc_config`=VALUES(`svc_config`), `updated`=VALUES(`updated`)"
+	var nodes, drpNode, drpNodes, app, env any
+	if c.nodes != nil {
+		nodes = *c.nodes
+	}
+	if c.drpNodes != nil {
+		drpNodes = *c.drpNodes
+	}
+	if c.drpNode != nil {
+		drpNode = *c.drpNode
+	}
+	if c.app != nil {
+		app = *c.app
+	}
+	if c.env != nil {
+		env = *c.env
+	}
+	result, err := oDb.db.ExecContext(ctx, query, c.name, c.clusterID, c.svcID, nodes, drpNode, drpNodes,
+		app, env, c.comment, c.flexMin, c.flexMax, c.ha, c.config)
+	if err != nil {
+		return false, fmt.Errorf("update services config: %w", err)
+	}
+	if affected, err := result.RowsAffected(); err != nil {
+		return false, fmt.Errorf("update services config unable to count row affected: %w", err)
+	} else {
+		return affected > 0, nil
+	}
 }
 
 // objectIDFindOrCreate returns uniq svcID for svcname on clusterID. When svcID is not found it creates new svcID row.
