@@ -263,6 +263,9 @@ func (d *jobFeedDaemonStatus) dbFindNodes() (err error) {
 			// already processed
 			continue
 		}
+		if found, isDuplicate := d.byNodename[n.nodename]; isDuplicate {
+			return fmt.Errorf("dbFindNodes %s [%s] duplicate nodename %s entry with node id: %s and %s", nodes, d.nodeID, n.nodename, found.nodeID, n.nodeID)
+		}
 		d.byNodeID[n.nodeID] = n
 		d.byNodename[n.nodename] = n
 	}

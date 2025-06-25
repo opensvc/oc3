@@ -16,10 +16,13 @@ import (
 	"github.com/opensvc/oc3/worker"
 )
 
-func work(queues []string) error {
+func work(runners int, queues []string) error {
 	db, err := newDatabase()
 	if err != nil {
 		return err
+	}
+	if runners < viper.GetInt("worker.runners") {
+		runners = viper.GetInt("worker.runners")
 	}
 	w := &worker.Worker{
 		Redis:  newRedis(),
@@ -30,9 +33,7 @@ func work(queues []string) error {
 			Url: viper.GetString("websocket.url"),
 			Key: []byte(viper.GetString("websocket.key")),
 		},
-	}
-	if err != nil {
-		return err
+		Runners: runners,
 	}
 	if viper.GetBool("worker.pprof.enable") {
 		if p := viper.GetString("worker.pprof.uxsocket"); p != "" {

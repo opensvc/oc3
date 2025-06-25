@@ -2,6 +2,8 @@ package worker
 
 import (
 	"fmt"
+	"strings"
+	"time"
 )
 
 type (
@@ -62,7 +64,69 @@ func (d *daemonDataV2) nodeFrozen(nodename string) (s string, err error) {
 }
 
 func (d *daemonDataV2) nodeHeartbeat(nodename string) ([]heartbeatData, error) {
-	return nil, nil
+	i, ok := mapTo(d.data, "nodes", nodename, "hb")
+	if !ok {
+		return nil, fmt.Errorf("data v2 no such key: nodes.%s.hb", nodename)
+	}
+	iM, ok := i.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("data v2 unexpected value for key nodes.%s.hb", nodename)
+	}
+	var l []heartbeatData
+	var nilMap map[string]any
+	for name, v := range iM {
+		stream, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		name = strings.TrimPrefix(name, "hb#")
+		family := mapToS(stream, "", "type")
+		state := mapToS(stream, "", "state")
+
+		// Add entry for the node hb state itself regardless of its peers
+		l = append(l, heartbeatData{
+			DBHeartbeat: DBHeartbeat{
+				nodeID: "",
+				driver: family,
+				name:   name,
+				state:  state,
+			},
+			nodename: nodename,
+		})
+
+		if state != "running" {
+			continue
+		}
+		for peer, i := range mapToMap(stream, nilMap, "peers") {
+			v, ok := i.(map[string]any)
+			if !ok {
+				continue
+			}
+			if _, ok := mapTo(v, "beating"); !ok {
+				continue
+			}
+			var beating int8
+			if mapToBool(v, false, "beating") {
+				beating = 1
+			} else {
+				beating = 2
+			}
+			lastBeating, _ := time.Parse(time.RFC3339Nano, mapToS(v, "", "last_at"))
+			l = append(l, heartbeatData{
+				DBHeartbeat: DBHeartbeat{
+					driver:      family,
+					name:        name,
+					state:       state,
+					beating:     beating,
+					desc:        mapToS(v, "", "desc"),
+					lastBeating: lastBeating,
+				},
+				nodename:     nodename,
+				peerNodename: peer,
+			})
+		}
+	}
+	return l, nil
 }
 
 func (d *daemonDataV2) getFromKeys(keys ...string) (v any, err error) {

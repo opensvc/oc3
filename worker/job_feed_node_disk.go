@@ -219,9 +219,12 @@ func (d *jobFeedNodeDisk) updateDB() error {
 		if objectPath != "" {
 			if objectID, ok := pathToObjectID[objectPath]; ok {
 				line["svc_id"] = objectID
-			} else if _, objectID, err := d.oDb.objectIDFindOrCreate(d.ctx, objectPath, d.clusterID); err != nil {
+			} else if created, objectID, err := d.oDb.objectIDFindOrCreate(d.ctx, objectPath, d.clusterID); err != nil {
 				return fmt.Errorf("objectIDFindOrCreate: %w", err)
 			} else {
+				if created {
+					slog.Info(fmt.Sprintf("jobFeedNodeDisk will create service %s@%s with new svc_id: %s", objectPath, d.clusterID, objectID))
+				}
 				line["svc_id"] = objectID
 				if objectID != "" {
 					pathToObjectID[objectPath] = objectID
