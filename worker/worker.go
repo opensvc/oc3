@@ -85,11 +85,14 @@ func (w *Worker) Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	jobC := make(chan []string, w.Runners)
+	runSlots := make(chan bool, w.Runners)
 	go func(c <-chan []string) {
 		for {
 			select {
 			case j := <-c:
+				runSlots <- true
 				go func(j []string) {
+					defer func() { <-runSlots }()
 					if err := w.runJob(j); err != nil {
 						slog.Error(err.Error())
 					}
