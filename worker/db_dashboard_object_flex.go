@@ -24,7 +24,7 @@ func (oDb *opensvcDB) dashboardUpdateObjectFlexStarted(ctx context.Context, obj 
 					SELECT
 						p.svc_flex_min_nodes AS svc_flex_min_nodes,
 						p.svc_flex_max_nodes AS svc_flex_max_nodes,
-						(SELECT COUNT(1) FROM svcmon c WHERE c.svc_id = ? AND c.mon_availstatus = "up") AS up
+						(SELECT COUNT(DISTINCT(c.node_id)) FROM svcmon c WHERE c.svc_id = ? AND c.mon_availstatus = "up") AS up
 					FROM v_svcmon p
 					WHERE
 						p.svc_id = ?

@@ -176,6 +176,7 @@ func (oDb *opensvcDB) hbLogUpdate(ctx context.Context, hb DBHeartbeat) error {
 		}
 		return nil
 	}
+
 	err := oDb.db.QueryRowContext(ctx, queryGetLogLast, hb.nodeID, hb.peerNodeID, hb.name).
 		Scan(&previousBegin, &prev.ID, &prev.state, &prev.beating)
 	switch {
@@ -198,7 +199,9 @@ func (oDb *opensvcDB) hbLogUpdate(ctx context.Context, hb DBHeartbeat) error {
 			_, err := oDb.db.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, hb.clusterID, hb.nodeID,
 				hb.peerNodeID, hb.name, prev.state, prev.beating, previousBegin)
 			if err != nil {
-				return fmt.Errorf("save hbmon_log transition: %w", err)
+				return fmt.Errorf("save hbmon_log transition %s -> %s name: %s state %s beating %d since %s: %w",
+					hb.nodeID, hb.peerNodeID, hb.name, prev.state, prev.beating, previousBegin,
+					err)
 			}
 			// reset previousBegin and end interval for new hbmon log
 			return setLogLast()
