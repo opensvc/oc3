@@ -459,14 +459,17 @@ func (oDb *opensvcDB) objectIDFindOrCreate(ctx context.Context, svcname, cluster
 		rowsAffected int64
 	)
 	if result, err = oDb.db.ExecContext(ctx, queryInsertID, svcname, clusterID); err != nil {
+		err = fmt.Errorf("INSERT IGNORE INTO `service_ids`: %w", err)
 		return
 	}
 	if rowsAffected, err = result.RowsAffected(); err != nil {
+		err = fmt.Errorf("count row affected for INSERT IGNORE INTO `service_ids`: %w", err)
 		return
 	} else if rowsAffected > 0 {
 		isNew = true
 	}
 	if err = oDb.db.QueryRowContext(ctx, querySearchID, svcname, clusterID).Scan(&svcID); err != nil {
+		err = fmt.Errorf("retrieve service id failed:%w", err)
 		return
 	}
 	return
