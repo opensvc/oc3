@@ -17,8 +17,9 @@ import (
 
 type (
 	Worker struct {
-		Redis  *redis.Client
-		DB     *sql.DB
+		Redis *redis.Client
+		DB    *sql.DB
+
 		Queues []string
 		WithTx bool
 		Ev     EventPublisher

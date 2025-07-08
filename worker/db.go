@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -13,7 +14,18 @@ type (
 	opensvcDB struct {
 		db DBOperater
 
+		// dbLck is a pointer to DBLocker, used to manage concurrent access to
+		// the database via locking mechanisms.
+		dbLck *DBLocker
+
 		tChanges map[string]struct{}
+	}
+
+	// DBLocker is a struct that combines a database connection and a sync.Locker
+	// for managing concurrent access.
+	DBLocker struct {
+		DB *sql.DB
+		sync.Locker
 	}
 
 	DBTxer interface {
@@ -27,6 +39,18 @@ type (
 		QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	}
 )
+
+var (
+	dbLocker         *DBLocker
+	dbLockerInitOnce sync.Once
+)
+
+func initDbLocker(db *sql.DB) *DBLocker {
+	dbLockerInitOnce.Do(func() {
+		dbLocker = &DBLocker{DB: db, Locker: &sync.Mutex{}}
+	})
+	return dbLocker
+}
 
 func (oDb *opensvcDB) translateEncapNodename(ctx context.Context, svcID, nodeID string) (subNodeID, vmName, vmType string, err error) {
 	const (

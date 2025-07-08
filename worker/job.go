@@ -103,6 +103,7 @@ func (j *BaseJob) PrepareDB(ctx context.Context, db *sql.DB, withTx bool) error 
 		j.db = db
 		j.oDb = &opensvcDB{db: db, tChanges: make(map[string]struct{})}
 	}
+	j.oDb.dbLck = initDbLocker(db)
 	j.ctx = ctx
 	return nil
 }

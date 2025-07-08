@@ -447,8 +447,9 @@ func (oDb *opensvcDB) insertOrUpdateObjectConfig(ctx context.Context, c *DBObjec
 	}
 }
 
-// objectIDFindOrCreate returns uniq svcID for svcname on clusterID. When svcID is not found it creates new svcID row.
-// isNew bool is set to true when a new svcID has been allocated.
+// objectIDFindOrCreate ensures a unique svc_id exists for a given svcname and clusterID, creating it if necessary.
+// Returns a boolean indicating if a new ID was created, the svc_id, or an error if the operation fails.
+// It is run inside a locked separate transaction to ensure always success insertion.
 func (oDb *opensvcDB) objectIDFindOrCreate(ctx context.Context, svcname, clusterID string) (isNew bool, svcID string, err error) {
 	const (
 		queryInsertID = "INSERT IGNORE INTO `service_ids` (`svcname`, `cluster_id`) VALUES (?, ?)"
@@ -458,20 +459,32 @@ func (oDb *opensvcDB) objectIDFindOrCreate(ctx context.Context, svcname, cluster
 		result       sql.Result
 		rowsAffected int64
 	)
-	if result, err = oDb.db.ExecContext(ctx, queryInsertID, svcname, clusterID); err != nil {
+	oDb.dbLck.Lock()
+	defer oDb.dbLck.Unlock()
+
+	tx, err1 := oDb.dbLck.DB.BeginTx(ctx, nil)
+	if err1 != nil {
+		err = fmt.Errorf("can't begin transaction: %w", err1)
+		return
+	}
+	if result, err = tx.ExecContext(ctx, queryInsertID, svcname, clusterID); err != nil {
 		err = fmt.Errorf("INSERT IGNORE INTO `service_ids`: %w", err)
+		_ = tx.Rollback()
 		return
 	}
 	if rowsAffected, err = result.RowsAffected(); err != nil {
 		err = fmt.Errorf("count row affected for INSERT IGNORE INTO `service_ids`: %w", err)
+		_ = tx.Rollback()
 		return
 	} else if rowsAffected > 0 {
 		isNew = true
 	}
-	if err = oDb.db.QueryRowContext(ctx, querySearchID, svcname, clusterID).Scan(&svcID); err != nil {
+	if err = tx.QueryRowContext(ctx, querySearchID, svcname, clusterID).Scan(&svcID); err != nil {
 		err = fmt.Errorf("retrieve service id failed:%w", err)
+		_ = tx.Rollback()
 		return
 	}
+	err = tx.Commit()
 	return
 }
 
