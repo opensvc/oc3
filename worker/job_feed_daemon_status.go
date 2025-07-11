@@ -493,7 +493,6 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 				}
 			}
 			instanceMonitorStates[iStatus.monSmonStatus] = true
-			resourceObsoleteAt := time.Now()
 			if iStatus.encap == nil {
 				subNodeID, _, _, err := d.oDb.translateEncapNodename(d.ctx, objID, nodeID)
 				if err != nil {
@@ -519,7 +518,7 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 						return fmt.Errorf("dbUpdateInstances update resource %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
 					}
 					slog.Debug(fmt.Sprintf("dbUpdateInstances deleting obsolete resources %s@%s", objectName, nodename))
-					if err := d.oDb.instanceResourcesDeleteObsolete(d.ctx, objID, nodeID, resourceObsoleteAt); err != nil {
+					if err := d.oDb.instanceResourcesDeleteObsolete(d.ctx, objID, nodeID, d.now); err != nil {
 						return fmt.Errorf("dbUpdateInstances delete obsolete resources %s@%s: %w", objID, nodeID, err)
 					}
 				}
@@ -556,7 +555,7 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 						}
 					}
 					slog.Debug(fmt.Sprintf("dbUpdateInstances deleting obsolete container resources %s@%s", objectName, nodename))
-					if err := d.oDb.instanceResourcesDeleteObsolete(d.ctx, objID, nodeID, resourceObsoleteAt); err != nil {
+					if err := d.oDb.instanceResourcesDeleteObsolete(d.ctx, objID, nodeID, d.now); err != nil {
 						return fmt.Errorf("dbUpdateInstances delete obsolete container resources %s@%s: %w", objID, nodeID, err)
 					}
 				}
