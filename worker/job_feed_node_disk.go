@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/go-redis/redis/v8"
+	redis "github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/mariadb"

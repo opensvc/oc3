@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-redis/redis/v8"
+	redis "github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/api"
 )
