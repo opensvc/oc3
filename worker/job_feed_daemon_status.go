@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	redis "github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cachekeys"
 )
@@ -170,7 +170,7 @@ func (d *jobFeedDaemonStatus) getChanges() error {
 		if err := d.redis.HDel(d.ctx, cachekeys.FeedDaemonStatusChangesH, d.nodeID).Err(); err != nil {
 			return fmt.Errorf("getChanges: HDEL %s %s: %w", cachekeys.FeedDaemonStatusChangesH, d.nodeID, err)
 		}
-	} else if err != redis.Nil {
+	} else if !errors.Is(err, redis.Nil) {
 		return fmt.Errorf("getChanges: HGET %s %s: %w", cachekeys.FeedDaemonStatusChangesH, d.nodeID, err)
 	}
 	d.rawChanges = s
@@ -535,7 +535,9 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 				} else {
 					for _, containerStatus := range iStatus.Containers() {
 						slog.Debug(fmt.Sprintf("dbUpdateInstances from container status %s@%s monVmName: %s monVmType: %s", objectName, nodename, containerStatus.monVmName, containerStatus.monVmType))
-
+						if containerStatus == nil {
+							continue
+						}
 						if containerStatus.fromOutsideStatus == "up" {
 							slog.Debug(fmt.Sprintf("dbUpdateInstances nodeContainerUpdateFromParentNode %s@%s encap hostname %s",
 								objID, nodeID, containerStatus.monVmName))
