@@ -477,6 +477,9 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 			if iStatus == nil {
 				continue
 			}
+			// set iStatus svcID and nodeID for db update
+			iStatus.svcID = objID
+			iStatus.nodeID = nodeID
 			_, isChanged := d.changes[objectName+"@"+nodename]
 			if !isChanged && obj.availStatus != "undef" {
 				slog.Debug(fmt.Sprintf("ping instance %s@%s", objectName, nodename))
@@ -490,6 +493,7 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 				}
 			}
 			instanceMonitorStates[iStatus.monSmonStatus] = true
+			resourceObsoleteAt := time.Now()
 			if iStatus.encap == nil {
 				subNodeID, _, _, err := d.oDb.translateEncapNodename(d.ctx, objID, nodeID)
 				if err != nil {
@@ -508,13 +512,9 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 						return fmt.Errorf("dbUpdateInstances delete resources %s@%s: %w", objID, nodeID, err)
 					}
 				} else {
-					// set iStatus svcID and nodeID for db update
-					iStatus.svcID = objID
-					iStatus.nodeID = nodeID
 					if err := d.instanceStatusUpdate(objectName, nodename, iStatus); err != nil {
 						return fmt.Errorf("dbUpdateInstances update status %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
 					}
-					resourceObsoleteAt := time.Now()
 					if err := d.instanceResourceUpdate(objectName, nodename, iStatus); err != nil {
 						return fmt.Errorf("dbUpdateInstances update resource %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
 					}
@@ -533,8 +533,9 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 						return fmt.Errorf("dbUpdateInstances delete resources %s@%s: %w", objID, nodeID, err)
 					}
 				} else {
-					resourceObsoleteAt := time.Now()
 					for _, containerStatus := range iStatus.Containers() {
+						slog.Debug(fmt.Sprintf("dbUpdateInstances from container status %s@%s monVmName: %s monVmType: %s", objectName, nodename, containerStatus.monVmName, containerStatus.monVmType))
+
 						if containerStatus.fromOutsideStatus == "up" {
 							slog.Debug(fmt.Sprintf("dbUpdateInstances nodeContainerUpdateFromParentNode %s@%s encap hostname %s",
 								objID, nodeID, containerStatus.monVmName))
@@ -547,6 +548,9 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 						if err := d.instanceStatusUpdate(objID, nodeID, containerStatus); err != nil {
 							return fmt.Errorf("dbUpdateInstances update container %s %s@%s (%s@%s): %w",
 								containerStatus.monVmName, objID, nodeID, objectName, nodename, err)
+						}
+						if err := d.instanceResourceUpdate(objectName, nodename, iStatus); err != nil {
+							return fmt.Errorf("dbUpdateInstances update resource %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
 						}
 					}
 					slog.Debug(fmt.Sprintf("dbUpdateInstances deleting obsolete container resources %s@%s", objectName, nodename))
