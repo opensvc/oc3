@@ -22,20 +22,25 @@ type (
 )
 
 func (i *instanceData) InstanceResources() []*DBInstanceResource {
-	l := make([]*DBInstanceResource, len(i.resources))
-	id := 0
+	var l []*DBInstanceResource
 	for rID, aResource := range i.resources {
-		var vmName string
+		l = append(l, aToInstanceResource(aResource.(map[string]any), i.svcID, i.nodeID, "", rID,
+			i.resourceMonitored[rID]))
+
 		if i.encap != nil {
 			if encapRid, ok := i.encap[rID].(map[string]any); ok {
+				var vmName string
 				if s, ok := encapRid["hostname"].(string); ok {
 					vmName = s
 				}
+				if encapResources, ok := encapRid["resources"].(map[string]any); ok {
+					for encapRID, encapAResource := range encapResources {
+						l = append(l, aToInstanceResource(encapAResource.(map[string]any), i.svcID, i.nodeID, vmName, encapRID,
+							i.resourceMonitored[encapRID]))
+					}
+				}
 			}
 		}
-		l[id] = aToInstanceResource(aResource.(map[string]any), i.svcID, i.nodeID, vmName, rID,
-			i.resourceMonitored[rID])
-		id++
 	}
 	return l
 }
