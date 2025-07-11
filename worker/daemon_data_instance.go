@@ -1,6 +1,8 @@
 package worker
 
-import "strings"
+import (
+	"strings"
+)
 
 type (
 	// instanceData
@@ -96,7 +98,8 @@ func (i *instanceData) Container(id string) *instanceData {
 	if vmName, ok := encap["hostname"].(string); ok {
 		dbI.monVmName = vmName
 	}
-	if containerType := strings.SplitN(mapToS(i.resources, "", id, "type"), ".", 1); len(containerType) > 1 {
+	// defines vm type from resources.<container#xx>.type = 'container.podman' -> podman
+	if containerType := strings.SplitN(mapToS(i.resources, "", id, "type"), ".", -1); len(containerType) > 1 {
 		dbI.monVmType = containerType[1]
 	}
 	mergeM := hypervisorContainerMergeMap
