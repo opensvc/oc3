@@ -28,7 +28,7 @@ func newCmd(args []string) *cobra.Command {
 				return err
 			}
 			logConfigFileUsed()
-			slog.Info(fmt.Sprintf("oc3 vesion: %s", version.Version))
+			slog.Info(fmt.Sprintf("oc3 vesion: %s", version.Version()))
 			return nil
 		},
 	}
