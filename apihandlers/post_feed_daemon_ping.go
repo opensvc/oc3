@@ -52,11 +52,11 @@ func (a *Api) PostFeedDaemonPing(c echo.Context) error {
 	if clusterID != "" {
 		objects, err := a.getObjectConfigToFeed(ctx, clusterID)
 		if err != nil {
-			log.Error("%s", err)
+			log.Error(fmt.Sprintf("%s", err))
 		} else {
 			if len(objects) > 0 {
 				if err := a.removeObjectConfigToFeed(ctx, clusterID); err != nil {
-					log.Error("%s", err)
+					log.Error(fmt.Sprintf("%s", err))
 				}
 				log.Info(fmt.Sprintf("accepted %s, cluster id %s need object config: %s", nodeID, clusterID, objects))
 				return c.JSON(http.StatusAccepted, api.FeedDaemonPingAccepted{ObjectWithoutConfig: &objects})
