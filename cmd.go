@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+
+	"github.com/opensvc/oc3/util/version"
 )
 
 var (
@@ -25,6 +28,7 @@ func newCmd(args []string) *cobra.Command {
 				return err
 			}
 			logConfigFileUsed()
+			slog.Info(fmt.Sprintf("oc3 vesion: %s", version.Version))
 			return nil
 		},
 	}
