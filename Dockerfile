@@ -11,7 +11,7 @@ WORKDIR /opt/oc3
 
 RUN git checkout $BRANCH && echo "Cache busted at $(date): git checkout $BRANCH"
 
-RUN make version
+RUN git describe --tags --abbrev > util/version/text/VERSION
 
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/oc3 .
 
