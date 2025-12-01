@@ -52,7 +52,14 @@ func cmdScheduler() *cobra.Command {
 			if err := setup(); err != nil {
 				return err
 			}
-			return scheduler.Run()
+			db, err := newDatabase()
+			if err != nil {
+				return err
+			}
+			sched := &scheduler.Scheduler{
+				DB: db,
+			}
+			return sched.Run()
 		},
 	}
 }
@@ -68,19 +75,6 @@ func cmdVersion() *cobra.Command {
 	return cmd
 }
 
-func setup() error {
-	if debug {
-		slog.SetLogLoggerLevel(slog.LevelDebug)
-	}
-	logConfigDir()
-	if err := initConfig(); err != nil {
-		return err
-	}
-	logConfigFileUsed()
-	slog.Info(fmt.Sprintf("oc3 version: %s", version.Version()))
-	return nil
-}
-
 func cmdRoot(args []string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   filepath.Base(args[0]),
@@ -94,4 +88,17 @@ func cmdRoot(args []string) *cobra.Command {
 		cmdWorker(),
 	)
 	return cmd
+}
+
+func setup() error {
+	if debug {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
+	logConfigDir()
+	if err := initConfig(); err != nil {
+		return err
+	}
+	logConfigFileUsed()
+	slog.Info(fmt.Sprintf("oc3 version: %s", version.Version()))
+	return nil
 }
