@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/opensvc/oc3/scheduler"
 	"github.com/opensvc/oc3/util/version"
 )
 
@@ -49,17 +48,7 @@ func cmdScheduler() *cobra.Command {
 		Use:   "scheduler",
 		Short: "start running db maintenance tasks",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := setup(); err != nil {
-				return err
-			}
-			db, err := newDatabase()
-			if err != nil {
-				return err
-			}
-			sched := &scheduler.Scheduler{
-				DB: db,
-			}
-			return sched.Run()
+			return schedule()
 		},
 	}
 }
