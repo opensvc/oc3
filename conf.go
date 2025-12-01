@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	configCandidateDirs = []string{"/etc/oc3/", "$HOME/.oc3/", "./"}
+	configCandidateDirs = []string{"/etc/oc3/", "$HOME/.config/oc3", "./"}
 )
 
 func logConfigDir() {
@@ -52,9 +52,9 @@ func initConfig() error {
 	// config file
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("/etc/oc3")
-	viper.AddConfigPath("$HOME/.oc3")
-	viper.AddConfigPath(".")
+	for _, d := range configCandidateDirs {
+		viper.AddConfigPath(d)
+	}
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return err
