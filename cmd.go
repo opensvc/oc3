@@ -14,48 +14,80 @@ var (
 	debug bool
 )
 
-func newCmd(args []string) *cobra.Command {
-	root := &cobra.Command{
-		Use:   filepath.Base(args[0]),
-		Short: "Manage the opensvc collector infrastructure components.",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if debug {
-				slog.SetLogLoggerLevel(slog.LevelDebug)
-			}
-
-			logConfigDir()
-			if err := initConfig(); err != nil {
-				return err
-			}
-			logConfigFileUsed()
-			slog.Info(fmt.Sprintf("oc3 vesion: %s", version.Version()))
-			return nil
-		},
-	}
-
-	root.PersistentFlags().BoolVar(&debug, "debug", false, "set log level to debug")
-
-	apiCmd := cobra.Command{
-		Use:   "api",
-		Short: "serve the collector api",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return listen()
-		},
-	}
-
+func cmdWorker() *cobra.Command {
 	var maxRunners int
-	workerCmd := cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "worker",
 		Short: "run jobs from a list of queues",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := setup(); err != nil {
+				return err
+			}
 			return work(maxRunners, args)
 		},
 	}
-	workerCmd.Flags().IntVar(&maxRunners, "runners", 1, "maximun number of worker job runners")
+	cmd.Flags().IntVar(&maxRunners, "runners", 1, "maximun number of worker job runners")
+	return cmd
+}
 
-	root.AddCommand(
-		&apiCmd,
-		&workerCmd,
+func cmdAPI() *cobra.Command {
+	return &cobra.Command{
+		Use:   "api",
+		Short: "serve the collector api",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := setup(); err != nil {
+				return err
+			}
+			return listen()
+		},
+	}
+}
+
+func cmdScheduler() *cobra.Command {
+	return &cobra.Command{
+		Use:   "scheduler",
+		Short: "start running db maintenance tasks",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return schedule()
+		},
+	}
+}
+
+func cmdVersion() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "version",
+		Short: "display the oc3 version",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println(version.Version())
+		},
+	}
+	return cmd
+}
+
+func cmdRoot(args []string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   filepath.Base(args[0]),
+		Short: "Manage the opensvc collector infrastructure components.",
+	}
+	cmd.PersistentFlags().BoolVar(&debug, "debug", false, "set log level to debug")
+	cmd.AddCommand(
+		cmdAPI(),
+		cmdScheduler(),
+		cmdVersion(),
+		cmdWorker(),
 	)
-	return root
+	return cmd
+}
+
+func setup() error {
+	if debug {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
+	logConfigDir()
+	if err := initConfig(); err != nil {
+		return err
+	}
+	logConfigFileUsed()
+	slog.Info(fmt.Sprintf("oc3 version: %s", version.Version()))
+	return nil
 }

@@ -6,8 +6,8 @@ import (
 
 // cmd parses the command line and run the selected component.
 func cmd(args []string) error {
-	root := newCmd(args)
-	return root.Execute()
+	cmd := cmdRoot(args)
+	return cmd.Execute()
 }
 
 // main is the program entrypoint. It's the only function using os.Exit, so
