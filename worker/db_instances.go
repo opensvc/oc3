@@ -67,6 +67,7 @@ type (
 		monAppStatus        string
 		monSyncStatus       string
 		monFrozen           int
+		monFrozenAt         time.Time
 		monVmType           string
 		monUpdated          string
 	}
@@ -456,24 +457,24 @@ func (oDb *opensvcDB) instanceStatusUpdate(ctx context.Context, s *DBInstanceSta
 			" `mon_smon_status`, `mon_smon_global_expect`, `mon_availstatus`, " +
 			" `mon_overallstatus`, `mon_ipstatus`, `mon_diskstatus`, `mon_fsstatus`," +
 			" `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`, `mon_syncstatus`," +
-			" `mon_frozen`, `mon_vmtype`, `mon_updated`)" +
-			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())" +
+			" `mon_frozen`, `mon_frozen_at`, `mon_vmtype`, `mon_updated`)" +
+			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())" +
 			"ON DUPLICATE KEY UPDATE" +
 			" `mon_smon_status` = ?, `mon_smon_global_expect` = ?, `mon_availstatus` = ?, " +
 			" `mon_overallstatus` = ?, `mon_ipstatus` = ?, `mon_diskstatus` = ?, `mon_fsstatus` = ?," +
 			" `mon_sharestatus` = ?, `mon_containerstatus` = ?, `mon_appstatus` = ?, `mon_syncstatus` = ?," +
-			" `mon_frozen` = ?, `mon_vmtype` = ?, `mon_updated` = NOW()"
+			" `mon_frozen` = ?, `mon_frozen_at` = ?, `mon_vmtype` = ?, `mon_updated` = NOW()"
 	)
 	// TODO check vs v2
 	_, err := oDb.db.ExecContext(ctx, qUpdate, s.svcID, s.nodeID, s.monVmName,
 		s.monSmonStatus, s.monSmonGlobalExpect, s.monAvailStatus,
 		s.monOverallStatus, s.monIpStatus, s.monDiskStatus, s.monFsStatus,
 		s.monShareStatus, s.monContainerStatus, s.monAppStatus, s.monSyncStatus,
-		s.monFrozen, s.monVmType,
+		s.monFrozen, s.monFrozenAt, s.monVmType,
 		s.monSmonStatus, s.monSmonGlobalExpect, s.monAvailStatus,
 		s.monOverallStatus, s.monIpStatus, s.monDiskStatus, s.monFsStatus,
 		s.monShareStatus, s.monContainerStatus, s.monAppStatus, s.monSyncStatus,
-		s.monFrozen, s.monVmType)
+		s.monFrozen, s.monFrozenAt, s.monVmType)
 	if err != nil {
 		return err
 	}
