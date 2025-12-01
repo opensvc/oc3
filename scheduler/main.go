@@ -91,11 +91,10 @@ func (t *Scheduler) Run() error {
 		select {
 		case <-tmrNow.C:
 			// Put here what you want to debug upon scheduler startup
-			t.NewTask("TaskRefreshBActionErrors", t.TaskRefreshBActionErrors).Run(ctx)
 			tmrNow.Stop()
 		case <-tmrHourly.C:
-			t.NewTask("TaskRefreshBActionErrors", t.TaskRefreshBActionErrors).Run(ctx)
 		case <-tmrDaily.C:
+			t.NewTask("TaskRefreshBActionErrors", t.TaskRefreshBActionErrors).Run(ctx)
 		case <-tmrWeekly.C:
 		}
 	}

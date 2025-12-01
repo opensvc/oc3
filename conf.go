@@ -43,11 +43,16 @@ func initConfig() error {
 	viper.SetDefault("websocket.key", "magix123")
 	viper.SetDefault("websocket.url", "http://127.0.0.1:8889")
 	viper.SetDefault("worker.runners", 1)
-	viper.SetDefault("worker.pprof.uxsocket", "/var/run/oc3_worker.sock")
-	viper.SetDefault("worker.pprof.addr", "127.0.0.1:9999")
+	viper.SetDefault("worker.pprof.uxsocket", "/var/run/oc3_worker_pprof.sock")
+	//viper.SetDefault("worker.pprof.addr", "127.0.0.1:9999")
 	viper.SetDefault("worker.pprof.enable", false)
 	viper.SetDefault("worker.metrics.enable", false)
 	viper.SetDefault("worker.metrics.addr", "127.0.0.1:2112")
+	viper.SetDefault("scheduler.pprof.uxsocket", "/var/run/oc3_scheduler_pprof.sock")
+	//viper.SetDefault("scheduler.pprof.addr", "127.0.0.1:9998")
+	viper.SetDefault("scheduler.pprof.enable", false)
+	viper.SetDefault("scheduler.metrics.enable", false)
+	viper.SetDefault("scheduler.metrics.addr", "127.0.0.1:2111")
 
 	// config file
 	viper.SetConfigName("config")
