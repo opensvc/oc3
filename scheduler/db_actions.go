@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TaskRefreshBActionErrors(ctx context.Context, db *sql.DB) error {
+func TaskRefreshBActionErrors(ctx context.Context, task *Task, db *sql.DB) error {
 
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()

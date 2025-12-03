@@ -53,6 +53,8 @@ func initConfig() error {
 	viper.SetDefault("scheduler.pprof.enable", false)
 	viper.SetDefault("scheduler.metrics.enable", false)
 	viper.SetDefault("scheduler.metrics.addr", "127.0.0.1:2111")
+	viper.SetDefault("scheduler.task.trim.default.retention", 365)
+	viper.SetDefault("scheduler.task.trim.default.batch_size", 1000)
 
 	// config file
 	viper.SetConfigName("config")

@@ -24,7 +24,7 @@ type (
 
 	Task struct {
 		name   string
-		fn     func(context.Context, *sql.DB) error
+		fn     func(context.Context, *Task, *sql.DB) error
 		period time.Duration
 	}
 
@@ -44,10 +44,14 @@ const (
 var (
 	tasks = TaskList{
 		{
-			name:   "TaskRefreshBActionErrors",
+			name:   "refresh_b_action_errors",
 			fn:     TaskRefreshBActionErrors,
-			period: 5 * time.Second,
-			//period: 24 * time.Hour,
+			period: 24 * time.Hour,
+		},
+		{
+			name:   "trim",
+			fn:     TaskTrim,
+			period: 24 * time.Hour,
 		},
 	}
 
@@ -83,17 +87,19 @@ func (t TaskList) Get(name string) Task {
 }
 
 func (t *Task) Infof(format string, args ...any) {
-	var nargs []any
-	nargs = append(nargs, t.name)
-	nargs = append(nargs, args...)
-	slog.Info(fmt.Sprintf("%s: "+format, nargs...))
+	slog.Info(fmt.Sprintf(t.name+": "+format, args...))
+}
+
+func (t *Task) Warnf(format string, args ...any) {
+	slog.Warn(fmt.Sprintf(t.name+": "+format, args...))
 }
 
 func (t *Task) Errorf(format string, args ...any) {
-	var nargs []any
-	nargs = append(nargs, t.name)
-	nargs = append(nargs, args...)
-	slog.Error(fmt.Sprintf("%s: "+format, nargs...))
+	slog.Error(fmt.Sprintf(t.name+": "+format, args...))
+}
+
+func (t *Task) Debugf(format string, args ...any) {
+	slog.Debug(fmt.Sprintf(t.name+": "+format, args...))
 }
 
 func (t *Task) Start(ctx context.Context, db *sql.DB) {
@@ -105,11 +111,11 @@ func (t *Task) Start(ctx context.Context, db *sql.DB) {
 	if !state.LastRunAt.IsZero() {
 		initialDelay = state.LastRunAt.Add(t.period).Sub(time.Now())
 	} else {
-		initialDelay = t.period
+		initialDelay = 0
 	}
 
 	if initialDelay < 0 {
-		initialDelay = time.Millisecond
+		initialDelay = 0
 	}
 
 	t.Infof("start with period=%s, last was %s, next in %s", t.period, state.LastRunAt.Format(time.RFC3339), initialDelay)
@@ -147,7 +153,7 @@ func (t *Task) Exec(ctx context.Context, db *sql.DB) {
 	begin := time.Now()
 
 	// Execution
-	err := t.fn(ctx, db)
+	err := t.fn(ctx, t, db)
 
 	duration := time.Now().Sub(begin)
 	if err != nil {
