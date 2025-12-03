@@ -127,15 +127,15 @@ func (t *Task) Start(ctx context.Context, db *sql.DB) {
 		case <-ctx.Done():
 			return
 		case <-timer.C:
-			// Blocking fn execution, no more timer event until terminated.
-			beginAt := time.Now()
-			t.Exec(ctx, db)
-			endAt := time.Now()
-
 			// Update the last run time persistant store
 			if err := t.SetLastRunAt(ctx, db); err != nil {
 				t.Errorf("%s", err)
 			}
+
+			// Blocking fn execution, no more timer event until terminated.
+			beginAt := time.Now()
+			t.Exec(ctx, db)
+			endAt := time.Now()
 
 			// Plan the next execution, correct the drift
 			nextPeriod := beginAt.Add(t.period).Sub(endAt)
