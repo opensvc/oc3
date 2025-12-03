@@ -42,7 +42,7 @@ const (
 )
 
 var (
-	tasks = TaskList{
+	Tasks = TaskList{
 		{
 			name:   "refresh_b_action_errors",
 			fn:     TaskRefreshBActionErrors,
@@ -77,6 +77,12 @@ var (
 	)
 )
 
+func (t TaskList) Print() {
+	for _, task := range t {
+		fmt.Println(task.name)
+	}
+}
+
 func (t TaskList) Get(name string) Task {
 	for _, task := range t {
 		if task.name == name {
@@ -84,6 +90,10 @@ func (t TaskList) Get(name string) Task {
 		}
 	}
 	return Task{}
+}
+
+func (t *Task) IsZero() bool {
+	return t.fn == nil
 }
 
 func (t *Task) Infof(format string, args ...any) {
@@ -147,13 +157,13 @@ func (t *Task) Start(ctx context.Context, db *sql.DB) {
 	}
 }
 
-func (t *Task) Exec(ctx context.Context, db *sql.DB) {
+func (t *Task) Exec(ctx context.Context, db *sql.DB) (err error) {
 	t.Infof("run")
 	status := taskExecStatusOk
 	begin := time.Now()
 
 	// Execution
-	err := t.fn(ctx, t, db)
+	err = t.fn(ctx, t, db)
 
 	duration := time.Now().Sub(begin)
 	if err != nil {
@@ -164,6 +174,7 @@ func (t *Task) Exec(ctx context.Context, db *sql.DB) {
 	}
 	taskExecCounter.With(prometheus.Labels{"desc": t.name, "status": status}).Inc()
 	taskExecDuration.With(prometheus.Labels{"desc": t.name, "status": status}).Observe(duration.Seconds())
+	return
 }
 
 func (t *Task) GetState(ctx context.Context, db *sql.DB) (State, error) {
@@ -195,7 +206,7 @@ func (t *Task) SetLastRunAt(ctx context.Context, db *sql.DB) error {
 }
 
 func (t *Scheduler) toggleTasks(ctx context.Context, states map[string]State) {
-	for _, task := range tasks {
+	for _, task := range Tasks {
 		storedState, _ := states[task.name]
 		cachedState, hasCachedState := t.states[task.name]
 		if hasCachedState && cachedState.IsDisabled == storedState.IsDisabled {
@@ -203,7 +214,7 @@ func (t *Scheduler) toggleTasks(ctx context.Context, states map[string]State) {
 			continue
 		}
 
-		task := tasks.Get(task.name)
+		task := Tasks.Get(task.name)
 		cancel, hasCancel := t.cancels[task.name]
 		switch {
 		case storedState.IsDisabled && hasCancel:

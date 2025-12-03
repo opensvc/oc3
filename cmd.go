@@ -43,6 +43,29 @@ func cmdAPI() *cobra.Command {
 	}
 }
 
+func cmdSchedulerList() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "list the tasks",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return scheduleList()
+		},
+	}
+}
+
+func cmdSchedulerExec() *cobra.Command {
+	var name string
+	cmd := &cobra.Command{
+		Use:   "exec",
+		Short: "execute a task inline",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return scheduleExec(name)
+		},
+	}
+	cmd.Flags().StringVar(&name, "name", "", "the task name")
+	return cmd
+}
+
 func cmdScheduler() *cobra.Command {
 	return &cobra.Command{
 		Use:   "scheduler",
@@ -70,9 +93,14 @@ func cmdRoot(args []string) *cobra.Command {
 		Short: "Manage the opensvc collector infrastructure components.",
 	}
 	cmd.PersistentFlags().BoolVar(&debug, "debug", false, "set log level to debug")
+	grpScheduler := cmdScheduler()
+	grpScheduler.AddCommand(
+		cmdSchedulerExec(),
+		cmdSchedulerList(),
+	)
 	cmd.AddCommand(
 		cmdAPI(),
-		cmdScheduler(),
+		grpScheduler,
 		cmdVersion(),
 		cmdWorker(),
 	)
