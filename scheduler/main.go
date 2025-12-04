@@ -205,6 +205,22 @@ func (t *Task) SetLastRunAt(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
+func (t *Scheduler) Infof(format string, args ...any) {
+	slog.Info(fmt.Sprintf("scheduler: "+format, args...))
+}
+
+func (t *Scheduler) Warnf(format string, args ...any) {
+	slog.Warn(fmt.Sprintf("scheduler: "+format, args...))
+}
+
+func (t *Scheduler) Errorf(format string, args ...any) {
+	slog.Error(fmt.Sprintf("scheduler: "+format, args...))
+}
+
+func (t *Scheduler) Debugf(format string, args ...any) {
+	slog.Debug(fmt.Sprintf("scheduler: "+format, args...))
+}
+
 func (t *Scheduler) toggleTasks(ctx context.Context, states map[string]State) {
 	for _, task := range Tasks {
 		storedState, _ := states[task.name]
@@ -242,10 +258,10 @@ func (t *Scheduler) monitor() error {
 	do := func() {
 		states, err := t.GetStateMap(ctx)
 		if err != nil {
-			slog.Error("states: %s", err)
+			t.Errorf("states: %s", err)
 			return
 		} else {
-			slog.Debug(fmt.Sprintf("states: %v", states))
+			t.Debugf("states: %v", states)
 		}
 		t.toggleTasks(ctx, states)
 	}
