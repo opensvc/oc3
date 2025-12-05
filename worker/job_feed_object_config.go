@@ -157,7 +157,7 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 	if hasRowAffected, err := d.oDb.insertOrUpdateObjectConfig(d.ctx, cfg); err != nil {
 		return err
 	} else if hasRowAffected {
-		d.oDb.tableChange("services")
+		d.oDb.SetChange("services")
 	}
 	return nil
 }

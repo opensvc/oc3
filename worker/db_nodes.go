@@ -227,7 +227,7 @@ func (oDb *opensvcDB) nodeContainerUpdateFromParentNode(ctx context.Context, cNa
 	if count, err := result.RowsAffected(); err != nil {
 		return err
 	} else if count > 0 {
-		oDb.tableChange("nodes")
+		oDb.SetChange("nodes")
 		return nil
 	} else {
 		apps, err := oDb.responsibleAppsForNode(ctx, pn.nodeID)
@@ -256,7 +256,7 @@ func (oDb *opensvcDB) nodeContainerUpdateFromParentNode(ctx context.Context, cNa
 		if count, err := result.RowsAffected(); err != nil {
 			return err
 		} else if count > 0 {
-			oDb.tableChange("nodes")
+			oDb.SetChange("nodes")
 			return nil
 		}
 	}
@@ -268,7 +268,7 @@ func (oDb *opensvcDB) nodeUpdateFrozen(ctx context.Context, nodeID, frozen strin
 	if _, err := oDb.db.ExecContext(ctx, query, frozen, nodeID); err != nil {
 		return fmt.Errorf("nodeUpdateFrozen: %w", err)
 	}
-	oDb.tableChange("nodes")
+	oDb.SetChange("nodes")
 	return nil
 }
 
@@ -293,7 +293,7 @@ func (oDb *opensvcDB) nodeUpdateClusterIDForNodeID(ctx context.Context, nodeID, 
 		} else if count, err := result.RowsAffected(); err != nil {
 			return false, fmt.Errorf("nodeUpdateClusterIDForNodeID count updated: %w", err)
 		} else if count > 0 {
-			oDb.tableChange("nodes")
+			oDb.SetChange("nodes")
 			return true, nil
 		} else {
 			return false, nil

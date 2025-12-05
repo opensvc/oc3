@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/cdb"
 )
 
 type (
@@ -19,7 +20,7 @@ type (
 	BaseJob struct {
 		ctx   context.Context
 		redis *redis.Client
-		db    DBOperater
+		db    cdb.DBOperater
 		oDb   *opensvcDB
 		ev    EventPublisher
 
@@ -56,7 +57,7 @@ type (
 	}
 
 	DBGetter interface {
-		DB() DBOperater
+		DB() cdb.DBOperater
 	}
 )
 
@@ -70,14 +71,14 @@ func RunJob(j JobRunner) error {
 
 	err := runOps(ops...)
 	if err != nil {
-		if tx, ok := j.DB().(DBTxer); ok {
+		if tx, ok := j.DB().(cdb.DBTxer); ok {
 			slog.Debug(fmt.Sprintf("%s rollbacking on error %s", name, detail))
 			if err := tx.Rollback(); err != nil {
 				slog.Error(fmt.Sprintf("%s rollback on error failed %s: %s", name, detail, err))
 			}
 		}
 		return err
-	} else if tx, ok := j.DB().(DBTxer); ok {
+	} else if tx, ok := j.DB().(cdb.DBTxer); ok {
 		slog.Debug(fmt.Sprintf("%s commiting %s", name, detail))
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("commit: %w", err)
@@ -97,18 +98,18 @@ func (j *BaseJob) PrepareDB(ctx context.Context, db *sql.DB, withTx bool) error 
 			return err
 		} else {
 			j.db = tx
-			j.oDb = &opensvcDB{db: tx, tChanges: make(map[string]struct{})}
+			j.oDb = &opensvcDB{db: tx, session: cdb.NewSession(tx, j.ev)}
 		}
 	case false:
 		j.db = db
-		j.oDb = &opensvcDB{db: db, tChanges: make(map[string]struct{})}
+		j.oDb = &opensvcDB{db: db, session: cdb.NewSession(db, j.ev)}
 	}
 	j.oDb.dbLck = initDbLocker(db)
 	j.ctx = ctx
 	return nil
 }
 
-func (j *BaseJob) DB() DBOperater {
+func (j *BaseJob) DB() cdb.DBOperater {
 	return j.db
 }
 
@@ -179,7 +180,7 @@ func (j *BaseJob) dropPending() error {
 }
 
 func (d *BaseJob) pushFromTableChanges() error {
-	return pushFromTableChanges(d.ctx, d.oDb, d.ev)
+	return d.oDb.session.NotifyChanges(d.ctx)
 }
 
 // populateFeedObjectConfigForClusterIDH HSET FeedObjectConfigForClusterIDH <clusterID> with the names of objects

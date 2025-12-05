@@ -180,7 +180,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 					if changed, err := d.oDb.updateDiskinfoArrayID(d.ctx, diskID, nodeID); err != nil {
 						return fmt.Errorf("updateDiskinfoArrayID: %w", err)
 					} else if changed {
-						d.oDb.tableChange("diskinfo")
+						d.oDb.SetChange("diskinfo")
 					}
 				}
 			} else {
@@ -194,20 +194,20 @@ func (d *jobFeedNodeDisk) updateDB() error {
 			if changed, err := d.oDb.updateDiskinfoArrayAndDevIDsAndSize(d.ctx, diskID, nodeID, devID, line["size"].(int32)); err != nil {
 				return fmt.Errorf("updateDiskinfoArrayAndDevIDsAndSize: %w", err)
 			} else if changed {
-				d.oDb.tableChange("diskinfo")
+				d.oDb.SetChange("diskinfo")
 			}
 		} else if len(diskL) == 0 {
 			line["local"] = "F"
 			if changed, err := d.oDb.updateDiskinfoForDiskSize(d.ctx, diskID, int32(line["size"].(float64))); err != nil {
 				return fmt.Errorf("updateDiskinfoForDiskSize: %w", err)
 			} else if changed {
-				d.oDb.tableChange("diskinfo")
+				d.oDb.SetChange("diskinfo")
 			}
 
 			if changed, err := d.oDb.updateDiskinfoSetMissingArrayID(d.ctx, diskID, nodeID); err != nil {
 				return fmt.Errorf("updateDiskinfoSetMissingArrayID: %w", err)
 			} else if changed {
-				d.oDb.tableChange("diskinfo")
+				d.oDb.SetChange("diskinfo")
 			}
 		}
 
@@ -283,7 +283,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 	if affected, err := request.ExecContextAndCountRowsAffected(d.ctx, d.db); err != nil {
 		return fmt.Errorf("updateDB insert: %w", err)
 	} else if affected > 0 {
-		d.oDb.tableChange("svcdisks")
+		d.oDb.SetChange("svcdisks")
 	}
 
 	query := "DELETE FROM `svcdisks` WHERE `node_id` = ? AND `disk_updated` < ?"
@@ -292,7 +292,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 	} else if affected, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("query %s count row affected: %w", query, err)
 	} else if affected > 0 {
-		d.oDb.tableChange("svcdisks")
+		d.oDb.SetChange("svcdisks")
 	}
 
 	// TODO: validate delete query
@@ -302,7 +302,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 	} else if affected, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("query %s count row affected: %w", query, err)
 	} else if affected > 0 {
-		d.oDb.tableChange("diskinfo")
+		d.oDb.SetChange("diskinfo")
 	}
 	return nil
 }

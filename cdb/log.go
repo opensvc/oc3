@@ -2,7 +2,6 @@ package cdb
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -28,7 +27,7 @@ type (
 	}
 )
 
-func Log(ctx context.Context, db *sql.DB, entries ...LogEntry) error {
+func Log(ctx context.Context, db execContexter, entries ...LogEntry) error {
 	toDict := func(d map[string]any) string {
 		if d == nil {
 			return "{}"

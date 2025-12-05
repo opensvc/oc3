@@ -86,7 +86,7 @@ func (oDb *opensvcDB) hbUpdate(ctx context.Context, hb DBHeartbeat) error {
 	if err != nil {
 		return err
 	}
-	oDb.tableChange("hbmon")
+	oDb.SetChange("hbmon")
 	return nil
 }
 
@@ -105,7 +105,7 @@ func (oDb *opensvcDB) hbDeleteOutDatedByClusterID(ctx context.Context, clusterID
 		return fmt.Errorf("hbDeleteOutDatedByClusterID count affected: %w", err)
 	} else if affected > 0 {
 		slog.Debug(fmt.Sprintf("hbDeleteOutDatedByClusterID %s %d", clusterID, affected))
-		oDb.tableChange("hbmon")
+		oDb.SetChange("hbmon")
 	}
 	return nil
 }
@@ -182,12 +182,12 @@ func (oDb *opensvcDB) hbLogUpdate(ctx context.Context, hb DBHeartbeat) error {
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial status, log value
-		defer oDb.tableChange("hbmon_log")
+		defer oDb.SetChange("hbmon_log")
 		return setLogLast()
 	case err != nil:
 		return fmt.Errorf("get hbmon_log_last: %w", err)
 	default:
-		defer oDb.tableChange("hbmon_log")
+		defer oDb.SetChange("hbmon_log")
 		if hb.state == prev.state && hb.beating == prev.beating {
 			// no change, extend last interval
 			if _, err := oDb.db.ExecContext(ctx, queryExtendIntervalOfCurrent, hb.nodeID, hb.peerNodeID, hb.name); err != nil {
