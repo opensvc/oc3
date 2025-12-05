@@ -1,4 +1,4 @@
-package dblog
+package cdb
 
 import (
 	"context"
@@ -17,10 +17,6 @@ type (
 		Begin       time.Time
 	}
 )
-
-func Placeholders(n int) string {
-	return strings.TrimRight(strings.Repeat("?,", n), ",")
-}
 
 func UpdateServicesLog(db *sql.DB, entries ...ServiceLogUpdate) error {
 	if len(entries) == 0 {

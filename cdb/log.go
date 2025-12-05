@@ -1,4 +1,4 @@
-package dblog
+package cdb
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 )
 
 type (
-	Entry struct {
+	LogEntry struct {
 		ID          int64          `json:"id"`
 		Action      string         `json:"log_action"`
 		User        string         `json:"log_user"`
@@ -28,7 +28,7 @@ type (
 	}
 )
 
-func Log(db *sql.DB, entries ...Entry) error {
+func Log(ctx context.Context, db *sql.DB, entries ...LogEntry) error {
 	toDict := func(d map[string]any) string {
 		if d == nil {
 			return "{}"
@@ -49,7 +49,7 @@ func Log(db *sql.DB, entries ...Entry) error {
 
 	}
 	sql := fmt.Sprintf("INSERT INTO log %s VALUES %s", cols, strings.Join(lines, ","))
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	_, err := db.ExecContext(ctx, sql, args...)
 	return err

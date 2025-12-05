@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/opensvc/oc3/dblog"
+	"github.com/opensvc/oc3/cdb"
 )
 
 func TaskScrub(ctx context.Context, task *Task, db *sql.DB) (err error) {
@@ -86,11 +86,11 @@ func TaskScrubSvcInstances(ctx context.Context, task *Task, db *sql.DB) error {
 		return err
 	}
 	task.Infof("set %d services status to undef (no live instance) for %s", n, svcIDs)
-	entries := make([]dblog.Entry, n)
+	entries := make([]cdb.LogEntry, n)
 	for i, svcID := range svcIDs {
 		d := make(map[string]any)
 		d["svc"] = svcNames[i]
-		entries[i] = dblog.Entry{
+		entries[i] = cdb.LogEntry{
 			Action: "service.status",
 			Fmt:    "service '%(svc)s' has zero live instance. Status flagged 'undef'",
 			Dict:   d,
@@ -99,6 +99,6 @@ func TaskScrubSvcInstances(ctx context.Context, task *Task, db *sql.DB) error {
 			SvcID:  &svcID,
 		}
 	}
-	err = dblog.Log(db, entries...)
+	err = cdb.Log(ctx, db, entries...)
 	return err
 }
