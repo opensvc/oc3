@@ -5,8 +5,13 @@ import (
 	"time"
 )
 
-func TaskRefreshBActionErrors(ctx context.Context, task *Task) error {
+var TaskRefreshBActionErrors = Task{
+	name:   "refresh_b_action_errors",
+	period: 24 * time.Hour,
+	fn:     taskRefreshBActionErrorsRun,
+}
 
+func taskRefreshBActionErrorsRun(ctx context.Context, task *Task) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 

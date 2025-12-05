@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -10,8 +9,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+var TaskTrim = Task{
+	name:   "trim",
+	period: time.Minute,
+	fn:     taskTrimRun,
+}
+
 // deleteBatched executes the deletion query in batches until no rows are affected.
-func deleteBatched(ctx context.Context, task *Task, db *sql.DB, table, dateCol, orderbyCol string) error {
+func deleteBatched(ctx context.Context, task *Task, table, dateCol, orderbyCol string) error {
 	batchSize := viper.GetInt64("scheduler.task.trim.default.batch_size")
 	retention := getRetentionDays(table)
 
@@ -29,7 +34,7 @@ func deleteBatched(ctx context.Context, task *Task, db *sql.DB, table, dateCol, 
 		ctx, cancel := context.WithTimeout(ctx, time.Minute)
 
 		// Execute the DELETE statement
-		result, err := db.ExecContext(ctx, query)
+		result, err := task.db.ExecContext(ctx, query)
 		cancel()
 		if err != nil {
 			task.Errorf("%s: error executing batch %d: %v", table, batchCount, err)
@@ -67,111 +72,27 @@ func getRetentionDays(table string) int {
 	return days
 }
 
-func TaskTrimSaves(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "saves", "save_date", "id")
-}
-
-func TaskTrimLog(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "log", "log_date", "id")
-}
-
-func TaskTrimStatDayDiskArray(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "stat_day_disk_array", "day", "id")
-}
-
-func TaskTrimStatDayDiskArrayDG(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "stat_day_disk_array_dg", "day", "id")
-}
-
-func TaskTrimStatDayDiskApp(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "stat_day_disk_app", "day", "id")
-}
-
-func TaskTrimStatDayDiskAppDG(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "stat_day_disk_app_dg", "day", "id")
-}
-
-func TaskTrimSwitches(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "switches", "sw_updated", "id")
-}
-
-func TaskTrimCompLog(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "comp_log", "run_date", "id")
-}
-
-func TaskTrimCompLogDaily(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "comp_log_daily", "run_date", "id")
-}
-
-func TaskTrimResmonLog(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "resmon_log", "res_end", "id")
-}
-
-func TaskTrimSvcmonLog(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "svcmon_log", "mon_end", "id")
-}
-
-func TaskTrimSvcactions(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "svcactions", "begin", "id")
-}
-
-func TaskTrimDashboardEvents(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "dashboard_events", "dash_end", "id")
-}
-
-func TaskTrimPackages(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "packages", "pkg_updated", "id")
-}
-
-func TaskTrimPatches(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "patches", "patch_updated", "id")
-}
-
-func TaskTrimNodeIP(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "node_ip", "updated", "id")
-}
-
-func TaskTrimNodeUsers(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "node_users", "updated", "id")
-}
-
-func TaskTrimNodeGroups(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "node_groups", "updated", "id")
-}
-
-func TaskTrimCompRunRuleset(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "comp_run_ruleset", "date", "id")
-}
-
-func TaskTrimLinks(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "links", "link_last_consultation_date", "id")
-}
-
-func TaskTrimServicesLog(ctx context.Context, task *Task, db *sql.DB) error {
-	return deleteBatched(ctx, task, db, "services_log", "svc_end", "id")
-}
-
-func TaskTrim(ctx context.Context, task *Task, db *sql.DB) (err error) {
-	err = errors.Join(err, TaskTrimSaves(ctx, task, db))
-	err = errors.Join(err, TaskTrimLog(ctx, task, db))
-	err = errors.Join(err, TaskTrimStatDayDiskArray(ctx, task, db))
-	err = errors.Join(err, TaskTrimStatDayDiskArrayDG(ctx, task, db))
-	err = errors.Join(err, TaskTrimStatDayDiskApp(ctx, task, db))
-	err = errors.Join(err, TaskTrimStatDayDiskAppDG(ctx, task, db))
-	err = errors.Join(err, TaskTrimSwitches(ctx, task, db))
-	err = errors.Join(err, TaskTrimCompLog(ctx, task, db))
-	err = errors.Join(err, TaskTrimCompLogDaily(ctx, task, db))
-	err = errors.Join(err, TaskTrimResmonLog(ctx, task, db))
-	err = errors.Join(err, TaskTrimSvcmonLog(ctx, task, db))
-	err = errors.Join(err, TaskTrimSvcactions(ctx, task, db))
-	err = errors.Join(err, TaskTrimDashboardEvents(ctx, task, db))
-	err = errors.Join(err, TaskTrimPackages(ctx, task, db))
-	err = errors.Join(err, TaskTrimPatches(ctx, task, db))
-	err = errors.Join(err, TaskTrimNodeIP(ctx, task, db))
-	err = errors.Join(err, TaskTrimNodeUsers(ctx, task, db))
-	err = errors.Join(err, TaskTrimNodeGroups(ctx, task, db))
-	err = errors.Join(err, TaskTrimCompRunRuleset(ctx, task, db))
-	err = errors.Join(err, TaskTrimLinks(ctx, task, db))
-	err = errors.Join(err, TaskTrimServicesLog(ctx, task, db))
+func taskTrimRun(ctx context.Context, task *Task) (err error) {
+	err = errors.Join(err, deleteBatched(ctx, task, "saves", "save_date", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "log", "log_date", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "stat_day_disk_array", "day", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "stat_day_disk_array_dg", "day", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "stat_day_disk_app", "day", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "stat_day_disk_app_dg", "day", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "switches", "sw_updated", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "comp_log", "run_date", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "comp_log_daily", "run_date", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "resmon_log", "res_end", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "svcmon_log", "mon_end", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "svcactions", "begin", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "dashboard_events", "dash_end", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "packages", "pkg_updated", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "patches", "patch_updated", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "node_ip", "updated", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "node_users", "updated", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "node_groups", "updated", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "comp_run_ruleset", "date", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "links", "link_last_consultation_date", "id"))
+	err = errors.Join(err, deleteBatched(ctx, task, "services_log", "svc_end", "id"))
 	return
 }

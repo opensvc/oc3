@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -11,26 +10,38 @@ import (
 	"github.com/opensvc/oc3/cdb"
 )
 
-func TaskScrub(ctx context.Context, task *Task, db *sql.DB) (err error) {
-	err = errors.Join(err, TaskScrubSvcStatus(ctx, task, db))
-	err = errors.Join(err, TaskScrubResStatus(ctx, task, db))
-	err = errors.Join(err, TaskScrubSvcInstances(ctx, task, db))
+// TaskScrub marks services, resources and instances status "undef"
+// When all instances have outdated or absent data.
+//
+// For testing, force a scrubable dataset with:
+//
+//	UPDATE services SET svc_status="up" WHERE svc_id IN (SELECT svc_id FROM v_outdated_services);
+var TaskScrub = Task{
+	name:   "scrub",
+	period: time.Minute,
+	fn:     taskScrubRun,
+}
+
+func taskScrubRun(ctx context.Context, task *Task) (err error) {
+	err = errors.Join(err, taskScrubRunSvcStatus(ctx, task))
+	err = errors.Join(err, taskScrubRunResStatus(ctx, task))
+	err = errors.Join(err, taskScrubRunSvcInstances(ctx, task))
 	return
 }
 
-func TaskScrubSvcStatus(ctx context.Context, task *Task, db *sql.DB) error {
+func taskScrubRunSvcStatus(ctx context.Context, task *Task) error {
 	return nil
 }
 
-func TaskScrubResStatus(ctx context.Context, task *Task, db *sql.DB) error {
+func taskScrubRunResStatus(ctx context.Context, task *Task) error {
 	return nil
 }
 
-func TaskScrubSvcInstances(ctx context.Context, task *Task, db *sql.DB) error {
+func taskScrubRunSvcInstances(ctx context.Context, task *Task) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	tx, err := db.BeginTx(ctx, nil)
+	tx, err := task.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -77,9 +88,6 @@ func TaskScrubSvcInstances(ctx context.Context, task *Task, db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	if err = tx.Commit(); err != nil {
-		return err
-	}
 	task.Infof("set %d services status to undef (no live instance) for %s", n, svcIDs)
 	entries := make([]cdb.LogEntry, n)
 	for i, svcID := range svcIDs {
@@ -94,6 +102,11 @@ func TaskScrubSvcInstances(ctx context.Context, task *Task, db *sql.DB) error {
 			SvcID:  &svcID,
 		}
 	}
-	err = cdb.Log(ctx, db, entries...)
-	return err
+	if err := cdb.Log(ctx, tx, entries...); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return nil
 }

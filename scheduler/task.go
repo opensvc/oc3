@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/opensvc/oc3/cdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -14,8 +15,12 @@ import (
 type (
 	Task struct {
 		name   string
-		fn     func(context.Context, *Task, *sql.DB) error
 		period time.Duration
+		fn     func(context.Context, *Task) error
+
+		db      *sql.DB
+		ev      eventPublisher
+		session *cdb.Session
 	}
 
 	TaskList []Task
@@ -33,21 +38,9 @@ const (
 
 var (
 	Tasks = TaskList{
-		{
-			name:   "refresh_b_action_errors",
-			fn:     TaskRefreshBActionErrors,
-			period: 24 * time.Hour,
-		},
-		{
-			name:   "trim",
-			fn:     TaskTrim,
-			period: 24 * time.Hour,
-		},
-		{
-			name:   "scrub",
-			fn:     TaskScrub,
-			period: time.Minute,
-		},
+		TaskRefreshBActionErrors,
+		TaskTrim,
+		TaskScrub,
 	}
 
 	taskExecCounter = promauto.NewCounterVec(
@@ -74,13 +67,13 @@ var (
 
 func (t TaskList) Print() {
 	for _, task := range t {
-		fmt.Println(task.name)
+		fmt.Println(task.Name())
 	}
 }
 
 func (t TaskList) Get(name string) Task {
 	for _, task := range t {
-		if task.name == name {
+		if task.Name() == name {
 			return task
 		}
 	}
@@ -89,6 +82,25 @@ func (t TaskList) Get(name string) Task {
 
 func (t *Task) IsZero() bool {
 	return t.fn == nil
+}
+
+func (t *Task) SetEv(ev eventPublisher) {
+	t.ev = ev
+}
+
+func (t *Task) SetDB(db *sql.DB) {
+	t.db = db
+}
+
+func (t *Task) Name() string {
+	return t.name
+}
+
+func (t *Task) Session() *cdb.Session {
+	if t.session == nil {
+		t.session = cdb.NewSession(t.db, t.ev)
+	}
+	return t.session
 }
 
 func (t *Task) Infof(format string, args ...any) {
@@ -107,8 +119,8 @@ func (t *Task) Debugf(format string, args ...any) {
 	slog.Debug(fmt.Sprintf(t.name+": "+format, args...))
 }
 
-func (t *Task) Start(ctx context.Context, db *sql.DB) {
-	state, err := t.GetState(ctx, db)
+func (t *Task) Start(ctx context.Context) {
+	state, err := t.GetState(ctx)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
@@ -133,13 +145,13 @@ func (t *Task) Start(ctx context.Context, db *sql.DB) {
 			return
 		case <-timer.C:
 			// Update the last run time persistant store
-			if err := t.SetLastRunAt(ctx, db); err != nil {
+			if err := t.SetLastRunAt(ctx); err != nil {
 				t.Errorf("%s", err)
 			}
 
 			// Blocking fn execution, no more timer event until terminated.
 			beginAt := time.Now()
-			_ = t.Exec(ctx, db)
+			_ = t.Exec(ctx)
 			endAt := time.Now()
 
 			// Plan the next execution, correct the drift
@@ -152,13 +164,13 @@ func (t *Task) Start(ctx context.Context, db *sql.DB) {
 	}
 }
 
-func (t *Task) Exec(ctx context.Context, db *sql.DB) (err error) {
+func (t *Task) Exec(ctx context.Context) (err error) {
 	t.Infof("run")
 	status := taskExecStatusOk
 	begin := time.Now()
 
 	// Execution
-	err = t.fn(ctx, t, db)
+	err = t.fn(ctx, t)
 
 	duration := time.Now().Sub(begin)
 	if err != nil {
@@ -172,7 +184,7 @@ func (t *Task) Exec(ctx context.Context, db *sql.DB) (err error) {
 	return
 }
 
-func (t *Task) GetState(ctx context.Context, db *sql.DB) (State, error) {
+func (t *Task) GetState(ctx context.Context) (State, error) {
 	var state State
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -180,20 +192,20 @@ func (t *Task) GetState(ctx context.Context, db *sql.DB) (State, error) {
 
 	query := "SELECT last_run_at,is_disabled FROM oc3_scheduler WHERE task_name = ? ORDER BY id DESC LIMIT 1"
 
-	err := db.QueryRowContext(ctx, query, t.name).Scan(&state.LastRunAt, &state.IsDisabled)
+	err := t.db.QueryRowContext(ctx, query, t.name).Scan(&state.LastRunAt, &state.IsDisabled)
 	if err == sql.ErrNoRows {
 		return state, nil
 	}
 	return state, err
 }
 
-func (t *Task) SetLastRunAt(ctx context.Context, db *sql.DB) error {
+func (t *Task) SetLastRunAt(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
 	query := "INSERT INTO oc3_scheduler (task_name, last_run_at) VALUES (?, NOW()) ON DUPLICATE KEY UPDATE last_run_at = NOW()"
 
-	_, err := db.ExecContext(ctx, query, t.name)
+	_, err := t.db.ExecContext(ctx, query, t.name)
 	if err != nil {
 		return fmt.Errorf("set %s last run time: %w", t.name, err)
 	}

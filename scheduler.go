@@ -19,11 +19,11 @@ func scheduleExec(name string) error {
 	if err != nil {
 		return err
 	}
-	task := scheduler.Tasks.Get(name)
+	task := scheduler.NewTask(name, db, newEv())
 	if task.IsZero() {
 		return fmt.Errorf("task not found")
 	}
-	return task.Exec(context.Background(), db)
+	return task.Exec(context.Background())
 }
 
 func scheduleList() error {
@@ -61,6 +61,7 @@ func schedule() error {
 	}
 	sched := &scheduler.Scheduler{
 		DB: db,
+		Ev: newEv(),
 	}
 	return sched.Run()
 }
