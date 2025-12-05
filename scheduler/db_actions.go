@@ -2,16 +2,15 @@ package scheduler
 
 import (
 	"context"
-	"database/sql"
 	"time"
 )
 
-func TaskRefreshBActionErrors(ctx context.Context, task *Task, db *sql.DB) error {
+func TaskRefreshBActionErrors(ctx context.Context, task *Task) error {
 
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	tx, err := db.BeginTx(ctx, nil)
+	tx, err := task.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
