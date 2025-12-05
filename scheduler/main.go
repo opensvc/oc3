@@ -13,10 +13,16 @@ import (
 
 type (
 	Scheduler struct {
-		DB      *sql.DB
+		DB *sql.DB
+		Ev eventPublisher
+
 		states  map[string]State
 		cancels map[string]func()
 		sigC    chan os.Signal
+	}
+
+	eventPublisher interface {
+		EventPublish(eventName string, data map[string]any) error
 	}
 )
 
@@ -38,25 +44,25 @@ func (t *Scheduler) Debugf(format string, args ...any) {
 
 func (t *Scheduler) toggleTasks(ctx context.Context, states map[string]State) {
 	for _, task := range Tasks {
-		storedState, _ := states[task.name]
-		cachedState, hasCachedState := t.states[task.name]
+		name := task.Name()
+		storedState, _ := states[name]
+		cachedState, hasCachedState := t.states[name]
 		if hasCachedState && cachedState.IsDisabled == storedState.IsDisabled {
 			//task.Debugf("%s: cachedState: %v storedState: %v", cachedState, storedState)
 			continue
 		}
 
-		task := Tasks.Get(task.name)
-		cancel, hasCancel := t.cancels[task.name]
+		cancel, hasCancel := t.cancels[name]
 		switch {
 		case storedState.IsDisabled && hasCancel:
 			task.Infof("stop")
 			cancel()
-			delete(t.cancels, task.name)
+			delete(t.cancels, name)
 		case !storedState.IsDisabled && !hasCancel:
 			ctx2, cancel := context.WithCancel(ctx)
-			t.cancels[task.name] = cancel
+			t.cancels[name] = cancel
 			go func() {
-				task.Start(ctx2, t.DB)
+				task.Start(ctx2)
 			}()
 		}
 	}
@@ -133,4 +139,15 @@ func (t *Scheduler) Run() error {
 	t.monitor()
 
 	return nil
+}
+
+func NewTask(name string, db *sql.DB, ev eventPublisher) Task {
+	task := Tasks.Get(name)
+	task.SetEv(ev)
+	task.SetDB(db)
+	return task
+}
+
+func (t *Scheduler) NewTask(name string) Task {
+	return NewTask(name, t.DB, t.Ev)
 }

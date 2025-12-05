@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/opensvc/oc3/oc2websocket"
 	"github.com/spf13/viper"
 )
 
@@ -70,4 +71,11 @@ func initConfig() error {
 		}
 	}
 	return nil
+}
+
+func newEv() *oc2websocket.T {
+	return &oc2websocket.T{
+		Url: viper.GetString("websocket.url"),
+		Key: []byte(viper.GetString("websocket.key")),
+	}
 }
