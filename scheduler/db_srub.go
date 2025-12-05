@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,10 +24,6 @@ func TaskScrubSvcStatus(ctx context.Context, task *Task, db *sql.DB) error {
 
 func TaskScrubResStatus(ctx context.Context, task *Task, db *sql.DB) error {
 	return nil
-}
-
-func Placeholders(n int) string {
-	return strings.TrimRight(strings.Repeat("?,", n), ",")
 }
 
 func TaskScrubSvcInstances(ctx context.Context, task *Task, db *sql.DB) error {
@@ -76,7 +71,7 @@ func TaskScrubSvcInstances(ctx context.Context, task *Task, db *sql.DB) error {
 	sql = `UPDATE services
 		SET svc_status = "undef", svc_availstatus="undef"
 		WHERE id IN (%s)`
-	sql = fmt.Sprintf(sql, Placeholders(len(ids)))
+	sql = fmt.Sprintf(sql, cdb.Placeholders(len(ids)))
 
 	_, err = tx.ExecContext(ctx, sql, ids...)
 	if err != nil {
