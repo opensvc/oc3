@@ -89,8 +89,9 @@ func cmdVersion() *cobra.Command {
 
 func cmdRoot(args []string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   filepath.Base(args[0]),
-		Short: "Manage the opensvc collector infrastructure components.",
+		Use:          filepath.Base(args[0]),
+		Short:        "Manage the opensvc collector infrastructure components.",
+		SilenceUsage: true,
 	}
 	cmd.PersistentFlags().BoolVar(&debug, "debug", false, "set log level to debug")
 	grpScheduler := cmdScheduler()
