@@ -63,7 +63,7 @@ func (oDb *opensvcDB) dashboardInstanceFrozenUpdate(ctx context.Context, objectI
 	if count, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("count dashboard 'service frozen' for %s@%s: %w", objectID, nodeID, err)
 	} else if count > 0 {
-		oDb.tableChange("dashboard")
+		oDb.SetChange("dashboard")
 	}
 	return nil
 }
@@ -79,7 +79,7 @@ func (oDb *opensvcDB) dashboardDeleteInstanceNotUpdated(ctx context.Context, obj
 	} else if count, err := result.RowsAffected(); err != nil {
 		return err
 	} else if count > 0 {
-		oDb.tableChange("dashboard")
+		oDb.SetChange("dashboard")
 	}
 	return nil
 }
@@ -95,7 +95,7 @@ func (oDb *opensvcDB) dashboardDeleteObjectWithType(ctx context.Context, objectI
 	} else if count, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType %s: %w", dashType, err)
 	} else if count > 0 {
-		oDb.tableChange("dashboard")
+		oDb.SetChange("dashboard")
 	}
 	return nil
 }
@@ -144,7 +144,7 @@ func (oDb *opensvcDB) dashboardUpdateObject(ctx context.Context, d *Dashboard) e
 	} else if count, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("dashboardUpdateObject: %w", err)
 	} else if count > 0 {
-		oDb.tableChange("dashboard")
+		oDb.SetChange("dashboard")
 	}
 	return nil
 }

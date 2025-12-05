@@ -52,13 +52,13 @@ func (oDb *opensvcDB) dashboardUpdateObjectFlexStarted(ctx context.Context, obj 
 	} else if count, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType count updated: %w", err)
 	} else if count > 0 {
-		defer oDb.tableChange("dashboard")
+		defer oDb.SetChange("dashboard")
 	} else if result, err := oDb.db.ExecContext(ctx, queryDelete, obj.svcID); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType clean obsolete flex error: %w", err)
 	} else if count, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType count deleted: %w", err)
 	} else if count > 0 {
-		defer oDb.tableChange("dashboard")
+		defer oDb.SetChange("dashboard")
 	}
 	return nil
 }

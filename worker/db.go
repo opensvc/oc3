@@ -3,22 +3,22 @@ package worker
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"sync"
-	"time"
+
+	"github.com/opensvc/oc3/cdb"
 )
 
 type (
 
 	// opensvcDB implements opensvc db functions
 	opensvcDB struct {
-		db DBOperater
+		db cdb.DBOperater
 
 		// dbLck is a pointer to DBLocker, used to manage concurrent access to
 		// the database via locking mechanisms.
 		dbLck *DBLocker
 
-		tChanges map[string]struct{}
+		session *cdb.Session
 	}
 
 	// DBLocker is a struct that combines a database connection and a sync.Locker
@@ -26,17 +26,6 @@ type (
 	DBLocker struct {
 		DB *sql.DB
 		sync.Locker
-	}
-
-	DBTxer interface {
-		Commit() error
-		Rollback() error
-	}
-
-	DBOperater interface {
-		ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-		QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
-		QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	}
 )
 
@@ -98,30 +87,6 @@ func (oDb *opensvcDB) translateEncapNodename(ctx context.Context, svcID, nodeID 
 	return
 }
 
-func (oDb *opensvcDB) tableChange(s ...string) {
-	for _, table := range s {
-		oDb.tChanges[table] = struct{}{}
-	}
-}
-
-func (oDb *opensvcDB) tableChanges() []string {
-	var r []string
-	for s := range oDb.tChanges {
-		r = append(r, s)
-	}
-	return r
-}
-
-func (oDb *opensvcDB) updateTableModified(ctx context.Context, tableName string) error {
-	defer logDuration("updateTableModified", time.Now())
-	const (
-		query = "" +
-			"INSERT INTO `table_modified` VALUES (NULL, ?, NOW())" +
-			" ON DUPLICATE KEY UPDATE `table_modified` = NOW()"
-	)
-	_, err := oDb.db.ExecContext(ctx, query, tableName)
-	if err != nil {
-		return fmt.Errorf("updateTableModified %s: %w", tableName, err)
-	}
-	return nil
+func (oDb *opensvcDB) SetChange(s ...string) {
+	oDb.session.SetChanges(s...)
 }

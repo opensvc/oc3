@@ -284,7 +284,7 @@ func (oDb *opensvcDB) objectPing(ctx context.Context, svcID string) (updates boo
 		return
 	}
 
-	oDb.tableChange("services")
+	oDb.SetChange("services")
 	updates = true
 
 	_, err = oDb.db.ExecContext(ctx, updateSvcLogLastSvc, now, svcID)
@@ -304,7 +304,7 @@ func (oDb *opensvcDB) objectUpdateStatus(ctx context.Context, svcID string, o *D
 	if _, err := oDb.db.ExecContext(ctx, query, o.availStatus, o.overallStatus, o.placement, o.frozen, o.provisioned, svcID); err != nil {
 		return fmt.Errorf("can't update service status %s: %w", svcID, err)
 	}
-	oDb.tableChange("services")
+	oDb.SetChange("services")
 	return nil
 }
 
@@ -364,12 +364,12 @@ func (oDb *opensvcDB) objectUpdateLog(ctx context.Context, svcID string, avail s
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial avail value
-		defer oDb.tableChange("service_log")
+		defer oDb.SetChange("service_log")
 		return setLogLast()
 	case err != nil:
 		return fmt.Errorf("objectUpdateLog can't get services_log_last %s: %w", svcID, err)
 	default:
-		defer oDb.tableChange("service_log")
+		defer oDb.SetChange("service_log")
 		if previousAvail == avail {
 			// no change, extend last interval
 			if _, err := oDb.db.ExecContext(ctx, qExtendIntervalOfCurrentAvail, svcID); err != nil {
@@ -516,7 +516,7 @@ func (oDb *opensvcDB) purgeTablesFromObjectID(ctx context.Context, id string) er
 			err = errors.Join(err, fmt.Errorf("count delete from %s: %w", tableName, err1))
 		} else if rowAffected > 0 {
 			slog.Debug(fmt.Sprintf("purged table %s object %s", tableName, id))
-			oDb.tableChange(tableName)
+			oDb.SetChange(tableName)
 		}
 	}
 	return err

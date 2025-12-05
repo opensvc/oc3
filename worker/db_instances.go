@@ -217,7 +217,7 @@ func (oDb *opensvcDB) instancePing(ctx context.Context, svcID, nodeID string) (u
 	begin = time.Now()
 	updates = true
 
-	oDb.tableChange("svcmon")
+	oDb.SetChange("svcmon")
 	if _, err = oDb.db.ExecContext(ctx, qUpdateSvcmonLogLast, svcID, nodeID); err != nil {
 		return
 	}
@@ -233,7 +233,7 @@ func (oDb *opensvcDB) instancePing(ctx context.Context, svcID, nodeID string) (u
 	}
 	slog.Debug(fmt.Sprintf("instancePing qUpdateResmon %s", time.Now().Sub(begin)))
 	begin = time.Now()
-	oDb.tableChange("resmon")
+	oDb.SetChange("resmon")
 
 	if _, err = oDb.db.ExecContext(ctx, qUpdateResmonLogLast, svcID, nodeID); err != nil {
 		return
@@ -275,7 +275,7 @@ func (oDb *opensvcDB) instancePingFromNodeID(ctx context.Context, nodeID string)
 		return
 	}
 	updates = true
-	oDb.tableChange("svcmon")
+	oDb.SetChange("svcmon")
 
 	if _, err = oDb.db.ExecContext(ctx, qUpdateSvcmonLogLast, nodeID); err != nil {
 		return
@@ -288,7 +288,7 @@ func (oDb *opensvcDB) instancePingFromNodeID(ctx context.Context, nodeID string)
 	} else if count == 0 {
 		return
 	}
-	oDb.tableChange("resmon")
+	oDb.SetChange("resmon")
 
 	_, err = oDb.db.ExecContext(ctx, qUpdateResmonLogLast, nodeID)
 	return
@@ -307,7 +307,7 @@ func (oDb *opensvcDB) instanceDeleteStatus(ctx context.Context, svcID, nodeID st
 	if changes, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("instanceDeleteStatus %s@%s can't get deleted count: %w", svcID, nodeID, err)
 	} else if changes > 0 {
-		oDb.tableChange("svcmon")
+		oDb.SetChange("svcmon")
 	}
 	return nil
 }
@@ -414,12 +414,12 @@ func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, status *DBIns
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial status, log value
-		defer oDb.tableChange("svcmon_log")
+		defer oDb.SetChange("svcmon_log")
 		return setLogLast()
 	case err != nil:
 		return fmt.Errorf("get svcmon_log_last: %w", err)
 	default:
-		defer oDb.tableChange("svcmon_log")
+		defer oDb.SetChange("svcmon_log")
 		if status.monAvailStatus == prev.monAvailStatus &&
 			status.monOverallStatus == prev.monOverallStatus &&
 			status.monSyncStatus == prev.monSyncStatus &&
@@ -478,7 +478,7 @@ func (oDb *opensvcDB) instanceStatusUpdate(ctx context.Context, s *DBInstanceSta
 	if err != nil {
 		return err
 	}
-	oDb.tableChange("svcmon")
+	oDb.SetChange("svcmon")
 	return nil
 }
 
@@ -583,12 +583,12 @@ func (oDb *opensvcDB) instanceResourceLogUpdate(ctx context.Context, res *DBInst
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial status, log value
-		defer oDb.tableChange("resmon_log")
+		defer oDb.SetChange("resmon_log")
 		return setLogLast()
 	case err != nil:
 		return fmt.Errorf("get resmon_log_last: %w", err)
 	default:
-		defer oDb.tableChange("resmon_log")
+		defer oDb.SetChange("resmon_log")
 		if previousStatus == res.status && previousLog == res.log {
 			// no change, extend last interval
 			if _, err := oDb.db.ExecContext(ctx, queryExtendIntervalOfCurrent, res.svcID, res.nodeID, res.rid); err != nil {
@@ -634,7 +634,7 @@ func (oDb *opensvcDB) instanceResourceUpdate(ctx context.Context, res *DBInstanc
 	if err != nil {
 		return fmt.Errorf("instanceResourceUpdate %s: %w", res.rid, err)
 	}
-	oDb.tableChange("resmon")
+	oDb.SetChange("resmon")
 	return nil
 }
 
@@ -716,7 +716,7 @@ func (oDb *opensvcDB) purgeInstances(ctx context.Context, id InstanceID) error {
 			err = errors.Join(err, fmt.Errorf("count delete from %s: %w", tableName, err1))
 		} else if rowAffected > 0 {
 			slog.Debug(fmt.Sprintf("purged table %s instance %s", tableName, id))
-			oDb.tableChange(tableName)
+			oDb.SetChange(tableName)
 		}
 	}
 	return err

@@ -179,23 +179,3 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	slog.Debug(fmt.Sprintf("BLPOP %s <- %s: %s", unqueuedJob[0], unqueuedJob[1], duration))
 	return nil
 }
-
-type (
-	tableTracker interface {
-		tableChanges() []string
-		updateTableModified(context.Context, string) error
-	}
-)
-
-func pushFromTableChanges(ctx context.Context, oDb tableTracker, ev EventPublisher) error {
-	for _, tableName := range oDb.tableChanges() {
-		slog.Debug(fmt.Sprintf("pushFromTableChanges %s", tableName))
-		if err := oDb.updateTableModified(ctx, tableName); err != nil {
-			return fmt.Errorf("pushFromTableChanges: %w", err)
-		}
-		if err := ev.EventPublish(tableName+"_change", nil); err != nil {
-			return fmt.Errorf("EventPublish send %s: %w", tableName, err)
-		}
-	}
-	return nil
-}
