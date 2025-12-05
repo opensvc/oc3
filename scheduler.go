@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -9,6 +10,26 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 )
+
+func scheduleExec(name string) error {
+	if err := setup(); err != nil {
+		return err
+	}
+	db, err := newDatabase()
+	if err != nil {
+		return err
+	}
+	task := scheduler.Tasks.Get(name)
+	if task.IsZero() {
+		return fmt.Errorf("task not found")
+	}
+	return task.Exec(context.Background(), db)
+}
+
+func scheduleList() error {
+	scheduler.Tasks.Print()
+	return nil
+}
 
 func schedule() error {
 	if err := setup(); err != nil {

@@ -5,98 +5,132 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type (
 	Scheduler struct {
-		DB *sql.DB
-	}
-
-	Task struct {
-		scheduler *Scheduler
-		name      string
-		fn        func(context.Context) error
+		DB      *sql.DB
+		states  map[string]State
+		cancels map[string]func()
+		sigC    chan os.Signal
 	}
 )
 
-const (
-	taskExecStatusOk     = "ok"
-	taskExecStatusFailed = "failed"
-)
-
-var (
-	taskExecCounter = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "oc3",
-			Subsystem: "scheduler",
-			Name:      "task_exec_count",
-			Help:      "Task execution counter",
-		},
-		[]string{"desc", "status"},
-	)
-
-	taskExecDuration = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace: "oc3",
-			Subsystem: "scheduler",
-			Name:      "task_exec_duration_seconds",
-			Help:      "Task execution duration in seconds.",
-			Buckets:   prometheus.DefBuckets,
-		},
-		[]string{"desc", "status"},
-	)
-)
-
-func (t *Task) Run(ctx context.Context) {
-	slog.Info(fmt.Sprintf("%s: exec", t.name))
-	status := taskExecStatusOk
-	begin := time.Now()
-	err := t.fn(ctx)
-	duration := time.Now().Sub(begin)
-	if err != nil {
-		status = taskExecStatusFailed
-		slog.Error(fmt.Sprintf("%s: %s [%s]", t.name, err, duration))
-	} else {
-		slog.Info(fmt.Sprintf("%s: %s [%s]", t.name, status, duration))
-	}
-	taskExecCounter.With(prometheus.Labels{"desc": t.name, "status": status}).Inc()
-	taskExecDuration.With(prometheus.Labels{"desc": t.name, "status": status}).Observe(duration.Seconds())
+func (t *Scheduler) Infof(format string, args ...any) {
+	slog.Info(fmt.Sprintf("scheduler: "+format, args...))
 }
 
-func (t *Scheduler) NewTask(name string, fn func(context.Context) error) *Task {
-	return &Task{
-		scheduler: t,
-		name:      name,
-		fn:        fn,
-	}
+func (t *Scheduler) Warnf(format string, args ...any) {
+	slog.Warn(fmt.Sprintf("scheduler: "+format, args...))
 }
 
-func (t *Scheduler) Run() error {
-	ctx := context.Background()
+func (t *Scheduler) Errorf(format string, args ...any) {
+	slog.Error(fmt.Sprintf("scheduler: "+format, args...))
+}
 
-	tmrHourly := time.NewTicker(time.Hour)
-	defer tmrHourly.Stop()
-	tmrDaily := time.NewTicker(24 * time.Hour)
-	defer tmrDaily.Stop()
-	tmrWeekly := time.NewTicker(7 * 24 * time.Hour)
-	defer tmrWeekly.Stop()
+func (t *Scheduler) Debugf(format string, args ...any) {
+	slog.Debug(fmt.Sprintf("scheduler: "+format, args...))
+}
 
-	tmrNow := time.NewTimer(0)
+func (t *Scheduler) toggleTasks(ctx context.Context, states map[string]State) {
+	for _, task := range Tasks {
+		storedState, _ := states[task.name]
+		cachedState, hasCachedState := t.states[task.name]
+		if hasCachedState && cachedState.IsDisabled == storedState.IsDisabled {
+			//task.Debugf("%s: cachedState: %v storedState: %v", cachedState, storedState)
+			continue
+		}
+
+		task := Tasks.Get(task.name)
+		cancel, hasCancel := t.cancels[task.name]
+		switch {
+		case storedState.IsDisabled && hasCancel:
+			task.Infof("stop")
+			cancel()
+			delete(t.cancels, task.name)
+		case !storedState.IsDisabled && !hasCancel:
+			ctx2, cancel := context.WithCancel(ctx)
+			t.cancels[task.name] = cancel
+			go func() {
+				task.Start(ctx2, t.DB)
+			}()
+		}
+	}
+	t.states = states
+}
+
+func (t *Scheduler) monitor() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	do := func() {
+		states, err := t.GetStateMap(ctx)
+		if err != nil {
+			t.Errorf("states: %s", err)
+			return
+		} else {
+			t.Debugf("states: %v", states)
+		}
+		t.toggleTasks(ctx, states)
+	}
+
+	do()
 
 	for {
 		select {
-		case <-tmrNow.C:
-			// Put here what you want to debug upon scheduler startup
-			tmrNow.Stop()
-		case <-tmrHourly.C:
-		case <-tmrDaily.C:
-			t.NewTask("TaskRefreshBActionErrors", t.TaskRefreshBActionErrors).Run(ctx)
-		case <-tmrWeekly.C:
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			do()
+		case <-t.sigC:
+			cancel()
 		}
 	}
+	return nil
+}
+
+func (t *Scheduler) GetStateMap(ctx context.Context) (map[string]State, error) {
+	states := make(map[string]State)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	query := "SELECT task_name,last_run_at,is_disabled FROM oc3_scheduler"
+
+	result, err := t.DB.QueryContext(ctx, query)
+	if err != nil {
+		return states, err
+	}
+	if result == nil {
+		return states, nil
+	}
+	for result.Next() {
+		var state State
+		var name string
+		err := result.Scan(&name, &state.LastRunAt, &state.IsDisabled)
+		if err != nil {
+			return states, fmt.Errorf("scan: %w", err)
+		}
+		states[name] = state
+	}
+	return states, nil
+}
+
+func (t *Scheduler) Run() error {
+	t.states = make(map[string]State)
+	t.cancels = make(map[string]func())
+	t.sigC = make(chan os.Signal, 1)
+
+	signal.Notify(t.sigC, os.Interrupt, syscall.SIGTERM)
+
+	t.monitor()
+
 	return nil
 }
