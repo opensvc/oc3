@@ -43,6 +43,11 @@ var (
 			fn:     TaskTrim,
 			period: 24 * time.Hour,
 		},
+		{
+			name:   "scrub",
+			fn:     TaskScrub,
+			period: time.Minute,
+		},
 	}
 
 	taskExecCounter = promauto.NewCounterVec(
@@ -134,7 +139,7 @@ func (t *Task) Start(ctx context.Context, db *sql.DB) {
 
 			// Blocking fn execution, no more timer event until terminated.
 			beginAt := time.Now()
-			t.Exec(ctx, db)
+			_ = t.Exec(ctx, db)
 			endAt := time.Now()
 
 			// Plan the next execution, correct the drift
