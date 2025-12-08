@@ -91,21 +91,22 @@ func RunJob(j JobRunner) error {
 	return nil
 }
 
-func (j *BaseJob) PrepareDB(ctx context.Context, db *sql.DB, withTx bool) error {
+func (j *BaseJob) PrepareDB(ctx context.Context, db *sql.DB, ev EventPublisher, withTx bool) error {
 	switch withTx {
 	case true:
 		if tx, err := db.BeginTx(ctx, nil); err != nil {
 			return err
 		} else {
 			j.db = tx
-			j.oDb = &cdb.DB{DB: tx, Session: cdb.NewSession(tx, j.ev)}
+			j.oDb = &cdb.DB{DB: tx, Session: cdb.NewSession(tx, ev)}
 		}
 	case false:
 		j.db = db
-		j.oDb = &cdb.DB{DB: db, Session: cdb.NewSession(db, j.ev)}
+		j.oDb = &cdb.DB{DB: db, Session: cdb.NewSession(db, ev)}
 	}
 	j.oDb.DBLck = cdb.InitDbLocker(db)
 	j.ctx = ctx
+	j.ev = ev
 	return nil
 }
 

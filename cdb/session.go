@@ -28,6 +28,9 @@ func (t *Session) NotifyChanges(ctx context.Context) error {
 	if err := t.saveChanges(ctx); err != nil {
 		return fmt.Errorf("NotifyChanges: %w", err)
 	}
+	if t.ev == nil {
+		return fmt.Errorf("NotifyChanges: eventPublisher is not configured")
+	}
 	for _, tableName := range t.listChanges() {
 		if err := t.ev.EventPublish(tableName+"_change", nil); err != nil {
 			return fmt.Errorf("EventPublish send %s: %w", tableName, err)
@@ -51,11 +54,14 @@ func (t *Session) listChanges() []string {
 }
 
 func (t *Session) saveChanges(ctx context.Context) error {
+	if len(t.tables) == 0 {
+		return nil
+	}
 	var tables = make([]string, 0, len(t.tables))
-	for _, table := range t.tables {
+	for table := range t.tables {
 		tables = append(tables, fmt.Sprintf("('%s', NOW())", table))
 	}
-	query := fmt.Sprintf("INSERT INTO `table_modified` VALUES %s ON DUPLICATE KEY UPDATE `table_modified` = NOW()",
+	query := fmt.Sprintf("INSERT INTO `table_modified` (`table_name`, `table_modified`) VALUES %s ON DUPLICATE KEY UPDATE `table_modified` = NOW()",
 		strings.Join(tables, ","))
 	_, err := t.db.ExecContext(ctx, query)
 	if err != nil {
