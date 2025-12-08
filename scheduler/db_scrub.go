@@ -47,7 +47,7 @@ func taskScrubRunSvcInstances(ctx context.Context, task *Task) error {
 	}
 	defer tx.Rollback()
 
-	sql := `SELECT id, svc_id, svcname FROM services
+	sql := `SELECT id, svc_id, svcname, svc_availstatus, svc_status_updated FROM services
 		WHERE svc_id IN (SELECT svc_id FROM v_outdated_services)
                 AND (svc_status != "undef" OR svc_availstatus != "undef")`
 	rows, err := tx.QueryContext(ctx, sql)
@@ -59,41 +59,56 @@ func taskScrubRunSvcInstances(ctx context.Context, task *Task) error {
 	svcIDs := make([]uuid.UUID, 0)
 	svcNames := make([]string, 0)
 	ids := make([]any, 0)
+	entries := make([]cdb.ServiceLogUpdate, 0)
+	now := time.Now()
 
 	for {
 		next := rows.Next()
 		if !next {
 			break
 		}
+		var entry cdb.ServiceLogUpdate
 		var svcID uuid.UUID
 		var svcName string
 		var id int64
-		rows.Scan(&id, &svcID, &svcName)
+		rows.Scan(&id, &svcID, &svcName, &entry.AvailStatus, &entry.End)
 		svcIDs = append(svcIDs, svcID)
 		svcNames = append(svcNames, svcName)
 		ids = append(ids, id)
+		entry.SvcID = svcID
+		entry.Begin = now
+		entry.End = now
+		entries = append(entries, entry)
 	}
-
 	n := len(ids)
 	if n == 0 {
 		return nil
 	}
 
+	if err := cdb.UpdateServicesLog(ctx, tx, entries...); err != nil {
+		return err
+	}
+
 	sql = `UPDATE services
 		SET svc_status = "undef", svc_availstatus="undef"
 		WHERE id IN (%s)`
-	sql = fmt.Sprintf(sql, cdb.Placeholders(len(ids)))
+	sql = fmt.Sprintf(sql, cdb.Placeholders(n))
 
-	_, err = tx.ExecContext(ctx, sql, ids...)
+	result, err := tx.ExecContext(ctx, sql, ids...)
 	if err != nil {
 		return err
 	}
+	if n, err := result.RowsAffected(); err != nil {
+		return err
+	} else if n > 0 {
+		task.Session().SetChanges("services")
+	}
 	task.Infof("set %d services status to undef (no live instance) for %s", n, svcIDs)
-	entries := make([]cdb.LogEntry, n)
+	logEntries := make([]cdb.LogEntry, n)
 	for i, svcID := range svcIDs {
 		d := make(map[string]any)
 		d["svc"] = svcNames[i]
-		entries[i] = cdb.LogEntry{
+		logEntries[i] = cdb.LogEntry{
 			Action: "service.status",
 			Fmt:    "service '%(svc)s' has zero live instance. Status flagged 'undef'",
 			Dict:   d,
@@ -102,11 +117,13 @@ func taskScrubRunSvcInstances(ctx context.Context, task *Task) error {
 			SvcID:  &svcID,
 		}
 	}
-	if err := cdb.Log(ctx, tx, entries...); err != nil {
+	if err := cdb.Log(ctx, tx, logEntries...); err != nil {
 		return err
 	}
+	task.session.SetChanges("log")
 	if err := tx.Commit(); err != nil {
 		return err
 	}
+	task.session.NotifyChanges(ctx)
 	return nil
 }
