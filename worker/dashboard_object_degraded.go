@@ -2,11 +2,13 @@ package worker
 
 import (
 	"fmt"
+
+	"github.com/opensvc/oc3/cdb"
 )
 
 type (
 	DashboardObjectDegraded struct {
-		obj *DBObject
+		obj *cdb.DBObject
 	}
 )
 
@@ -19,9 +21,9 @@ func (d *DashboardObjectDegraded) Fmt() string {
 }
 
 func (d *DashboardObjectDegraded) Dict() string {
-	return fmt.Sprintf("{\"s\": \"%s\"}", d.obj.overallStatus)
+	return fmt.Sprintf("{\"s\": \"%s\"}", d.obj.OverallStatus)
 }
 
 func (d *DashboardObjectDegraded) Severity() int {
-	return severityFromEnv(dashObjObjectDegraded, d.obj.env)
+	return severityFromEnv(dashObjObjectDegraded, d.obj.Env)
 }

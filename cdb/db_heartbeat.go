@@ -1,4 +1,4 @@
-package worker
+package cdb
 
 import (
 	"context"
@@ -30,25 +30,25 @@ type (
 	//) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci |
 	DBHeartbeat struct {
 		ID        int64
-		clusterID string
-		nodeID    string
-		driver    string
-		name      string
-		desc      string
-		state     string
+		ClusterID string
+		NodeID    string
+		Driver    string
+		Name      string
+		Desc      string
+		State     string
 
-		// peerNodeID when defined, it means the heartbeat is from a peer node,
+		// PeerNodeID when defined, it means the heartbeat is from a peer node,
 		// so `beating` and `lastBeating`
-		peerNodeID string
-		// beating: 0: n/a, 1: beating, 2: not beating
-		beating     int8
-		lastBeating time.Time
+		PeerNodeID string
+		// Beating: 0: n/a, 1: Beating, 2: not Beating
+		Beating     int8
+		LastBeating time.Time
 
-		updated string
+		Updated string
 	}
 )
 
-func (oDb *opensvcDB) hbByClusterID(ctx context.Context, clusterID string) ([]DBHeartbeat, error) {
+func (oDb *DB) hbByClusterID(ctx context.Context, clusterID string) ([]DBHeartbeat, error) {
 	const (
 		query = "SELECT `id`, `cluster_id`, `node_id`, `peer_node_id`, `driver`, `name`, `desc`, `state`, `beating`, `updated`" +
 			" FROM `hbmon`" +
@@ -57,7 +57,7 @@ func (oDb *opensvcDB) hbByClusterID(ctx context.Context, clusterID string) ([]DB
 	var (
 		l []DBHeartbeat
 	)
-	rows, err := oDb.db.QueryContext(ctx, query, clusterID)
+	rows, err := oDb.DB.QueryContext(ctx, query, clusterID)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (oDb *opensvcDB) hbByClusterID(ctx context.Context, clusterID string) ([]DB
 	var ()
 	for rows.Next() {
 		var hb DBHeartbeat
-		if err = rows.Scan(&hb.ID, &hb.clusterID, &hb.nodeID, &hb.peerNodeID, &hb.driver, &hb.name, &hb.desc, &hb.state, &hb.beating, &hb.updated); err != nil {
+		if err = rows.Scan(&hb.ID, &hb.ClusterID, &hb.NodeID, &hb.PeerNodeID, &hb.Driver, &hb.Name, &hb.Desc, &hb.State, &hb.Beating, &hb.Updated); err != nil {
 			return nil, err
 		}
 		l = append(l, hb)
@@ -73,8 +73,8 @@ func (oDb *opensvcDB) hbByClusterID(ctx context.Context, clusterID string) ([]DB
 	return l, rows.Err()
 }
 
-func (oDb *opensvcDB) hbUpdate(ctx context.Context, hb DBHeartbeat) error {
-	defer logDuration("hbUpdate cluster id:"+hb.clusterID+" "+hb.driver, time.Now())
+func (oDb *DB) HBUpdate(ctx context.Context, hb DBHeartbeat) error {
+	defer logDuration("HBUpdate cluster id:"+hb.ClusterID+" "+hb.Driver, time.Now())
 	const (
 		qUpdate = "" +
 			"INSERT INTO `hbmon` (`cluster_id`, `node_id`, `peer_node_id`, `driver`, `name`, `desc`, `state`, `beating`, `last_beating`, `updated`)" +
@@ -82,7 +82,7 @@ func (oDb *opensvcDB) hbUpdate(ctx context.Context, hb DBHeartbeat) error {
 			"ON DUPLICATE KEY UPDATE" +
 			" `cluster_id` = VALUES(`cluster_id`),  `driver` = VALUES(`driver`), `desc` = VALUES(`desc`), `state` = VALUES(`state`), `beating`= VALUES(`beating`),  `last_beating`= VALUES(`last_beating`), `updated`= VALUES(`updated`)"
 	)
-	_, err := oDb.db.ExecContext(ctx, qUpdate, hb.clusterID, hb.nodeID, hb.peerNodeID, hb.driver, hb.name, hb.desc, hb.state, hb.beating, hb.lastBeating)
+	_, err := oDb.DB.ExecContext(ctx, qUpdate, hb.ClusterID, hb.NodeID, hb.PeerNodeID, hb.Driver, hb.Name, hb.Desc, hb.State, hb.Beating, hb.LastBeating)
 	if err != nil {
 		return err
 	}
@@ -90,14 +90,14 @@ func (oDb *opensvcDB) hbUpdate(ctx context.Context, hb DBHeartbeat) error {
 	return nil
 }
 
-func (oDb *opensvcDB) hbDeleteOutDatedByClusterID(ctx context.Context, clusterID string, maxTime time.Time) error {
+func (oDb *DB) HBDeleteOutDatedByClusterID(ctx context.Context, clusterID string, maxTime time.Time) error {
 	defer logDuration("hbDeleteOutDated cluster id:"+clusterID, time.Now())
 	const (
 		query = "" +
 			"DELETE FROM `hbmon` WHERE `cluster_id` = ? AND `updated` < ?"
 	)
-	_, err := oDb.db.ExecContext(ctx, query, clusterID, maxTime)
-	result, err := oDb.db.ExecContext(ctx, query, clusterID, maxTime)
+	_, err := oDb.DB.ExecContext(ctx, query, clusterID, maxTime)
+	result, err := oDb.DB.ExecContext(ctx, query, clusterID, maxTime)
 	if err != nil {
 		return fmt.Errorf("hbDeleteOutDatedByClusterID: %w", err)
 	}
@@ -110,8 +110,8 @@ func (oDb *opensvcDB) hbDeleteOutDatedByClusterID(ctx context.Context, clusterID
 	return nil
 }
 
-func (oDb *opensvcDB) hbLogUpdate(ctx context.Context, hb DBHeartbeat) error {
-	defer logDuration("hbLogUpdate "+hb.nodeID+":"+hb.peerNodeID+":"+hb.name, time.Now())
+func (oDb *DB) HBLogUpdate(ctx context.Context, hb DBHeartbeat) error {
+	defer logDuration("hbLogUpdate "+hb.NodeID+":"+hb.PeerNodeID+":"+hb.Name, time.Now())
 	// CREATE TABLE `hbmon_log` (
 	//  `id` bigint(20) NOT NULL AUTO_INCREMENT,
 	//  `cluster_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
@@ -170,15 +170,15 @@ func (oDb *opensvcDB) hbLogUpdate(ctx context.Context, hb DBHeartbeat) error {
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.db.ExecContext(ctx, querySetLogLast, hb.clusterID, hb.nodeID, hb.peerNodeID, hb.name, hb.state, hb.beating)
+		_, err := oDb.DB.ExecContext(ctx, querySetLogLast, hb.ClusterID, hb.NodeID, hb.PeerNodeID, hb.Name, hb.State, hb.Beating)
 		if err != nil {
 			return fmt.Errorf("update hbmon_log_last: %w", err)
 		}
 		return nil
 	}
 
-	err := oDb.db.QueryRowContext(ctx, queryGetLogLast, hb.nodeID, hb.peerNodeID, hb.name).
-		Scan(&previousBegin, &prev.ID, &prev.state, &prev.beating)
+	err := oDb.DB.QueryRowContext(ctx, queryGetLogLast, hb.NodeID, hb.PeerNodeID, hb.Name).
+		Scan(&previousBegin, &prev.ID, &prev.State, &prev.Beating)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial status, log value
@@ -188,19 +188,19 @@ func (oDb *opensvcDB) hbLogUpdate(ctx context.Context, hb DBHeartbeat) error {
 		return fmt.Errorf("get hbmon_log_last: %w", err)
 	default:
 		defer oDb.SetChange("hbmon_log")
-		if hb.state == prev.state && hb.beating == prev.beating {
+		if hb.State == prev.State && hb.Beating == prev.Beating {
 			// no change, extend last interval
-			if _, err := oDb.db.ExecContext(ctx, queryExtendIntervalOfCurrent, hb.nodeID, hb.peerNodeID, hb.name); err != nil {
+			if _, err := oDb.DB.ExecContext(ctx, queryExtendIntervalOfCurrent, hb.NodeID, hb.PeerNodeID, hb.Name); err != nil {
 				return fmt.Errorf("extend hbmon_log_last: %w", err)
 			}
 			return nil
 		} else {
 			// the state or beating value will change, save interval of prev, log value before change
-			_, err := oDb.db.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, hb.clusterID, hb.nodeID,
-				hb.peerNodeID, hb.name, prev.state, prev.beating, previousBegin)
+			_, err := oDb.DB.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, hb.ClusterID, hb.NodeID,
+				hb.PeerNodeID, hb.Name, prev.State, prev.Beating, previousBegin)
 			if err != nil {
 				return fmt.Errorf("save hbmon_log transition %s -> %s name: %s state %s beating %d since %s: %w",
-					hb.nodeID, hb.peerNodeID, hb.name, prev.state, prev.beating, previousBegin,
+					hb.NodeID, hb.PeerNodeID, hb.Name, prev.State, prev.Beating, previousBegin,
 					err)
 			}
 			// reset previousBegin and end interval for new hbmon log

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/opensvc/oc3/cdb"
 )
 
 type (
@@ -85,11 +87,11 @@ func (d *daemonDataV2) nodeHeartbeat(nodename string) ([]heartbeatData, error) {
 
 		// Add entry for the node hb state itself regardless of its peers
 		l = append(l, heartbeatData{
-			DBHeartbeat: DBHeartbeat{
-				nodeID: "",
-				driver: family,
-				name:   name,
-				state:  state,
+			DBHeartbeat: cdb.DBHeartbeat{
+				NodeID: "",
+				Driver: family,
+				Name:   name,
+				State:  state,
 			},
 			nodename: nodename,
 		})
@@ -113,13 +115,13 @@ func (d *daemonDataV2) nodeHeartbeat(nodename string) ([]heartbeatData, error) {
 			}
 			lastBeating, _ := time.Parse(time.RFC3339Nano, mapToS(v, "", "last_at"))
 			l = append(l, heartbeatData{
-				DBHeartbeat: DBHeartbeat{
-					driver:      family,
-					name:        name,
-					state:       state,
-					beating:     beating,
-					desc:        mapToS(v, "", "desc"),
-					lastBeating: lastBeating,
+				DBHeartbeat: cdb.DBHeartbeat{
+					Driver:      family,
+					Name:        name,
+					State:       state,
+					Beating:     beating,
+					Desc:        mapToS(v, "", "desc"),
+					LastBeating: lastBeating,
 				},
 				nodename:     nodename,
 				peerNodename: peer,
@@ -149,33 +151,33 @@ func (d *daemonDataV2) appFromObjectName(svcname string, nodes ...string) string
 	return ""
 }
 
-func (d *daemonDataV2) objectStatus(objectName string) *DBObjStatus {
+func (d *daemonDataV2) objectStatus(objectName string) *cdb.DBObjStatus {
 	if i, ok := mapTo(d.data, "services", objectName); ok && i != nil {
 		if o, ok := i.(map[string]any); ok {
-			oStatus := &DBObjStatus{
-				availStatus:   "n/a",
-				overallStatus: "n/a",
-				placement:     "n/a",
-				frozen:        "n/a",
-				provisioned:   "n/a",
+			oStatus := &cdb.DBObjStatus{
+				AvailStatus:   "n/a",
+				OverallStatus: "n/a",
+				Placement:     "n/a",
+				Frozen:        "n/a",
+				Provisioned:   "n/a",
 			}
 			if s, ok := o["avail"].(string); ok {
-				oStatus.availStatus = s
+				oStatus.AvailStatus = s
 			}
 			if s, ok := o["overall"].(string); ok {
-				oStatus.overallStatus = s
+				oStatus.OverallStatus = s
 			}
 			if s, ok := o["placement"].(string); ok {
-				oStatus.placement = s
+				oStatus.Placement = s
 			}
 			if s, ok := o["frozen"].(string); ok {
-				oStatus.frozen = s
+				oStatus.Frozen = s
 			}
 			if prov, ok := o["provisioned"].(bool); ok {
 				if prov {
-					oStatus.provisioned = "True"
+					oStatus.Provisioned = "True"
 				} else {
-					oStatus.provisioned = "False"
+					oStatus.Provisioned = "False"
 				}
 			}
 			return oStatus
@@ -192,35 +194,35 @@ func (d *daemonDataV2) InstanceStatus(objectName string, nodename string) *insta
 		return nil
 	}
 	instanceStatus := &instanceData{
-		DBInstanceStatus:  DBInstanceStatus{},
+		DBInstanceStatus:  cdb.DBInstanceStatus{},
 		resourceMonitored: make(map[string]bool),
 	}
 
-	instanceStatus.monSmonStatus = mapToS(a, "", "monitor", "status")
-	instanceStatus.monSmonGlobalExpect = mapToS(a, "", "monitor", "global_expect")
-	instanceStatus.monAvailStatus = mapToS(a, "", "avail")
-	instanceStatus.monOverallStatus = mapToS(a, "", "overall")
-	instanceStatus.monIpStatus = mapToS(a, "n/a", "status_group", "ip")
-	instanceStatus.monDiskStatus = mapToS(a, "n/a", "status_group", "disk")
-	instanceStatus.monFsStatus = mapToS(a, "n/a", "status_group", "fs")
-	instanceStatus.monShareStatus = mapToS(a, "n/a", "status_group", "share")
-	instanceStatus.monContainerStatus = mapToS(a, "n/a", "status_group", "container")
-	instanceStatus.monAppStatus = mapToS(a, "n/a", "status_group", "app")
-	instanceStatus.monSyncStatus = mapToS(a, "n/a", "status_group", "sync")
+	instanceStatus.MonSmonStatus = mapToS(a, "", "monitor", "status")
+	instanceStatus.MonSmonGlobalExpect = mapToS(a, "", "monitor", "global_expect")
+	instanceStatus.MonAvailStatus = mapToS(a, "", "avail")
+	instanceStatus.MonOverallStatus = mapToS(a, "", "overall")
+	instanceStatus.MonIpStatus = mapToS(a, "n/a", "status_group", "ip")
+	instanceStatus.MonDiskStatus = mapToS(a, "n/a", "status_group", "disk")
+	instanceStatus.MonFsStatus = mapToS(a, "n/a", "status_group", "fs")
+	instanceStatus.MonShareStatus = mapToS(a, "n/a", "status_group", "share")
+	instanceStatus.MonContainerStatus = mapToS(a, "n/a", "status_group", "container")
+	instanceStatus.MonAppStatus = mapToS(a, "n/a", "status_group", "app")
+	instanceStatus.MonSyncStatus = mapToS(a, "n/a", "status_group", "sync")
 	instanceStatus.encap = mapToMap(a, nilMap, "encap")
 	instanceStatus.resources = mapToMap(a, nilMap, "resources")
 
 	switch v := mapToA(a, 0, "frozen").(type) {
 	case int:
 		if v > 0 {
-			instanceStatus.monFrozen = 1
+			instanceStatus.MonFrozen = 1
 		}
 	case float64:
 		if v > 0 {
-			instanceStatus.monFrozen = 1
+			instanceStatus.MonFrozen = 1
 		}
 	default:
-		instanceStatus.monFrozen = 1
+		instanceStatus.MonFrozen = 1
 	}
 
 	for rid := range instanceStatus.resources {

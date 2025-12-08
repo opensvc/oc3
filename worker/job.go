@@ -21,7 +21,7 @@ type (
 		ctx   context.Context
 		redis *redis.Client
 		db    cdb.DBOperater
-		oDb   *opensvcDB
+		oDb   *cdb.DB
 		ev    EventPublisher
 
 		name   string
@@ -98,13 +98,13 @@ func (j *BaseJob) PrepareDB(ctx context.Context, db *sql.DB, withTx bool) error 
 			return err
 		} else {
 			j.db = tx
-			j.oDb = &opensvcDB{db: tx, session: cdb.NewSession(tx, j.ev)}
+			j.oDb = &cdb.DB{DB: tx, Session: cdb.NewSession(tx, j.ev)}
 		}
 	case false:
 		j.db = db
-		j.oDb = &opensvcDB{db: db, session: cdb.NewSession(db, j.ev)}
+		j.oDb = &cdb.DB{DB: db, Session: cdb.NewSession(db, j.ev)}
 	}
-	j.oDb.dbLck = initDbLocker(db)
+	j.oDb.DBLck = cdb.InitDbLocker(db)
 	j.ctx = ctx
 	return nil
 }
@@ -180,16 +180,16 @@ func (j *BaseJob) dropPending() error {
 }
 
 func (d *BaseJob) pushFromTableChanges() error {
-	return d.oDb.session.NotifyChanges(d.ctx)
+	return d.oDb.Session.NotifyChanges(d.ctx)
 }
 
 // populateFeedObjectConfigForClusterIDH HSET FeedObjectConfigForClusterIDH <clusterID> with the names of objects
 // without config or HDEL FeedObjectConfigForClusterIDH <clusterID> if there are no missing configs.
-func (d *BaseJob) populateFeedObjectConfigForClusterIDH(clusterID string, byObjectID map[string]*DBObject) ([]string, error) {
+func (d *BaseJob) populateFeedObjectConfigForClusterIDH(clusterID string, byObjectID map[string]*cdb.DBObject) ([]string, error) {
 	needConfig := make(map[string]struct{})
 	for _, obj := range byObjectID {
-		if obj.nullConfig {
-			objName := obj.svcname
+		if obj.NullConfig {
+			objName := obj.Svcname
 			// TODO: import om3 naming ?
 			if strings.Contains(objName, "/svc/") ||
 				strings.Contains(objName, "/vol/") ||

@@ -1,10 +1,14 @@
 package worker
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/opensvc/oc3/cdb"
+)
 
 type (
 	heartbeatData struct {
-		DBHeartbeat
+		cdb.DBHeartbeat
 
 		nodename     string
 		peerNodename string
@@ -13,6 +17,6 @@ type (
 
 func (d heartbeatData) String() string {
 	return fmt.Sprintf("%s:%s - %s:%s %s state:%s beating:%d",
-		d.nodename, d.DBHeartbeat.nodeID, d.peerNodename, d.DBHeartbeat.peerNodeID,
-		d.DBHeartbeat.name, d.DBHeartbeat.state, d.DBHeartbeat.beating)
+		d.nodename, d.DBHeartbeat.NodeID, d.peerNodename, d.DBHeartbeat.PeerNodeID,
+		d.DBHeartbeat.Name, d.DBHeartbeat.State, d.DBHeartbeat.Beating)
 }

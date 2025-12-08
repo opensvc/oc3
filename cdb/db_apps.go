@@ -1,4 +1,4 @@
-package worker
+package cdb
 
 import (
 	"context"
@@ -14,7 +14,7 @@ type (
 	}
 )
 
-// authGroupIdsForNode is the oc3 implementation of oc2 node_responsibles(node_id):
+// AuthGroupIdsForNode is the oc3 implementation of oc2 node_responsibles(node_id):
 //
 //	q = db.nodes.node_id == node_id
 //	q &= db.apps.app == db.nodes.app
@@ -22,14 +22,14 @@ type (
 //	q &= db.auth_group.id == db.apps_responsibles.group_id
 //	rows = db(q).select(db.auth_group.id)
 //	return [r.id for r in rows]
-func (oDb *opensvcDB) authGroupIdsForNode(ctx context.Context, nodeID string) (groupIds []int64, err error) {
+func (oDb *DB) AuthGroupIdsForNode(ctx context.Context, nodeID string) (groupIds []int64, err error) {
 	const query = `
 		SELECT auth_group.id FROM auth_group
 		JOIN apps_responsibles ON auth_group.id = apps_responsibles.group_id
 		JOIN apps ON apps_responsibles.app_id = apps.id
 		JOIN nodes ON apps.app = nodes.app
 		WHERE nodes.node_id = ?`
-	rows, err := oDb.db.QueryContext(ctx, query, nodeID)
+	rows, err := oDb.DB.QueryContext(ctx, query, nodeID)
 	if err != nil {
 		err = fmt.Errorf("authGroupIdsForNode: %w", err)
 		return
@@ -52,14 +52,14 @@ func (oDb *opensvcDB) authGroupIdsForNode(ctx context.Context, nodeID string) (g
 	return
 }
 
-// responsibleAppsForNode is the oc3 implementation of oc2 node_responsibles_apps(node_id):
+// ResponsibleAppsForNode is the oc3 implementation of oc2 node_responsibles_apps(node_id):
 //
 //	groups = node_responsibles(node_id)
 //	q = db.apps_responsibles.group_id.belongs(groups)
 //	q &= db.apps_responsibles.app_id == db.apps.id
 //	rows = db(q).select(db.apps.app)
 //	return [r.app for r in rows]
-func (oDb *opensvcDB) responsibleAppsForNode(ctx context.Context, nodeID string) (apps []string, err error) {
+func (oDb *DB) ResponsibleAppsForNode(ctx context.Context, nodeID string) (apps []string, err error) {
 	var query = `
 		SELECT apps.app FROM apps
 		JOIN apps_responsibles ON apps.id = apps_responsibles.app_id
@@ -70,7 +70,7 @@ func (oDb *opensvcDB) responsibleAppsForNode(ctx context.Context, nodeID string)
 			JOIN apps ON apps_responsibles.app_id = apps.id
 			JOIN nodes ON apps.app = nodes.app
 			WHERE nodes.node_id = ?)`
-	rows, err := oDb.db.QueryContext(ctx, query, nodeID)
+	rows, err := oDb.DB.QueryContext(ctx, query, nodeID)
 	if err != nil {
 		err = fmt.Errorf("responsibleAppsForNode: %w", err)
 		return
@@ -94,7 +94,7 @@ func (oDb *opensvcDB) responsibleAppsForNode(ctx context.Context, nodeID string)
 	return
 }
 
-func (oDb *opensvcDB) appFromAppName(ctx context.Context, app string) (bool, *DBApp, error) {
+func (oDb *DB) appFromAppName(ctx context.Context, app string) (bool, *DBApp, error) {
 	const query = "SELECT id, app FROM apps WHERE app = ?"
 	var (
 		foundID  int64
@@ -103,7 +103,7 @@ func (oDb *opensvcDB) appFromAppName(ctx context.Context, app string) (bool, *DB
 	if app == "" {
 		return false, nil, fmt.Errorf("can't find app from empty value")
 	}
-	err := oDb.db.QueryRowContext(ctx, query, app).Scan(&foundID, &foundApp)
+	err := oDb.DB.QueryRowContext(ctx, query, app).Scan(&foundID, &foundApp)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return false, nil, nil
@@ -114,7 +114,7 @@ func (oDb *opensvcDB) appFromAppName(ctx context.Context, app string) (bool, *DB
 	}
 }
 
-func (oDb *opensvcDB) isAppAllowedForNodeID(ctx context.Context, nodeID, app string) (bool, error) {
+func (oDb *DB) isAppAllowedForNodeID(ctx context.Context, nodeID, app string) (bool, error) {
 	// TODO: apps_responsibles PRIMARY KEY (app_id, group_id)
 	const query = "" +
 		"SELECT count(*) FROM (" +
@@ -128,7 +128,7 @@ func (oDb *opensvcDB) isAppAllowedForNodeID(ctx context.Context, nodeID, app str
 		"   ) AS `t` GROUP BY `t`.`group_id`) `u`" +
 		"WHERE `u`.`c` = 2"
 	var found int64
-	err := oDb.db.QueryRowContext(ctx, query, nodeID, app).Scan(&found)
+	err := oDb.DB.QueryRowContext(ctx, query, nodeID, app).Scan(&found)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return false, nil
@@ -139,14 +139,14 @@ func (oDb *opensvcDB) isAppAllowedForNodeID(ctx context.Context, nodeID, app str
 	}
 }
 
-func (oDb *opensvcDB) appFromNodeAndCandidateApp(ctx context.Context, candidateApp string, node *DBNode) (string, error) {
+func (oDb *DB) AppFromNodeAndCandidateApp(ctx context.Context, candidateApp string, node *DBNode) (string, error) {
 	app := candidateApp
 	if candidateApp == "" {
-		app = node.app
-	} else if ok, err := oDb.isAppAllowedForNodeID(ctx, node.nodeID, candidateApp); err != nil {
+		app = node.App
+	} else if ok, err := oDb.isAppAllowedForNodeID(ctx, node.NodeID, candidateApp); err != nil {
 		return "", fmt.Errorf("can't detect if app %s is allowed: %w", candidateApp, err)
 	} else if !ok {
-		app = node.app
+		app = node.App
 	}
 	if ok, _, err := oDb.appFromAppName(ctx, app); err != nil {
 		return "", fmt.Errorf("can't verify guessed app %s: %w", app, err)
@@ -156,10 +156,10 @@ func (oDb *opensvcDB) appFromNodeAndCandidateApp(ctx context.Context, candidateA
 	return app, nil
 }
 
-// appIDFromNodeID retrieves the application ID associated with a given node ID from the database.
+// AppIDFromNodeID retrieves the application ID associated with a given node ID from the database.
 // Returns the app ID, a boolean indicating if the app exists, and an error if applicable.
 // If the node ID is empty, it returns an error.
-func (oDb *opensvcDB) appIDFromNodeID(ctx context.Context, nodeID string) (int64, bool, error) {
+func (oDb *DB) AppIDFromNodeID(ctx context.Context, nodeID string) (int64, bool, error) {
 	const query = "SELECT `apps`.`id` FROM `apps` JOIN `nodes` ON `apps`.`app` = `nodes`.`app` WHERE `nodes`.`node_id`  = ? LIMIT 1"
 	var (
 		appID sql.NullInt64
@@ -167,7 +167,7 @@ func (oDb *opensvcDB) appIDFromNodeID(ctx context.Context, nodeID string) (int64
 	if nodeID == "" {
 		return appID.Int64, false, fmt.Errorf("can't find app from empty node id value")
 	}
-	err := oDb.db.QueryRowContext(ctx, query, nodeID).Scan(&appID)
+	err := oDb.DB.QueryRowContext(ctx, query, nodeID).Scan(&appID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return appID.Int64, false, nil
@@ -181,7 +181,7 @@ func (oDb *opensvcDB) appIDFromNodeID(ctx context.Context, nodeID string) (int64
 // appIDFromNodeID retrieves the application ID associated with a given node ID from the database.
 // Returns the app ID, a boolean indicating if the app exists, and an error if applicable.
 // If the node ID is empty, it returns an error.
-func (oDb *opensvcDB) appIDFromObjectID(ctx context.Context, objectID string) (int64, bool, error) {
+func (oDb *DB) AppIDFromObjectID(ctx context.Context, objectID string) (int64, bool, error) {
 	const query = "SELECT `apps`.`id` FROM `apps` JOIN `services` ON `apps`.`app` = `services`.`svc_app` WHERE `services`.`svc_id`  = ? LIMIT 1"
 	var (
 		appID sql.NullInt64
@@ -189,7 +189,7 @@ func (oDb *opensvcDB) appIDFromObjectID(ctx context.Context, objectID string) (i
 	if objectID == "" {
 		return appID.Int64, false, fmt.Errorf("can't find app from empty object id value")
 	}
-	err := oDb.db.QueryRowContext(ctx, query, objectID).Scan(&appID)
+	err := oDb.DB.QueryRowContext(ctx, query, objectID).Scan(&appID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return appID.Int64, false, nil
@@ -200,7 +200,7 @@ func (oDb *opensvcDB) appIDFromObjectID(ctx context.Context, objectID string) (i
 	}
 }
 
-// appIDFromObjectOrNodeIDs retrieves the application ID associated with the given objectID or nodeID in the database.
+// AppIDFromObjectOrNodeIDs retrieves the application ID associated with the given objectID or nodeID in the database.
 // It first attempts to find the application ID based on the objectID. If unsuccessful, it falls back to using the nodeID.
 // Returns the application ID, a boolean indicating success, and an error if any issue occurs during retrieval.
 //
@@ -220,14 +220,14 @@ func (oDb *opensvcDB) appIDFromObjectID(ctx context.Context, objectID string) (i
 //		               q &= db.apps.app == db.nodes.app
 //		               return db(q).select(db.apps.ALL).first()
 //		           return row
-func (odb *opensvcDB) appIDFromObjectOrNodeIDs(ctx context.Context, nodeID, objectID string) (int64, bool, error) {
+func (odb *DB) AppIDFromObjectOrNodeIDs(ctx context.Context, nodeID, objectID string) (int64, bool, error) {
 	if objectID != "" {
-		if found, ok, err := odb.appIDFromObjectID(ctx, objectID); err == nil {
+		if found, ok, err := odb.AppIDFromObjectID(ctx, objectID); err == nil {
 			// abort on error
 			return found, ok, err
 		} else if ok {
 			return found, ok, err
 		}
 	}
-	return odb.appIDFromNodeID(ctx, nodeID)
+	return odb.AppIDFromNodeID(ctx, nodeID)
 }

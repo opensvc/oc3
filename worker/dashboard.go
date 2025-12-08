@@ -3,6 +3,8 @@ package worker
 import (
 	"fmt"
 	"time"
+
+	"github.com/opensvc/oc3/cdb"
 )
 
 type (
@@ -42,8 +44,8 @@ func severityFromEnv(dashType int, objEnv string) int {
 	}
 }
 
-func (d *jobFeedDaemonStatus) updateDashboardObject(obj *DBObject, doDelete bool, dash dashboarder) error {
-	objID := obj.svcID
+func (d *jobFeedDaemonStatus) updateDashboardObject(obj *cdb.DBObject, doDelete bool, dash dashboarder) error {
+	objID := obj.SvcID
 	fmtErr := func(err error) error {
 		if err != nil {
 			return fmt.Errorf("updateDashboardObject '%s': %w", dash.Type(), err)
@@ -52,7 +54,7 @@ func (d *jobFeedDaemonStatus) updateDashboardObject(obj *DBObject, doDelete bool
 	}
 
 	if doDelete {
-		return fmtErr(d.oDb.dashboardDeleteObjectWithType(d.ctx, objID, dash.Type()))
+		return fmtErr(d.oDb.DashboardDeleteObjectWithType(d.ctx, objID, dash.Type()))
 	}
 
 	inAckPeriod, err := d.oDb.ObjectInAckUnavailabilityPeriod(d.ctx, objID)
@@ -61,19 +63,19 @@ func (d *jobFeedDaemonStatus) updateDashboardObject(obj *DBObject, doDelete bool
 	}
 	dashType := dash.Type()
 	if inAckPeriod {
-		return fmtErr(d.oDb.dashboardDeleteObjectWithType(d.ctx, objID, dashType))
+		return fmtErr(d.oDb.DashboardDeleteObjectWithType(d.ctx, objID, dashType))
 	} else {
 		now := time.Now()
-		dash := Dashboard{
+		dash := cdb.Dashboard{
 			ObjectID: objID,
 			Type:     dashType,
 			Fmt:      dash.Fmt(),
 			Dict:     dash.Dict(),
-			Env:      obj.env,
+			Env:      obj.Env,
 			Severity: dash.Severity(),
 			Created:  now,
 			Updated:  now,
 		}
-		return fmtErr(d.oDb.dashboardUpdateObject(d.ctx, &dash))
+		return fmtErr(d.oDb.DashboardUpdateObject(d.ctx, &dash))
 	}
 }

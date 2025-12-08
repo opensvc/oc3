@@ -1,4 +1,4 @@
-package worker
+package cdb
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func (oDb *opensvcDB) dashboardUpdateObjectFlexStarted(ctx context.Context, obj *DBObject) error {
+func (oDb *DB) DashboardUpdateObjectFlexStarted(ctx context.Context, obj *DBObject, sev int) error {
 	defer logDuration("dashboardUpdateObjectFlexStarted", time.Now())
 	const query = `
 		INSERT INTO dashboard
@@ -46,14 +46,13 @@ func (oDb *opensvcDB) dashboardUpdateObjectFlexStarted(ctx context.Context, obj 
 		DELETE FROM dashboard
 		WHERE svc_id = ? and dash_type = "flex error" and dash_fmt like "%instances started%"`
 
-	sev := severityFromEnv(dashObjObjectFlexError, obj.env)
-	if result, err := oDb.db.ExecContext(ctx, query, obj.svcID, sev, obj.env, obj.svcID, obj.svcID); err != nil {
+	if result, err := oDb.DB.ExecContext(ctx, query, obj.SvcID, sev, obj.Env, obj.SvcID, obj.SvcID); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType flex error: %w", err)
 	} else if count, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType count updated: %w", err)
 	} else if count > 0 {
 		defer oDb.SetChange("dashboard")
-	} else if result, err := oDb.db.ExecContext(ctx, queryDelete, obj.svcID); err != nil {
+	} else if result, err := oDb.DB.ExecContext(ctx, queryDelete, obj.SvcID); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType clean obsolete flex error: %w", err)
 	} else if count, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType count deleted: %w", err)
