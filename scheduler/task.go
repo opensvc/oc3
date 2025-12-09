@@ -14,9 +14,10 @@ import (
 
 type (
 	Task struct {
-		name   string
-		period time.Duration
-		fn     func(context.Context, *Task) error
+		name    string
+		period  time.Duration
+		timeout time.Duration
+		fn      func(context.Context, *Task) error
 
 		db      *sql.DB
 		ev      eventPublisher
@@ -188,6 +189,9 @@ func (t *Task) Exec(ctx context.Context) (err error) {
 	t.Infof("run")
 	status := taskExecStatusOk
 	begin := time.Now()
+
+	ctx, cancel := context.WithTimeout(ctx, t.timeout)
+	defer cancel()
 
 	// Execution
 	err = t.fn(ctx, t)

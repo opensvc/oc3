@@ -15,9 +15,10 @@ import (
 //
 //	UPDATE services SET svc_status="up" WHERE svc_id IN (SELECT svc_id FROM v_outdated_services);
 var TaskScrub = Task{
-	name:   "scrub",
-	period: time.Minute,
-	fn:     taskScrubRun,
+	name:    "scrub",
+	period:  time.Minute,
+	fn:      taskScrubRun,
+	timeout: time.Minute,
 }
 
 func taskScrubRun(ctx context.Context, task *Task) (err error) {
@@ -36,9 +37,6 @@ func taskScrubRunResStatus(ctx context.Context, task *Task) error {
 }
 
 func taskScrubRunSvcInstances(ctx context.Context, task *Task) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
-
 	odb, err := task.DBX(ctx)
 	if err != nil {
 		return err

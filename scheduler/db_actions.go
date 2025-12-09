@@ -6,41 +6,22 @@ import (
 )
 
 var TaskRefreshBActionErrors = Task{
-	name:   "refresh_b_action_errors",
-	period: 24 * time.Hour,
-	fn:     taskRefreshBActionErrorsRun,
+	name:    "refresh_b_action_errors",
+	period:  24 * time.Hour,
+	fn:      taskRefreshBActionErrorsRun,
+	timeout: time.Minute,
 }
 
 func taskRefreshBActionErrorsRun(ctx context.Context, task *Task) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
-
-	tx, err := task.db.BeginTx(ctx, nil)
+	odb, err := task.DBX(ctx)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer odb.Rollback()
 
-	_, err = tx.ExecContext(ctx, "TRUNCATE b_action_errors")
-	if err != nil {
+	if err := odb.BActionErrorsRefresh(ctx); err != nil {
 		return err
 	}
 
-	sql := `INSERT INTO b_action_errors (
-             SELECT NULL, a.svc_id, a.node_id, count(a.id)
-             FROM svcactions a
-	     WHERE
-               a.end>date_sub(now(), interval 1 day) AND
-               a.status='err' AND
-               isnull(a.ack) AND
-               a.end IS NOT NULL
-             GROUP BY a.svc_id, a.node_id
-        )`
-
-	_, err = tx.ExecContext(ctx, sql)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	return odb.Commit()
 }
