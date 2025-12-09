@@ -96,6 +96,26 @@ func (t *Task) Name() string {
 	return t.name
 }
 
+func (t *Task) DBX(ctx context.Context) (*cdb.DB, error) {
+	tx, err := t.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &cdb.DB{
+		Session: cdb.NewSession(tx, t.ev),
+		DB:      tx,
+		DBLck:   cdb.InitDbLocker(t.db),
+	}, nil
+}
+
+func (t *Task) DB() *cdb.DB {
+	return &cdb.DB{
+		Session: cdb.NewSession(t.db, t.ev),
+		DB:      t.db,
+		DBLck:   cdb.InitDbLocker(t.db),
+	}
+}
+
 func (t *Task) Session() *cdb.Session {
 	if t.session == nil {
 		t.session = cdb.NewSession(t.db, t.ev)

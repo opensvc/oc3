@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type (
@@ -520,4 +522,58 @@ func (oDb *DB) PurgeTablesFromObjectID(ctx context.Context, id string) error {
 		}
 	}
 	return err
+}
+
+// ObjectOutdatedLists return lists of ids, svc_ids and svcnames for objects that no
+// longer have instances updated in the last 15 minutes and that don't have their object
+// status set to "undef" yet.
+func (oDb *DB) ObjectOutdatedLists(ctx context.Context) (ids []int64, svcIDs []uuid.UUID, svcNames []string, err error) {
+	sql := `SELECT id, svc_id, svcname FROM services
+                WHERE svc_id IN (SELECT svc_id FROM v_outdated_services WHERE uptodate=0)
+                AND (svc_status != "undef" OR svc_availstatus != "undef")`
+	rows, err := oDb.DB.QueryContext(ctx, sql)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for {
+		next := rows.Next()
+		if !next {
+			break
+		}
+		var svcID uuid.UUID
+		var svcName string
+		var id int64
+		rows.Scan(&id, &svcID, &svcName)
+		svcIDs = append(svcIDs, svcID)
+		svcNames = append(svcNames, svcName)
+		ids = append(ids, id)
+	}
+	return
+}
+
+func (oDb *DB) ObjectUpdateStatusSimple(ctx context.Context, ids []int64, availStatus, overallStatus string) (n int64, err error) {
+	idsLen := len(ids)
+	sql := `UPDATE services
+                SET svc_status=?, svc_availstatus=?, svc_status_updated=NOW()
+                WHERE id IN (%s)`
+	sql = fmt.Sprintf(sql, Placeholders(idsLen))
+
+	args := make([]any, idsLen+2)
+	args[0] = overallStatus
+	args[1] = availStatus
+	for i, id := range ids {
+		args[i+2] = id
+	}
+
+	result, err := oDb.DB.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return 0, err
+	}
+	n, err = result.RowsAffected()
+	if err == nil && n > 0 {
+		oDb.Session.SetChanges("services")
+	}
+	return n, err
 }

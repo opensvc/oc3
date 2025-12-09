@@ -53,6 +53,26 @@ func InitDbLocker(db *sql.DB) *DBLocker {
 	return dbLocker
 }
 
+func (oDb *DB) Commit() error {
+	tx, ok := oDb.DB.(DBTxer)
+	if !ok {
+		return nil
+	}
+	return tx.Commit()
+}
+
+func (oDb *DB) Rollback() error {
+	tx, ok := oDb.DB.(DBTxer)
+	if !ok {
+		return nil
+	}
+	if r := recover(); r != nil {
+		tx.Rollback()
+		panic(r)
+	}
+	return tx.Rollback()
+}
+
 func (oDb *DB) SetChange(s ...string) {
 	oDb.Session.SetChanges(s...)
 }

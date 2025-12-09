@@ -35,6 +35,7 @@ func (t *Session) NotifyChanges(ctx context.Context) error {
 		if err := t.ev.EventPublish(tableName+"_change", nil); err != nil {
 			return fmt.Errorf("EventPublish send %s: %w", tableName, err)
 		}
+		slog.Debug(fmt.Sprintf("table %s change notified", tableName))
 	}
 	return nil
 }

@@ -17,7 +17,7 @@ var TaskTrim = Task{
 
 // deleteBatched executes the deletion query in batches until no rows are affected.
 func deleteBatched(ctx context.Context, task *Task, table, dateCol, orderbyCol string) error {
-	batchSize := viper.GetInt64("scheduler.task.trim.default.batch_size")
+	batchSize := getBatchSize(table)
 	retention := getRetentionDays(table)
 
 	// The base SQL query for the batched deletion.
@@ -64,10 +64,18 @@ func deleteBatched(ctx context.Context, task *Task, table, dateCol, orderbyCol s
 	}
 }
 
+func getBatchSize(table string) int64 {
+	n := viper.GetInt64(fmt.Sprintf("scheduler.task.trim.table.%s.batch_size", table))
+	if n == 0 {
+		n = viper.GetInt64("scheduler.task.trim.batch_size")
+	}
+	return n
+}
+
 func getRetentionDays(table string) int {
-	days := viper.GetInt(fmt.Sprintf("scheduler.task.trim.%s.retention", table))
+	days := viper.GetInt(fmt.Sprintf("scheduler.task.trim.table.%s.retention", table))
 	if days == 0 {
-		days = viper.GetInt("scheduler.task.trim.default.retention")
+		days = viper.GetInt("scheduler.task.trim.retention")
 	}
 	return days
 }

@@ -11,7 +11,9 @@ import (
 
 type (
 	ServiceLogUpdate struct {
-		SvcID       uuid.UUID
+		SvcID uuid.UUID
+
+		// AvailStatus is the new value in "services"
 		AvailStatus string
 
 		// Begin value is:
@@ -69,17 +71,17 @@ func UpdateServicesLog(ctx context.Context, db DBOperater, entries ...ServiceLog
 		logLastLines = append(logLastLines, "(?, ?, ?, ?)")
 		prevEntry, ok := last[entry.SvcID]
 		if ok {
-			logLastArgs = append(logLastArgs, entry.SvcID, entry.AvailStatus, prevEntry.Begin, entry.End)
+			logLastArgs = append(logLastArgs, entry.SvcID, entry.AvailStatus, entry.Begin, entry.End)
 			if entry.AvailStatus != prevEntry.AvailStatus {
 				logLines = append(logLines, "(?, ?, ?, ?)")
 				logArgs = append(logArgs, prevEntry.SvcID, prevEntry.AvailStatus, prevEntry.Begin, entry.End)
 			}
 		} else {
-			logLastArgs = append(logLastArgs, entry.SvcID, entry.AvailStatus, "NOW()")
+			logLastArgs = append(logLastArgs, entry.SvcID, entry.AvailStatus, "NOW()", "NOW()")
 		}
 	}
 
-	sql = "INSERT INTO services_log_last (svc_id, svc_availstatus, svc_begin, svc_end) VALUES %s ON DUPLICATE KEY UPDATE svc_id=VALUES(svc_id), svc_availstatus=VALUES(svc_availstatus), svc_begin=VALUES(svc_begin), svc_end=VALUES(svc_end)"
+	sql = "INSERT INTO services_log_last (svc_id, svc_availstatus, svc_begin, svc_end) VALUES %s ON DUPLICATE KEY UPDATE svc_id=VALUES(svc_id), svc_availstatus=VALUES(svc_availstatus), svc_end=VALUES(svc_end)"
 	sql = fmt.Sprintf(sql, strings.Join(logLastLines, ","))
 	_, err = db.ExecContext(ctx, sql, logLastArgs...)
 	if err != nil {
