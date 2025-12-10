@@ -366,12 +366,12 @@ func (oDb *DB) ObjectUpdateLog(ctx context.Context, svcID string, avail string) 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial avail value
-		defer oDb.SetChange("service_log")
+		defer oDb.SetChange("services_log")
 		return setLogLast()
 	case err != nil:
 		return fmt.Errorf("objectUpdateLog can't get services_log_last %s: %w", svcID, err)
 	default:
-		defer oDb.SetChange("service_log")
+		defer oDb.SetChange("services_log")
 		if previousAvail == avail {
 			// no change, extend last interval
 			if _, err := oDb.DB.ExecContext(ctx, qExtendIntervalOfCurrentAvail, svcID); err != nil {
