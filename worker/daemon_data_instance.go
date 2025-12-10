@@ -2,12 +2,14 @@ package worker
 
 import (
 	"strings"
+
+	"github.com/opensvc/oc3/cdb"
 )
 
 type (
 	// instanceData
 	instanceData struct {
-		DBInstanceStatus
+		cdb.DBInstanceStatus
 
 		encap     map[string]any
 		resources map[string]any
@@ -21,10 +23,10 @@ type (
 	}
 )
 
-func (i *instanceData) InstanceResources() []*DBInstanceResource {
-	var l []*DBInstanceResource
+func (i *instanceData) InstanceResources() []*cdb.DBInstanceResource {
+	var l []*cdb.DBInstanceResource
 	for rID, aResource := range i.resources {
-		l = append(l, aToInstanceResource(aResource.(map[string]any), i.svcID, i.nodeID, "", rID,
+		l = append(l, aToInstanceResource(aResource.(map[string]any), i.SvcID, i.NodeID, "", rID,
 			i.resourceMonitored[rID]))
 
 		if i.encap != nil {
@@ -35,7 +37,7 @@ func (i *instanceData) InstanceResources() []*DBInstanceResource {
 				}
 				if encapResources, ok := encapRid["resources"].(map[string]any); ok {
 					for encapRID, encapAResource := range encapResources {
-						l = append(l, aToInstanceResource(encapAResource.(map[string]any), i.svcID, i.nodeID, vmName, encapRID,
+						l = append(l, aToInstanceResource(encapAResource.(map[string]any), i.SvcID, i.NodeID, vmName, encapRID,
 							i.resourceMonitored[encapRID]))
 					}
 				}
@@ -45,35 +47,35 @@ func (i *instanceData) InstanceResources() []*DBInstanceResource {
 	return l
 }
 
-func aToInstanceResource(a map[string]any, svcID, nodeID, vmName, rID string, monitor bool) *DBInstanceResource {
-	res := &DBInstanceResource{
-		svcID:    svcID,
-		nodeID:   nodeID,
-		vmName:   vmName,
-		rid:      rID,
-		status:   mapToS(a, "", "status"),
-		desc:     mapToS(a, "", "label"),
-		disable:  mapToBoolS(a, false, "disable"),
-		optional: mapToBoolS(a, false, "optional"),
-		resType:  mapToS(a, "", "type"),
+func aToInstanceResource(a map[string]any, svcID, nodeID, vmName, rID string, monitor bool) *cdb.DBInstanceResource {
+	res := &cdb.DBInstanceResource{
+		SvcID:    svcID,
+		NodeID:   nodeID,
+		VmName:   vmName,
+		RID:      rID,
+		Status:   mapToS(a, "", "status"),
+		Desc:     mapToS(a, "", "label"),
+		Disable:  mapToBoolS(a, false, "disable"),
+		Optional: mapToBoolS(a, false, "optional"),
+		ResType:  mapToS(a, "", "type"),
 	}
 	if monitor {
-		res.monitor = "T"
+		res.Monitor = "T"
 	} else {
-		res.monitor = "F"
+		res.Monitor = "F"
 	}
 	if logs, ok := mapTo(a, "log"); ok {
 		switch l := logs.(type) {
 		case []string:
 			// v2 log entry
-			res.log = strings.Join(l, "\n")
+			res.Log = strings.Join(l, "\n")
 		case []map[string]string:
 			// v3 log entry
 			lines := make([]string, 0, len(l))
 			for _, m := range l {
 				lines = append(lines, m["level"]+": "+m["message"])
 			}
-			res.log = strings.Join(lines, "\n")
+			res.Log = strings.Join(lines, "\n")
 		}
 	}
 	return res
@@ -96,46 +98,46 @@ func (i *instanceData) Container(id string) *instanceData {
 	if encap == nil {
 		return nil
 	}
-	dbI := DBInstanceStatus{
-		nodeID: i.nodeID,
-		svcID:  i.svcID,
+	dbI := cdb.DBInstanceStatus{
+		NodeID: i.NodeID,
+		SvcID:  i.SvcID,
 	}
 	if vmName, ok := encap["hostname"].(string); ok {
-		dbI.monVmName = vmName
+		dbI.MonVmName = vmName
 	}
 	// defines vm type from resources.<container#xx>.type = 'container.podman' -> podman
 	if containerType := strings.SplitN(mapToS(i.resources, "", id, "type"), ".", -1); len(containerType) > 1 {
-		dbI.monVmType = containerType[1]
+		dbI.MonVmType = containerType[1]
 	}
 	mergeM := hypervisorContainerMergeMap
 	if encapAvail, ok := encap["avail"].(string); ok {
-		dbI.monAvailStatus = mergeM[i.monAvailStatus+","+encapAvail]
+		dbI.MonAvailStatus = mergeM[i.MonAvailStatus+","+encapAvail]
 	} else {
-		dbI.monAvailStatus = mergeM[i.monAvailStatus+",n/a"]
+		dbI.MonAvailStatus = mergeM[i.MonAvailStatus+",n/a"]
 	}
 	if encapOverall, ok := encap["overall"].(string); ok {
-		dbI.monOverallStatus = mergeM[i.monOverallStatus+","+encapOverall]
+		dbI.MonOverallStatus = mergeM[i.MonOverallStatus+","+encapOverall]
 	} else {
-		dbI.monOverallStatus = mergeM[i.monOverallStatus+",n/a"]
+		dbI.MonOverallStatus = mergeM[i.MonOverallStatus+",n/a"]
 	}
 
 	if statusGroup, ok := encap["status_group"].(map[string]string); ok {
-		dbI.monIpStatus = mergeM[i.monIpStatus+","+statusGroup["ip"]]
-		dbI.monDiskStatus = mergeM[i.monDiskStatus+","+statusGroup["disk"]]
-		dbI.monFsStatus = mergeM[i.monFsStatus+","+statusGroup["fs"]]
-		dbI.monShareStatus = mergeM[i.monShareStatus+","+statusGroup["share"]]
-		dbI.monContainerStatus = mergeM[i.monContainerStatus+","+statusGroup["container"]]
-		dbI.monAppStatus = mergeM[i.monAppStatus+","+statusGroup["app"]]
-		dbI.monSyncStatus = mergeM[i.monSyncStatus+","+statusGroup["sync"]]
+		dbI.MonIpStatus = mergeM[i.MonIpStatus+","+statusGroup["ip"]]
+		dbI.MonDiskStatus = mergeM[i.MonDiskStatus+","+statusGroup["disk"]]
+		dbI.MonFsStatus = mergeM[i.MonFsStatus+","+statusGroup["fs"]]
+		dbI.MonShareStatus = mergeM[i.MonShareStatus+","+statusGroup["share"]]
+		dbI.MonContainerStatus = mergeM[i.MonContainerStatus+","+statusGroup["container"]]
+		dbI.MonAppStatus = mergeM[i.MonAppStatus+","+statusGroup["app"]]
+		dbI.MonSyncStatus = mergeM[i.MonSyncStatus+","+statusGroup["sync"]]
 	} else {
 		// unexpected status_group map, ignore all encap status_group
-		dbI.monIpStatus = mergeM[i.monIpStatus+","]
-		dbI.monDiskStatus = mergeM[i.monDiskStatus+","]
-		dbI.monFsStatus = mergeM[i.monFsStatus+","]
-		dbI.monShareStatus = mergeM[i.monShareStatus+","]
-		dbI.monContainerStatus = mergeM[i.monContainerStatus+","]
-		dbI.monAppStatus = mergeM[i.monAppStatus+","]
-		dbI.monSyncStatus = mergeM[i.monSyncStatus+","]
+		dbI.MonIpStatus = mergeM[i.MonIpStatus+","]
+		dbI.MonDiskStatus = mergeM[i.MonDiskStatus+","]
+		dbI.MonFsStatus = mergeM[i.MonFsStatus+","]
+		dbI.MonShareStatus = mergeM[i.MonShareStatus+","]
+		dbI.MonContainerStatus = mergeM[i.MonContainerStatus+","]
+		dbI.MonAppStatus = mergeM[i.MonAppStatus+","]
+		dbI.MonSyncStatus = mergeM[i.MonSyncStatus+","]
 	}
 
 	// frozen value merge rules:
@@ -148,10 +150,10 @@ func (i *instanceData) Container(id string) *instanceData {
 	switch encapFrozen {
 	case 0:
 		// encap is thawed => frozen result is the hypervisor frozen value
-		dbI.monFrozen = i.monFrozen
+		dbI.MonFrozen = i.MonFrozen
 	default:
 		// encap is frozen => frozen result is the global frozen value + 2
-		dbI.monFrozen = i.monFrozen + 2
+		dbI.MonFrozen = i.MonFrozen + 2
 	}
 
 	var nilMap map[string]any

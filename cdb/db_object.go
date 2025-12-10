@@ -1,4 +1,4 @@
-package worker
+package cdb
 
 import (
 	"context"
@@ -7,29 +7,31 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type (
 	DBObject struct {
-		svcname   string
-		svcID     string
-		clusterID string
+		Svcname   string
+		SvcID     string
+		ClusterID string
 
 		DBObjStatus
 
-		env string
-		app string
+		Env string
+		App string
 
-		// nullConfig is true when db svc_config is NULL
-		nullConfig bool
+		// NullConfig is true when db svc_config is NULL
+		NullConfig bool
 	}
 
 	DBObjStatus struct {
-		availStatus   string
-		overallStatus string
-		placement     string
-		frozen        string
-		provisioned   string
+		AvailStatus   string
+		OverallStatus string
+		Placement     string
+		Frozen        string
+		Provisioned   string
 	}
 
 	// DBObjectConfig
@@ -80,43 +82,43 @@ type (
 	//  KEY `k_cluster_id` (`cluster_id`)
 	//) ENGINE=InnoDB AUTO_INCREMENT=2491471 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
 	DBObjectConfig struct {
-		svcID     string
-		name      string
-		nodes     *string
-		clusterID string
-		drpNode   *string
-		drpNodes  *string
-		app       *string
-		env       *string
-		comment   string
-		flexMin   int
-		flexMax   int
-		ha        bool
-		config    string
-		updated   time.Time
+		SvcID     string
+		Name      string
+		Nodes     *string
+		ClusterID string
+		DrpNode   *string
+		DrpNodes  *string
+		App       *string
+		Env       *string
+		Comment   string
+		FlexMin   int
+		FlexMax   int
+		HA        bool
+		Config    string
+		Updated   time.Time
 	}
 )
 
-func (oDb *opensvcDB) objectFromID(ctx context.Context, svcID string) (*DBObject, error) {
+func (oDb *DB) ObjectFromID(ctx context.Context, svcID string) (*DBObject, error) {
 	const query = "SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_status, svc_frozen, svc_placement, svc_provisioned FROM services WHERE svc_id = ?"
 	var o DBObject
 	var frozen, placement, provisioned sql.NullString
-	err := oDb.db.QueryRowContext(ctx, query, svcID).Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus,
-		&o.overallStatus, &frozen, &placement, &provisioned)
+	err := oDb.DB.QueryRowContext(ctx, query, svcID).Scan(&o.Svcname, &o.SvcID, &o.ClusterID, &o.AvailStatus,
+		&o.OverallStatus, &frozen, &placement, &provisioned)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
 	case err != nil:
 		return nil, err
 	default:
-		o.frozen = placement.String
-		o.placement = placement.String
-		o.provisioned = placement.String
+		o.Frozen = placement.String
+		o.Placement = placement.String
+		o.Provisioned = placement.String
 		return &o, nil
 	}
 }
 
-func (oDb *opensvcDB) objectIDsFromClusterIDWithPurgeTag(ctx context.Context, clusterID string) (objectIDs []string, err error) {
+func (oDb *DB) ObjectIDsFromClusterIDWithPurgeTag(ctx context.Context, clusterID string) (objectIDs []string, err error) {
 	const (
 		query = "" +
 			"SELECT `svc_tags`.`svc_id`" +
@@ -132,7 +134,7 @@ func (oDb *opensvcDB) objectIDsFromClusterIDWithPurgeTag(ctx context.Context, cl
 	var (
 		rows *sql.Rows
 	)
-	rows, err = oDb.db.QueryContext(ctx, query, clusterID)
+	rows, err = oDb.DB.QueryContext(ctx, query, clusterID)
 	if err != nil {
 		return
 	}
@@ -148,7 +150,7 @@ func (oDb *opensvcDB) objectIDsFromClusterIDWithPurgeTag(ctx context.Context, cl
 	return
 }
 
-func (oDb *opensvcDB) objectsFromClusterIDAndObjectNames(ctx context.Context, clusterID string, objectNames []string) (dbObjects []*DBObject, err error) {
+func (oDb *DB) ObjectsFromClusterIDAndObjectNames(ctx context.Context, clusterID string, objectNames []string) (dbObjects []*DBObject, err error) {
 	defer logDuration("objectsFromClusterIDAndObjectNames", time.Now())
 	var query = `
 		SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env, svc_status,
@@ -167,7 +169,7 @@ func (oDb *opensvcDB) objectsFromClusterIDAndObjectNames(ctx context.Context, cl
 	query += ")"
 
 	var rows *sql.Rows
-	rows, err = oDb.db.QueryContext(ctx, query, args...)
+	rows, err = oDb.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return
 	}
@@ -176,21 +178,21 @@ func (oDb *opensvcDB) objectsFromClusterIDAndObjectNames(ctx context.Context, cl
 		var o DBObject
 		var placement, provisioned, env, app sql.NullString
 		var hasConfig sql.NullBool
-		if err = rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &env, &o.overallStatus, &placement, &provisioned, &app, &hasConfig); err != nil {
+		if err = rows.Scan(&o.Svcname, &o.SvcID, &o.ClusterID, &o.AvailStatus, &env, &o.OverallStatus, &placement, &provisioned, &app, &hasConfig); err != nil {
 			return
 		}
-		o.placement = placement.String
-		o.provisioned = provisioned.String
-		o.app = app.String
-		o.env = env.String
-		o.nullConfig = hasConfig.Bool
+		o.Placement = placement.String
+		o.Provisioned = provisioned.String
+		o.App = app.String
+		o.Env = env.String
+		o.NullConfig = hasConfig.Bool
 		dbObjects = append(dbObjects, &o)
 	}
 	err = rows.Err()
 	return
 }
 
-func (oDb *opensvcDB) objectsFromClusterID(ctx context.Context, clusterID string) (dbObjects []*DBObject, err error) {
+func (oDb *DB) ObjectsFromClusterID(ctx context.Context, clusterID string) (dbObjects []*DBObject, err error) {
 	defer logDuration("objectsFromClusterID", time.Now())
 	var query = `
 		SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env, svc_status,
@@ -199,7 +201,7 @@ func (oDb *opensvcDB) objectsFromClusterID(ctx context.Context, clusterID string
 		WHERE cluster_id = ?`
 
 	var rows *sql.Rows
-	rows, err = oDb.db.QueryContext(ctx, query, clusterID)
+	rows, err = oDb.DB.QueryContext(ctx, query, clusterID)
 	if err != nil {
 		return
 	}
@@ -208,26 +210,26 @@ func (oDb *opensvcDB) objectsFromClusterID(ctx context.Context, clusterID string
 		var o DBObject
 		var placement, provisioned, env, app sql.NullString
 		var hasNullConfig sql.NullBool
-		if err = rows.Scan(&o.svcname, &o.svcID, &o.clusterID, &o.availStatus, &env, &o.overallStatus, &placement, &provisioned, &app, &hasNullConfig); err != nil {
+		if err = rows.Scan(&o.Svcname, &o.SvcID, &o.ClusterID, &o.AvailStatus, &env, &o.OverallStatus, &placement, &provisioned, &app, &hasNullConfig); err != nil {
 			return
 		}
-		o.placement = placement.String
-		o.provisioned = provisioned.String
-		o.app = app.String
-		o.env = env.String
-		o.nullConfig = hasNullConfig.Bool
+		o.Placement = placement.String
+		o.Provisioned = provisioned.String
+		o.App = app.String
+		o.Env = env.String
+		o.NullConfig = hasNullConfig.Bool
 		dbObjects = append(dbObjects, &o)
 	}
 	err = rows.Err()
 	return
 }
 
-// objectCreate creates missing object in database and returns *DBObject.
+// ObjectCreate creates missing object in database and returns *DBObject.
 //
 // uniq svcID is found thew objectIDFindOrCreate to ensure uniq svcID on concurrent calls
 // for same object.
-func (oDb *opensvcDB) objectCreate(ctx context.Context, objectName, clusterID, candidateApp string, node *DBNode) (*DBObject, error) {
-	created, svcID, err := oDb.objectIDFindOrCreate(ctx, objectName, clusterID)
+func (oDb *DB) ObjectCreate(ctx context.Context, objectName, clusterID, candidateApp string, node *DBNode) (*DBObject, error) {
+	created, svcID, err := oDb.ObjectIDFindOrCreate(ctx, objectName, clusterID)
 	if err != nil {
 		return nil, fmt.Errorf("can't find or create object: %w", err)
 	}
@@ -237,7 +239,7 @@ func (oDb *opensvcDB) objectCreate(ctx context.Context, objectName, clusterID, c
 			return nil, err
 		}
 	}
-	if obj, err := oDb.objectFromID(ctx, svcID); err != nil {
+	if obj, err := oDb.ObjectFromID(ctx, svcID); err != nil {
 		return nil, err
 	} else if obj == nil {
 		// svc id exists without associated service
@@ -245,7 +247,7 @@ func (oDb *opensvcDB) objectCreate(ctx context.Context, objectName, clusterID, c
 		if err := oDb.insertOrUpdateObjectForNodeAndCandidateApp(ctx, objectName, svcID, candidateApp, node); err != nil {
 			return nil, err
 		}
-		if obj, err := oDb.objectFromID(ctx, svcID); err != nil {
+		if obj, err := oDb.ObjectFromID(ctx, svcID); err != nil {
 			return nil, err
 		} else if obj == nil {
 			return nil, fmt.Errorf("objectCreate %s: can't retrieve service with svc_id %s", objectName, svcID)
@@ -257,10 +259,10 @@ func (oDb *opensvcDB) objectCreate(ctx context.Context, objectName, clusterID, c
 	}
 }
 
-// objectPing updates services.svc_status_updated and services_log_last.svc_end
+// ObjectPing updates services.svc_status_updated and services_log_last.svc_end
 // when services.svc_status_updated timestamp for svc_id id older than 30s.
-func (oDb *opensvcDB) objectPing(ctx context.Context, svcID string) (updates bool, err error) {
-	defer logDuration("objectPing "+svcID, time.Now())
+func (oDb *DB) ObjectPing(ctx context.Context, svcID string) (updates bool, err error) {
+	defer logDuration("ObjectPing "+svcID, time.Now())
 	const UpdateServicesSvcStatusUpdated = "" +
 		"UPDATE `services` SET `svc_status_updated` = NOW()" +
 		" WHERE `svc_id`= ? " +
@@ -272,7 +274,7 @@ func (oDb *opensvcDB) objectPing(ctx context.Context, svcID string) (updates boo
 		result      sql.Result
 		rowAffected int64
 	)
-	result, err = oDb.db.ExecContext(ctx, UpdateServicesSvcStatusUpdated, svcID)
+	result, err = oDb.DB.ExecContext(ctx, UpdateServicesSvcStatusUpdated, svcID)
 	if err != nil {
 		return
 	}
@@ -287,12 +289,12 @@ func (oDb *opensvcDB) objectPing(ctx context.Context, svcID string) (updates boo
 	oDb.SetChange("services")
 	updates = true
 
-	_, err = oDb.db.ExecContext(ctx, updateSvcLogLastSvc, now, svcID)
+	_, err = oDb.DB.ExecContext(ctx, updateSvcLogLastSvc, now, svcID)
 
 	return
 }
 
-func (oDb *opensvcDB) objectUpdateStatus(ctx context.Context, svcID string, o *DBObjStatus) error {
+func (oDb *DB) ObjectUpdateStatus(ctx context.Context, svcID string, o *DBObjStatus) error {
 	const query = "" +
 		"UPDATE `services` SET `svc_availstatus` = ?" +
 		" , `svc_status` = ?" +
@@ -301,19 +303,19 @@ func (oDb *opensvcDB) objectUpdateStatus(ctx context.Context, svcID string, o *D
 		" , `svc_provisioned` = ?" +
 		" , `svc_status_updated` = NOW()" +
 		" WHERE `svc_id`= ? "
-	if _, err := oDb.db.ExecContext(ctx, query, o.availStatus, o.overallStatus, o.placement, o.frozen, o.provisioned, svcID); err != nil {
+	if _, err := oDb.DB.ExecContext(ctx, query, o.AvailStatus, o.OverallStatus, o.Placement, o.Frozen, o.Provisioned, svcID); err != nil {
 		return fmt.Errorf("can't update service status %s: %w", svcID, err)
 	}
 	oDb.SetChange("services")
 	return nil
 }
 
-// objectUpdateLog handle services_log_last and services_log avail value changes.
+// ObjectUpdateLog handle services_log_last and services_log avail value changes.
 //
 // services_log_last tracks the current avail value from begin to now.
 // services_log tracks avail values changes with begin and end: [(avail, begin, end), ...]
-func (oDb *opensvcDB) objectUpdateLog(ctx context.Context, svcID string, avail string) error {
-	defer logDuration("objectUpdateLog "+svcID, time.Now())
+func (oDb *DB) ObjectUpdateLog(ctx context.Context, svcID string, avail string) error {
+	defer logDuration("ObjectUpdateLog "+svcID, time.Now())
 	/*
 		CREATE TABLE `services_log_last` (
 		  `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -354,13 +356,13 @@ func (oDb *opensvcDB) objectUpdateLog(ctx context.Context, svcID string, avail s
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.db.ExecContext(ctx, qSetLogLast, svcID, avail, avail)
+		_, err := oDb.DB.ExecContext(ctx, qSetLogLast, svcID, avail, avail)
 		if err != nil {
 			return fmt.Errorf("objectUpdateLog can't update services_log_last %s: %w", svcID, err)
 		}
 		return nil
 	}
-	err := oDb.db.QueryRowContext(ctx, qGetLogLast, svcID).Scan(&previousAvail, &previousBegin)
+	err := oDb.DB.QueryRowContext(ctx, qGetLogLast, svcID).Scan(&previousAvail, &previousBegin)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial avail value
@@ -372,13 +374,13 @@ func (oDb *opensvcDB) objectUpdateLog(ctx context.Context, svcID string, avail s
 		defer oDb.SetChange("service_log")
 		if previousAvail == avail {
 			// no change, extend last interval
-			if _, err := oDb.db.ExecContext(ctx, qExtendIntervalOfCurrentAvail, svcID); err != nil {
+			if _, err := oDb.DB.ExecContext(ctx, qExtendIntervalOfCurrentAvail, svcID); err != nil {
 				return fmt.Errorf("objectUpdateLog can't set services_log_last.svc_end %s: %w", svcID, err)
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of previous avail value before change
-			if _, err := oDb.db.ExecContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, svcID, previousBegin, previousAvail); err != nil {
+			if _, err := oDb.DB.ExecContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, svcID, previousBegin, previousAvail); err != nil {
 				return fmt.Errorf("objectUpdateLog can't save services_log change %s: %w", svcID, err)
 			}
 			// reset begin and end interval for new avail
@@ -390,25 +392,25 @@ func (oDb *opensvcDB) objectUpdateLog(ctx context.Context, svcID string, avail s
 // insertOrUpdateObjectForNodeAndCandidateApp will insert or update object with svcID.
 //
 // If candidate app is not valid, node app will be used (see appFromNodeAndCandidateApp)
-func (oDb *opensvcDB) insertOrUpdateObjectForNodeAndCandidateApp(ctx context.Context, objectName string, svcID, candidateApp string, node *DBNode) error {
+func (oDb *DB) insertOrUpdateObjectForNodeAndCandidateApp(ctx context.Context, objectName string, svcID, candidateApp string, node *DBNode) error {
 	const query = "" +
 		"INSERT INTO `services` (`svcname`, `cluster_id`, `svc_id`, `svc_app`, `svc_env`, `updated`)" +
 		" VALUES (?, ?, ?, ?, ?, NOW())" +
 		" ON DUPLICATE KEY UPDATE" +
 		"    `svcname` = ?, `cluster_id` = ?, `svc_app` = ?, `svc_env` = ?, `updated` = Now()"
-	app, err := oDb.appFromNodeAndCandidateApp(ctx, candidateApp, node)
+	app, err := oDb.AppFromNodeAndCandidateApp(ctx, candidateApp, node)
 	if err != nil {
-		return fmt.Errorf("get application from candidate %s with node_id %s: %w", candidateApp, node.nodeID, err)
+		return fmt.Errorf("get application from candidate %s with node_id %s: %w", candidateApp, node.NodeID, err)
 	}
-	_, err = oDb.db.ExecContext(ctx, query, objectName, node.clusterID, svcID, app, node.nodeEnv, objectName, node.clusterID, app, node.nodeEnv)
+	_, err = oDb.DB.ExecContext(ctx, query, objectName, node.ClusterID, svcID, app, node.NodeEnv, objectName, node.ClusterID, app, node.NodeEnv)
 	if err != nil {
 		return fmt.Errorf("createServiceFromObjectAndCandidateApp %s %s: %w", objectName, svcID, err)
 	}
 	return nil
 }
 
-// insertOrUpdateObjectConfig will insert or update object config with svcID.
-func (oDb *opensvcDB) insertOrUpdateObjectConfig(ctx context.Context, c *DBObjectConfig) (bool, error) {
+// InsertOrUpdateObjectConfig will insert or update object config with svcID.
+func (oDb *DB) InsertOrUpdateObjectConfig(ctx context.Context, c *DBObjectConfig) (bool, error) {
 	const query = "" +
 		"INSERT INTO `services` (`svcname`, `cluster_id`, `svc_id`, `svc_nodes`, `svc_drpnode`, `svc_drpnodes`" +
 		" ,  `svc_app`, `svc_env`, `svc_comment`, `svc_flex_min_nodes`, `svc_flex_max_nodes`" +
@@ -420,23 +422,23 @@ func (oDb *opensvcDB) insertOrUpdateObjectConfig(ctx context.Context, c *DBObjec
 		"   , `svc_flex_min_nodes`=VALUES(`svc_flex_min_nodes`), `svc_flex_max_nodes`=VALUES(`svc_flex_max_nodes`)" +
 		"   , `svc_ha`=VALUES(`svc_ha`), `svc_config`=VALUES(`svc_config`), `updated`=VALUES(`updated`)"
 	var nodes, drpNode, drpNodes, app, env any
-	if c.nodes != nil {
-		nodes = *c.nodes
+	if c.Nodes != nil {
+		nodes = *c.Nodes
 	}
-	if c.drpNodes != nil {
-		drpNodes = *c.drpNodes
+	if c.DrpNodes != nil {
+		drpNodes = *c.DrpNodes
 	}
-	if c.drpNode != nil {
-		drpNode = *c.drpNode
+	if c.DrpNode != nil {
+		drpNode = *c.DrpNode
 	}
-	if c.app != nil {
-		app = *c.app
+	if c.App != nil {
+		app = *c.App
 	}
-	if c.env != nil {
-		env = *c.env
+	if c.Env != nil {
+		env = *c.Env
 	}
-	result, err := oDb.db.ExecContext(ctx, query, c.name, c.clusterID, c.svcID, nodes, drpNode, drpNodes,
-		app, env, c.comment, c.flexMin, c.flexMax, c.ha, c.config)
+	result, err := oDb.DB.ExecContext(ctx, query, c.Name, c.ClusterID, c.SvcID, nodes, drpNode, drpNodes,
+		app, env, c.Comment, c.FlexMin, c.FlexMax, c.HA, c.Config)
 	if err != nil {
 		return false, fmt.Errorf("update services config: %w", err)
 	}
@@ -447,10 +449,10 @@ func (oDb *opensvcDB) insertOrUpdateObjectConfig(ctx context.Context, c *DBObjec
 	}
 }
 
-// objectIDFindOrCreate ensures a unique svc_id exists for a given svcname and clusterID, creating it if necessary.
+// ObjectIDFindOrCreate ensures a unique svc_id exists for a given svcname and clusterID, creating it if necessary.
 // Returns a boolean indicating if a new ID was created, the svc_id, or an error if the operation fails.
 // It is run inside a locked separate transaction to ensure always success insertion.
-func (oDb *opensvcDB) objectIDFindOrCreate(ctx context.Context, svcname, clusterID string) (isNew bool, svcID string, err error) {
+func (oDb *DB) ObjectIDFindOrCreate(ctx context.Context, svcname, clusterID string) (isNew bool, svcID string, err error) {
 	const (
 		queryInsertID = "INSERT IGNORE INTO `service_ids` (`svcname`, `cluster_id`) VALUES (?, ?)"
 		querySearchID = "SELECT `svc_id` FROM `service_ids` WHERE `svcname` = ? AND `cluster_id` = ? LIMIT 1"
@@ -459,10 +461,10 @@ func (oDb *opensvcDB) objectIDFindOrCreate(ctx context.Context, svcname, cluster
 		result       sql.Result
 		rowsAffected int64
 	)
-	oDb.dbLck.Lock()
-	defer oDb.dbLck.Unlock()
+	oDb.DBLck.Lock()
+	defer oDb.DBLck.Unlock()
 
-	tx, err1 := oDb.dbLck.DB.BeginTx(ctx, nil)
+	tx, err1 := oDb.DBLck.DB.BeginTx(ctx, nil)
 	if err1 != nil {
 		err = fmt.Errorf("can't begin transaction: %w", err1)
 		return
@@ -488,7 +490,7 @@ func (oDb *opensvcDB) objectIDFindOrCreate(ctx context.Context, svcname, cluster
 	return
 }
 
-func (oDb *opensvcDB) purgeTablesFromObjectID(ctx context.Context, id string) error {
+func (oDb *DB) PurgeTablesFromObjectID(ctx context.Context, id string) error {
 	const (
 		where = "WHERE `svc_id` = ?"
 	)
@@ -507,7 +509,7 @@ func (oDb *opensvcDB) purgeTablesFromObjectID(ctx context.Context, id string) er
 	slog.Debug(fmt.Sprintf("purging object %s", id))
 	for _, tableName := range tables {
 		request := fmt.Sprintf("DELETE FROM %s WHERE `svc_id` = ?", tableName)
-		result, err1 := oDb.db.ExecContext(ctx, request, id)
+		result, err1 := oDb.DB.ExecContext(ctx, request, id)
 		if err1 != nil {
 			err = errors.Join(err, fmt.Errorf("delete from %s: %w", tableName, err1))
 			continue
@@ -520,4 +522,58 @@ func (oDb *opensvcDB) purgeTablesFromObjectID(ctx context.Context, id string) er
 		}
 	}
 	return err
+}
+
+// ObjectOutdatedLists return lists of ids, svc_ids and svcnames for objects that no
+// longer have instances updated in the last 15 minutes and that don't have their object
+// status set to "undef" yet.
+func (oDb *DB) ObjectOutdatedLists(ctx context.Context) (ids []int64, svcIDs []uuid.UUID, svcNames []string, err error) {
+	sql := `SELECT id, svc_id, svcname FROM services
+                WHERE svc_id IN (SELECT svc_id FROM v_outdated_services WHERE uptodate=0)
+                AND (svc_status != "undef" OR svc_availstatus != "undef")`
+	rows, err := oDb.DB.QueryContext(ctx, sql)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for {
+		next := rows.Next()
+		if !next {
+			break
+		}
+		var svcID uuid.UUID
+		var svcName string
+		var id int64
+		rows.Scan(&id, &svcID, &svcName)
+		svcIDs = append(svcIDs, svcID)
+		svcNames = append(svcNames, svcName)
+		ids = append(ids, id)
+	}
+	return
+}
+
+func (oDb *DB) ObjectUpdateStatusSimple(ctx context.Context, ids []int64, availStatus, overallStatus string) (n int64, err error) {
+	idsLen := len(ids)
+	sql := `UPDATE services
+                SET svc_status=?, svc_availstatus=?, svc_status_updated=NOW()
+                WHERE id IN (%s)`
+	sql = fmt.Sprintf(sql, Placeholders(idsLen))
+
+	args := make([]any, idsLen+2)
+	args[0] = overallStatus
+	args[1] = availStatus
+	for i, id := range ids {
+		args[i+2] = id
+	}
+
+	result, err := oDb.DB.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return 0, err
+	}
+	n, err = result.RowsAffected()
+	if err == nil && n > 0 {
+		oDb.Session.SetChanges("services")
+	}
+	return n, err
 }

@@ -11,6 +11,7 @@ import (
 	redis "github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/cdb"
 )
 
 type (
@@ -101,8 +102,8 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 	//
 	//	RawConfig []byte `json:"raw_config"`
 	//}
-	var cfg *DBObjectConfig
-	if created, objectID, err := d.oDb.objectIDFindOrCreate(d.ctx, d.objectName, d.clusterID); err != nil {
+	var cfg *cdb.DBObjectConfig
+	if created, objectID, err := d.oDb.ObjectIDFindOrCreate(d.ctx, d.objectName, d.clusterID); err != nil {
 		return err
 	} else {
 		if created {
@@ -117,15 +118,15 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 			mapToInt(d.data, 0, "monitored_resource_count") > 0 {
 			ha = true
 		}
-		cfg = &DBObjectConfig{
-			name:      d.objectName,
-			svcID:     objectID,
-			clusterID: d.clusterID,
-			updated:   d.now,
-			comment:   mapToS(d.data, "", "comment"),
-			flexMin:   mapToInt(d.data, 1, "flex_min"),
-			flexMax:   mapToInt(d.data, 0, "flex_max"),
-			ha:        ha,
+		cfg = &cdb.DBObjectConfig{
+			Name:      d.objectName,
+			SvcID:     objectID,
+			ClusterID: d.clusterID,
+			Updated:   d.now,
+			Comment:   mapToS(d.data, "", "comment"),
+			FlexMin:   mapToInt(d.data, 1, "flex_min"),
+			FlexMax:   mapToInt(d.data, 0, "flex_max"),
+			HA:        ha,
 		}
 	}
 
@@ -133,28 +134,28 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 		if b, err := base64.StdEncoding.DecodeString(s); err != nil {
 			return fmt.Errorf("can't decode raw_config: %w", err)
 		} else {
-			cfg.config = string(b)
+			cfg.Config = string(b)
 		}
 	}
 	var nilVal any
 	if v, err := toString(mapToA(d.data, &nilVal, "scope"), " "); err == nil {
-		cfg.nodes = &v
+		cfg.Nodes = &v
 	}
 
 	if v, err := toString(mapToA(d.data, &nilVal, "drpnodes"), " "); err == nil {
-		cfg.drpNodes = &v
+		cfg.DrpNodes = &v
 	}
 	if s := mapToS(d.data, "", "drpnode"); s != "" {
-		cfg.drpNode = &s
+		cfg.DrpNode = &s
 	}
 	if s := mapToS(d.data, "", "app"); s != "" {
-		cfg.app = &s
+		cfg.App = &s
 	}
 	if s := mapToS(d.data, "", "env"); s != "" {
-		cfg.env = &s
+		cfg.Env = &s
 	}
-	slog.Info(fmt.Sprintf("insertOrUpdateObjectConfig %s@%s@%sconfig: %s", cfg.name, cfg.svcID, cfg.clusterID, cfg.config))
-	if hasRowAffected, err := d.oDb.insertOrUpdateObjectConfig(d.ctx, cfg); err != nil {
+	slog.Info(fmt.Sprintf("insertOrUpdateObjectConfig %s@%s@%sconfig: %s", cfg.Name, cfg.SvcID, cfg.ClusterID, cfg.Config))
+	if hasRowAffected, err := d.oDb.InsertOrUpdateObjectConfig(d.ctx, cfg); err != nil {
 		return err
 	} else if hasRowAffected {
 		d.oDb.SetChange("services")

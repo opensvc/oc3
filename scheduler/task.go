@@ -14,9 +14,10 @@ import (
 
 type (
 	Task struct {
-		name   string
-		period time.Duration
-		fn     func(context.Context, *Task) error
+		name    string
+		period  time.Duration
+		timeout time.Duration
+		fn      func(context.Context, *Task) error
 
 		db      *sql.DB
 		ev      eventPublisher
@@ -96,6 +97,26 @@ func (t *Task) Name() string {
 	return t.name
 }
 
+func (t *Task) DBX(ctx context.Context) (*cdb.DB, error) {
+	tx, err := t.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &cdb.DB{
+		Session: cdb.NewSession(tx, t.ev),
+		DB:      tx,
+		DBLck:   cdb.InitDbLocker(t.db),
+	}, nil
+}
+
+func (t *Task) DB() *cdb.DB {
+	return &cdb.DB{
+		Session: cdb.NewSession(t.db, t.ev),
+		DB:      t.db,
+		DBLck:   cdb.InitDbLocker(t.db),
+	}
+}
+
 func (t *Task) Session() *cdb.Session {
 	if t.session == nil {
 		t.session = cdb.NewSession(t.db, t.ev)
@@ -168,6 +189,9 @@ func (t *Task) Exec(ctx context.Context) (err error) {
 	t.Infof("run")
 	status := taskExecStatusOk
 	begin := time.Now()
+
+	ctx, cancel := context.WithTimeout(ctx, t.timeout)
+	defer cancel()
 
 	// Execution
 	err = t.fn(ctx, t)

@@ -1,4 +1,4 @@
-package worker
+package cdb
 
 import (
 	"context"
@@ -23,8 +23,8 @@ type (
 	}
 )
 
-// dashboardInstanceFrozenUpdate update or remove the "service frozen" alerts for instance
-func (oDb *opensvcDB) dashboardInstanceFrozenUpdate(ctx context.Context, objectID, nodeID string, objectEnv string, frozen bool) error {
+// DashboardInstanceFrozenUpdate update or remove the "service frozen" alerts for instance
+func (oDb *DB) DashboardInstanceFrozenUpdate(ctx context.Context, objectID, nodeID string, objectEnv string, frozen bool) error {
 	defer logDuration("dashboardInstanceFrozenUpdate", time.Now())
 	const (
 		queryThawed = `
@@ -50,12 +50,12 @@ func (oDb *opensvcDB) dashboardInstanceFrozenUpdate(ctx context.Context, objectI
 	)
 	switch frozen {
 	case true:
-		result, err = oDb.db.ExecContext(ctx, queryFrozen, objectID, nodeID, objectEnv, objectEnv)
+		result, err = oDb.DB.ExecContext(ctx, queryFrozen, objectID, nodeID, objectEnv, objectEnv)
 		if err != nil {
 			return fmt.Errorf("update dashboard 'service frozen' for %s@%s: %w", objectID, nodeID, err)
 		}
 	case false:
-		result, err = oDb.db.ExecContext(ctx, queryThawed, objectID, nodeID)
+		result, err = oDb.DB.ExecContext(ctx, queryThawed, objectID, nodeID)
 		if err != nil {
 			return fmt.Errorf("delete dashboard 'service frozen' for %s@%s: %w", objectID, nodeID, err)
 		}
@@ -69,12 +69,12 @@ func (oDb *opensvcDB) dashboardInstanceFrozenUpdate(ctx context.Context, objectI
 }
 
 // dashboardDeleteInstanceNotUpdated delete "instance status not updated" alerts.
-func (oDb *opensvcDB) dashboardDeleteInstanceNotUpdated(ctx context.Context, objectID, nodeID string) error {
+func (oDb *DB) DashboardDeleteInstanceNotUpdated(ctx context.Context, objectID, nodeID string) error {
 	defer logDuration("dashboardDeleteInstanceNotUpdated", time.Now())
 	const (
 		query = `DELETE FROM dashboard WHERE svc_id = ? AND node_id = ? AND dash_type = 'instance status not updated'`
 	)
-	if result, err := oDb.db.ExecContext(ctx, query, objectID, nodeID); err != nil {
+	if result, err := oDb.DB.ExecContext(ctx, query, objectID, nodeID); err != nil {
 		return err
 	} else if count, err := result.RowsAffected(); err != nil {
 		return err
@@ -85,12 +85,12 @@ func (oDb *opensvcDB) dashboardDeleteInstanceNotUpdated(ctx context.Context, obj
 }
 
 // dashboardDeleteObjectWithType delete from dashboard where svc_id and dash_type match
-func (oDb *opensvcDB) dashboardDeleteObjectWithType(ctx context.Context, objectID, dashType string) error {
+func (oDb *DB) DashboardDeleteObjectWithType(ctx context.Context, objectID, dashType string) error {
 	defer logDuration("dashboardDeleteObjectWithType: "+dashType, time.Now())
 	const (
 		query = `DELETE FROM dashboard WHERE svc_id = ? AND dash_type = ?`
 	)
-	if result, err := oDb.db.ExecContext(ctx, query, objectID, dashType); err != nil {
+	if result, err := oDb.DB.ExecContext(ctx, query, objectID, dashType); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType %s: %w", dashType, err)
 	} else if count, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType %s: %w", dashType, err)
@@ -101,13 +101,13 @@ func (oDb *opensvcDB) dashboardDeleteObjectWithType(ctx context.Context, objectI
 }
 
 // ObjectInAckUnavailabilityPeriod returns true if objectID is in acknowledge unavailability period.
-func (oDb *opensvcDB) ObjectInAckUnavailabilityPeriod(ctx context.Context, objectID string) (ok bool, err error) {
+func (oDb *DB) ObjectInAckUnavailabilityPeriod(ctx context.Context, objectID string) (ok bool, err error) {
 	defer logDuration("ObjectInAckUnavailabilityPeriod", time.Now())
 	const (
 		query = `SELECT COUNT(*) FROM svcmon_log_ack WHERE svc_id = ? AND mon_begin <= NOW() AND mon_end >= NOW()`
 	)
 	var count uint64
-	err = oDb.db.QueryRowContext(ctx, query, objectID).Scan(&count)
+	err = oDb.DB.QueryRowContext(ctx, query, objectID).Scan(&count)
 	if err != nil {
 		err = fmt.Errorf("ObjectInAckUnavailabilityPeriod: %w", err)
 	}
@@ -115,7 +115,7 @@ func (oDb *opensvcDB) ObjectInAckUnavailabilityPeriod(ctx context.Context, objec
 }
 
 // dashboardUpdateObject delete "service unavailable" alerts.
-func (oDb *opensvcDB) dashboardUpdateObject(ctx context.Context, d *Dashboard) error {
+func (oDb *DB) DashboardUpdateObject(ctx context.Context, d *Dashboard) error {
 	defer logDuration("dashboardUpdateObject", time.Now())
 	const (
 		query = `INSERT INTO dashboard
@@ -136,7 +136,7 @@ func (oDb *opensvcDB) dashboardUpdateObject(ctx context.Context, d *Dashboard) e
 				dash_env = ?
 				`
 	)
-	result, err := oDb.db.ExecContext(ctx, query,
+	result, err := oDb.DB.ExecContext(ctx, query,
 		d.ObjectID, d.Type, d.Fmt, d.Severity, d.Dict, d.Env,
 		d.Fmt, d.Severity, d.Dict, d.Env)
 	if err != nil {

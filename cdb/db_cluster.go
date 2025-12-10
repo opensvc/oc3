@@ -1,10 +1,10 @@
-package worker
+package cdb
 
 import (
 	"context"
 )
 
-func (oDb *opensvcDB) updateClustersData(ctx context.Context, clusterName, clusterID, data string) error {
+func (oDb *DB) UpdateClustersData(ctx context.Context, clusterName, clusterID, data string) error {
 	// TODO: verify if still needed, we can't assert things here
 	// +--------------+--------------+------+-----+---------+----------------+
 	// | Field        | Type         | Null | Key | Default | Extra          |
@@ -19,6 +19,6 @@ func (oDb *opensvcDB) updateClustersData(ctx context.Context, clusterName, clust
 			VALUES (?, ?, ?)
 			ON DUPLICATE KEY UPDATE cluster_name = ?, cluster_data = ?`
 	)
-	_, err := oDb.db.ExecContext(ctx, query, clusterName, clusterID, data, clusterName, data)
+	_, err := oDb.DB.ExecContext(ctx, query, clusterName, clusterID, data, clusterName, data)
 	return err
 }

@@ -3,10 +3,8 @@ package scheduler
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/opensvc/oc3/cdb"
 )
 
@@ -17,9 +15,10 @@ import (
 //
 //	UPDATE services SET svc_status="up" WHERE svc_id IN (SELECT svc_id FROM v_outdated_services);
 var TaskScrub = Task{
-	name:   "scrub",
-	period: time.Minute,
-	fn:     taskScrubRun,
+	name:    "scrub",
+	period:  time.Minute,
+	fn:      taskScrubRun,
+	timeout: time.Minute,
 }
 
 func taskScrubRun(ctx context.Context, task *Task) (err error) {
@@ -38,40 +37,16 @@ func taskScrubRunResStatus(ctx context.Context, task *Task) error {
 }
 
 func taskScrubRunSvcInstances(ctx context.Context, task *Task) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
-
-	tx, err := task.db.BeginTx(ctx, nil)
+	odb, err := task.DBX(ctx)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer odb.Rollback()
 
-	sql := `SELECT id, svc_id, svcname FROM services
-		WHERE svc_id IN (SELECT svc_id FROM v_outdated_services)
-                AND (svc_status != "undef" OR svc_availstatus != "undef")`
-	rows, err := tx.QueryContext(ctx, sql)
+	// Fetch the outdated services still not in "undef" availstatus
+	ids, svcIDs, svcNames, err := odb.ObjectOutdatedLists(ctx)
 	if err != nil {
 		return err
-	}
-	defer rows.Close()
-
-	svcIDs := make([]uuid.UUID, 0)
-	svcNames := make([]string, 0)
-	ids := make([]any, 0)
-
-	for {
-		next := rows.Next()
-		if !next {
-			break
-		}
-		var svcID uuid.UUID
-		var svcName string
-		var id int64
-		rows.Scan(&id, &svcID, &svcName)
-		svcIDs = append(svcIDs, svcID)
-		svcNames = append(svcNames, svcName)
-		ids = append(ids, id)
 	}
 
 	n := len(ids)
@@ -79,21 +54,28 @@ func taskScrubRunSvcInstances(ctx context.Context, task *Task) error {
 		return nil
 	}
 
-	sql = `UPDATE services
-		SET svc_status = "undef", svc_availstatus="undef"
-		WHERE id IN (%s)`
-	sql = fmt.Sprintf(sql, cdb.Placeholders(len(ids)))
-
-	_, err = tx.ExecContext(ctx, sql, ids...)
-	if err != nil {
-		return err
+	// Historize `services` lines we will touch
+	for _, svcID := range svcIDs {
+		if err := odb.ObjectUpdateLog(ctx, svcID.String(), "undef"); err != nil {
+			return err
+		}
 	}
-	task.Infof("set %d services status to undef (no live instance) for %s", n, svcIDs)
-	entries := make([]cdb.LogEntry, n)
+
+	// Update the `services` table
+	if n, err := odb.ObjectUpdateStatusSimple(ctx, ids, "undef", "undef"); err != nil {
+		return err
+	} else if int(n) != len(svcIDs) {
+		task.Infof("set %d/%d services status to undef (no live instance) amongst %s", n, len(svcIDs), svcIDs)
+	} else {
+		task.Infof("set %d services status to undef (no live instance) for %s", n, svcIDs)
+	}
+
+	// Create log table entries
+	logEntries := make([]cdb.LogEntry, n)
 	for i, svcID := range svcIDs {
 		d := make(map[string]any)
 		d["svc"] = svcNames[i]
-		entries[i] = cdb.LogEntry{
+		logEntries[i] = cdb.LogEntry{
 			Action: "service.status",
 			Fmt:    "service '%(svc)s' has zero live instance. Status flagged 'undef'",
 			Dict:   d,
@@ -102,10 +84,17 @@ func taskScrubRunSvcInstances(ctx context.Context, task *Task) error {
 			SvcID:  &svcID,
 		}
 	}
-	if err := cdb.Log(ctx, tx, entries...); err != nil {
+	if err := odb.Log(ctx, logEntries...); err != nil {
 		return err
 	}
-	if err := tx.Commit(); err != nil {
+	odb.Session.SetChanges("log")
+
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+
+	// Commit and notify client of changed tables
+	if err := odb.Commit(); err != nil {
 		return err
 	}
 	return nil

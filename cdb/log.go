@@ -27,7 +27,7 @@ type (
 	}
 )
 
-func Log(ctx context.Context, db execContexter, entries ...LogEntry) error {
+func (oDb *DB) Log(ctx context.Context, entries ...LogEntry) error {
 	toDict := func(d map[string]any) string {
 		if d == nil {
 			return "{}"
@@ -50,6 +50,6 @@ func Log(ctx context.Context, db execContexter, entries ...LogEntry) error {
 	sql := fmt.Sprintf("INSERT INTO log %s VALUES %s", cols, strings.Join(lines, ","))
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	_, err := db.ExecContext(ctx, sql, args...)
+	_, err := oDb.DB.ExecContext(ctx, sql, args...)
 	return err
 }

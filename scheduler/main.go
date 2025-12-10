@@ -61,6 +61,8 @@ func (t *Scheduler) toggleTasks(ctx context.Context, states map[string]State) {
 		case !storedState.IsDisabled && !hasCancel:
 			ctx2, cancel := context.WithCancel(ctx)
 			t.cancels[name] = cancel
+			task.SetDB(t.DB)
+			task.SetEv(t.Ev)
 			go func() {
 				task.Start(ctx2)
 			}()

@@ -2,7 +2,6 @@ package cdb
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -12,89 +11,90 @@ import (
 
 type (
 	ServiceLogUpdate struct {
-		SvcID       uuid.UUID
+		SvcID uuid.UUID
+
+		// AvailStatus is the new value in "services"
 		AvailStatus string
-		Begin       time.Time
+
+		// Begin value is:
+		// * Now() if set from the scrub task
+		// * the last received status time in other cases
+		Begin time.Time
+
+		// End value is:
+		// * the last received status time, in any case
+		//
+		// It will land in the svc_end col of the new services_log line
+		End time.Time
 	}
 )
 
-func UpdateServicesLog(db *sql.DB, entries ...ServiceLogUpdate) error {
+func UpdateServicesLog(ctx context.Context, db DBOperater, entries ...ServiceLogUpdate) error {
 	if len(entries) == 0 {
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-
 	svcIDs := make([]any, len(entries))
+	ends := make(map[uuid.UUID]time.Time)
 
 	for i, entry := range entries {
 		svcIDs[i] = entry.SvcID
-	}
-	sql := fmt.Sprintf("SELECT svc_id, svc_availstatus, svc_begin FROM services_log_last WHERE svc_id IN (%s)", Placeholders(len(svcIDs)))
-	rows, err := tx.Query(sql, svcIDs...)
-	if err != nil {
-		return err
+		ends[entry.SvcID] = entry.End
 	}
 
-	prev := make(map[uuid.UUID]ServiceLogUpdate)
+	sql := fmt.Sprintf("SELECT svc_id, svc_availstatus, svc_begin FROM services_log_last WHERE svc_id IN (%s)", Placeholders(len(svcIDs)))
+	rows, err := db.QueryContext(ctx, sql, svcIDs...)
+	if err != nil {
+		return fmt.Errorf("services_log_last select: %s: %w", sql, err)
+	}
+
+	last := make(map[uuid.UUID]ServiceLogUpdate)
 	for {
 		ok := rows.Next()
 		if !ok {
 			break
 		}
-		var (
-			svcID       uuid.UUID
-			availStatus string
-			begin       time.Time
-		)
-		err := rows.Scan(&svcID, &availStatus, &begin)
+		var line ServiceLogUpdate
+		err := rows.Scan(&line.SvcID, &line.AvailStatus, &line.Begin)
 		if err != nil {
-			return err
+			return fmt.Errorf("services_log_last line scan: %w", err)
 		}
-		prev[svcID] = ServiceLogUpdate{
-			SvcID:       svcID,
-			AvailStatus: availStatus,
-			Begin:       begin,
-		}
+		last[line.SvcID] = line
 	}
 
-	args := make([]any, 0)
-	lines := make([]string, 0)
+	logLastArgs := make([]any, 0)
+	logLastLines := make([]string, 0)
 	logArgs := make([]any, 0)
 	logLines := make([]string, 0)
 
 	for _, entry := range entries {
-		prevEntry, ok := prev[entry.SvcID]
-		lines = append(lines, "(?, ?, ?)")
+		logLastLines = append(logLastLines, "(?, ?, ?, ?)")
+		prevEntry, ok := last[entry.SvcID]
 		if ok {
-			args = append(args, entry.SvcID, entry.AvailStatus, prevEntry.Begin)
+			logLastArgs = append(logLastArgs, entry.SvcID, entry.AvailStatus, entry.Begin, entry.End)
 			if entry.AvailStatus != prevEntry.AvailStatus {
 				logLines = append(logLines, "(?, ?, ?, ?)")
-				logArgs = append(logArgs, prevEntry.SvcID, prevEntry.AvailStatus, prevEntry.Begin, "NOW()")
+				logArgs = append(logArgs, prevEntry.SvcID, prevEntry.AvailStatus, prevEntry.Begin, entry.End)
 			}
 		} else {
-			args = append(args, entry.SvcID, entry.AvailStatus, "NOW()")
+			logLastArgs = append(logLastArgs, entry.SvcID, entry.AvailStatus, "NOW()", "NOW()")
 		}
 	}
 
-	sql = "INSERT INTO services_log_last (svc_id, svc_availstatus, svc_begin) VALUES %s ON DUPLICATE KEY UPDATE svc_id=VALUES(svc_id), svc_availstatus=VALUES(svc_availstatus), svc_begin=VALUES(svc_begin)"
-	sql = fmt.Sprintf(sql, strings.Join(lines, ","))
-	_, err = tx.Exec(sql, args...)
+	sql = "INSERT INTO services_log_last (svc_id, svc_availstatus, svc_begin, svc_end) VALUES %s ON DUPLICATE KEY UPDATE svc_id=VALUES(svc_id), svc_availstatus=VALUES(svc_availstatus), svc_end=VALUES(svc_end)"
+	sql = fmt.Sprintf(sql, strings.Join(logLastLines, ","))
+	_, err = db.ExecContext(ctx, sql, logLastArgs...)
 	if err != nil {
-		return err
+		return fmt.Errorf("services_log_last update: %s: %w", sql, err)
 	}
-
-	sql = "INSERT INTO services_log (svc_id, svc_availstatus, svc_begin, svc_end) VALUES %s"
-	sql = fmt.Sprintf(sql, strings.Join(logLines, ","))
-	_, err = tx.Exec(sql, logArgs...)
-	if err != nil {
-		return err
+	if len(logLines) > 0 {
+		sql = "INSERT INTO services_log (svc_id, svc_availstatus, svc_begin, svc_end) VALUES %s"
+		sql = fmt.Sprintf(sql, strings.Join(logLines, ","))
+		_, err = db.ExecContext(ctx, sql, logArgs...)
+		if err != nil {
+			return fmt.Errorf("services_log insert: %s: %w", sql, err)
+		}
+		//task.Session().SetChanges("services_log")
 	}
 	return nil
 

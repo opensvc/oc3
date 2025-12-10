@@ -1,4 +1,4 @@
-package worker
+package cdb
 
 import (
 	"context"
@@ -10,9 +10,14 @@ import (
 )
 
 type (
-	DBInstance struct {
-		svcID  string
+	InstanceID struct {
 		nodeID string
+		svcID  string
+	}
+
+	DBInstance struct {
+		SvcID  string
+		NodeID string
 		Frozen int64
 	}
 
@@ -52,24 +57,24 @@ type (
 	//) ENGINE=InnoDB AUTO_INCREMENT=28468 DEFAULT CHARSET=utf8
 	DBInstanceStatus struct {
 		ID                  int64
-		nodeID              string
-		svcID               string
-		monVmName           string
-		monSmonStatus       string
-		monSmonGlobalExpect string
-		monAvailStatus      string
-		monOverallStatus    string
-		monIpStatus         string
-		monDiskStatus       string
-		monFsStatus         string
-		monShareStatus      string
-		monContainerStatus  string
-		monAppStatus        string
-		monSyncStatus       string
-		monFrozen           int
-		monFrozenAt         time.Time
-		monVmType           string
-		monUpdated          string
+		NodeID              string
+		SvcID               string
+		MonVmName           string
+		MonSmonStatus       string
+		MonSmonGlobalExpect string
+		MonAvailStatus      string
+		MonOverallStatus    string
+		MonIpStatus         string
+		MonDiskStatus       string
+		MonFsStatus         string
+		MonShareStatus      string
+		MonContainerStatus  string
+		MonAppStatus        string
+		MonSyncStatus       string
+		MonFrozen           int
+		MonFrozenAt         time.Time
+		MonVmType           string
+		MonUpdated          string
 	}
 
 	// DBInstanceResource is the database table resmon
@@ -100,23 +105,27 @@ type (
 	//        KEY `idx_node_id_updated` (`node_id`,`updated`)
 	// ) ENGINE=InnoDB AUTO_INCREMENT=15524822 DEFAULT CHARSET=utf8
 	DBInstanceResource struct {
-		svcID    string
-		nodeID   string
-		vmName   string
-		rid      string
-		status   string
-		changed  time.Time
-		updated  time.Time
-		desc     string
-		log      string
-		monitor  string
-		disable  string
-		optional string
-		resType  string
+		SvcID    string
+		NodeID   string
+		VmName   string
+		RID      string
+		Status   string
+		Changed  time.Time
+		Updated  time.Time
+		Desc     string
+		Log      string
+		Monitor  string
+		Disable  string
+		Optional string
+		ResType  string
 	}
 )
 
-func (oDb *opensvcDB) instancesFromObjectIDs(ctx context.Context, objectIDs ...string) ([]*DBInstance, error) {
+func (i *InstanceID) String() string {
+	return fmt.Sprintf("instance id: %s@%s", i.svcID, i.nodeID)
+}
+
+func (oDb *DB) InstancesFromObjectIDs(ctx context.Context, objectIDs ...string) ([]*DBInstance, error) {
 	if len(objectIDs) == 0 {
 		return nil, nil
 	}
@@ -134,7 +143,7 @@ func (oDb *opensvcDB) instancesFromObjectIDs(ctx context.Context, objectIDs ...s
 	}
 	query += ")"
 
-	rows, err := oDb.db.QueryContext(ctx, query, values...)
+	rows, err := oDb.DB.QueryContext(ctx, query, values...)
 	if err != nil {
 		return nil, fmt.Errorf("instancesFromObjectIDs query: %w", err)
 	}
@@ -145,7 +154,7 @@ func (oDb *opensvcDB) instancesFromObjectIDs(ctx context.Context, objectIDs ...s
 	for rows.Next() {
 		var o DBInstance
 		var frozen sql.NullInt64
-		if err := rows.Scan(&o.svcID, &o.nodeID, &frozen); err != nil {
+		if err := rows.Scan(&o.SvcID, &o.NodeID, &frozen); err != nil {
 			return nil, fmt.Errorf("instancesFromObjectIDs scan: %w", err)
 		}
 		o.Frozen = frozen.Int64
@@ -157,10 +166,10 @@ func (oDb *opensvcDB) instancesFromObjectIDs(ctx context.Context, objectIDs ...s
 	return instances, nil
 }
 
-// instancePing updates svcmon.mon_updated, svcmon_log_last.mon_end,
+// InstancePing updates svcmon.mon_updated, svcmon_log_last.mon_end,
 // resmon.updated and resmon_log_last.res_end
 // when svcmon.mon_updated timestamp for svc_id id older than 30s.
-func (oDb *opensvcDB) instancePing(ctx context.Context, svcID, nodeID string) (updates bool, err error) {
+func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates bool, err error) {
 	defer logDuration("instancePing "+svcID+"@"+nodeID, time.Now())
 	const (
 		qHasInstance  = "SELECT count(*) FROM `svcmon` WHERE `svc_id` = ? AND `node_id` = ?"
@@ -193,7 +202,7 @@ func (oDb *opensvcDB) instancePing(ctx context.Context, svcID, nodeID string) (u
 		result sql.Result
 	)
 	begin := time.Now()
-	err = oDb.db.QueryRowContext(ctx, qHasInstance, svcID, nodeID).Scan(&count)
+	err = oDb.DB.QueryRowContext(ctx, qHasInstance, svcID, nodeID).Scan(&count)
 	slog.Debug(fmt.Sprintf("instancePing qHasInstance %s", time.Now().Sub(begin)))
 	begin = time.Now()
 
@@ -206,7 +215,7 @@ func (oDb *opensvcDB) instancePing(ctx context.Context, svcID, nodeID string) (u
 	}
 
 	begin = time.Now()
-	if result, err = oDb.db.ExecContext(ctx, qUpdateSvcmon, svcID, nodeID); err != nil {
+	if result, err = oDb.DB.ExecContext(ctx, qUpdateSvcmon, svcID, nodeID); err != nil {
 		return
 	} else if count, err = result.RowsAffected(); err != nil {
 		return
@@ -218,13 +227,13 @@ func (oDb *opensvcDB) instancePing(ctx context.Context, svcID, nodeID string) (u
 	updates = true
 
 	oDb.SetChange("svcmon")
-	if _, err = oDb.db.ExecContext(ctx, qUpdateSvcmonLogLast, svcID, nodeID); err != nil {
+	if _, err = oDb.DB.ExecContext(ctx, qUpdateSvcmonLogLast, svcID, nodeID); err != nil {
 		return
 	}
 	slog.Debug(fmt.Sprintf("instancePing qUpdateSvcmonLogLast %s", time.Now().Sub(begin)))
 	begin = time.Now()
 
-	if result, err = oDb.db.ExecContext(ctx, qUpdateResmon, svcID, nodeID); err != nil {
+	if result, err = oDb.DB.ExecContext(ctx, qUpdateResmon, svcID, nodeID); err != nil {
 		return
 	} else if count, err = result.RowsAffected(); err != nil {
 		return
@@ -235,7 +244,7 @@ func (oDb *opensvcDB) instancePing(ctx context.Context, svcID, nodeID string) (u
 	begin = time.Now()
 	oDb.SetChange("resmon")
 
-	if _, err = oDb.db.ExecContext(ctx, qUpdateResmonLogLast, svcID, nodeID); err != nil {
+	if _, err = oDb.DB.ExecContext(ctx, qUpdateResmonLogLast, svcID, nodeID); err != nil {
 		return
 	}
 
@@ -244,10 +253,10 @@ func (oDb *opensvcDB) instancePing(ctx context.Context, svcID, nodeID string) (u
 	return
 }
 
-// instancePingFromNodeID updates match svcmon.mon_updated, svcmon_log_last.mon_end,
+// InstancePingFromNodeID updates match svcmon.mon_updated, svcmon_log_last.mon_end,
 // resmon.updated and resmon_log_last.res_end when svcmon.mon_updated timestamp
 // for node_id id older than 30s.
-func (oDb *opensvcDB) instancePingFromNodeID(ctx context.Context, nodeID string) (updates bool, err error) {
+func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updates bool, err error) {
 	defer logDuration("instancePing "+nodeID, time.Now())
 	const (
 		qUpdateSvcmon = `UPDATE svcmon SET mon_updated = NOW()
@@ -267,7 +276,7 @@ func (oDb *opensvcDB) instancePingFromNodeID(ctx context.Context, nodeID string)
 		result sql.Result
 	)
 
-	if result, err = oDb.db.ExecContext(ctx, qUpdateSvcmon, nodeID); err != nil {
+	if result, err = oDb.DB.ExecContext(ctx, qUpdateSvcmon, nodeID); err != nil {
 		return
 	} else if count, err = result.RowsAffected(); err != nil {
 		return
@@ -277,11 +286,11 @@ func (oDb *opensvcDB) instancePingFromNodeID(ctx context.Context, nodeID string)
 	updates = true
 	oDb.SetChange("svcmon")
 
-	if _, err = oDb.db.ExecContext(ctx, qUpdateSvcmonLogLast, nodeID); err != nil {
+	if _, err = oDb.DB.ExecContext(ctx, qUpdateSvcmonLogLast, nodeID); err != nil {
 		return
 	}
 
-	if result, err = oDb.db.ExecContext(ctx, qUpdateResmon, nodeID); err != nil {
+	if result, err = oDb.DB.ExecContext(ctx, qUpdateResmon, nodeID); err != nil {
 		return
 	} else if count, err = result.RowsAffected(); err != nil {
 		return
@@ -290,17 +299,17 @@ func (oDb *opensvcDB) instancePingFromNodeID(ctx context.Context, nodeID string)
 	}
 	oDb.SetChange("resmon")
 
-	_, err = oDb.db.ExecContext(ctx, qUpdateResmonLogLast, nodeID)
+	_, err = oDb.DB.ExecContext(ctx, qUpdateResmonLogLast, nodeID)
 	return
 }
 
-func (oDb *opensvcDB) instanceDeleteStatus(ctx context.Context, svcID, nodeID string) error {
+func (oDb *DB) InstanceDeleteStatus(ctx context.Context, svcID, nodeID string) error {
 	defer logDuration("instanceDeleteStatus "+svcID+"@"+nodeID, time.Now())
 	const (
 		queryDelete = "" +
 			"DELETE FROM `svcmon` WHERE `svc_id` = ? AND `node_id` = ?"
 	)
-	result, err := oDb.db.ExecContext(ctx, queryDelete, svcID, nodeID)
+	result, err := oDb.DB.ExecContext(ctx, queryDelete, svcID, nodeID)
 	if err != nil {
 		return fmt.Errorf("instanceDeleteStatus %s@%s: %w", svcID, nodeID, err)
 	}
@@ -312,8 +321,8 @@ func (oDb *opensvcDB) instanceDeleteStatus(ctx context.Context, svcID, nodeID st
 	return nil
 }
 
-func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, status *DBInstanceStatus) error {
-	defer logDuration("instanceStatusLogUpdate "+status.svcID+"@"+status.nodeID, time.Now())
+func (oDb *DB) InstanceStatusLogUpdate(ctx context.Context, status *DBInstanceStatus) error {
+	defer logDuration("instanceStatusLogUpdate "+status.SvcID+"@"+status.NodeID, time.Now())
 	/*
 		CREATE TABLE `svcmon_log_last` (
 		  `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -398,19 +407,19 @@ func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, status *DBIns
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.db.ExecContext(ctx, querySetLogLast, status.svcID, status.nodeID,
-			status.monAvailStatus, status.monOverallStatus, status.monSyncStatus, status.monIpStatus, status.monFsStatus,
-			status.monDiskStatus, status.monShareStatus, status.monContainerStatus, status.monAppStatus,
-			status.monAvailStatus, status.monOverallStatus, status.monSyncStatus, status.monIpStatus, status.monFsStatus,
-			status.monDiskStatus, status.monShareStatus, status.monContainerStatus, status.monAppStatus)
+		_, err := oDb.DB.ExecContext(ctx, querySetLogLast, status.SvcID, status.NodeID,
+			status.MonAvailStatus, status.MonOverallStatus, status.MonSyncStatus, status.MonIpStatus, status.MonFsStatus,
+			status.MonDiskStatus, status.MonShareStatus, status.MonContainerStatus, status.MonAppStatus,
+			status.MonAvailStatus, status.MonOverallStatus, status.MonSyncStatus, status.MonIpStatus, status.MonFsStatus,
+			status.MonDiskStatus, status.MonShareStatus, status.MonContainerStatus, status.MonAppStatus)
 		if err != nil {
 			return fmt.Errorf("update svcmon_log_last: %w", err)
 		}
 		return nil
 	}
-	err := oDb.db.QueryRowContext(ctx, queryGetLogLast, status.svcID, status.nodeID).Scan(&previousBegin, &prev.ID,
-		&prev.monAvailStatus, &prev.monOverallStatus, &prev.monSyncStatus, &prev.monIpStatus, &prev.monFsStatus,
-		&prev.monDiskStatus, &prev.monShareStatus, &prev.monContainerStatus, &prev.monAppStatus)
+	err := oDb.DB.QueryRowContext(ctx, queryGetLogLast, status.SvcID, status.NodeID).Scan(&previousBegin, &prev.ID,
+		&prev.MonAvailStatus, &prev.MonOverallStatus, &prev.MonSyncStatus, &prev.MonIpStatus, &prev.MonFsStatus,
+		&prev.MonDiskStatus, &prev.MonShareStatus, &prev.MonContainerStatus, &prev.MonAppStatus)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial status, log value
@@ -420,25 +429,25 @@ func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, status *DBIns
 		return fmt.Errorf("get svcmon_log_last: %w", err)
 	default:
 		defer oDb.SetChange("svcmon_log")
-		if status.monAvailStatus == prev.monAvailStatus &&
-			status.monOverallStatus == prev.monOverallStatus &&
-			status.monSyncStatus == prev.monSyncStatus &&
-			status.monIpStatus == prev.monIpStatus &&
-			status.monFsStatus == prev.monFsStatus &&
-			status.monDiskStatus == prev.monDiskStatus &&
-			status.monShareStatus == prev.monShareStatus &&
-			status.monContainerStatus == prev.monContainerStatus &&
-			status.monAppStatus == prev.monAppStatus {
+		if status.MonAvailStatus == prev.MonAvailStatus &&
+			status.MonOverallStatus == prev.MonOverallStatus &&
+			status.MonSyncStatus == prev.MonSyncStatus &&
+			status.MonIpStatus == prev.MonIpStatus &&
+			status.MonFsStatus == prev.MonFsStatus &&
+			status.MonDiskStatus == prev.MonDiskStatus &&
+			status.MonShareStatus == prev.MonShareStatus &&
+			status.MonContainerStatus == prev.MonContainerStatus &&
+			status.MonAppStatus == prev.MonAppStatus {
 			// no change, extend last interval
-			if _, err := oDb.db.ExecContext(ctx, queryExtendIntervalOfCurrent, status.svcID, status.nodeID); err != nil {
+			if _, err := oDb.DB.ExecContext(ctx, queryExtendIntervalOfCurrent, status.SvcID, status.NodeID); err != nil {
 				return fmt.Errorf("extend svcmon_log_last: %w", err)
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of prev status, log value before change
-			_, err := oDb.db.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, status.svcID, status.nodeID,
-				prev.monAvailStatus, prev.monOverallStatus, prev.monSyncStatus, prev.monIpStatus, prev.monFsStatus,
-				prev.monDiskStatus, prev.monShareStatus, prev.monContainerStatus, prev.monAppStatus,
+			_, err := oDb.DB.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, status.SvcID, status.NodeID,
+				prev.MonAvailStatus, prev.MonOverallStatus, prev.MonSyncStatus, prev.MonIpStatus, prev.MonFsStatus,
+				prev.MonDiskStatus, prev.MonShareStatus, prev.MonContainerStatus, prev.MonAppStatus,
 				previousBegin)
 			if err != nil {
 				return fmt.Errorf("save svcmon_log transition: %w", err)
@@ -449,8 +458,8 @@ func (oDb *opensvcDB) instanceStatusLogUpdate(ctx context.Context, status *DBIns
 	}
 }
 
-func (oDb *opensvcDB) instanceStatusUpdate(ctx context.Context, s *DBInstanceStatus) error {
-	defer logDuration("instanceStatusUpdate "+s.svcID+"@"+s.nodeID, time.Now())
+func (oDb *DB) InstanceStatusUpdate(ctx context.Context, s *DBInstanceStatus) error {
+	defer logDuration("instanceStatusUpdate "+s.SvcID+"@"+s.NodeID, time.Now())
 	const (
 		qUpdate = "" +
 			"INSERT INTO `svcmon` (`svc_id`, `node_id`, `mon_vmname`, " +
@@ -466,15 +475,15 @@ func (oDb *opensvcDB) instanceStatusUpdate(ctx context.Context, s *DBInstanceSta
 			" `mon_frozen` = ?, `mon_frozen_at` = ?, `mon_vmtype` = ?, `mon_updated` = NOW()"
 	)
 	// TODO check vs v2
-	_, err := oDb.db.ExecContext(ctx, qUpdate, s.svcID, s.nodeID, s.monVmName,
-		s.monSmonStatus, s.monSmonGlobalExpect, s.monAvailStatus,
-		s.monOverallStatus, s.monIpStatus, s.monDiskStatus, s.monFsStatus,
-		s.monShareStatus, s.monContainerStatus, s.monAppStatus, s.monSyncStatus,
-		s.monFrozen, s.monFrozenAt, s.monVmType,
-		s.monSmonStatus, s.monSmonGlobalExpect, s.monAvailStatus,
-		s.monOverallStatus, s.monIpStatus, s.monDiskStatus, s.monFsStatus,
-		s.monShareStatus, s.monContainerStatus, s.monAppStatus, s.monSyncStatus,
-		s.monFrozen, s.monFrozenAt, s.monVmType)
+	_, err := oDb.DB.ExecContext(ctx, qUpdate, s.SvcID, s.NodeID, s.MonVmName,
+		s.MonSmonStatus, s.MonSmonGlobalExpect, s.MonAvailStatus,
+		s.MonOverallStatus, s.MonIpStatus, s.MonDiskStatus, s.MonFsStatus,
+		s.MonShareStatus, s.MonContainerStatus, s.MonAppStatus, s.MonSyncStatus,
+		s.MonFrozen, s.MonFrozenAt, s.MonVmType,
+		s.MonSmonStatus, s.MonSmonGlobalExpect, s.MonAvailStatus,
+		s.MonOverallStatus, s.MonIpStatus, s.MonDiskStatus, s.MonFsStatus,
+		s.MonShareStatus, s.MonContainerStatus, s.MonAppStatus, s.MonSyncStatus,
+		s.MonFrozen, s.MonFrozenAt, s.MonVmType)
 	if err != nil {
 		return err
 	}
@@ -482,42 +491,42 @@ func (oDb *opensvcDB) instanceStatusUpdate(ctx context.Context, s *DBInstanceSta
 	return nil
 }
 
-func (oDb *opensvcDB) instanceResourcesDelete(ctx context.Context, svcID, nodeID string) error {
-	defer logDuration("instanceResourcesDelete "+svcID+"@"+nodeID+":", time.Now())
+func (oDb *DB) InstanceResourcesDelete(ctx context.Context, svcID, nodeID string) error {
+	defer logDuration("InstanceResourcesDelete "+svcID+"@"+nodeID+":", time.Now())
 	const (
 		queryPurge = "DELETE FROM `resmon` WHERE `svc_id` = ? AND `node_id` = ?"
 	)
-	if _, err := oDb.db.ExecContext(ctx, queryPurge, svcID, nodeID); err != nil {
-		return fmt.Errorf("instanceResourcesDelete: %w", err)
+	if _, err := oDb.DB.ExecContext(ctx, queryPurge, svcID, nodeID); err != nil {
+		return fmt.Errorf("InstanceResourcesDelete: %w", err)
 	}
 	return nil
 }
 
-func (oDb *opensvcDB) instanceResourcesDeleteObsolete(ctx context.Context, svcID, nodeID string, maxTime time.Time) error {
-	defer logDuration("instanceResourcesDeleteObsolete "+svcID+"@"+nodeID+":", time.Now())
+func (oDb *DB) InstanceResourcesDeleteObsolete(ctx context.Context, svcID, nodeID string, maxTime time.Time) error {
+	defer logDuration("InstanceResourcesDeleteObsolete "+svcID+"@"+nodeID+":", time.Now())
 	const (
 		queryPurge = "" +
 			"DELETE FROM `resmon`" +
 			"WHERE `svc_id` = ? AND `node_id` = ? AND `updated` < ?"
 	)
-	result, err := oDb.db.ExecContext(ctx, queryPurge, svcID, nodeID, maxTime)
+	result, err := oDb.DB.ExecContext(ctx, queryPurge, svcID, nodeID, maxTime)
 	if err != nil {
-		return fmt.Errorf("instanceResourcesDeleteObsolete: %w", err)
+		return fmt.Errorf("InstanceResourcesDeleteObsolete: %w", err)
 	}
 	if affected, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("instanceResourcesDeleteObsolete count affected: %w", err)
+		return fmt.Errorf("InstanceResourcesDeleteObsolete count affected: %w", err)
 	} else {
-		slog.Debug(fmt.Sprintf("instanceResourcesDeleteObsolete %s@%s: %d", svcID, nodeID, affected))
+		slog.Debug(fmt.Sprintf("InstanceResourcesDeleteObsolete %s@%s: %d", svcID, nodeID, affected))
 	}
 	return nil
 }
 
-// instanceResourceLogUpdate handle resmon_log_last and resmon_log avail value changes.
+// InstanceResourceLogUpdate handle resmon_log_last and resmon_log avail value changes.
 //
 // resmon_log_last tracks the current status, log value from begin to now.
 // resmon_log tracks status, log values changes with begin and end: [(status, log, begin, end), ...]
-func (oDb *opensvcDB) instanceResourceLogUpdate(ctx context.Context, res *DBInstanceResource) error {
-	defer logDuration("instanceResourceLogUpdate "+res.svcID+"@"+res.nodeID+":"+res.rid, time.Now())
+func (oDb *DB) InstanceResourceLogUpdate(ctx context.Context, res *DBInstanceResource) error {
+	defer logDuration("InstanceResourceLogUpdate "+res.SvcID+"@"+res.NodeID+":"+res.RID, time.Now())
 	/*
 		CREATE TABLE `resmon_log` (
 		  `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -570,16 +579,16 @@ func (oDb *opensvcDB) instanceResourceLogUpdate(ctx context.Context, res *DBInst
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.db.ExecContext(ctx, querySetLogLast,
-			res.svcID, res.nodeID, res.rid,
-			res.status, res.log,
-			res.status, res.log)
+		_, err := oDb.DB.ExecContext(ctx, querySetLogLast,
+			res.SvcID, res.NodeID, res.RID,
+			res.Status, res.Log,
+			res.Status, res.Log)
 		if err != nil {
 			return fmt.Errorf("update resmon_log_last: %w", err)
 		}
 		return nil
 	}
-	err := oDb.db.QueryRowContext(ctx, queryGetLogLast, res.svcID, res.nodeID, res.rid).Scan(&previousStatus, &previousLog, &previousBegin)
+	err := oDb.DB.QueryRowContext(ctx, queryGetLogLast, res.SvcID, res.NodeID, res.RID).Scan(&previousStatus, &previousLog, &previousBegin)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial status, log value
@@ -589,16 +598,16 @@ func (oDb *opensvcDB) instanceResourceLogUpdate(ctx context.Context, res *DBInst
 		return fmt.Errorf("get resmon_log_last: %w", err)
 	default:
 		defer oDb.SetChange("resmon_log")
-		if previousStatus == res.status && previousLog == res.log {
+		if previousStatus == res.Status && previousLog == res.Log {
 			// no change, extend last interval
-			if _, err := oDb.db.ExecContext(ctx, queryExtendIntervalOfCurrent, res.svcID, res.nodeID, res.rid); err != nil {
+			if _, err := oDb.DB.ExecContext(ctx, queryExtendIntervalOfCurrent, res.SvcID, res.NodeID, res.RID); err != nil {
 				return fmt.Errorf("extend services_log_last: %w", err)
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of previous status, log value before change
-			if _, err := oDb.db.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition,
-				res.svcID, res.nodeID, res.rid, previousBegin, previousStatus, previousLog); err != nil {
+			if _, err := oDb.DB.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition,
+				res.SvcID, res.NodeID, res.RID, previousBegin, previousStatus, previousLog); err != nil {
 				return fmt.Errorf("add services_log change: %w", err)
 			}
 			// reset begin and end interval for new status, log
@@ -607,8 +616,8 @@ func (oDb *opensvcDB) instanceResourceLogUpdate(ctx context.Context, res *DBInst
 	}
 }
 
-func (oDb *opensvcDB) instanceResourceUpdate(ctx context.Context, res *DBInstanceResource) error {
-	defer logDuration("instanceResourceUpdate "+res.svcID+"@"+res.nodeID+":"+res.rid, time.Now())
+func (oDb *DB) InstanceResourceUpdate(ctx context.Context, res *DBInstanceResource) error {
+	defer logDuration("InstanceResourceUpdate "+res.SvcID+"@"+res.NodeID+":"+res.RID, time.Now())
 	const (
 		query = "" +
 			"INSERT INTO `resmon` (`svc_id`, `node_id`, `vmname`, `rid`," +
@@ -623,22 +632,22 @@ func (oDb *opensvcDB) instanceResourceUpdate(ctx context.Context, res *DBInstanc
 			" `res_optional` = ?, `res_disable` = ?, `res_monitor` = ?," +
 			" `updated` = NOW()"
 	)
-	_, err := oDb.db.ExecContext(ctx, query,
-		res.svcID, res.nodeID, res.vmName, res.rid,
-		res.status, res.resType, res.log, res.desc,
-		res.optional, res.disable, res.monitor,
-		res.status, res.resType, res.log, res.desc,
-		res.disable, res.disable, res.monitor,
+	_, err := oDb.DB.ExecContext(ctx, query,
+		res.SvcID, res.NodeID, res.VmName, res.RID,
+		res.Status, res.ResType, res.Log, res.Desc,
+		res.Optional, res.Disable, res.Monitor,
+		res.Status, res.ResType, res.Log, res.Desc,
+		res.Disable, res.Disable, res.Monitor,
 	)
 
 	if err != nil {
-		return fmt.Errorf("instanceResourceUpdate %s: %w", res.rid, err)
+		return fmt.Errorf("instanceResourceUpdate %s: %w", res.RID, err)
 	}
 	oDb.SetChange("resmon")
 	return nil
 }
 
-// getOrphanInstances returns list of InstanceID defined on svcmon for nodeIDs but where
+// GetOrphanInstances returns list of InstanceID defined on svcmon for nodeIDs but where
 // the associated services.svcname is not into objectNames
 //
 //	SELECT `svcmon`.`svc_id`, `svcmon`.`node_id`
@@ -649,7 +658,7 @@ func (oDb *opensvcDB) instanceResourceUpdate(ctx context.Context, res *DBInstanc
 //	    	`svcmon`.`svc_id` = `services`.`svc_id`
 //		AND
 //			`services`.`svcname` NOT IN ('obj1','obj2',...)
-func (oDb *opensvcDB) getOrphanInstances(ctx context.Context, nodeIDs, objectNames []string) (instanceIDs []InstanceID, err error) {
+func (oDb *DB) GetOrphanInstances(ctx context.Context, nodeIDs, objectNames []string) (instanceIDs []InstanceID, err error) {
 	var (
 		query = "SELECT `svcmon`.`svc_id`, `svcmon`.`node_id` FROM `services`, `svcmon`"
 
@@ -675,7 +684,7 @@ func (oDb *opensvcDB) getOrphanInstances(ctx context.Context, nodeIDs, objectNam
 		queryArgs = append(queryArgs, objectNames[i])
 	}
 	query += " )"
-	rows, err = oDb.db.QueryContext(ctx, query, queryArgs...)
+	rows, err = oDb.DB.QueryContext(ctx, query, queryArgs...)
 	if err != nil {
 		return
 	}
@@ -691,7 +700,7 @@ func (oDb *opensvcDB) getOrphanInstances(ctx context.Context, nodeIDs, objectNam
 	return
 }
 
-func (oDb *opensvcDB) purgeInstances(ctx context.Context, id InstanceID) error {
+func (oDb *DB) PurgeInstances(ctx context.Context, id InstanceID) error {
 	const (
 		where = "WHERE `svc_id` = ? and `node_id` = ?"
 	)
@@ -707,7 +716,7 @@ func (oDb *opensvcDB) purgeInstances(ctx context.Context, id InstanceID) error {
 	slog.Debug(fmt.Sprintf("purging instance %s", id))
 	for _, tableName := range tables {
 		request := fmt.Sprintf("DELETE FROM %s WHERE `svc_id` = ? and `node_id` = ?", tableName)
-		result, err1 := oDb.db.ExecContext(ctx, request, id.svcID, id.nodeID)
+		result, err1 := oDb.DB.ExecContext(ctx, request, id.svcID, id.nodeID)
 		if err1 != nil {
 			err = errors.Join(err, fmt.Errorf("delete from %s: %w", tableName, err1))
 			continue

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/opensvc/oc3/cdb"
 )
 
 type (
@@ -102,11 +104,11 @@ func (d *daemonDataV3) nodeHeartbeat(nodename string) ([]heartbeatData, error) {
 
 		// Add entry for the node hb state itself regardless of its peers
 		l = append(l, heartbeatData{
-			DBHeartbeat: DBHeartbeat{
-				nodeID: "",
-				driver: family,
-				name:   name,
-				state:  state,
+			DBHeartbeat: cdb.DBHeartbeat{
+				NodeID: "",
+				Driver: family,
+				Name:   name,
+				State:  state,
 			},
 			nodename: nodename,
 		})
@@ -127,13 +129,13 @@ func (d *daemonDataV3) nodeHeartbeat(nodename string) ([]heartbeatData, error) {
 			}
 			lastBeating, _ := time.Parse(time.RFC3339Nano, mapToS(v, "", "last_at"))
 			l = append(l, heartbeatData{
-				DBHeartbeat: DBHeartbeat{
-					driver:      family,
-					name:        name,
-					state:       state,
-					beating:     beating,
-					desc:        mapToS(v, "", "desc"),
-					lastBeating: lastBeating,
+				DBHeartbeat: cdb.DBHeartbeat{
+					Driver:      family,
+					Name:        name,
+					State:       state,
+					Beating:     beating,
+					Desc:        mapToS(v, "", "desc"),
+					LastBeating: lastBeating,
 				},
 				nodename:     nodename,
 				peerNodename: peer,
@@ -154,33 +156,33 @@ func (d *daemonDataV3) appFromObjectName(objectName string, nodes ...string) str
 	return ""
 }
 
-func (d *daemonDataV3) objectStatus(objectName string) *DBObjStatus {
+func (d *daemonDataV3) objectStatus(objectName string) *cdb.DBObjStatus {
 	if i, ok := mapTo(d.cluster, "object", objectName); ok && i != nil {
 		if o, ok := i.(map[string]any); ok {
-			oStatus := &DBObjStatus{
-				availStatus:   "n/a",
-				overallStatus: "n/a",
-				placement:     "n/a",
-				frozen:        "n/a",
-				provisioned:   "n/a",
+			oStatus := &cdb.DBObjStatus{
+				AvailStatus:   "n/a",
+				OverallStatus: "n/a",
+				Placement:     "n/a",
+				Frozen:        "n/a",
+				Provisioned:   "n/a",
 			}
 			if s, ok := o["avail"].(string); ok {
-				oStatus.availStatus = s
+				oStatus.AvailStatus = s
 			}
 			if s, ok := o["overall"].(string); ok {
-				oStatus.overallStatus = s
+				oStatus.OverallStatus = s
 			}
 			if s, ok := o["placement_state"].(string); ok {
-				oStatus.placement = s
+				oStatus.Placement = s
 			}
 			if s, ok := o["frozen"].(string); ok {
-				oStatus.frozen = s
+				oStatus.Frozen = s
 			}
 			if prov, ok := o["provisioned"].(string); ok {
 				if prov == "true" {
-					oStatus.provisioned = "True"
+					oStatus.Provisioned = "True"
 				} else {
-					oStatus.provisioned = "False"
+					oStatus.Provisioned = "False"
 				}
 			}
 			return oStatus
@@ -210,13 +212,13 @@ func (d *daemonDataV3) InstanceStatus(objectName string, nodename string) *insta
 	}
 
 	instanceStatus := &instanceData{
-		DBInstanceStatus:  DBInstanceStatus{},
+		DBInstanceStatus:  cdb.DBInstanceStatus{},
 		resourceMonitored: make(map[string]bool),
 	}
 
-	instanceStatus.monAvailStatus = mapToS(status, "", "avail")
+	instanceStatus.MonAvailStatus = mapToS(status, "", "avail")
 
-	instanceStatus.monOverallStatus = mapToS(status, "", "overall")
+	instanceStatus.MonOverallStatus = mapToS(status, "", "overall")
 
 	// TODO: verify v3 encap
 	instanceStatus.encap = mapToMap(status, nilMap, "encap")
@@ -224,22 +226,22 @@ func (d *daemonDataV3) InstanceStatus(objectName string, nodename string) *insta
 	instanceStatus.resources = mapToMap(status, nilMap, "resources")
 
 	if frozenAt, _ := time.Parse(time.RFC3339Nano, status["frozen_at"].(string)); frozenAt.After(time.Time{}) {
-		instanceStatus.monFrozen = 1
-		instanceStatus.monFrozenAt = frozenAt
+		instanceStatus.MonFrozen = 1
+		instanceStatus.MonFrozenAt = frozenAt
 	}
 
 	// TODO: verify defaults
-	instanceStatus.monSmonStatus = mapToS(monitor, "", "state")
-	instanceStatus.monSmonGlobalExpect = mapToS(monitor, "", "global_expect")
+	instanceStatus.MonSmonStatus = mapToS(monitor, "", "state")
+	instanceStatus.MonSmonGlobalExpect = mapToS(monitor, "", "global_expect")
 
 	// TODO: status group from v2 (ip/disk/fs/share/container/app/sync)?
-	instanceStatus.monIpStatus = mapToS(status, "n/a", "status_group", "ip")
-	instanceStatus.monDiskStatus = mapToS(status, "n/a", "status_group", "disk")
-	instanceStatus.monFsStatus = mapToS(status, "n/a", "status_group", "fs")
-	instanceStatus.monShareStatus = mapToS(status, "n/a", "status_group", "share")
-	instanceStatus.monContainerStatus = mapToS(status, "n/a", "status_group", "container")
-	instanceStatus.monAppStatus = mapToS(status, "n/a", "status_group", "app")
-	instanceStatus.monSyncStatus = mapToS(status, "n/a", "status_group", "sync")
+	instanceStatus.MonIpStatus = mapToS(status, "n/a", "status_group", "ip")
+	instanceStatus.MonDiskStatus = mapToS(status, "n/a", "status_group", "disk")
+	instanceStatus.MonFsStatus = mapToS(status, "n/a", "status_group", "fs")
+	instanceStatus.MonShareStatus = mapToS(status, "n/a", "status_group", "share")
+	instanceStatus.MonContainerStatus = mapToS(status, "n/a", "status_group", "container")
+	instanceStatus.MonAppStatus = mapToS(status, "n/a", "status_group", "app")
+	instanceStatus.MonSyncStatus = mapToS(status, "n/a", "status_group", "sync")
 
 	configResources := mapToMap(config, nilMap, "resources")
 	for rid := range instanceStatus.resources {

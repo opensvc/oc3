@@ -156,29 +156,29 @@ func (d *jobFeedNodeDisk) updateDB() error {
 			}
 			devID := strings.ToUpper(diskID[26:28] + ":" + diskID[28:30] + ":" + diskID[30:])
 			portnamePrefix := "50" + devID[2:12] + `%`
-			if newDiskID, err := d.oDb.diskIDFromDiskinfoWithDevIDAndTargetID(d.ctx, devID, portnamePrefix, diskID); err != nil {
+			if newDiskID, err := d.oDb.DiskIDFromDiskinfoWithDevIDAndTargetID(d.ctx, devID, portnamePrefix, diskID); err != nil {
 				return fmt.Errorf("search diskinfo on OPEN-V disk with diskID %s: %w", diskID, err)
 			} else if newDiskID != "" {
-				if err := d.oDb.updateDiskinfoDiskID(d.ctx, diskID, newDiskID); err != nil {
-					return fmt.Errorf("updateDiskinfoDiskID on OPEN-V disk: %w", err)
+				if err := d.oDb.UpdateDiskinfoDiskID(d.ctx, diskID, newDiskID); err != nil {
+					return fmt.Errorf("UpdateDiskinfoDiskID on OPEN-V disk: %w", err)
 				}
 			}
 		}
 
-		diskL, err := d.oDb.diskinfoByDiskID(d.ctx, diskID)
+		diskL, err := d.oDb.DiskinfoByDiskID(d.ctx, diskID)
 		if err != nil {
-			return fmt.Errorf("diskinfoByDiskID: %w", err)
+			return fmt.Errorf("DiskinfoByDiskID: %w", err)
 		}
 
 		if len(diskL) > 0 {
 			disk0 := diskL[0]
 			// TODO: ensure check arrayID == "NULL" is still valid
-			if disk0.arrayID == nodeID || disk0.arrayID == "" || disk0.arrayID == "NULL" {
+			if disk0.ArrayID == nodeID || disk0.ArrayID == "" || disk0.ArrayID == "NULL" {
 				// diskinfo registered as a stub for a local disk
 				line["local"] = "T"
 				if len(diskL) == 1 {
-					if changed, err := d.oDb.updateDiskinfoArrayID(d.ctx, diskID, nodeID); err != nil {
-						return fmt.Errorf("updateDiskinfoArrayID: %w", err)
+					if changed, err := d.oDb.UpdateDiskinfoArrayID(d.ctx, diskID, nodeID); err != nil {
+						return fmt.Errorf("UpdateDiskinfoArrayID: %w", err)
 					} else if changed {
 						d.oDb.SetChange("diskinfo")
 					}
@@ -191,20 +191,20 @@ func (d *jobFeedNodeDisk) updateDB() error {
 		if strings.HasPrefix(diskID, d.nodeID+".") && len(diskL) == 0 {
 			line["local"] = "T"
 			devID := strings.TrimPrefix(diskID, d.nodeID+".")
-			if changed, err := d.oDb.updateDiskinfoArrayAndDevIDsAndSize(d.ctx, diskID, nodeID, devID, line["size"].(int32)); err != nil {
+			if changed, err := d.oDb.UpdateDiskinfoArrayAndDevIDsAndSize(d.ctx, diskID, nodeID, devID, line["size"].(int32)); err != nil {
 				return fmt.Errorf("updateDiskinfoArrayAndDevIDsAndSize: %w", err)
 			} else if changed {
 				d.oDb.SetChange("diskinfo")
 			}
 		} else if len(diskL) == 0 {
 			line["local"] = "F"
-			if changed, err := d.oDb.updateDiskinfoForDiskSize(d.ctx, diskID, int32(line["size"].(float64))); err != nil {
+			if changed, err := d.oDb.UpdateDiskinfoForDiskSize(d.ctx, diskID, int32(line["size"].(float64))); err != nil {
 				return fmt.Errorf("updateDiskinfoForDiskSize: %w", err)
 			} else if changed {
 				d.oDb.SetChange("diskinfo")
 			}
 
-			if changed, err := d.oDb.updateDiskinfoSetMissingArrayID(d.ctx, diskID, nodeID); err != nil {
+			if changed, err := d.oDb.UpdateDiskinfoSetMissingArrayID(d.ctx, diskID, nodeID); err != nil {
 				return fmt.Errorf("updateDiskinfoSetMissingArrayID: %w", err)
 			} else if changed {
 				d.oDb.SetChange("diskinfo")
@@ -219,7 +219,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 		if objectPath != "" {
 			if objectID, ok := pathToObjectID[objectPath]; ok {
 				line["svc_id"] = objectID
-			} else if created, objectID, err := d.oDb.objectIDFindOrCreate(d.ctx, objectPath, d.clusterID); err != nil {
+			} else if created, objectID, err := d.oDb.ObjectIDFindOrCreate(d.ctx, objectPath, d.clusterID); err != nil {
 				return fmt.Errorf("objectIDFindOrCreate: %w", err)
 			} else {
 				if created {
@@ -244,7 +244,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 			} else {
 				line["app_id"] = nil
 			}
-		} else if appID, ok, err := d.oDb.appIDFromObjectOrNodeIDs(d.ctx, nodeID, objectID); err != nil {
+		} else if appID, ok, err := d.oDb.AppIDFromObjectOrNodeIDs(d.ctx, nodeID, objectID); err != nil {
 			return fmt.Errorf("appIDFromObjectOrNodeIDs: %w", err)
 		} else if !ok {
 			appIDM[objectID+"@"+nodeID] = 0

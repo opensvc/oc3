@@ -2,11 +2,13 @@ package worker
 
 import (
 	"fmt"
+
+	"github.com/opensvc/oc3/cdb"
 )
 
 type (
 	DashboardObjectUnavailable struct {
-		obj *DBObject
+		obj *cdb.DBObject
 	}
 )
 
@@ -19,9 +21,9 @@ func (d *DashboardObjectUnavailable) Fmt() string {
 }
 
 func (d *DashboardObjectUnavailable) Dict() string {
-	return fmt.Sprintf("{\"s\": \"%s\"}", d.obj.availStatus)
+	return fmt.Sprintf("{\"s\": \"%s\"}", d.obj.AvailStatus)
 }
 
 func (d *DashboardObjectUnavailable) Severity() int {
-	return severityFromEnv(dashObjObjectUnavailable, d.obj.env)
+	return severityFromEnv(dashObjObjectUnavailable, d.obj.Env)
 }

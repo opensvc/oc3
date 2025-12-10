@@ -33,7 +33,7 @@ type (
 	}
 
 	PrepareDBer interface {
-		PrepareDB(ctx context.Context, db *sql.DB, withTx bool) error
+		PrepareDB(ctx context.Context, db *sql.DB, ev EventPublisher, withTx bool) error
 	}
 
 	RedisSetter interface {
@@ -154,7 +154,7 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	}
 	workType := j.Name()
 	if a, ok := j.(PrepareDBer); ok {
-		if err := a.PrepareDB(ctx, w.DB, w.WithTx); err != nil {
+		if err := a.PrepareDB(ctx, w.DB, w.Ev, w.WithTx); err != nil {
 			slog.Error(fmt.Sprintf("🔴can't get db for %s: %s", workType, err))
 			return fmt.Errorf("can't get db for %s: %w", workType, err)
 		}

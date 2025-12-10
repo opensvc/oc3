@@ -10,64 +10,39 @@ import (
 )
 
 var TaskTrim = Task{
-	name:   "trim",
-	period: time.Minute,
-	fn:     taskTrimRun,
+	name:    "trim",
+	period:  time.Minute,
+	fn:      taskTrimRun,
+	timeout: 2 * time.Hour,
 }
 
 // deleteBatched executes the deletion query in batches until no rows are affected.
 func deleteBatched(ctx context.Context, task *Task, table, dateCol, orderbyCol string) error {
-	batchSize := viper.GetInt64("scheduler.task.trim.default.batch_size")
+	batchSize := getBatchSize(table)
 	retention := getRetentionDays(table)
+	odb := task.DB()
 
-	// The base SQL query for the batched deletion.
-	// ORDER BY is crucial for consistent performance and avoiding lock conflicts.
-	query := fmt.Sprintf("DELETE FROM `%s` WHERE `%s` < DATE_SUB(NOW(), INTERVAL %d DAY) ORDER BY `%s` LIMIT %d",
-		table, dateCol, retention, orderbyCol, batchSize)
-
-	totalDeleted := 0
-	batchCount := 0
-
-	for {
-		batchCount++
-
-		ctx, cancel := context.WithTimeout(ctx, time.Minute)
-
-		// Execute the DELETE statement
-		result, err := task.db.ExecContext(ctx, query)
-		cancel()
-		if err != nil {
-			task.Errorf("%s: error executing batch %d: %v", table, batchCount, err)
-			return err
-		}
-
-		// Check the number of affected rows
-		rowsAffected, err := result.RowsAffected()
-		if err != nil {
-			task.Errorf("%s: error checking affected rows for batch %d: %v", table, batchCount, err)
-			return err
-		}
-
-		totalDeleted += int(rowsAffected)
-		if rowsAffected > 0 {
-			task.Infof("%s: batch %d: deleted %d rows. total deleted: %d", table, batchCount, rowsAffected, totalDeleted)
-		}
-
-		// If less than the batch size was deleted, we've reached the end of the matching rows.
-		if rowsAffected < batchSize {
-			task.Infof("%s: deletion complete. retention: %d days. batch size: %d. total batches: %d. total rows deleted: %d", table, retention, batchSize, batchCount, totalDeleted)
-			return nil
-		}
-
-		// Add a short sleep to yield CPU time, preventing resource monopolization
-		time.Sleep(10 * time.Millisecond)
+	totalDeleted, batchCount, err := odb.DeleteBatched(ctx, table, dateCol, orderbyCol, batchSize, retention)
+	if err != nil {
+		return err
 	}
+
+	task.Infof("%s: deletion complete. retention: %d days. batch size: %d. total batches: %d. total rows deleted: %d", table, retention, batchSize, batchCount, totalDeleted)
+	return nil
+}
+
+func getBatchSize(table string) int64 {
+	n := viper.GetInt64(fmt.Sprintf("scheduler.task.trim.table.%s.batch_size", table))
+	if n == 0 {
+		n = viper.GetInt64("scheduler.task.trim.batch_size")
+	}
+	return n
 }
 
 func getRetentionDays(table string) int {
-	days := viper.GetInt(fmt.Sprintf("scheduler.task.trim.%s.retention", table))
+	days := viper.GetInt(fmt.Sprintf("scheduler.task.trim.table.%s.retention", table))
 	if days == 0 {
-		days = viper.GetInt("scheduler.task.trim.default.retention")
+		days = viper.GetInt("scheduler.task.trim.retention")
 	}
 	return days
 }
