@@ -52,7 +52,7 @@ func taskScrubResources(ctx context.Context, task *Task) error {
 
 	names := make([]string, n)
 
-	// Historize `services` lines we will touch
+	// Historize `resmon` lines we will touch
 	for i, resource := range resources {
 		names[i] = resource.String()
 		if err := odb.ResourceUpdateLog(ctx, resource, "undef"); err != nil {
@@ -60,7 +60,7 @@ func taskScrubResources(ctx context.Context, task *Task) error {
 		}
 	}
 
-	// Update the `services` table
+	// Update the `resmon` table
 	if modified, err := odb.ResourceUpdateStatus(ctx, resources, "undef"); err != nil {
 		return err
 	} else if int(modified) != n {
@@ -108,44 +108,44 @@ func taskScrubObjects(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	// Fetch the outdated services still not in "undef" availstatus
-	ids, svcIDs, svcNames, err := odb.ObjectOutdatedLists(ctx)
+	objects, err := odb.ObjectOutdatedLists(ctx)
 	if err != nil {
 		return err
 	}
 
-	n := len(ids)
+	n := len(objects)
 	if n == 0 {
 		return nil
 	}
 
 	// Historize `services` lines we will touch
-	for _, svcID := range svcIDs {
-		if err := odb.ObjectUpdateLog(ctx, svcID.String(), "undef"); err != nil {
+	for _, o := range objects {
+		if err := odb.ObjectUpdateLog(ctx, o.OID.String(), "undef"); err != nil {
 			return err
 		}
 	}
 
 	// Update the `services` table
-	if n, err := odb.ObjectUpdateStatusSimple(ctx, ids, "undef", "undef"); err != nil {
+	if modified, err := odb.ObjectUpdateStatusSimple(ctx, objects, "undef", "undef"); err != nil {
 		return err
-	} else if int(n) != len(svcIDs) {
-		task.Infof("set %d/%d services status to undef (no live instance) amongst %s", n, len(svcIDs), svcIDs)
+	} else if int(modified) != n {
+		task.Infof("set %d/%d services status to undef (no live instance) amongst %s", modified, n, objects)
 	} else {
-		task.Infof("set %d services status to undef (no live instance) for %s", n, svcIDs)
+		task.Infof("set %d services status to undef (no live instance) for %s", n, objects)
 	}
 
 	// Create log table entries
 	logEntries := make([]cdb.LogEntry, n)
-	for i, svcID := range svcIDs {
+	for i, o := range objects {
 		d := make(map[string]any)
-		d["svc"] = svcNames[i]
+		d["svc"] = o.String()
 		logEntries[i] = cdb.LogEntry{
 			Action: "service.status",
 			Fmt:    "service '%(svc)s' has zero live instance. Status flagged 'undef'",
 			Dict:   d,
 			User:   "scheduler",
 			Level:  "error",
-			SvcID:  &svcID,
+			SvcID:  &o.OID,
 		}
 	}
 	if err := odb.Log(ctx, logEntries...); err != nil {
