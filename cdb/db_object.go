@@ -538,10 +538,10 @@ func (oDb *DB) PurgeTablesFromObjectID(ctx context.Context, id string) error {
 	return err
 }
 
-// ObjectOutdatedLists return lists of ids, svc_ids and svcnames for objects that no
+// ObjectsOutdated return lists of ids, svc_ids and svcnames for objects that no
 // longer have instances updated in the last 15 minutes and that don't have their object
 // status set to "undef" yet.
-func (oDb *DB) ObjectOutdatedLists(ctx context.Context) (objects []ObjectMeta, err error) {
+func (oDb *DB) ObjectsOutdated(ctx context.Context) (objects []ObjectMeta, err error) {
 	sql := `SELECT id, svc_id, svcname FROM services
                 WHERE svc_id IN (SELECT svc_id FROM v_outdated_services WHERE uptodate=0)
                 AND (svc_status != "undef" OR svc_availstatus != "undef")`

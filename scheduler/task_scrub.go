@@ -3,6 +3,8 @@ package scheduler
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/opensvc/oc3/cdb"
@@ -29,7 +31,22 @@ func taskScrubRun(ctx context.Context, task *Task) (err error) {
 }
 
 func taskScrubInstances(ctx context.Context, task *Task) error {
-	return nil
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+	instanceIDs, err := odb.InstancesOutdated(ctx)
+	if err != nil {
+		return err
+	}
+	if instanceIDs != nil {
+		slog.Info(fmt.Sprintf("purge outdated %s", instanceIDs))
+	}
+	for _, instanceID := range instanceIDs {
+		odb.PurgeInstance(ctx, instanceID)
+	}
+	return odb.Commit()
 }
 
 func taskScrubResources(ctx context.Context, task *Task) error {
@@ -93,11 +110,7 @@ func taskScrubResources(ctx context.Context, task *Task) error {
 		return err
 	}
 
-	// Commit and notify client of changed tables
-	if err := odb.Commit(); err != nil {
-		return err
-	}
-	return nil
+	return odb.Commit()
 }
 
 func taskScrubObjects(ctx context.Context, task *Task) error {
@@ -108,7 +121,7 @@ func taskScrubObjects(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	// Fetch the outdated services still not in "undef" availstatus
-	objects, err := odb.ObjectOutdatedLists(ctx)
+	objects, err := odb.ObjectsOutdated(ctx)
 	if err != nil {
 		return err
 	}
@@ -157,9 +170,5 @@ func taskScrubObjects(ctx context.Context, task *Task) error {
 		return err
 	}
 
-	// Commit and notify client of changed tables
-	if err := odb.Commit(); err != nil {
-		return err
-	}
-	return nil
+	return odb.Commit()
 }

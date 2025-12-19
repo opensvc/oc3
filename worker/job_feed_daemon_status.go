@@ -635,7 +635,7 @@ func (d *jobFeedDaemonStatus) dbPurgeInstances() error {
 		return fmt.Errorf("dbPurgeInstances: getOrphanInstances: %w", err)
 	}
 	for _, instanceID := range instanceIDs {
-		if err1 := d.oDb.PurgeInstances(d.ctx, instanceID); err1 != nil {
+		if err1 := d.oDb.PurgeInstance(d.ctx, instanceID); err1 != nil {
 			err = errors.Join(err, fmt.Errorf("purge instance %v: %w", instanceID, err1))
 		}
 	}
