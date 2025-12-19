@@ -12,6 +12,12 @@ import (
 )
 
 type (
+	ObjectMeta struct {
+		ID   int64
+		OID  uuid.UUID
+		Name string
+	}
+
 	DBObject struct {
 		Svcname   string
 		SvcID     string
@@ -98,6 +104,14 @@ type (
 		Updated   time.Time
 	}
 )
+
+func (t ObjectMeta) String() string {
+	if t.Name != "" {
+		return t.Name
+	} else {
+		return t.OID.String()
+	}
+}
 
 func (oDb *DB) ObjectFromID(ctx context.Context, svcID string) (*DBObject, error) {
 	const query = "SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_status, svc_frozen, svc_placement, svc_provisioned FROM services WHERE svc_id = ?"
@@ -366,12 +380,12 @@ func (oDb *DB) ObjectUpdateLog(ctx context.Context, svcID string, avail string) 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		// set initial avail value
-		defer oDb.SetChange("service_log")
+		defer oDb.SetChange("services_log")
 		return setLogLast()
 	case err != nil:
 		return fmt.Errorf("objectUpdateLog can't get services_log_last %s: %w", svcID, err)
 	default:
-		defer oDb.SetChange("service_log")
+		defer oDb.SetChange("services_log")
 		if previousAvail == avail {
 			// no change, extend last interval
 			if _, err := oDb.DB.ExecContext(ctx, qExtendIntervalOfCurrentAvail, svcID); err != nil {
@@ -524,10 +538,10 @@ func (oDb *DB) PurgeTablesFromObjectID(ctx context.Context, id string) error {
 	return err
 }
 
-// ObjectOutdatedLists return lists of ids, svc_ids and svcnames for objects that no
+// ObjectsOutdated return lists of ids, svc_ids and svcnames for objects that no
 // longer have instances updated in the last 15 minutes and that don't have their object
 // status set to "undef" yet.
-func (oDb *DB) ObjectOutdatedLists(ctx context.Context) (ids []int64, svcIDs []uuid.UUID, svcNames []string, err error) {
+func (oDb *DB) ObjectsOutdated(ctx context.Context) (objects []ObjectMeta, err error) {
 	sql := `SELECT id, svc_id, svcname FROM services
                 WHERE svc_id IN (SELECT svc_id FROM v_outdated_services WHERE uptodate=0)
                 AND (svc_status != "undef" OR svc_availstatus != "undef")`
@@ -542,19 +556,15 @@ func (oDb *DB) ObjectOutdatedLists(ctx context.Context) (ids []int64, svcIDs []u
 		if !next {
 			break
 		}
-		var svcID uuid.UUID
-		var svcName string
-		var id int64
-		rows.Scan(&id, &svcID, &svcName)
-		svcIDs = append(svcIDs, svcID)
-		svcNames = append(svcNames, svcName)
-		ids = append(ids, id)
+		var o ObjectMeta
+		rows.Scan(&o.ID, &o.OID, &o.Name)
+		objects = append(objects, o)
 	}
 	return
 }
 
-func (oDb *DB) ObjectUpdateStatusSimple(ctx context.Context, ids []int64, availStatus, overallStatus string) (n int64, err error) {
-	idsLen := len(ids)
+func (oDb *DB) ObjectUpdateStatusSimple(ctx context.Context, objects []ObjectMeta, availStatus, overallStatus string) (n int64, err error) {
+	idsLen := len(objects)
 	sql := `UPDATE services
                 SET svc_status=?, svc_availstatus=?, svc_status_updated=NOW()
                 WHERE id IN (%s)`
@@ -563,8 +573,8 @@ func (oDb *DB) ObjectUpdateStatusSimple(ctx context.Context, ids []int64, availS
 	args := make([]any, idsLen+2)
 	args[0] = overallStatus
 	args[1] = availStatus
-	for i, id := range ids {
-		args[i+2] = id
+	for i, o := range objects {
+		args[i+2] = o.ID
 	}
 
 	result, err := oDb.DB.ExecContext(ctx, sql, args...)

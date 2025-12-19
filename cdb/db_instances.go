@@ -121,8 +121,8 @@ type (
 	}
 )
 
-func (i *InstanceID) String() string {
-	return fmt.Sprintf("instance id: %s@%s", i.svcID, i.nodeID)
+func (i InstanceID) String() string {
+	return fmt.Sprintf("instance{obj_id:%s, node_id:%s}", i.svcID, i.nodeID)
 }
 
 func (oDb *DB) InstancesFromObjectIDs(ctx context.Context, objectIDs ...string) ([]*DBInstance, error) {
@@ -700,7 +700,7 @@ func (oDb *DB) GetOrphanInstances(ctx context.Context, nodeIDs, objectNames []st
 	return
 }
 
-func (oDb *DB) PurgeInstances(ctx context.Context, id InstanceID) error {
+func (oDb *DB) PurgeInstance(ctx context.Context, id InstanceID) error {
 	const (
 		where = "WHERE `svc_id` = ? and `node_id` = ?"
 	)
@@ -713,7 +713,7 @@ func (oDb *DB) PurgeInstances(ctx context.Context, id InstanceID) error {
 
 		err error
 	)
-	slog.Debug(fmt.Sprintf("purging instance %s", id))
+	slog.Debug(fmt.Sprintf("purging %s", id))
 	for _, tableName := range tables {
 		request := fmt.Sprintf("DELETE FROM %s WHERE `svc_id` = ? and `node_id` = ?", tableName)
 		result, err1 := oDb.DB.ExecContext(ctx, request, id.svcID, id.nodeID)
@@ -724,9 +724,30 @@ func (oDb *DB) PurgeInstances(ctx context.Context, id InstanceID) error {
 		if rowAffected, err1 := result.RowsAffected(); err1 != nil {
 			err = errors.Join(err, fmt.Errorf("count delete from %s: %w", tableName, err1))
 		} else if rowAffected > 0 {
-			slog.Debug(fmt.Sprintf("purged table %s instance %s", tableName, id))
+			slog.Debug(fmt.Sprintf("purged %s from table %s", id, tableName))
 			oDb.SetChange(tableName)
 		}
 	}
 	return err
+}
+
+func (oDb *DB) InstancesOutdated(ctx context.Context) (instanceIDs []InstanceID, err error) {
+	var rows *sql.Rows
+	query := "SELECT `svc_id`, `node_id` " +
+		"FROM `svcmon` " +
+		"WHERE `mon_updated` < DATE_SUB(NOW(), INTERVAL 21 MINUTE)"
+	rows, err = oDb.DB.QueryContext(ctx, query)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var instanceID InstanceID
+		if err = rows.Scan(&instanceID.svcID, &instanceID.nodeID); err != nil {
+			return
+		}
+		instanceIDs = append(instanceIDs, instanceID)
+	}
+	err = rows.Err()
+	return
 }
