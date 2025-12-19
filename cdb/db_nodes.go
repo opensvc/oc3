@@ -306,3 +306,18 @@ func (oDb *DB) NodeUpdateClusterIDForNodeID(ctx context.Context, nodeID, cluster
 		return false, fmt.Errorf("NodeUpdateClusterIDForNodeID check cluster_id: %w", err)
 	}
 }
+
+func (oDb *DB) PurgeNodeHBAsOutdated(ctx context.Context) error {
+	request := fmt.Sprintf("DELETE FROM `node_hba` WHERE `updated` < DATE_SUB(NOW(), INTERVAL 7 DAY)")
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return fmt.Errorf("delete from node_hba: %w", err)
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("count delete from node_hba: %w", err)
+	} else if rowAffected > 0 {
+		slog.Info(fmt.Sprintf("purged %d entries from table node_hba", rowAffected))
+		oDb.SetChange("node_hba")
+	}
+	return nil
+}

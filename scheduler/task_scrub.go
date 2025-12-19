@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -10,24 +9,60 @@ import (
 	"github.com/opensvc/oc3/cdb"
 )
 
-// TaskScrub marks services, resources and instances status "undef"
-// When all instances have outdated or absent data.
+// TaskScrubObjects marks services status "undef" if all instances have outdated or absent data.
 //
 // For testing, force a scrubable dataset with:
 //
 //	UPDATE services SET svc_status="up" WHERE svc_id IN (SELECT svc_id FROM v_outdated_services);
-var TaskScrub = Task{
-	name:    "scrub",
-	period:  time.Minute,
-	fn:      taskScrubRun,
+var TaskScrubObjects = Task{
+	name:    "scrub_object",
+	fn:      taskScrubObjects,
 	timeout: time.Minute,
 }
 
-func taskScrubRun(ctx context.Context, task *Task) (err error) {
-	err = errors.Join(err, taskScrubObjects(ctx, task))
-	err = errors.Join(err, taskScrubResources(ctx, task))
-	err = errors.Join(err, taskScrubInstances(ctx, task))
-	return
+var TaskScrubResources = Task{
+	name:    "scrub_resources",
+	fn:      taskScrubResources,
+	timeout: time.Minute,
+}
+
+var TaskScrubInstances = Task{
+	name:    "scrub_instances",
+	fn:      taskScrubInstances,
+	timeout: time.Minute,
+}
+
+var TaskScrubChecksLive = Task{
+	name:    "scrub_checks_live",
+	fn:      taskScrubChecksLive,
+	timeout: time.Minute,
+}
+
+var TaskScrubNodeHBA = Task{
+	name:    "scrub_node_hba",
+	fn:      taskScrubNodeHBA,
+	timeout: time.Minute,
+}
+
+var TaskScrubDaily = Task{
+	name:   "scrub_daily",
+	period: 24 * time.Hour,
+	children: TaskList{
+		TaskScrubChecksLive,
+		TaskScrubNodeHBA,
+	},
+	timeout: 5 * time.Minute,
+}
+
+var TaskScrubMinutely = Task{
+	name:   "scrub_minutely",
+	period: time.Minute,
+	children: TaskList{
+		TaskScrubObjects,
+		TaskScrubResources,
+		TaskScrubInstances,
+	},
+	timeout: time.Minute,
 }
 
 func taskScrubInstances(ctx context.Context, task *Task) error {
@@ -45,6 +80,9 @@ func taskScrubInstances(ctx context.Context, task *Task) error {
 	}
 	for _, instanceID := range instanceIDs {
 		odb.PurgeInstance(ctx, instanceID)
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
 	}
 	return odb.Commit()
 }
@@ -170,5 +208,37 @@ func taskScrubObjects(ctx context.Context, task *Task) error {
 		return err
 	}
 
+	return odb.Commit()
+}
+
+func taskScrubChecksLive(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeChecksOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubNodeHBA(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeNodeHBAsOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
 	return odb.Commit()
 }
