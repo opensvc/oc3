@@ -42,6 +42,7 @@ var (
 		TaskRefreshBActionErrors,
 		TaskTrim,
 		TaskScrub,
+		TaskScrubChecks,
 	}
 
 	taskExecCounter = promauto.NewCounterVec(

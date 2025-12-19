@@ -23,6 +23,13 @@ var TaskScrub = Task{
 	timeout: time.Minute,
 }
 
+var TaskScrubChecks = Task{
+	name:    "scrub_checks",
+	period:  24 * time.Hour,
+	fn:      taskScrubChecks,
+	timeout: time.Minute,
+}
+
 func taskScrubRun(ctx context.Context, task *Task) (err error) {
 	err = errors.Join(err, taskScrubObjects(ctx, task))
 	err = errors.Join(err, taskScrubResources(ctx, task))
@@ -45,6 +52,9 @@ func taskScrubInstances(ctx context.Context, task *Task) error {
 	}
 	for _, instanceID := range instanceIDs {
 		odb.PurgeInstance(ctx, instanceID)
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
 	}
 	return odb.Commit()
 }
@@ -170,5 +180,21 @@ func taskScrubObjects(ctx context.Context, task *Task) error {
 		return err
 	}
 
+	return odb.Commit()
+}
+
+func taskScrubChecks(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeChecksOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
 	return odb.Commit()
 }
