@@ -191,7 +191,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 		if strings.HasPrefix(diskID, d.nodeID+".") && len(diskL) == 0 {
 			line["local"] = "T"
 			devID := strings.TrimPrefix(diskID, d.nodeID+".")
-			if changed, err := d.oDb.UpdateDiskinfoArrayAndDevIDsAndSize(d.ctx, diskID, nodeID, devID, line["size"].(int32)); err != nil {
+			if changed, err := d.oDb.UpdateDiskinfoArrayAndDevIDsAndSize(d.ctx, diskID, nodeID, devID, int32(line["size"].(float64))); err != nil {
 				return fmt.Errorf("updateDiskinfoArrayAndDevIDsAndSize: %w", err)
 			} else if changed {
 				d.oDb.SetChange("diskinfo")
