@@ -3,8 +3,11 @@ package scheduler
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/opensvc/oc3/cdb"
@@ -13,11 +16,14 @@ import (
 )
 
 type (
+	TaskFunc func(context.Context, *Task) error
+
 	Task struct {
-		name    string
-		period  time.Duration
-		timeout time.Duration
-		fn      func(context.Context, *Task) error
+		name     string
+		period   time.Duration
+		timeout  time.Duration
+		fn       TaskFunc
+		children TaskList
 
 		db      *sql.DB
 		ev      eventPublisher
@@ -41,8 +47,8 @@ var (
 	Tasks = TaskList{
 		TaskRefreshBActionErrors,
 		TaskTrim,
-		TaskScrub,
-		TaskScrubChecks,
+		TaskScrubMinutely,
+		TaskScrubDaily,
 	}
 
 	taskExecCounter = promauto.NewCounterVec(
@@ -68,15 +74,27 @@ var (
 )
 
 func (t TaskList) Print() {
+	t.Fprint(os.Stdout)
+}
+
+func (t TaskList) Fprint(w io.Writer) {
 	for _, task := range t {
-		fmt.Println(task.Name())
+		fmt.Fprintln(w, task.name)
+		for _, child := range task.children {
+			fmt.Fprintln(w, "  "+child.name)
+		}
 	}
 }
 
 func (t TaskList) Get(name string) Task {
 	for _, task := range t {
-		if task.Name() == name {
+		if task.name == name {
 			return task
+		}
+		for _, child := range task.children {
+			if child.name == name {
+				return child
+			}
 		}
 	}
 	return Task{}
@@ -195,7 +213,17 @@ func (t *Task) Exec(ctx context.Context) (err error) {
 	defer cancel()
 
 	// Execution
-	err = t.fn(ctx, t)
+	if t.fn != nil {
+		err = t.fn(ctx, t)
+	}
+
+	for _, child := range t.children {
+		child.db = t.db
+		child.ev = t.ev
+		child.session = t.session
+		child.name = fmt.Sprintf("%s: %s", t.name, child.name)
+		err = errors.Join(err, child.Exec(ctx))
+	}
 
 	duration := time.Now().Sub(begin)
 	if err != nil {
