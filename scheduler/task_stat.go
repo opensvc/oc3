@@ -5,14 +5,15 @@ import (
 	"time"
 )
 
-var TaskStatDiskDaily = Task{
-	name:   "stat_disk_daily",
+var TaskStatDaily = Task{
+	name:   "stat_daily",
 	period: 24 * time.Hour,
 	children: TaskList{
 		TaskStatDiskAppDaily,
 		TaskStatDiskAppDGDaily,
 		TaskStatDiskArrayDaily,
 		TaskStatDiskArrayDGDaily,
+		TaskStatSvcDaily,
 	},
 	timeout: 5 * time.Minute,
 }
@@ -38,6 +39,12 @@ var TaskStatDiskArrayDaily = Task{
 var TaskStatDiskArrayDGDaily = Task{
 	name:    "stat_disk_array_dg_daily",
 	fn:      taskStatDiskArrayDGDaily,
+	timeout: 5 * time.Minute,
+}
+
+var TaskStatSvcDaily = Task{
+	name:    "stat_svc_daily",
+	fn:      taskStatSvcDaily,
 	timeout: 5 * time.Minute,
 }
 
@@ -92,6 +99,36 @@ func taskStatDiskArrayDGDaily(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 	if err := odb.StatDayDiskArrayDG(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskStatSvcDaily(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+	if err := odb.StatDaySvcActionsByLevel(ctx, "err"); err != nil {
+		return err
+	}
+	if err := odb.StatDaySvcActionsByLevel(ctx, "warn"); err != nil {
+		return err
+	}
+	if err := odb.StatDaySvcActionsByLevel(ctx, "ok"); err != nil {
+		return err
+	}
+	if err := odb.StatDaySvcActions(ctx); err != nil {
+		return err
+	}
+	if err := odb.StatDaySvcDiskSize(ctx); err != nil {
+		return err
+	}
+	if err := odb.StatDaySvcLocalDiskSize(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {

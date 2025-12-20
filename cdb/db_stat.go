@@ -92,3 +92,86 @@ func (oDb *DB) StatDayDiskArrayDG(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (oDb *DB) StatDaySvcActionsByLevel(ctx context.Context, lvl string) error {
+	var query = fmt.Sprintf(`INSERT IGNORE INTO stat_day_svc (svc_id, day, nb_action_%s)
+             SELECT
+               a.svc_id,
+               DATE(NOW()),
+               COUNT(a.id)
+             FROM
+               svcactions a
+             WHERE
+               a.begin >= CURDATE()
+               AND a.begin < DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+               AND a.status = "%s"
+             GROUP BY
+               a.svc_id
+             ON DUPLICATE KEY UPDATE
+               nb_action_%s = VALUES(nb_action_%s)`, lvl, lvl, lvl, lvl)
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update stat_day_svc failed: %w", err)
+	}
+	return nil
+}
+
+func (oDb *DB) StatDaySvcActions(ctx context.Context) error {
+	var query = `INSERT IGNORE INTO stat_day_svc (svc_id, day, nb_action)
+             SELECT
+               a.svc_id,
+               DATE(NOW()),
+               COUNT(a.id)
+             FROM
+               svcactions a
+             WHERE
+               a.begin >= CURDATE()
+               AND a.begin < DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+             GROUP BY
+               a.svc_id
+             ON DUPLICATE KEY UPDATE
+               nb_action = VALUES(nb_action)`
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update stat_day_svc failed: %w", err)
+	}
+	return nil
+}
+
+func (oDb *DB) StatDaySvcDiskSize(ctx context.Context) error {
+	var query = `INSERT IGNORE INTO stat_day_svc (svc_id, day, disk_size)
+             SELECT
+               d.svc_id,
+               DATE(NOW()),
+	       IF(SUM(d.disk_size) IS NULL, 0, SUM(d.disk_size))
+             FROM
+	       svcdisks d
+             WHERE
+	       d.disk_local='F'
+             GROUP BY
+	       d.svc_id
+             ON DUPLICATE KEY UPDATE
+	       disk_size=VALUES(disk_size)`
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update stat_day_svc failed: %w", err)
+	}
+	return nil
+}
+
+func (oDb *DB) StatDaySvcLocalDiskSize(ctx context.Context) error {
+	var query = `INSERT IGNORE INTO stat_day_svc (svc_id, day, local_disk_size)
+             SELECT
+               d.svc_id,
+               DATE(NOW()),
+	       IF(SUM(d.disk_size) IS NULL, 0, SUM(d.disk_size))
+             FROM
+	       svcdisks d
+             WHERE
+	       d.disk_local='T'
+             GROUP BY
+	       d.svc_id
+             ON DUPLICATE KEY UPDATE
+	       local_disk_size=VALUES(local_disk_size)`
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update stat_day_svc failed: %w", err)
+	}
+	return nil
+}
