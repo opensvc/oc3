@@ -49,6 +49,7 @@ var (
 		TaskTrim,
 		TaskScrubMinutely,
 		TaskScrubDaily,
+		TaskStatDiskDaily,
 	}
 
 	taskExecCounter = promauto.NewCounterVec(
@@ -101,7 +102,7 @@ func (t TaskList) Get(name string) Task {
 }
 
 func (t *Task) IsZero() bool {
-	return t.fn == nil
+	return t.fn == nil && t.children == nil
 }
 
 func (t *Task) SetEv(ev eventPublisher) {
