@@ -18,7 +18,7 @@ type (
 	jobFeedObjectConfig struct {
 		*BaseJob
 
-		// idX is the id of the posted object config with expected pattern: <objectName>@<nodeID>@<clusterID>
+		// idX is the id of the posted object config with the expected pattern: <objectName>@<nodeID>@<clusterID>
 		idX string
 
 		objectName string
@@ -107,7 +107,7 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 		return err
 	} else {
 		if created {
-			slog.Info(fmt.Sprintf("obFeedObjectConfig will create service %s@%s with new svc_id: %s", d.objectName, d.clusterID, objectID))
+			slog.Info(fmt.Sprintf("jobFeedObjectConfig will create service %s@%s with new svc_id: %s", d.objectName, d.clusterID, objectID))
 		}
 		slog.Debug(fmt.Sprintf("%s updateDB %s@%s will update found svc_id:%s", d.name, d.objectName, d.clusterID, objectID))
 

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+
+	"github.com/opensvc/oc3/api"
 )
 
 type (
@@ -118,6 +120,32 @@ type (
 		Disable  string
 		Optional string
 		ResType  string
+	}
+
+	// DBInstanceResinfo is the database table resinfo
+	//
+	// CREATE TABLE `resinfo` (
+	//  `id` int(11) NOT NULL AUTO_INCREMENT,
+	//  `rid` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+	//  `res_key` varchar(40) DEFAULT '',
+	//  `res_value` varchar(255) DEFAULT NULL,
+	//  `updated` timestamp NOT NULL DEFAULT current_timestamp(),
+	//  `topology` varchar(20) DEFAULT 'failover',
+	//  `node_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
+	//  `svc_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
+	//  PRIMARY KEY (`id`),
+	//  UNIQUE KEY `uk` (`node_id`,`svc_id`,`rid`,`res_key`),
+	//  KEY `k_node_id` (`node_id`),
+	//  KEY `k_svc_id` (`svc_id`)
+	//) ENGINE=InnoDB AUTO_INCREMENT=175883380 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
+	DBInstanceResinfo struct {
+		SvcID    string
+		NodeID   string
+		Topology string
+		Updated  time.Time
+		RID      string
+		Key      string
+		Value    string
 	}
 )
 
@@ -517,6 +545,60 @@ func (oDb *DB) InstanceResourcesDeleteObsolete(ctx context.Context, svcID, nodeI
 		return fmt.Errorf("InstanceResourcesDeleteObsolete count affected: %w", err)
 	} else {
 		slog.Debug(fmt.Sprintf("InstanceResourcesDeleteObsolete %s@%s: %d", svcID, nodeID, affected))
+	}
+	return nil
+}
+
+func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID string, data api.InstanceResourceInfo) error {
+	defer logDuration("InstanceResourceInfoUpdate "+svcID+"@"+nodeID, time.Now())
+	const (
+		query = "" +
+			"INSERT INTO `resinfo` (`svc_id`, `node_id`, `rid`, `res_key`, `topology`, `res_value`, `updated`) " +
+			"VALUES (?, ?, ?, ?, ?, ?, NOW())" +
+			"ON DUPLICATE KEY UPDATE `topology` = VALUES(`topology`), `res_value` = VALUES(`res_value`), `updated` = NOW()"
+	)
+	if len(data.Info) == 0 {
+		return nil
+	}
+	var (
+		changed  bool
+		topology = data.Topology
+	)
+
+	defer func() {
+		if changed {
+			oDb.SetChange("resinfo")
+		}
+	}()
+
+	stmt, err := oDb.DB.PrepareContext(ctx, query)
+	if err != nil {
+		return fmt.Errorf("db prepare: %w", err)
+	}
+	for _, info := range data.Info {
+		for _, key := range info.Keys {
+			if result, err := stmt.ExecContext(ctx, svcID, nodeID, info.Rid, key.Key, topology, key.Value); err != nil {
+				return fmt.Errorf("db exec: %w", err)
+			} else if count, err := result.RowsAffected(); err != nil {
+				return fmt.Errorf("db rows affected: %w", err)
+			} else if count > 0 {
+				changed = true
+			}
+		}
+	}
+
+	return nil
+}
+
+func (oDb *DB) InstanceResourceInfoDelete(ctx context.Context, svcID, nodeID string, maxTime time.Time) error {
+	defer logDuration("InstanceResourceInfoDelete "+svcID+"@"+nodeID, time.Now())
+	const query = "DELETE FROM `resinfo` WHERE `svc_id` = ? AND `node_id` = ? AND `updated` < ?"
+	if result, err := oDb.DB.ExecContext(ctx, query, svcID, nodeID, maxTime); err != nil {
+		return fmt.Errorf("query %s: %w", query, err)
+	} else if affected, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("query %s count row affected: %w", query, err)
+	} else if affected > 0 {
+		oDb.SetChange("resinfo")
 	}
 	return nil
 }
