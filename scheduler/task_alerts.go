@@ -24,6 +24,7 @@ var TaskAlertDaily = Task{
 	name: "alerts_daily",
 	children: TaskList{
 		TaskAlertAppsWithoutResponsible,
+		TaskAlertPurgeActionErrors,
 	},
 	period:  24 * time.Hour,
 	timeout: 15 * time.Minute,
@@ -44,6 +45,18 @@ var TaskAlertAppsWithoutResponsible = Task{
 var TaskAlertInstancesOutdated = Task{
 	name:    "alert_instances_outdated",
 	fn:      taskAlertInstancesOutdated,
+	timeout: 5 * time.Minute,
+}
+
+var TaskAlertPurgeActionErrors = Task{
+	name:    "alert_purge_action_errors",
+	fn:      taskAlertPurgeActionErrors,
+	timeout: 5 * time.Minute,
+}
+
+var TaskAlertUpdateActionErrors = Task{
+	name:    "alert_update_action_errors",
+	fn:      taskAlertUpdateActionErrors,
 	timeout: 5 * time.Minute,
 }
 
@@ -124,6 +137,42 @@ func taskAlertInstancesOutdated(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 	if err := odb.AlertInstancesOutdated(ctx); err != nil {
 		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertPurgeActionErrors(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+	if err := odb.DashboardDeleteActionErrors(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertUpdateActionErrors(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+	lines, err := odb.GetBActionErrors(ctx)
+	if err != nil {
+		return err
+	}
+	for _, line := range lines {
+		if err := odb.AlertActionErrors(ctx, line); err != nil {
+			return err
+		}
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
 		return err

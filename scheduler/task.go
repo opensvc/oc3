@@ -46,6 +46,7 @@ const (
 var (
 	Tasks = TaskList{
 		TaskRefreshBActionErrors,
+		TaskAlertUpdateActionErrors,
 		TaskTrim,
 		TaskScrubMinutely,
 		TaskScrubDaily,
