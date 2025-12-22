@@ -25,6 +25,7 @@ var TaskAlertDaily = Task{
 	children: TaskList{
 		TaskAlertAppsWithoutResponsible,
 		TaskAlertPurgeActionErrors,
+		TaskAlertActionErrorsNotAcked,
 	},
 	period:  24 * time.Hour,
 	timeout: 15 * time.Minute,
@@ -57,6 +58,12 @@ var TaskAlertPurgeActionErrors = Task{
 var TaskAlertUpdateActionErrors = Task{
 	name:    "alert_update_action_errors",
 	fn:      taskAlertUpdateActionErrors,
+	timeout: 5 * time.Minute,
+}
+
+var TaskAlertActionErrorsNotAcked = Task{
+	name:    "alert_action_errors_not_acked",
+	fn:      taskAlertActionErrorsNotAcked,
 	timeout: 5 * time.Minute,
 }
 
@@ -165,6 +172,40 @@ func taskAlertUpdateActionErrors(ctx context.Context, task *Task) error {
 		return err
 	}
 	defer odb.Rollback()
+	lines, err := odb.GetBActionErrors(ctx)
+	if err != nil {
+		return err
+	}
+	for _, line := range lines {
+		if err := odb.AlertActionErrors(ctx, line); err != nil {
+			return err
+		}
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertActionErrorsNotAcked(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+	ids, err := odb.GetActionErrorsNotAcked(ctx)
+	if err != nil {
+		return err
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	if err := odb.LogActionErrorsNotAcked(ctx, ids); err != nil {
+		return err
+	}
+	if err := odb.AutoAckActionErrors(ctx, ids); err != nil {
+		return err
+	}
 	lines, err := odb.GetBActionErrors(ctx)
 	if err != nil {
 		return err
