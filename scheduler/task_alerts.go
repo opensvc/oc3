@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/opensvc/oc3/cdb"
@@ -18,9 +19,24 @@ var TaskAlertHourly = Task{
 	timeout: 15 * time.Minute,
 }
 
+var TaskAlertDaily = Task{
+	name: "alerts_daily",
+	children: TaskList{
+		TaskAlertAppsWithoutResponsible,
+	},
+	period:  24 * time.Hour,
+	timeout: 15 * time.Minute,
+}
+
 var TaskAlertNetworkWithWrongMask = Task{
 	name:    "alert_network_with_wrong_mask",
 	fn:      taskAlertNetworkWithWrongMask,
+	timeout: 5 * time.Minute,
+}
+
+var TaskAlertAppsWithoutResponsible = Task{
+	name:    "alert_apps_without_responsible",
+	fn:      taskAlertAppWithoutResponsible,
 	timeout: 5 * time.Minute,
 }
 
@@ -59,6 +75,34 @@ func taskAlertNetworkWithWrongMask(ctx context.Context, task *Task) error {
 	if err := odb.DashboardDeleteNetworkWrongMaskNotUpdated(ctx); err != nil {
 		return err
 	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertAppWithoutResponsible(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+	apps, err := odb.AppsWithoutResponsible(ctx)
+	if err != nil {
+		return err
+	}
+	if len(apps) == 0 {
+		return nil
+	}
+	odb.Log(ctx, cdb.LogEntry{
+		Action: "app",
+		Fmt:    "applications with no declared responsibles %(app)s",
+		Dict: map[string]any{
+			"app": strings.Join(apps, ", "),
+		},
+		User:  "scheduler",
+		Level: "warning",
+	})
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
 		return err
 	}

@@ -231,3 +231,32 @@ func (odb *DB) AppIDFromObjectOrNodeIDs(ctx context.Context, nodeID, objectID st
 	}
 	return odb.AppIDFromNodeID(ctx, nodeID)
 }
+
+func (oDb *DB) AppsWithoutResponsible(ctx context.Context) (apps []string, err error) {
+	const query = `SELECT apps.app
+	  FROM apps
+	  LEFT JOIN apps_responsibles
+	  ON apps.id=apps_responsibles.app_id
+	  WHERE apps_responsibles.group_id IS NULL`
+	rows, err := oDb.DB.QueryContext(ctx, query)
+	if err != nil {
+		err = fmt.Errorf("AppsWithoutResponsible: %w", err)
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var app sql.NullString
+		err = rows.Scan(&app)
+		if err != nil {
+			err = fmt.Errorf("AppsWithoutResponsible: %w", err)
+			return
+		}
+		if app.Valid {
+			apps = append(apps, app.String)
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return
+	}
+	return
+}

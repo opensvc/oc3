@@ -51,6 +51,7 @@ var (
 		TaskScrubDaily,
 		TaskStatDaily,
 		TaskAlertHourly,
+		TaskAlertDaily,
 	}
 
 	taskExecCounter = promauto.NewCounterVec(
