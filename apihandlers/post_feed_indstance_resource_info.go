@@ -11,12 +11,13 @@ import (
 	"github.com/opensvc/oc3/cachekeys"
 )
 
-// PostFeedObjectConfig will populate FeedObjectConfigH <path>@<nodeID>@<clusterID>
-// with posted object config. The auth middleware has prepared nodeID and clusterID.
-func (a *Api) PostFeedObjectConfig(c echo.Context) error {
-	keyH := cachekeys.FeedObjectConfigH
-	keyQ := cachekeys.FeedObjectConfigQ
-	keyPendingH := cachekeys.FeedObjectConfigPendingH
+// PostFeedInstanceResourceInfo will populate FeedInstanceResourceInfo <path>@<nodeID>@<clusterID>
+// with posted instance resource information. The auth middleware has prepared nodeID and clusterID.
+func (a *Api) PostFeedInstanceResourceInfo(c echo.Context) error {
+	var data api.PostFeedInstanceResourceInfoJSONRequestBody
+	keyH := cachekeys.FeedInstanceResourceInfoH
+	keyQ := cachekeys.FeedInstanceResourceInfoQ
+	keyPendingH := cachekeys.FeedInstanceResourceInfoPendingH
 	log := getLog(c)
 	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {
@@ -27,20 +28,20 @@ func (a *Api) PostFeedObjectConfig(c echo.Context) error {
 	if clusterID == "" {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
-	var payload api.PostFeedObjectConfigJSONRequestBody
-	if err := c.Bind(&payload); err != nil {
+
+	if err := c.Bind(&data); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}
-	if payload.Path == "" {
-		log.Debug("bad request: empty path")
-		return JSONProblem(c, http.StatusBadRequest, "Got object empty path", "")
+	if data.Path == "" {
+		log.Debug("bad request: missing or empty instance path")
+		return JSONProblem(c, http.StatusBadRequest, "BadRequest: missing or empty instance path", "")
 	}
-	b, err := json.Marshal(payload)
+	b, err := json.Marshal(data)
 	if err != nil {
 		return JSONProblem(c, http.StatusInternalServerError, "Failed to re-encode config", err.Error())
 	}
 	ctx := c.Request().Context()
-	idx := payload.Path + "@" + nodeID + "@" + clusterID
+	idx := data.Path + "@" + nodeID + "@" + clusterID
 	log.Info(fmt.Sprintf("HSET %s %s", keyH, idx))
 	if err := a.Redis.HSet(ctx, keyH, idx, b).Err(); err != nil {
 		log.Error(fmt.Sprintf("HSET %s %s", keyH, idx))

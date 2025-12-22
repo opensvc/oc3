@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.5
+  version: 1.0.6
 
 paths:
   /feed/node/disk:
@@ -42,6 +42,26 @@ paths:
       responses:
         202:
           description: instance configuration will be refreshed
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
+  /feed/instance/resource_info:
+    post:
+      description: |
+        Update or create instance resource info
+      operationId: PostFeedInstanceResourceInfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstanceResourceInfo'
+      responses:
+        202:
+          description: instance resource information will be refreshed
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
@@ -192,6 +212,39 @@ components:
         region:
           type: string
 
+    InstanceResourceInfo:
+      type: object
+      required:
+        - path
+        - info
+      properties:
+        path:
+          type: string
+        topology:
+          type: string
+        info:
+          type: array
+          items:
+            type: object
+            required:
+              - rid
+              - keys
+            properties:
+              rid:
+                type: string
+              keys:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - key
+                    - value
+                  properties:
+                    key:
+                      type: string
+                    value:
+                      type: string
+
     NodeDisks:
       type: object
       properties:
@@ -208,7 +261,7 @@ components:
         path:
           type: string
         orchestrate:
-            type: string
+          type: string
         topology:
           type: string
         scope:
@@ -352,6 +405,11 @@ components:
           example: "0.0.1"
 
   parameters:
+    ObjectPathHeader:
+      name: OC3-ObjectPath
+      in: header
+      schema:
+        type: string
 
   securitySchemes:
     basicAuth:
