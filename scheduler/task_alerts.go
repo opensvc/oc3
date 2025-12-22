@@ -14,6 +14,7 @@ var TaskAlertHourly = Task{
 	name: "alerts_hourly",
 	children: TaskList{
 		TaskAlertNetworkWithWrongMask,
+		TaskAlertInstancesOutdated,
 	},
 	period:  time.Hour,
 	timeout: 15 * time.Minute,
@@ -37,6 +38,12 @@ var TaskAlertNetworkWithWrongMask = Task{
 var TaskAlertAppsWithoutResponsible = Task{
 	name:    "alert_apps_without_responsible",
 	fn:      taskAlertAppWithoutResponsible,
+	timeout: 5 * time.Minute,
+}
+
+var TaskAlertInstancesOutdated = Task{
+	name:    "alert_instances_outdated",
+	fn:      taskAlertInstancesOutdated,
 	timeout: 5 * time.Minute,
 }
 
@@ -103,6 +110,21 @@ func taskAlertAppWithoutResponsible(ctx context.Context, task *Task) error {
 		User:  "scheduler",
 		Level: "warning",
 	})
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertInstancesOutdated(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+	if err := odb.AlertInstancesOutdated(ctx); err != nil {
+		return err
+	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
 		return err
 	}
