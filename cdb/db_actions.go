@@ -74,7 +74,7 @@ func (oDb *DB) LogActionErrorsNotAcked(ctx context.Context, ids []int64) error {
                SELECT NULL,
                       "service.action.notacked",
                       "scheduler",
-                      "unacknowledged failed action '%(action)s' at '%(begin)s'",
+                      "unacknowledged failed action '%%(action)s' at '%%(begin)s'",
                       concat('{"action": "', action, '", "begin": "', begin, '"}'),
                       NOW(),
                       svc_id,

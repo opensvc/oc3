@@ -101,7 +101,6 @@ func (t *Scheduler) monitor() error {
 			cancel()
 		}
 	}
-	return nil
 }
 
 func (t *Scheduler) GetStateMap(ctx context.Context) (map[string]State, error) {
