@@ -44,6 +44,18 @@ var TaskScrubNodeHBA = Task{
 	timeout: time.Minute,
 }
 
+var TaskScrubPackages = Task{
+	name:    "scrub_packages",
+	fn:      taskScrubPackages,
+	timeout: time.Minute,
+}
+
+var TaskScrubPatches = Task{
+	name:    "scrub_patches",
+	fn:      taskScrubPatches,
+	timeout: time.Minute,
+}
+
 var TaskScrubStorArray = Task{
 	name:    "scrub_stor_array",
 	fn:      taskScrubStorArray,
@@ -124,6 +136,8 @@ var TaskScrubDaily = Task{
 		TaskScrubCompStatus,
 		TaskScrubDiskinfo,
 		TaskScrubNodeHBA,
+		TaskScrubPackages,
+		TaskScrubPatches,
 		TaskScrubStorArray,
 		TaskScrubSvcdisks,
 		TaskUpdateStorArrayDGQuota,
@@ -312,6 +326,38 @@ func taskScrubNodeHBA(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.PurgeNodeHBAsOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubPackages(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgePackagesOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubPatches(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgePatchesOutdated(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
