@@ -148,3 +148,42 @@ func (oDb *DB) DashboardUpdateObject(ctx context.Context, d *Dashboard) error {
 	}
 	return nil
 }
+
+func (oDb *DB) DashboardDeleteNetworkWrongMaskNotUpdated(ctx context.Context) error {
+	defer logDuration("DashboardDeleteNetworkWrongMaskNotUpdated", time.Now())
+	const (
+		query = `DELETE FROM dashboard
+                  WHERE
+                    dash_type="netmask misconfigured" AND
+                    dash_updated < DATE_SUB(NOW(), INTERVAL 1 MINUTE)`
+	)
+	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("DashboardDeleteNetworkWrongMaskNotUpdated: %w", err)
+	} else if count, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("DashboardDeleteNetworkWrongMaskNotUpdated: %w", err)
+	} else if count > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardDeleteActionErrors(ctx context.Context) error {
+	defer logDuration("DashboardDeleteActionErrors", time.Now())
+	const (
+		query = `DELETE FROM dashboard
+                  WHERE
+                    dash_type LIKE "%action err%" AND
+                    (svc_id, node_id) NOT IN (
+                      SELECT svc_id, node_id
+                      FROM b_action_errors
+                    )`
+	)
+	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("DashboardDeleteActionErrors: %w", err)
+	} else if count, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("DashboardDeleteActionErrors: %w", err)
+	} else if count > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}

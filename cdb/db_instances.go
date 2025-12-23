@@ -751,3 +751,36 @@ func (oDb *DB) InstancesOutdated(ctx context.Context) (instanceIDs []InstanceID,
 	err = rows.Err()
 	return
 }
+
+func (oDb *DB) AlertInstancesOutdated(ctx context.Context) error {
+	age := 2
+	request := fmt.Sprintf(`INSERT IGNORE
+             INTO log
+               SELECT NULL,
+                      "service.status",
+                      "scheduler",
+                      "instance status not updated for more than %dh (%%(date)s)",
+                      CONCAT('{"date": "', mon_updated, '"}'),
+                      NOW(),
+                      svc_id,
+                      0,
+                      0,
+                      MD5(CONCAT("service.status.notupdated",node_id,svc_id,mon_updated)),
+                      "warning",
+                      node_id
+               from svcmon
+               where mon_updated<DATE_SUB(NOW(), INTERVAL %d HOUR)`, age, age)
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		slog.Debug(fmt.Sprintf("alert: instance outdated: %d", rowAffected))
+		oDb.SetChange("log")
+	} else {
+		slog.Debug("alert: no instance outdated")
+	}
+	return nil
+}

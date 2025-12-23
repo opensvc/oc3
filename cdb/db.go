@@ -80,11 +80,11 @@ func (oDb *DB) SetChange(s ...string) {
 	oDb.Session.SetChanges(s...)
 }
 
-func (oDb *DB) DeleteBatched(ctx context.Context, table, dateCol, orderbyCol string, batchSize int64, retention int) (totalDeleted int64, batchCount int64, err error) {
+func (oDb *DB) DeleteBatched(ctx context.Context, table, dateCol, orderbyCol string, batchSize int64, retention int, where string) (totalDeleted int64, batchCount int64, err error) {
 	// The base SQL query for the batched deletion.
 	// ORDER BY is crucial for consistent performance and avoiding lock conflicts.
-	query := fmt.Sprintf("DELETE FROM `%s` WHERE `%s` < DATE_SUB(NOW(), INTERVAL %d DAY) ORDER BY `%s` LIMIT %d",
-		table, dateCol, retention, orderbyCol, batchSize)
+	query := fmt.Sprintf("DELETE FROM `%s` WHERE `%s` < DATE_SUB(NOW(), INTERVAL %d DAY) %s ORDER BY `%s` LIMIT %d",
+		table, dateCol, retention, where, orderbyCol, batchSize)
 
 	for {
 		batchCount++
