@@ -62,6 +62,12 @@ var TaskScrubSvcdisks = Task{
 	timeout: time.Minute,
 }
 
+var TaskScrubCompRulesetsServices = Task{
+	name:    "scrub_comp_rulesets_services",
+	fn:      taskScrubCompRulesetsServices,
+	timeout: time.Minute,
+}
+
 var TaskUpdateStorArrayDGQuota = Task{
 	name:    "scrub_update_stor_array_dg_quota",
 	fn:      taskUpdateStorArrayDGQuota,
@@ -72,6 +78,7 @@ var TaskScrubDaily = Task{
 	name:   "scrub_daily",
 	period: 24 * time.Hour,
 	children: TaskList{
+		TaskScrubCompRulesetsServices,
 		TaskScrubChecksLive,
 		TaskScrubNodeHBA,
 		TaskScrubDiskinfo,
@@ -311,6 +318,22 @@ func taskScrubStorArray(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.PurgeStorArrayOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubCompRulesetsServices(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeCompRulesetsServices(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
