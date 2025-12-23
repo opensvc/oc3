@@ -56,6 +56,12 @@ var TaskScrubPatches = Task{
 	timeout: time.Minute,
 }
 
+var TaskScrubResmon = Task{
+	name:    "scrub_resmon",
+	fn:      taskScrubResmon,
+	timeout: time.Minute,
+}
+
 var TaskScrubStorArray = Task{
 	name:    "scrub_stor_array",
 	fn:      taskScrubStorArray,
@@ -138,6 +144,7 @@ var TaskScrubDaily = Task{
 		TaskScrubNodeHBA,
 		TaskScrubPackages,
 		TaskScrubPatches,
+		TaskScrubResmon,
 		TaskScrubStorArray,
 		TaskScrubSvcdisks,
 		TaskUpdateStorArrayDGQuota,
@@ -358,6 +365,22 @@ func taskScrubPatches(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.PurgePatchesOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubResmon(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeResmonOutdated(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
