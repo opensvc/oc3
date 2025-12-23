@@ -26,9 +26,16 @@ var TaskAlertDaily = Task{
 		TaskAlertAppsWithoutResponsible,
 		TaskAlertPurgeActionErrors,
 		TaskAlertActionErrorsNotAcked,
+		TaskAlertMACDup,
 	},
 	period:  24 * time.Hour,
 	timeout: 15 * time.Minute,
+}
+
+var TaskAlertMACDup = Task{
+	name:    "alert_mac_dup",
+	fn:      taskAlertMACDup,
+	timeout: 5 * time.Minute,
 }
 
 var TaskAlertNetworkWithWrongMask = Task{
@@ -65,6 +72,21 @@ var TaskAlertActionErrorsNotAcked = Task{
 	name:    "alert_action_errors_not_acked",
 	fn:      taskAlertActionErrorsNotAcked,
 	timeout: 5 * time.Minute,
+}
+
+func taskAlertMACDup(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+	if err := odb.AlertMacDUP(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
 }
 
 func taskAlertNetworkWithWrongMask(ctx context.Context, task *Task) error {

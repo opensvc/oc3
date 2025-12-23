@@ -311,13 +311,93 @@ func (oDb *DB) PurgeNodeHBAsOutdated(ctx context.Context) error {
 	request := fmt.Sprintf("DELETE FROM `node_hba` WHERE `updated` < DATE_SUB(NOW(), INTERVAL 7 DAY)")
 	result, err := oDb.DB.ExecContext(ctx, request)
 	if err != nil {
-		return fmt.Errorf("delete from node_hba: %w", err)
+		return err
 	}
 	if rowAffected, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("count delete from node_hba: %w", err)
+		return err
 	} else if rowAffected > 0 {
 		slog.Info(fmt.Sprintf("purged %d entries from table node_hba", rowAffected))
 		oDb.SetChange("node_hba")
 	}
+	return nil
+}
+
+func (oDb *DB) AlertMacDUP(ctx context.Context) error {
+	request := `
+		-- Step 1: Find duplicates and prepare data for insert/update
+		INSERT INTO dashboard (
+		  dash_type, dash_severity, node_id, svc_id,
+		  dash_fmt, dash_dict, dash_created, dash_env, dash_updated
+		)
+		SELECT
+		  "mac duplicate" AS dash_type,
+		  IF(nodes.node_env = "PRD", 4, 3) AS dash_severity,
+		  nodes.node_id,
+		  "" AS svc_id,
+		  CONCAT("mac ", duplicates.mac, " reported by nodes ", duplicates.node_names) AS dash_fmt,
+		  CONCAT('{"mac": "', duplicates.mac, '", "nodes": "', duplicates.node_names, '"}') AS dash_dict,
+		  NOW() AS dash_created,
+		  nodes.node_env AS dash_env,
+		  NOW() AS dash_updated
+		FROM (
+		  -- Subquery to find duplicate MACs and their associated node_ids
+		  SELECT
+		    t.mac,
+		    GROUP_CONCAT(DISTINCT t.node_id ORDER BY t.node_id) AS node_ids,
+		    GROUP_CONCAT(DISTINCT t.nodename ORDER BY t.nodename) AS node_names
+		  FROM (
+		      SELECT
+		        mac,
+			node_ip.node_id AS node_id,
+			nodes.nodename AS nodename
+		      FROM node_ip
+		      JOIN nodes ON nodes.node_id = node_ip.node_id
+		      WHERE
+		        node_ip.intf NOT LIKE "%:%" AND
+		        node_ip.intf NOT LIKE "usbecm%" AND
+		        node_ip.intf NOT LIKE "docker%" AND
+		        node_ip.mac != "00:00:00:00:00:00" AND
+		        node_ip.mac != "2:21:28:57:47:17" AND
+		        node_ip.mac != "0:0:0:0:0:0" AND
+		        node_ip.mac != "00:16:3e:00:00:00" AND
+		        node_ip.mac != "0" AND
+		        node_ip.mac != "" AND
+		        node_ip.updated > DATE_SUB(NOW(), INTERVAL 1 DAY)
+		      GROUP BY mac, node_ip.node_id
+		  ) AS t
+		  GROUP BY t.mac
+		  HAVING COUNT(t.mac) > 1
+		) AS duplicates
+		JOIN nodes ON FIND_IN_SET(nodes.node_id, duplicates.node_ids)
+		ON DUPLICATE KEY UPDATE
+		  dash_fmt = VALUES(dash_fmt),
+		  dash_dict = VALUES(dash_dict),
+		  dash_env = VALUES(dash_env),
+		  dash_updated = VALUES(dash_updated)
+		`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+
+	request = `DELETE FROM dashboard
+		   WHERE
+		     dash_type = "mac duplicate" AND
+		     dash_updated < DATE_SUB(NOW(), INTERVAL 1 DAY)`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+
 	return nil
 }
