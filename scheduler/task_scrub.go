@@ -44,6 +44,12 @@ var TaskScrubNodeHBA = Task{
 	timeout: time.Minute,
 }
 
+var TaskScrubStorArray = Task{
+	name:    "scrub_stor_array",
+	fn:      taskScrubStorArray,
+	timeout: time.Minute,
+}
+
 var TaskScrubDiskinfo = Task{
 	name:    "scrub_diskinfo",
 	fn:      taskScrubDiskinfo,
@@ -64,6 +70,7 @@ var TaskScrubDaily = Task{
 		TaskScrubNodeHBA,
 		TaskScrubDiskinfo,
 		TaskScrubSvcdisks,
+		TaskScrubStorArray,
 	},
 	timeout: 5 * time.Minute,
 }
@@ -281,6 +288,22 @@ func taskScrubSvcdisks(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.PurgeSvcdisksOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubStorArray(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeStorArrayOutdated(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
