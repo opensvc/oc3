@@ -130,3 +130,18 @@ func (oDb *DB) UpdateDiskinfoSetMissingArrayID(ctx context.Context, diskID, arra
 		return affected > 0, nil
 	}
 }
+
+func (oDb *DB) PurgeDiskinfoOutdated(ctx context.Context) error {
+	var query = `DELETE
+		FROM diskinfo
+		WHERE
+		  disk_updated < DATE_SUB(NOW(), INTERVAL 2 DAY)`
+	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("purge diskinfo: %w", err)
+	} else if affected, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("count diskinfo deleted: %w", err)
+	} else if affected > 0 {
+		oDb.SetChange("diskinfo")
+	}
+	return nil
+}
