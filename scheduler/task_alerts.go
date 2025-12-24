@@ -80,7 +80,7 @@ func taskAlertMACDup(ctx context.Context, task *Task) error {
 		return err
 	}
 	defer odb.Rollback()
-	if err := odb.AlertMacDUP(ctx); err != nil {
+	if err := odb.AlertMACDup(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {

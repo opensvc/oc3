@@ -322,7 +322,7 @@ func (oDb *DB) PurgeNodeHBAsOutdated(ctx context.Context) error {
 	return nil
 }
 
-func (oDb *DB) AlertMacDUP(ctx context.Context) error {
+func (oDb *DB) AlertMACDup(ctx context.Context) error {
 	request := `
 		-- Step 1: Find duplicates and prepare data for insert/update
 		INSERT INTO dashboard (
@@ -399,5 +399,41 @@ func (oDb *DB) AlertMacDUP(ctx context.Context) error {
 		oDb.SetChange("dashboard")
 	}
 
+	return nil
+}
+
+func (oDb *DB) UpdateVirtualAssets(ctx context.Context) error {
+	request := `UPDATE svcmon m, nodes n, nodes n2
+          SET
+           n2.loc_addr=n.loc_addr,
+           n2.loc_city=n.loc_city,
+           n2.loc_zip=n.loc_zip,
+           n2.loc_room=n.loc_room,
+           n2.loc_building=n.loc_building,
+           n2.loc_floor=n.loc_floor,
+           n2.loc_rack=n.loc_rack,
+           n2.loc_country=n.loc_country,
+           n2.power_cabinet1=n.power_cabinet1,
+           n2.power_cabinet2=n.power_cabinet2,
+           n2.power_supply_nb=n.power_supply_nb,
+           n2.power_protect=n.power_protect,
+           n2.power_protect_breaker=n.power_protect_breaker,
+           n2.power_breaker1=n.power_breaker1,
+           n2.power_breaker2=n.power_breaker2,
+           n2.enclosure=n.enclosure
+          WHERE
+           m.node_id=n.node_id AND
+           m.mon_vmname=n2.nodename AND
+           m.mon_vmtype IN ('ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx', 'zone', 'lxc', 'jail', 'vz', 'srp') and
+           m.mon_containerstatus IN ("up", "stdby up", "warn")`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("nodes")
+	}
 	return nil
 }

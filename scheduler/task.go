@@ -47,6 +47,7 @@ var (
 	Tasks = TaskList{
 		TaskRefreshBActionErrors,
 		TaskAlertUpdateActionErrors,
+		TaskUpdateVirtualAssets,
 		TaskTrim,
 		TaskScrubMinutely,
 		TaskScrubDaily,
