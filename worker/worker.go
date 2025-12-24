@@ -130,6 +130,14 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 		j = newDaemonPing(unqueuedJob[1])
 	case cachekeys.FeedDaemonStatusQ:
 		j = newDaemonStatus(unqueuedJob[1])
+	case cachekeys.FeedInstanceResourceInfoQ:
+		objectName, nodeID, ClusterID, err := w.jobToInstanceAndClusterID(unqueuedJob[1])
+		if err != nil {
+			err := fmt.Errorf("invalid feed instance resource info index: %w", err)
+			slog.Warn(err.Error())
+			return err
+		}
+		j = newjobFeedInstanceResourceInfo(objectName, nodeID, ClusterID)
 	case cachekeys.FeedNodeDiskQ:
 		// expected unqueuedJob[1]: <nodename>@<nodeID>@<clusterID>
 		l := strings.Split(unqueuedJob[1], "@")
@@ -139,13 +147,13 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 		}
 		j = newNodeDisk(l[0], l[1], l[2])
 	case cachekeys.FeedObjectConfigQ:
-		// expected unqueuedJob[1]: foo@<nodeID>@<clusterID>
-		l := strings.Split(unqueuedJob[1], "@")
-		if len(l) != 3 || l[0] == "" || l[1] == "" || l[2] == "" {
-			slog.Warn(fmt.Sprintf("invalid feed instance config index: %s", unqueuedJob[1]))
-			return fmt.Errorf("invalid feed instance config index: %s", unqueuedJob[1])
+		objectName, nodeID, ClusterID, err := w.jobToInstanceAndClusterID(unqueuedJob[1])
+		if err != nil {
+			err := fmt.Errorf("invalid feed instance config index: %s", unqueuedJob[1])
+			slog.Warn(err.Error())
+			return err
 		}
-		j = newFeedObjectConfig(l[0], l[1], l[2])
+		j = newFeedObjectConfig(objectName, nodeID, ClusterID)
 	case cachekeys.FeedSystemQ:
 		j = newDaemonSystem(unqueuedJob[1])
 	default:
@@ -178,4 +186,19 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	operationDuration.With(prometheus.Labels{"desc": workType, "status": status}).Observe(duration.Seconds())
 	slog.Debug(fmt.Sprintf("BLPOP %s <- %s: %s", unqueuedJob[0], unqueuedJob[1], duration))
 	return nil
+}
+
+// jobToInstanceAndClusterID splits a jobName string into path, nodeID, and clusterID based on "@" delimiter.
+// Returns an error if the format is invalid or elements are empty.
+// expected jobName: foo@<nodeID>@<clusterID>
+func (w *Worker) jobToInstanceAndClusterID(jobName string) (path, nodeID, clusterID string, err error) {
+	l := strings.Split(jobName, "@")
+	if len(l) != 3 || l[0] == "" || l[1] == "" || l[2] == "" {
+		err = fmt.Errorf("unexpected job name: %s", jobName)
+	} else {
+		path = l[0]
+		nodeID = l[1]
+		clusterID = l[2]
+	}
+	return
 }
