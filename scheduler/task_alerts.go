@@ -10,8 +10,8 @@ import (
 	"github.com/opensvc/oc3/cdb"
 )
 
-var TaskAlertHourly = Task{
-	name: "alerts_hourly",
+var TaskAlert1H = Task{
+	name: "alerts_1h",
 	children: TaskList{
 		TaskAlertNetworkWithWrongMask,
 		TaskAlertInstancesOutdated,
@@ -20,8 +20,8 @@ var TaskAlertHourly = Task{
 	timeout: 15 * time.Minute,
 }
 
-var TaskAlertDaily = Task{
-	name: "alerts_daily",
+var TaskAlert1D = Task{
+	name: "alerts_1d",
 	children: TaskList{
 		TaskAlertAppsWithoutResponsible,
 		TaskAlertPurgeActionErrors,

@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-var TaskStatDaily = Task{
-	name:   "stat_daily",
+var TaskStat1D = Task{
+	name:   "stat_1d",
 	period: 24 * time.Hour,
 	children: TaskList{
 		TaskStatDiskAppDaily,

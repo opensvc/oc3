@@ -20,6 +20,7 @@ type (
 
 	Task struct {
 		name     string
+		desc     string
 		period   time.Duration
 		timeout  time.Duration
 		fn       TaskFunc
@@ -49,12 +50,13 @@ var (
 		TaskAlertUpdateActionErrors,
 		TaskUpdateVirtualAssets,
 		TaskTrim,
-		TaskScrubMinutely,
-		TaskScrubHourly,
-		TaskScrubDaily,
-		TaskStatDaily,
-		TaskAlertHourly,
-		TaskAlertDaily,
+		TaskScrub1M,
+		TaskScrub10M,
+		TaskScrub1H,
+		TaskScrub1D,
+		TaskStat1D,
+		TaskAlert1H,
+		TaskAlert1D,
 	}
 
 	taskExecCounter = promauto.NewCounterVec(
