@@ -187,3 +187,41 @@ func (oDb *DB) DashboardDeleteActionErrors(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (oDb *DB) PurgeAlertsOnNodesWithoutAsset(ctx context.Context) error {
+	const (
+		query = `DELETE d
+			FROM dashboard d
+			LEFT JOIN nodes n ON d.node_id = n.node_id
+			WHERE
+			  n.node_id IS NULL AND
+			  d.node_id != ""`
+	)
+	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return err
+	} else if count, err := result.RowsAffected(); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) PurgeAlertsOnServicesWithoutAsset(ctx context.Context) error {
+	const (
+		query = `DELETE d
+			FROM dashboard d
+			LEFT JOIN services n ON d.svc_id = n.svc_id
+			WHERE
+			  n.svc_id IS NULL AND
+			  d.svc_id != ""`
+	)
+	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return err
+	} else if count, err := result.RowsAffected(); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}

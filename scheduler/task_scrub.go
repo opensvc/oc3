@@ -44,9 +44,87 @@ var TaskScrubNodeHBA = Task{
 	timeout: time.Minute,
 }
 
+var TaskScrubPackages = Task{
+	name:    "scrub_packages",
+	fn:      taskScrubPackages,
+	timeout: time.Minute,
+}
+
+var TaskScrubPatches = Task{
+	name:    "scrub_patches",
+	fn:      taskScrubPatches,
+	timeout: time.Minute,
+}
+
+var TaskScrubResmon = Task{
+	name:    "scrub_resmon",
+	fn:      taskScrubResmon,
+	timeout: time.Minute,
+}
+
+var TaskScrubStorArray = Task{
+	name:    "scrub_stor_array",
+	fn:      taskScrubStorArray,
+	timeout: time.Minute,
+}
+
+var TaskScrubDiskinfo = Task{
+	name:    "scrub_diskinfo",
+	fn:      taskScrubDiskinfo,
+	timeout: time.Minute,
+}
+
 var TaskScrubSvcdisks = Task{
 	name:    "scrub_svcdisks",
 	fn:      taskScrubSvcdisks,
+	timeout: time.Minute,
+}
+
+var TaskScrubCompModulesetsNodes = Task{
+	name:    "scrub_comp_modulesets_nodes",
+	fn:      taskScrubCompModulesetsNodes,
+	timeout: time.Minute,
+}
+
+var TaskScrubCompModulesetsServices = Task{
+	name:    "scrub_comp_modulesets_services",
+	fn:      taskScrubCompModulesetsServices,
+	timeout: time.Minute,
+}
+
+var TaskScrubCompRulesetsNodes = Task{
+	name:    "scrub_comp_rulesets_nodes",
+	fn:      taskScrubCompRulesetsNodes,
+	timeout: time.Minute,
+}
+
+var TaskScrubCompRulesetsServices = Task{
+	name:    "scrub_comp_rulesets_services",
+	fn:      taskScrubCompRulesetsServices,
+	timeout: time.Minute,
+}
+
+var TaskScrubCompStatus = Task{
+	name:    "scrub_comp_status",
+	fn:      taskScrubCompStatus,
+	timeout: time.Minute,
+}
+
+var TaskUpdateStorArrayDGQuota = Task{
+	name:    "scrub_update_stor_array_dg_quota",
+	fn:      taskUpdateStorArrayDGQuota,
+	timeout: time.Minute,
+}
+
+var TaskScrubAlertsOnNodesWithoutAsset = Task{
+	name:    "scrub_alerts_on_nodes_without_asset",
+	fn:      taskScrubAlertsOnNodesWithoutAsset,
+	timeout: time.Minute,
+}
+
+var TaskScrubAlertsOnServicesWithoutAsset = Task{
+	name:    "scrub_alerts_on_services_without_asset",
+	fn:      taskScrubAlertsOnServicesWithoutAsset,
 	timeout: time.Minute,
 }
 
@@ -54,9 +132,22 @@ var TaskScrubDaily = Task{
 	name:   "scrub_daily",
 	period: 24 * time.Hour,
 	children: TaskList{
+		TaskScrubAlertsOnNodesWithoutAsset,
+		TaskScrubAlertsOnServicesWithoutAsset,
 		TaskScrubChecksLive,
+		TaskScrubCompModulesetsNodes,
+		TaskScrubCompModulesetsServices,
+		TaskScrubCompRulesetsNodes,
+		TaskScrubCompRulesetsServices,
+		TaskScrubCompStatus,
+		TaskScrubDiskinfo,
 		TaskScrubNodeHBA,
+		TaskScrubPackages,
+		TaskScrubPatches,
+		TaskScrubResmon,
+		TaskScrubStorArray,
 		TaskScrubSvcdisks,
+		TaskUpdateStorArrayDGQuota,
 	},
 	timeout: 5 * time.Minute,
 }
@@ -250,6 +341,70 @@ func taskScrubNodeHBA(ctx context.Context, task *Task) error {
 	return odb.Commit()
 }
 
+func taskScrubPackages(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgePackagesOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubPatches(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgePatchesOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubResmon(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeResmonOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubDiskinfo(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeDiskinfoOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
 func taskScrubSvcdisks(ctx context.Context, task *Task) error {
 	odb, err := task.DBX(ctx)
 	if err != nil {
@@ -258,6 +413,165 @@ func taskScrubSvcdisks(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.PurgeSvcdisksOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubStorArray(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeStorArrayOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubCompModulesetsNodes(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeCompModulesetsNodes(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubCompRulesetsNodes(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeCompRulesetsNodes(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubCompModulesetsServices(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeCompModulesetsServices(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubCompRulesetsServices(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeCompRulesetsServices(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubCompStatus(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeCompStatusOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.PurgeCompStatusSvcOrphans(ctx); err != nil {
+		return err
+	}
+	if err := odb.PurgeCompStatusNodeOrphans(ctx); err != nil {
+		return err
+	}
+	if err := odb.PurgeCompStatusModulesetOrphans(ctx); err != nil {
+		return err
+	}
+	if err := odb.PurgeCompStatusNodeUnattached(ctx); err != nil {
+		return err
+	}
+	if err := odb.PurgeCompStatusSvcUnattached(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubAlertsOnNodesWithoutAsset(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeAlertsOnNodesWithoutAsset(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskScrubAlertsOnServicesWithoutAsset(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeAlertsOnServicesWithoutAsset(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskUpdateStorArrayDGQuota(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.UpdateStorArrayDGQuota(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {

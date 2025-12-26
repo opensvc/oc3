@@ -124,3 +124,18 @@ func (oDb *DB) ResourceUpdateStatus(ctx context.Context, resources []ResourceMet
 	}
 	return n, err
 }
+
+func (oDb *DB) PurgeResmonOutdated(ctx context.Context) error {
+	var query = `DELETE
+		FROM resmon
+		WHERE
+		  updated < DATE_SUB(NOW(), INTERVAL 1 DAY)`
+	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return err
+	} else if affected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if affected > 0 {
+		oDb.SetChange("resmon")
+	}
+	return nil
+}
