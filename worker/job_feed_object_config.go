@@ -154,7 +154,7 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 	if s := mapToS(d.data, "", "env"); s != "" {
 		cfg.Env = &s
 	}
-	slog.Info(fmt.Sprintf("insertOrUpdateObjectConfig %s@%s@%sconfig: %s", cfg.Name, cfg.SvcID, cfg.ClusterID, cfg.Config))
+	slog.Info(fmt.Sprintf("insertOrUpdateObjectConfig %s@%s@%s", cfg.Name, cfg.SvcID, cfg.ClusterID))
 	if hasRowAffected, err := d.oDb.InsertOrUpdateObjectConfig(d.ctx, cfg); err != nil {
 		return err
 	} else if hasRowAffected {
