@@ -50,6 +50,7 @@ var (
 		TaskUpdateVirtualAssets,
 		TaskTrim,
 		TaskScrubMinutely,
+		TaskScrubHourly,
 		TaskScrubDaily,
 		TaskStatDaily,
 		TaskAlertHourly,

@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/opensvc/oc3/cdb"
+	"github.com/spf13/viper"
 )
 
 // TaskScrubObjects marks services status "undef" if all instances have outdated or absent data.
@@ -80,6 +83,18 @@ var TaskScrubSvcdisks = Task{
 	timeout: time.Minute,
 }
 
+var TaskScrubTempviz = Task{
+	name:    "scrub_tempviz",
+	fn:      taskScrubTempviz,
+	timeout: time.Minute,
+}
+
+var TaskScrubPdf = Task{
+	name:    "scrub_pdf",
+	fn:      taskScrubPdf,
+	timeout: time.Minute,
+}
+
 var TaskScrubCompModulesetsNodes = Task{
 	name:    "scrub_comp_modulesets_nodes",
 	fn:      taskScrubCompModulesetsNodes,
@@ -144,12 +159,22 @@ var TaskScrubDaily = Task{
 		TaskScrubNodeHBA,
 		TaskScrubPackages,
 		TaskScrubPatches,
+		TaskScrubPdf,
 		TaskScrubResmon,
 		TaskScrubStorArray,
 		TaskScrubSvcdisks,
 		TaskUpdateStorArrayDGQuota,
 	},
 	timeout: 5 * time.Minute,
+}
+
+var TaskScrubHourly = Task{
+	name:   "scrub_hourly",
+	period: time.Minute,
+	children: TaskList{
+		TaskScrubTempviz,
+	},
+	timeout: time.Minute,
 }
 
 var TaskScrubMinutely = Task{
@@ -578,4 +603,68 @@ func taskUpdateStorArrayDGQuota(ctx context.Context, task *Task) error {
 		return err
 	}
 	return odb.Commit()
+}
+
+func taskScrubTempviz(ctx context.Context, task *Task) error {
+	threshold := time.Now().Add(-1 * time.Hour)
+	directories := viper.GetStringSlice("scheduler.task.scrub_tempviz.directories")
+	if len(directories) == 0 {
+		slog.Warn("skip: define scheduler.task.scrub_tempviz.directories")
+		return nil
+	}
+	var matches []string
+	for _, directory := range directories {
+		pattern := filepath.Join(directory, "tempviz*")
+		if m, err := filepath.Glob(pattern); err != nil {
+			return fmt.Errorf("failed to glob files: %w", err)
+		} else {
+			matches = append(matches, m...)
+		}
+	}
+	for _, fpath := range matches {
+		fileInfo, err := os.Stat(fpath)
+		if err != nil {
+			return err
+		}
+		mtime := fileInfo.ModTime()
+		if mtime.Before(threshold) {
+			slog.Info(fmt.Sprintf("rm %s mtime %s", fpath, mtime))
+			if err := os.Remove(fpath); err != nil {
+				return fmt.Errorf("failed to rm %s: %w", fpath, err)
+			}
+		}
+	}
+	return nil
+}
+
+func taskScrubPdf(ctx context.Context, task *Task) error {
+	threshold := time.Now().Add(-24 * time.Hour)
+	directories := viper.GetStringSlice("scheduler.task.scrub_pdf.directories")
+	if len(directories) == 0 {
+		slog.Warn("skip: define scheduler.task.scrub_pdf.directories")
+		return nil
+	}
+	var matches []string
+	for _, directory := range directories {
+		pattern := filepath.Join(directory, "*-*-*-*-*.pdf")
+		if m, err := filepath.Glob(pattern); err != nil {
+			return fmt.Errorf("failed to glob files: %w", err)
+		} else {
+			matches = append(matches, m...)
+		}
+	}
+	for _, fpath := range matches {
+		fileInfo, err := os.Stat(fpath)
+		if err != nil {
+			return err
+		}
+		mtime := fileInfo.ModTime()
+		if mtime.Before(threshold) {
+			slog.Info(fmt.Sprintf("rm %s mtime %s", fpath, mtime))
+			if err := os.Remove(fpath); err != nil {
+				return fmt.Errorf("failed to rm %s: %w", fpath, err)
+			}
+		}
+	}
+	return nil
 }
