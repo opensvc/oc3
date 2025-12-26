@@ -48,5 +48,8 @@ func work(runners int, queues []string) error {
 			_ = http.ListenAndServe(addr, nil)
 		}()
 	}
+	if len(queues) == 0 {
+		return fmt.Errorf("no queues specified")
+	}
 	return w.Run()
 }
