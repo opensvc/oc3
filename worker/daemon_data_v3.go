@@ -83,6 +83,10 @@ func (d *daemonDataV3) nodeHeartbeat(nodename string) ([]heartbeatData, error) {
 	if !ok {
 		return nil, fmt.Errorf("data v3 no such key: node.%s.daemon.heartbeat.streams", nodename)
 	}
+	if i == nil {
+		// no heartbeat streams
+		return nil, nil
+	}
 	iL, ok := i.([]any)
 	if !ok {
 		return nil, fmt.Errorf("data v3 unexpected value for key node.%s.daemon.heartbeat.streams", nodename)
