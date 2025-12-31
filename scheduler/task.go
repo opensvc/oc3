@@ -57,6 +57,7 @@ var (
 		TaskStat1D,
 		TaskAlert1H,
 		TaskAlert1D,
+		TaskMetrics,
 	}
 
 	taskExecCounter = promauto.NewCounterVec(
@@ -122,6 +123,18 @@ func (t *Task) SetDB(db *sql.DB) {
 
 func (t *Task) Name() string {
 	return t.name
+}
+
+func (t *Task) DBXRO(ctx context.Context) (*cdb.DB, error) {
+	tx, err := t.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, err
+	}
+	return &cdb.DB{
+		Session: cdb.NewSession(tx, t.ev),
+		DB:      tx,
+		DBLck:   cdb.InitDbLocker(t.db),
+	}, nil
 }
 
 func (t *Task) DBX(ctx context.Context) (*cdb.DB, error) {
