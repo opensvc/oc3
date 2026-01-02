@@ -52,11 +52,11 @@ func taskMetrics(ctx context.Context, task *Task) error {
 		return err
 	}
 	defer rodb.Rollback()
-	cache, err := rodb.ResolveFiltersets(ctx)
+	cache, err := task.DB().ResolveFiltersets(ctx)
 	if err != nil {
 		return err
 	}
-	doMetricFilterset := func(metric cdb.Metric, fsetID uint64) error {
+	doMetricFilterset := func(metric cdb.Metric, fsetID int) error {
 		rows, err := rodb.DB.QueryContext(ctx, *metric.SQL)
 		if err != nil {
 			return fmt.Errorf("%s: %w", *metric.SQL, err)
@@ -138,8 +138,16 @@ func taskMetrics(ctx context.Context, task *Task) error {
 	doMetricByFilterset := func(metric cdb.Metric) error {
 		for fsetID, fsetCache := range cache {
 			sql := *metric.SQL
-			sql = strings.ReplaceAll(sql, "%%fset_svc_ids%%", fsetCache.SvcIDs)
-			sql = strings.ReplaceAll(sql, "%%fset_node_ids%%", fsetCache.NodeIDs)
+			if fsetCache.SvcIDs != "" {
+				sql = strings.ReplaceAll(sql, "%%fset_svc_ids%%", fsetCache.SvcIDs)
+			} else {
+				sql = strings.ReplaceAll(sql, "%%fset_svc_ids%%", "\"magic1234567890\"")
+			}
+			if fsetCache.NodeIDs != "" {
+				sql = strings.ReplaceAll(sql, "%%fset_node_ids%%", fsetCache.NodeIDs)
+			} else {
+				sql = strings.ReplaceAll(sql, "%%fset_node_ids%%", "\"magic1234567890\"")
+			}
 			*metric.SQL = sql
 			task.Debugf("%d/%d: %s", metric.ID, fsetID, sql)
 			if err := doMetricFilterset(metric, fsetID); err != nil {
