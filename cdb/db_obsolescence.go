@@ -22,6 +22,126 @@ func (oDb *DB) StatObsolescenceHW(ctx context.Context) error {
 	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
+	query = `
+		DELETE FROM dashboard
+		WHERE node_id IN (
+		    SELECT n.node_id
+		    FROM obsolescence o
+		    JOIN nodes n ON o.obs_name = n.model
+		    WHERE o.obs_type = "hw" AND (
+			o.obs_alert_date IS NULL
+			OR o.obs_name LIKE "%virtual%"
+			OR o.obs_name LIKE "%virtuel%"
+			OR o.obs_name LIKE "%cluster%"
+			OR o.obs_alert_date = "0000-00-00 00:00:00"
+			OR o.obs_warn_date >= NOW()
+			OR o.obs_alert_date <= NOW()
+		    )
+		) AND dash_type = "hardware obsolescence warning"
+           `
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update obsolescence failed: %w", err)
+	}
+	query = `
+		INSERT INTO dashboard (
+		    dash_type,
+		    svc_id,
+		    dash_severity,
+		    dash_fmt,
+		    dash_dict,
+		    dash_created,
+		    dash_dict_md5,
+		    dash_env,
+		    dash_updated,
+		    node_id
+		)
+		SELECT
+		    "hardware obsolescence warning",
+		    "",
+		    0,
+		    "%(o)s warning since %(a)s",
+		    JSON_OBJECT("a", o.obs_warn_date, "o", o.obs_name),
+		    NOW(),
+		    "",
+		    n.node_env,
+		    NOW(),
+		    n.node_id
+		FROM obsolescence o
+		JOIN nodes n ON o.obs_name = n.model
+		WHERE
+		    o.obs_type = "hw"
+		    AND o.obs_alert_date IS NOT NULL
+		    AND o.obs_alert_date != "0000-00-00 00:00:00"
+		    AND o.obs_name NOT LIKE "%virtual%"
+		    AND o.obs_name NOT LIKE "%virtuel%"
+		    AND o.obs_name NOT LIKE "%cluster%"
+		    AND o.obs_warn_date < NOW()
+		    AND o.obs_alert_date > NOW()
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=NOW()
+            `
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update obsolescence failed: %w", err)
+	}
+	query = `
+		DELETE FROM dashboard
+		WHERE node_id IN (
+		    SELECT n.node_id
+		    FROM obsolescence o
+		    JOIN nodes n ON o.obs_name = n.model
+		    WHERE o.obs_type = "hw" AND (
+			o.obs_alert_date IS NULL
+			OR o.obs_name LIKE "%virtual%"
+			OR o.obs_name LIKE "%virtuel%"
+			OR o.obs_name LIKE "%cluster%"
+			OR o.obs_alert_date = "0000-00-00 00:00:00"
+			OR o.obs_alert_date >= NOW()
+		    )
+		) AND dash_type = "hardware obsolescence alert"
+           `
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update obsolescence failed: %w", err)
+	}
+	query = `
+		INSERT INTO dashboard (
+		    dash_type,
+		    svc_id,
+		    dash_severity,
+		    dash_fmt,
+		    dash_dict,
+		    dash_created,
+		    dash_dict_md5,
+		    dash_env,
+		    dash_updated,
+		    node_id
+		)
+		SELECT
+		    "hardware obsolescence alert",
+		    "",
+		    0,
+		    "%(o)s alert since %(a)s",
+		    JSON_OBJECT("a", o.obs_alert_date, "o", o.obs_name),
+		    NOW(),
+		    "",
+		    n.node_env,
+		    NOW(),
+		    n.node_id
+		FROM obsolescence o
+		JOIN nodes n ON o.obs_name = n.model
+		WHERE
+		    o.obs_type = "hw"
+		    AND o.obs_alert_date IS NOT NULL
+		    AND o.obs_alert_date != "0000-00-00 00:00:00"
+		    AND o.obs_name NOT LIKE "%virtual%"
+		    AND o.obs_name NOT LIKE "%virtuel%"
+		    AND o.obs_name NOT LIKE "%cluster%"
+		    AND o.obs_alert_date < NOW()
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=NOW()
+            `
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update obsolescence failed: %w", err)
+	}
 	return nil
 }
 
@@ -39,6 +159,114 @@ func (oDb *DB) StatObsolescenceOS(ctx context.Context) error {
 		     WHERE os_concat != ''
 		     GROUP BY os_concat
                     `
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update obsolescence failed: %w", err)
+	}
+	query = `
+		DELETE FROM dashboard
+		WHERE node_id IN (
+		    SELECT n.node_id
+		    FROM obsolescence o
+		    JOIN nodes n ON o.obs_name = n.os_concat
+		    WHERE o.obs_type = "os" AND (
+			o.obs_alert_date IS NULL
+			OR o.obs_alert_date = "0000-00-00 00:00:00"
+			OR o.obs_warn_date >= NOW()
+			OR o.obs_alert_date <= NOW()
+		    )
+		) AND dash_type = "os obsolescence warning"
+           `
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update obsolescence failed: %w", err)
+	}
+	query = `
+		INSERT INTO dashboard (
+		    dash_type,
+		    svc_id,
+		    dash_severity,
+		    dash_fmt,
+		    dash_dict,
+		    dash_created,
+		    dash_dict_md5,
+		    dash_env,
+		    dash_updated,
+		    node_id
+		)
+		SELECT
+		    "os obsolescence warning",
+		    "",
+		    0,
+		    "%(o)s warning since %(a)s",
+		    JSON_OBJECT("a", o.obs_warn_date, "o", o.obs_name),
+		    NOW(),
+		    "",
+		    n.node_env,
+		    NOW(),
+		    n.node_id
+		FROM obsolescence o
+		JOIN nodes n ON o.obs_name = n.os_concat
+		WHERE
+		    o.obs_type = "os"
+		    AND o.obs_alert_date IS NOT NULL
+		    AND o.obs_alert_date != "0000-00-00 00:00:00"
+		    AND o.obs_warn_date < NOW()
+		    AND o.obs_alert_date > NOW()
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=NOW()
+            `
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update obsolescence failed: %w", err)
+	}
+	query = `
+		DELETE FROM dashboard
+		WHERE node_id IN (
+		    SELECT n.node_id
+		    FROM obsolescence o
+		    JOIN nodes n ON o.obs_name = n.os_concat
+		    WHERE o.obs_type = "os" AND (
+			o.obs_alert_date IS NULL
+			OR o.obs_alert_date = "0000-00-00 00:00:00"
+			OR o.obs_alert_date >= NOW()
+		    )
+		) AND dash_type = "os obsolescence alert"
+           `
+	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("update obsolescence failed: %w", err)
+	}
+	query = `
+		INSERT INTO dashboard (
+		    dash_type,
+		    svc_id,
+		    dash_severity,
+		    dash_fmt,
+		    dash_dict,
+		    dash_created,
+		    dash_dict_md5,
+		    dash_env,
+		    dash_updated,
+		    node_id
+		)
+		SELECT
+		    "os obsolescence alert",
+		    "",
+		    0,
+		    "%(o)s alert since %(a)s",
+		    JSON_OBJECT("a", o.obs_alert_date, "o", o.obs_name),
+		    NOW(),
+		    "",
+		    n.node_env,
+		    NOW(),
+		    n.node_id
+		FROM obsolescence o
+		JOIN nodes n ON o.obs_name = n.os_concat
+		WHERE
+		    o.obs_type = "os"
+		    AND o.obs_alert_date IS NOT NULL
+		    AND o.obs_alert_date != "0000-00-00 00:00:00"
+		    AND o.obs_alert_date < NOW()
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=NOW()
+            `
 	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
