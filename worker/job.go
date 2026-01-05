@@ -155,7 +155,7 @@ func runOps(ops ...operation) error {
 		}
 		begin := time.Now()
 		err := op.do()
-		duration := time.Now().Sub(begin)
+		duration := time.Since(begin)
 		if err != nil {
 			operationDuration.
 				With(prometheus.Labels{"desc": op.desc, "status": operationStatusFailed}).

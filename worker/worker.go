@@ -177,7 +177,7 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	}
 	status := operationStatusOk
 	err := RunJob(j)
-	duration := time.Now().Sub(begin)
+	duration := time.Since(begin)
 	if err != nil {
 		status = operationStatusFailed
 		slog.Error(fmt.Sprintf("🔴job %s %s: %s", workType, j.Detail(), err))

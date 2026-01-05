@@ -561,7 +561,7 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 			//				cluster.node.<node>.instance.<path>.monitor.is_leader
 			//     collector v2 calls update_dash_service_not_on_primary (broken since no DEFAULT.autostart_node values)
 
-			slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances instance duration %s@%s %s", objectName, nodename, time.Now().Sub(beginInstance)))
+			slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances instance duration %s@%s %s", objectName, nodename, time.Since(beginInstance)))
 		}
 		beginObjDash := time.Now()
 		if len(instanceMonitorStates) == 1 && instanceMonitorStates["idle"] {
@@ -588,8 +588,8 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 			}
 			// Dropped feature: update_dash_flex_cpu
 		}
-		slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances object dashboard duration %s %s", objectName, time.Now().Sub(beginObjDash)))
-		slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances object duration %s %s", objectName, time.Now().Sub(beginObj)))
+		slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances object dashboard duration %s %s", objectName, time.Since(beginObjDash)))
+		slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances object duration %s %s", objectName, time.Since(beginObj)))
 	}
 
 	return nil
@@ -672,9 +672,9 @@ func (d *jobFeedDaemonStatus) cacheObjectsWithoutConfig() error {
 }
 
 func logDuration(s string, begin time.Time) {
-	slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", s, time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", s, time.Since(begin)))
 }
 
 func logDurationInfo(s string, begin time.Time) {
-	slog.Info(fmt.Sprintf("STAT: %s elapse: %s", s, time.Now().Sub(begin)))
+	slog.Info(fmt.Sprintf("STAT: %s elapse: %s", s, time.Since(begin)))
 }
