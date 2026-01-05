@@ -30,6 +30,7 @@ var TaskAlert1H = Task{
 		TaskAlertOnNodesWithoutAsset,
 		TaskAlertOnServicesWithoutAsset,
 		TaskAlertServiceConfigNotUpdated,
+		TaskLogAppsWithoutResponsible,
 		TaskLogInstancesNotUpdated,
 	},
 	period:  time.Hour,
@@ -107,6 +108,12 @@ var TaskAlertNetworkWithWrongMask = Task{
 var TaskAlertAppsWithoutResponsible = Task{
 	name:    "alert_apps_without_responsible",
 	fn:      taskAlertAppWithoutResponsible,
+	timeout: 5 * time.Minute,
+}
+
+var TaskLogAppsWithoutResponsible = Task{
+	name:    "log_apps_without_responsible",
+	fn:      taskLogAppWithoutResponsible,
 	timeout: 5 * time.Minute,
 }
 
@@ -208,7 +215,7 @@ func taskAlertNetworkWithWrongMask(ctx context.Context, task *Task) error {
 	return odb.Commit()
 }
 
-func taskAlertAppWithoutResponsible(ctx context.Context, task *Task) error {
+func taskLogAppWithoutResponsible(ctx context.Context, task *Task) error {
 	odb, err := task.DBX(ctx)
 	if err != nil {
 		return err
@@ -473,6 +480,22 @@ func taskAlertChecksNotUpdated(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.DashboardUpdateChecksNotUpdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertAppWithoutResponsible(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.DashboardUpdateAppWithoutResponsible(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {

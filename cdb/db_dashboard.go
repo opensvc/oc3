@@ -687,3 +687,77 @@ func (oDb *DB) DashboardUpdateNodeWithoutMaintenanceEnd(ctx context.Context) err
 	}
 	return nil
 }
+
+func (oDb *DB) DashboardUpdateAppWithoutResponsible(ctx context.Context) error {
+	request := `
+		DELETE FROM dashboard
+		WHERE
+		  dash_type="application code without responsible" and
+		  (
+		    dash_dict IN (
+		      SELECT
+		        JSON_OBJECT("a", a.app)
+		      FROM apps a JOIN apps_responsibles ar ON a.id=ar.app_id
+		    ) OR
+		    dash_dict = "" OR
+		    dash_dict IS NULL
+		  )
+	`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	request = `
+		DELETE FROM dashboard
+		WHERE
+                  dash_type="application code without responsible" AND
+                  dash_dict NOT IN (
+                    SELECT
+                      JSON_OBJECT("a", a.app)
+                    FROM apps a
+                )
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+
+	request = `
+		INSERT INTO dashboard
+		SELECT
+		  NULL,
+		  "application code without responsible",
+		  "",
+		  2,
+		  "%(a)s",
+		  JSON_OBJECT("a", a.app),
+		  NOW(),
+		  MD5(JSON_OBJECT("a", a.app)),
+		  "",
+		  NOW(),
+		  "",
+		  NULL,
+		  a.app
+		FROM apps a LEFT JOIN apps_responsibles ar ON a.id=ar.app_id
+		WHERE
+		  ar.group_id IS NULL
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=NOW()
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
