@@ -351,3 +351,61 @@ func (oDb *DB) DashboardUpdateServiceConfigOutdated(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (oDb *DB) DashboardUpdateInstancesOutdated(ctx context.Context) error {
+	request := `
+		INSERT INTO dashboard
+		SELECT
+		  NULL,
+		  "service status not updated",
+		  svc_id,
+		  IF(mon_svctype="PRD", 1, 0),
+		  "",
+		  "",
+		  mon_updated,
+		  "",
+		  mon_svctype,
+		  NOW(),
+		  node_id,
+		  NULL,
+		  NULL
+		FROM svcmon
+		WHERE mon_updated < DATE_SUB(NOW(), INTERVAL 16 MINUTE)
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=NOW()
+	`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	request = `
+		DELETE FROM dashboard
+		WHERE id IN (
+		    SELECT dashboard.id
+		    FROM dashboard
+		    LEFT JOIN svcmon ON
+			dashboard.svc_id = svcmon.svc_id AND
+			dashboard.node_id = svcmon.node_id
+		    WHERE
+			dashboard.dash_type = "service status not updated" AND
+			dashboard.svc_id != "" AND
+			dashboard.node_id != "" AND
+			(svcmon.id IS NULL OR svcmon.mon_updated >= DATE_SUB(NOW(), INTERVAL 16 MINUTE))
+		)
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}

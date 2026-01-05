@@ -10,6 +10,15 @@ import (
 	"github.com/opensvc/oc3/cdb"
 )
 
+var TaskAlert1M = Task{
+	name: "alerts_1m",
+	children: TaskList{
+		TaskAlertInstancesOutdated,
+	},
+	period:  time.Minute,
+	timeout: 15 * time.Minute,
+}
+
 var TaskAlert1H = Task{
 	name: "alerts_1h",
 	children: TaskList{
@@ -106,6 +115,12 @@ var TaskAlertActionErrorsNotAcked = Task{
 var TaskAlertServiceConfigOutdated = Task{
 	name:    "alert_service_config_outdated",
 	fn:      taskAlertServiceConfigOutdated,
+	timeout: 5 * time.Minute,
+}
+
+var TaskAlertInstancesOutdated = Task{
+	name:    "alert_instances_outdated",
+	fn:      taskAlertInstancesOutdated,
 	timeout: 5 * time.Minute,
 }
 
@@ -350,6 +365,22 @@ func taskAlertServiceConfigOutdated(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.DashboardUpdateServiceConfigOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertInstancesOutdated(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.DashboardUpdateInstancesOutdated(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
