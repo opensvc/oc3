@@ -9,7 +9,7 @@ import (
 )
 
 func UIMiddleware(_ context.Context) echo.MiddlewareFunc {
-	uiHandler := http.StripPrefix("/oc3/public/ui", swaggerui.Handler("/oc3/public/openapi"))
+	uiHandler := http.StripPrefix("/oc3/docs", swaggerui.Handler("/oc3/docs/openapi"))
 	echoUI := echo.WrapHandler(uiHandler)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
