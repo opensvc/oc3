@@ -40,10 +40,17 @@ var TaskAlert1D = Task{
 	children: TaskList{
 		TaskAlertActionErrorsNotAcked,
 		TaskAlertMACDup,
+		TaskAlertNodeMaintenanceExpired,
 		TaskAlertPurgeActionErrors,
 	},
 	period:  24 * time.Hour,
 	timeout: 15 * time.Minute,
+}
+
+var TaskAlertNodeMaintenanceExpired = Task{
+	name:    "alert_node_maintenance_expired",
+	fn:      taskAlertNodeMaintenanceExpired,
+	timeout: time.Minute,
 }
 
 var TaskAlertActionErrorCleanup = Task{
@@ -381,6 +388,22 @@ func taskAlertInstancesOutdated(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.DashboardUpdateInstancesOutdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertNodeMaintenanceExpired(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.DashboardUpdateNodeMaintenanceExpired(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {

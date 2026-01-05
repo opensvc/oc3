@@ -409,3 +409,64 @@ func (oDb *DB) DashboardUpdateInstancesOutdated(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error {
+	request := `SET @now = NOW()`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	request = `
+		INSERT INTO dashboard
+		SELECT
+		  NULL,
+                  "node maintenance expired",
+                  "",
+                  1,
+                  "",
+                  "",
+                  @now,
+                  "",
+                  node_env,
+                  @now,
+                  node_id,
+                  NULL,
+                  NULL
+                 FROM nodes
+                 WHERE
+                   maintenance_end is not NULL AND
+                   maintenance_end != "0000-00-00 00:00:00" AND
+                   maintenance_end < @now
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=@now
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	request = `
+		DELETE FROM dashboard
+		WHERE
+		  dash_type="node maintenance expired" AND
+		  (
+		    dash_updated < @now or
+		    dash_updated IS NULL
+		  )
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
