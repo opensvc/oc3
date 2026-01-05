@@ -257,3 +257,63 @@ func (oDb *DB) DashboardUpdateNodesNotUpdated(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (oDb *DB) AlertActionErrors(ctx context.Context, line BActionErrorCount) error {
+	var (
+		env      string
+		severity int
+	)
+	if line.SvcEnv != nil && *line.SvcEnv == "PRD" {
+		env = *line.SvcEnv
+		severity = 4
+	} else {
+		env = "TST"
+		severity = 3
+	}
+	request := `
+                 INSERT INTO dashboard
+                 SET
+                   dash_type="action errors",
+                   svc_id=?,
+                   node_id=?,
+                   dash_severity=?,
+                   dash_fmt="%(err)s action errors",
+                   dash_dict=CONCAT('{"err": "', ?, '"}'),
+                   dash_created=NOW(),
+                   dash_env=?,
+                   dash_updated=NOW()
+                 ON DUPLICATE KEY UPDATE
+                   dash_severity=?,
+                   dash_fmt="%(err)s action errors",
+                   dash_dict=CONCAT('{"err": "', ?, '"}'),
+                   dash_updated=NOW()`
+	result, err := oDb.DB.ExecContext(ctx, request, line.SvcID, line.NodeID, severity, line.ErrCount, env, severity, line.ErrCount)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardDeleteActionErrorsWithNoError(ctx context.Context) error {
+	request := `
+             DELETE FROM dashboard
+             WHERE
+               dash_dict='{"err": "0"}' and
+               dash_type='action errors'
+	`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}

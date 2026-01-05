@@ -13,6 +13,7 @@ import (
 var TaskAlert1H = Task{
 	name: "alerts_1h",
 	children: TaskList{
+		TaskAlertActionErrorCleanup,
 		TaskAlertAppsWithoutResponsible,
 		TaskAlertInstancesOutdated,
 		TaskAlertNetworkWithWrongMask,
@@ -33,6 +34,12 @@ var TaskAlert1D = Task{
 	},
 	period:  24 * time.Hour,
 	timeout: 15 * time.Minute,
+}
+
+var TaskAlertActionErrorCleanup = Task{
+	name:    "alert_action_error_cleanup",
+	fn:      taskAlertActionErrorCleanup,
+	timeout: time.Minute,
 }
 
 var TaskAlertNodesNotUpdated = Task{
@@ -304,6 +311,22 @@ func taskAlertNodesNotUpdated(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.DashboardUpdateNodesNotUpdated(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertActionErrorCleanup(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.DashboardDeleteActionErrorsWithNoError(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
