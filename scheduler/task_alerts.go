@@ -15,11 +15,12 @@ var TaskAlert1H = Task{
 	children: TaskList{
 		TaskAlertActionErrorCleanup,
 		TaskAlertAppsWithoutResponsible,
-		TaskAlertInstancesOutdated,
 		TaskAlertNetworkWithWrongMask,
 		TaskAlertNodesNotUpdated,
 		TaskAlertOnNodesWithoutAsset,
 		TaskAlertOnServicesWithoutAsset,
+		TaskAlertServiceConfigOutdated,
+		TaskLogInstancesOutdated,
 	},
 	period:  time.Hour,
 	timeout: 15 * time.Minute,
@@ -78,9 +79,9 @@ var TaskAlertAppsWithoutResponsible = Task{
 	timeout: 5 * time.Minute,
 }
 
-var TaskAlertInstancesOutdated = Task{
-	name:    "alert_instances_outdated",
-	fn:      taskAlertInstancesOutdated,
+var TaskLogInstancesOutdated = Task{
+	name:    "log_instances_outdated",
+	fn:      taskLogInstancesOutdated,
 	timeout: 5 * time.Minute,
 }
 
@@ -99,6 +100,12 @@ var TaskAlertUpdateActionErrors = Task{
 var TaskAlertActionErrorsNotAcked = Task{
 	name:    "alert_action_errors_not_acked",
 	fn:      taskAlertActionErrorsNotAcked,
+	timeout: 5 * time.Minute,
+}
+
+var TaskAlertServiceConfigOutdated = Task{
+	name:    "alert_service_config_outdated",
+	fn:      taskAlertServiceConfigOutdated,
 	timeout: 5 * time.Minute,
 }
 
@@ -186,13 +193,13 @@ func taskAlertAppWithoutResponsible(ctx context.Context, task *Task) error {
 	return odb.Commit()
 }
 
-func taskAlertInstancesOutdated(ctx context.Context, task *Task) error {
+func taskLogInstancesOutdated(ctx context.Context, task *Task) error {
 	odb, err := task.DBX(ctx)
 	if err != nil {
 		return err
 	}
 	defer odb.Rollback()
-	if err := odb.AlertInstancesOutdated(ctx); err != nil {
+	if err := odb.LogInstancesOutdated(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -327,6 +334,22 @@ func taskAlertActionErrorCleanup(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.DashboardDeleteActionErrorsWithNoError(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertServiceConfigOutdated(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.DashboardUpdateServiceConfigOutdated(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {

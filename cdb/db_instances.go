@@ -840,7 +840,7 @@ func (oDb *DB) InstancesOutdated(ctx context.Context) (instanceIDs []InstanceID,
 	return
 }
 
-func (oDb *DB) AlertInstancesOutdated(ctx context.Context) error {
+func (oDb *DB) LogInstancesOutdated(ctx context.Context) error {
 	age := 2
 	request := fmt.Sprintf(`INSERT IGNORE
              INTO log

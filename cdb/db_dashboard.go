@@ -317,3 +317,37 @@ func (oDb *DB) DashboardDeleteActionErrorsWithNoError(ctx context.Context) error
 	}
 	return nil
 }
+
+func (oDb *DB) DashboardUpdateServiceConfigOutdated(ctx context.Context) error {
+	request := `
+	     INSERT INTO dashboard
+             SELECT
+               NULL,
+               "service configuration not updated",
+               svc_id,
+               IF(svc_env="PRD", 1, 0),
+               "",
+               "",
+               updated,
+               "",
+               svc_env,
+               NOW(),
+               "",
+               NULL,
+               NULL
+             FROM services
+             WHERE updated < DATE_SUB(NOW(), INTERVAL 25 HOUR)
+             ON DUPLICATE KEY UPDATE
+               dash_updated=NOW()
+	`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
