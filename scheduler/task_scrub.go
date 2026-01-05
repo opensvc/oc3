@@ -141,24 +141,10 @@ var TaskUpdateStorArrayDGQuota = Task{
 	timeout: time.Minute,
 }
 
-var TaskScrubAlertsOnNodesWithoutAsset = Task{
-	name:    "scrub_alerts_on_nodes_without_asset",
-	fn:      taskScrubAlertsOnNodesWithoutAsset,
-	timeout: time.Minute,
-}
-
-var TaskScrubAlertsOnServicesWithoutAsset = Task{
-	name:    "scrub_alerts_on_services_without_asset",
-	fn:      taskScrubAlertsOnServicesWithoutAsset,
-	timeout: time.Minute,
-}
-
 var TaskScrub1D = Task{
 	name:   "scrub_1d",
 	period: 24 * time.Hour,
 	children: TaskList{
-		TaskScrubAlertsOnNodesWithoutAsset,
-		TaskScrubAlertsOnServicesWithoutAsset,
 		TaskScrubChecksLive,
 		TaskScrubCompModulesetsNodes,
 		TaskScrubCompModulesetsServices,
@@ -568,38 +554,6 @@ func taskScrubCompStatus(ctx context.Context, task *Task) error {
 		return err
 	}
 	if err := odb.PurgeCompStatusSvcUnattached(ctx); err != nil {
-		return err
-	}
-	if err := odb.Session.NotifyChanges(ctx); err != nil {
-		return err
-	}
-	return odb.Commit()
-}
-
-func taskScrubAlertsOnNodesWithoutAsset(ctx context.Context, task *Task) error {
-	odb, err := task.DBX(ctx)
-	if err != nil {
-		return err
-	}
-	defer odb.Rollback()
-
-	if err := odb.PurgeAlertsOnNodesWithoutAsset(ctx); err != nil {
-		return err
-	}
-	if err := odb.Session.NotifyChanges(ctx); err != nil {
-		return err
-	}
-	return odb.Commit()
-}
-
-func taskScrubAlertsOnServicesWithoutAsset(ctx context.Context, task *Task) error {
-	odb, err := task.DBX(ctx)
-	if err != nil {
-		return err
-	}
-	defer odb.Rollback()
-
-	if err := odb.PurgeAlertsOnServicesWithoutAsset(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
