@@ -45,7 +45,7 @@ func listenAndServe(addr string) error {
 	}
 
 	strategy := union.New(
-		xauth.NewPublicStrategy("/oc3/public/"),
+		xauth.NewPublicStrategy("/oc3/public/", "/oc3/docs"),
 		xauth.NewBasicNode(db),
 	)
 	if viper.GetBool("listener.metrics.enable") {
@@ -68,7 +68,7 @@ func listenAndServe(addr string) error {
 }
 
 func registerAPIUI(e *echo.Echo) {
-	slog.Info("add handler /oc3/public/ui")
-	g := e.Group("/oc3/public/ui")
+	slog.Info("add handler /oc3/docs/")
+	g := e.Group("/oc3/docs")
 	g.Use(apihandlers.UIMiddleware(context.Background()))
 }
