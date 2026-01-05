@@ -258,6 +258,95 @@ func (oDb *DB) DashboardUpdateNodesNotUpdated(ctx context.Context) error {
 	return nil
 }
 
+func (oDb *DB) DashboardUpdateChecksNotUpdated(ctx context.Context) error {
+	request := `
+		DELETE FROM dashboard
+		WHERE
+		  dash_type = "check value not updated" AND
+		  node_id NOT IN (SELECT DISTINCT node_id FROM checks_live)
+	`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+
+	request = `
+		DELETE FROM dashboard
+		WHERE id IN (
+		    -- Suppression des "check out of bounds" non correspondants
+		    SELECT d.id FROM dashboard d
+		    LEFT JOIN checks_live c ON
+			d.dash_dict_md5 = MD5(CONCAT(
+			    '{"ctype": "', c.chk_type,
+			    '", "inst": "', c.chk_instance,
+			    '", "ttype": "', c.chk_threshold_provider,
+			    '", "val": ', c.chk_value,
+			    ', "min": ', c.chk_low,
+			    ', "max": ', c.chk_high, '}'))
+			AND d.node_id = c.node_id
+		    WHERE
+			d.dash_type = "check out of bounds"
+			AND c.id IS NULL
+
+		    UNION ALL
+
+		    -- Suppression des "check value not updated" non correspondants
+		    SELECT d.id FROM dashboard d
+		    LEFT JOIN checks_live c ON
+			d.dash_dict_md5 = MD5(CONCAT('{"i":"', c.chk_instance, '", "t":"', c.chk_type, '"}'))
+			AND d.node_id = c.node_id
+		    WHERE
+			d.dash_type = "check value not updated"
+			AND c.id IS NULL
+		)
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	request = `
+	INSERT INTO dashboard
+	SELECT
+	    NULL,
+	    "check value not updated",
+	    "",
+	    IF(n.node_env = "PRD", 1, 0),
+	    "%(t)s:%(i)s",
+	    CONCAT('{"i":"', chk_instance, '", "t":"', chk_type, '"}'),
+	    chk_updated,
+	    MD5(CONCAT('{"i":"', chk_instance, '", "t":"', chk_type, '"}')),
+	    n.node_env,
+	    NOW(),
+	    c.node_id,
+	    NULL,
+	    CONCAT(chk_type, ":", chk_instance)
+	FROM checks_live c
+	JOIN nodes n ON c.node_id = n.node_id
+	WHERE chk_updated < DATE_SUB(NOW(), INTERVAL 1 DAY)
+	ON DUPLICATE KEY UPDATE dash_updated = NOW();
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
 func (oDb *DB) AlertActionErrors(ctx context.Context, line BActionErrorCount) error {
 	var (
 		env      string
@@ -318,7 +407,7 @@ func (oDb *DB) DashboardDeleteActionErrorsWithNoError(ctx context.Context) error
 	return nil
 }
 
-func (oDb *DB) DashboardUpdateServiceConfigOutdated(ctx context.Context) error {
+func (oDb *DB) DashboardUpdateServiceConfigNotUpdated(ctx context.Context) error {
 	request := `
 	     INSERT INTO dashboard
              SELECT
@@ -352,7 +441,7 @@ func (oDb *DB) DashboardUpdateServiceConfigOutdated(ctx context.Context) error {
 	return nil
 }
 
-func (oDb *DB) DashboardUpdateInstancesOutdated(ctx context.Context) error {
+func (oDb *DB) DashboardUpdateInstancesNotUpdated(ctx context.Context) error {
 	request := `
 		INSERT INTO dashboard
 		SELECT

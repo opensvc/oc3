@@ -13,7 +13,7 @@ import (
 var TaskAlert1M = Task{
 	name: "alerts_1m",
 	children: TaskList{
-		TaskAlertInstancesOutdated,
+		TaskAlertInstancesNotUpdated,
 	},
 	period:  time.Minute,
 	timeout: 15 * time.Minute,
@@ -24,12 +24,13 @@ var TaskAlert1H = Task{
 	children: TaskList{
 		TaskAlertActionErrorCleanup,
 		TaskAlertAppsWithoutResponsible,
+		TaskAlertChecksNotUpdated,
 		TaskAlertNetworkWithWrongMask,
 		TaskAlertNodesNotUpdated,
 		TaskAlertOnNodesWithoutAsset,
 		TaskAlertOnServicesWithoutAsset,
-		TaskAlertServiceConfigOutdated,
-		TaskLogInstancesOutdated,
+		TaskAlertServiceConfigNotUpdated,
+		TaskLogInstancesNotUpdated,
 	},
 	period:  time.Hour,
 	timeout: 15 * time.Minute,
@@ -109,9 +110,9 @@ var TaskAlertAppsWithoutResponsible = Task{
 	timeout: 5 * time.Minute,
 }
 
-var TaskLogInstancesOutdated = Task{
-	name:    "log_instances_outdated",
-	fn:      taskLogInstancesOutdated,
+var TaskLogInstancesNotUpdated = Task{
+	name:    "log_instances_not_updated",
+	fn:      taskLogInstancesNotUpdated,
 	timeout: 5 * time.Minute,
 }
 
@@ -133,15 +134,21 @@ var TaskAlertActionErrorsNotAcked = Task{
 	timeout: 5 * time.Minute,
 }
 
-var TaskAlertServiceConfigOutdated = Task{
-	name:    "alert_service_config_outdated",
-	fn:      taskAlertServiceConfigOutdated,
+var TaskAlertServiceConfigNotUpdated = Task{
+	name:    "alert_service_config_not_updated",
+	fn:      taskAlertServiceConfigNotUpdated,
 	timeout: 5 * time.Minute,
 }
 
-var TaskAlertInstancesOutdated = Task{
-	name:    "alert_instances_outdated",
-	fn:      taskAlertInstancesOutdated,
+var TaskAlertInstancesNotUpdated = Task{
+	name:    "alert_instances_not_updated",
+	fn:      taskAlertInstancesNotUpdated,
+	timeout: 5 * time.Minute,
+}
+
+var TaskAlertChecksNotUpdated = Task{
+	name:    "alert_checks_not_updated",
+	fn:      taskAlertChecksNotUpdated,
 	timeout: 5 * time.Minute,
 }
 
@@ -229,13 +236,13 @@ func taskAlertAppWithoutResponsible(ctx context.Context, task *Task) error {
 	return odb.Commit()
 }
 
-func taskLogInstancesOutdated(ctx context.Context, task *Task) error {
+func taskLogInstancesNotUpdated(ctx context.Context, task *Task) error {
 	odb, err := task.DBX(ctx)
 	if err != nil {
 		return err
 	}
 	defer odb.Rollback()
-	if err := odb.LogInstancesOutdated(ctx); err != nil {
+	if err := odb.LogInstancesNotUpdated(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -378,14 +385,14 @@ func taskAlertActionErrorCleanup(ctx context.Context, task *Task) error {
 	return odb.Commit()
 }
 
-func taskAlertServiceConfigOutdated(ctx context.Context, task *Task) error {
+func taskAlertServiceConfigNotUpdated(ctx context.Context, task *Task) error {
 	odb, err := task.DBX(ctx)
 	if err != nil {
 		return err
 	}
 	defer odb.Rollback()
 
-	if err := odb.DashboardUpdateServiceConfigOutdated(ctx); err != nil {
+	if err := odb.DashboardUpdateServiceConfigNotUpdated(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -394,14 +401,14 @@ func taskAlertServiceConfigOutdated(ctx context.Context, task *Task) error {
 	return odb.Commit()
 }
 
-func taskAlertInstancesOutdated(ctx context.Context, task *Task) error {
+func taskAlertInstancesNotUpdated(ctx context.Context, task *Task) error {
 	odb, err := task.DBX(ctx)
 	if err != nil {
 		return err
 	}
 	defer odb.Rollback()
 
-	if err := odb.DashboardUpdateInstancesOutdated(ctx); err != nil {
+	if err := odb.DashboardUpdateInstancesNotUpdated(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -450,6 +457,22 @@ func taskAlertNodeWithoutMaintenanceEnd(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.DashboardUpdateNodeWithoutMaintenanceEnd(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertChecksNotUpdated(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.DashboardUpdateChecksNotUpdated(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
