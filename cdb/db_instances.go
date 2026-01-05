@@ -231,7 +231,7 @@ func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates 
 	)
 	begin := time.Now()
 	err = oDb.DB.QueryRowContext(ctx, qHasInstance, svcID, nodeID).Scan(&count)
-	slog.Debug(fmt.Sprintf("instancePing qHasInstance %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("instancePing qHasInstance %s", time.Since(begin)))
 	begin = time.Now()
 
 	switch {
@@ -250,7 +250,7 @@ func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates 
 	} else if count == 0 {
 		return
 	}
-	slog.Debug(fmt.Sprintf("instancePing qUpdateSvcmon %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("instancePing qUpdateSvcmon %s", time.Since(begin)))
 	begin = time.Now()
 	updates = true
 
@@ -258,7 +258,7 @@ func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates 
 	if _, err = oDb.DB.ExecContext(ctx, qUpdateSvcmonLogLast, svcID, nodeID); err != nil {
 		return
 	}
-	slog.Debug(fmt.Sprintf("instancePing qUpdateSvcmonLogLast %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("instancePing qUpdateSvcmonLogLast %s", time.Since(begin)))
 	begin = time.Now()
 
 	if result, err = oDb.DB.ExecContext(ctx, qUpdateResmon, svcID, nodeID); err != nil {
@@ -268,7 +268,7 @@ func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates 
 	} else if count == 0 {
 		return
 	}
-	slog.Debug(fmt.Sprintf("instancePing qUpdateResmon %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("instancePing qUpdateResmon %s", time.Since(begin)))
 	begin = time.Now()
 	oDb.SetChange("resmon")
 
@@ -276,7 +276,7 @@ func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates 
 		return
 	}
 
-	slog.Debug(fmt.Sprintf("instancePing qUpdateResmonLogLast %s", time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("instancePing qUpdateResmonLogLast %s", time.Since(begin)))
 	begin = time.Now()
 	return
 }

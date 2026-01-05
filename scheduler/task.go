@@ -231,7 +231,7 @@ func (t *Task) Exec(ctx context.Context) (err error) {
 		err = errors.Join(err, child.Exec(ctx))
 	}
 
-	duration := time.Now().Sub(begin)
+	duration := time.Since(begin)
 	if err != nil {
 		status = taskExecStatusFailed
 		t.Errorf("%s [%s]", err, duration)

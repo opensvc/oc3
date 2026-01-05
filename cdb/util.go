@@ -7,9 +7,9 @@ import (
 )
 
 func logDuration(s string, begin time.Time) {
-	slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", s, time.Now().Sub(begin)))
+	slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", s, time.Since(begin)))
 }
 
 func logDurationInfo(s string, begin time.Time) {
-	slog.Info(fmt.Sprintf("STAT: %s elapse: %s", s, time.Now().Sub(begin)))
+	slog.Info(fmt.Sprintf("STAT: %s elapse: %s", s, time.Since(begin)))
 }
