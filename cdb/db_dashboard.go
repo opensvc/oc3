@@ -470,3 +470,65 @@ func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error 
 	}
 	return nil
 }
+
+func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) error {
+	request := `SET @now = NOW()`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	request = `
+		INSERT INTO dashboard
+		SELECT
+		  NULL,
+		  "node close to maintenance end",
+		  "",
+		  0,
+		  "",
+		  "",
+		  @now,
+		  "",
+		  node_env,
+		  @now,
+		  node_id,
+		  NULL,
+		  NULL
+		FROM nodes
+		WHERE
+		  maintenance_end IS NOT NULL AND
+		  maintenance_end != "0000-00-00 00:00:00" AND
+		  maintenance_end > DATE_SUB(@now, INTERVAL 30 DAY) AND
+		  maintenance_end > @now
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=@now
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	request = `
+		DELETE FROM dashboard
+		WHERE
+		  dash_type="node close to maintenance end" AND
+		  (
+		    dash_updated < @now or
+		    dash_updated IS NULL
+		  )
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}

@@ -40,11 +40,18 @@ var TaskAlert1D = Task{
 	children: TaskList{
 		TaskAlertActionErrorsNotAcked,
 		TaskAlertMACDup,
+		TaskAlertNodeCloseToMaintenanceEnd,
 		TaskAlertNodeMaintenanceExpired,
 		TaskAlertPurgeActionErrors,
 	},
 	period:  24 * time.Hour,
 	timeout: 15 * time.Minute,
+}
+
+var TaskAlertNodeCloseToMaintenanceEnd = Task{
+	name:    "alert_node_close_to_maintenance_end",
+	fn:      taskAlertNodeCloseToMaintenanceEnd,
+	timeout: time.Minute,
 }
 
 var TaskAlertNodeMaintenanceExpired = Task{
@@ -404,6 +411,22 @@ func taskAlertNodeMaintenanceExpired(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.DashboardUpdateNodeMaintenanceExpired(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertNodeCloseToMaintenanceEnd(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.DashboardUpdateNodeCloseToMaintenanceEnd(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
