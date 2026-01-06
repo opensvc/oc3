@@ -96,14 +96,10 @@ func (j *jobFeedInstanceResourceInfo) updateDB() (err error) {
 }
 
 func (j *jobFeedInstanceResourceInfo) purgeDB() (err error) {
-	created, objectID, err := j.oDb.ObjectIDFindOrCreate(j.ctx, j.objectName, j.clusterID)
-	if err != nil {
-		return fmt.Errorf("ObjectIDFindOrCreate: %w", err)
+	if j.objectID == "" {
+		return fmt.Errorf("purgeDB: objectID is empty")
 	}
-	if created {
-		slog.Info(fmt.Sprintf("jobFeedInstanceResourceInfo has created new object id %s@%s %s", j.objectName, j.clusterID, objectID))
-	}
-	err = j.oDb.InstanceResourceInfoDelete(j.ctx, objectID, j.nodeID, j.now)
+	err = j.oDb.InstanceResourceInfoDelete(j.ctx, j.objectID, j.nodeID, j.now)
 	if err != nil {
 		return fmt.Errorf("InstanceResourceInfoDelete: %w", err)
 	}
