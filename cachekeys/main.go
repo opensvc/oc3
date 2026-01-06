@@ -1,6 +1,6 @@
 package cachekeys
 
-var (
+const (
 	FeedDaemonPingQ        = "oc3:q:feed_daemon_ping"
 	FeedDaemonPingH        = "oc3:h:feed_daemon_ping"
 	FeedDaemonPingPendingH = "oc3:h:feed_daemon_ping_pending"
