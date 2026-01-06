@@ -51,19 +51,19 @@ func newjobFeedInstanceResourceInfo(objectName, nodeID, clusterID string) *jobFe
 	}
 }
 
-func (d *jobFeedInstanceResourceInfo) Operations() []operation {
+func (j *jobFeedInstanceResourceInfo) Operations() []operation {
 	return []operation{
-		{desc: "instanceResourceInfo/dropPending", do: d.dropPending},
-		{desc: "instanceResourceInfo/getData", do: d.getData},
-		{desc: "instanceResourceInfo/dbNow", do: d.dbNow},
-		{desc: "instanceResourceInfo/updateDB", do: d.updateDB},
-		{desc: "instanceResourceInfo/purgeDB", do: d.purgeDB},
-		{desc: "instanceResourceInfo/pushFromTableChanges", do: d.pushFromTableChanges},
+		{desc: "instanceResourceInfo/dropPending", do: j.dropPending},
+		{desc: "instanceResourceInfo/getData", do: j.getData},
+		{desc: "instanceResourceInfo/dbNow", do: j.dbNow},
+		{desc: "instanceResourceInfo/updateDB", do: j.updateDB},
+		{desc: "instanceResourceInfo/purgeDB", do: j.purgeDB},
+		{desc: "instanceResourceInfo/pushFromTableChanges", do: j.pushFromTableChanges},
 	}
 }
 
-func (d *jobFeedInstanceResourceInfo) getData() error {
-	cmd := d.redis.HGet(d.ctx, cachekeys.FeedInstanceResourceInfoH, d.idX)
+func (j *jobFeedInstanceResourceInfo) getData() error {
+	cmd := j.redis.HGet(j.ctx, cachekeys.FeedInstanceResourceInfoH, j.idX)
 	result, err := cmd.Result()
 	switch err {
 	case nil:
@@ -72,22 +72,22 @@ func (d *jobFeedInstanceResourceInfo) getData() error {
 	default:
 		return fmt.Errorf("HGET: %w", err)
 	}
-	if err := json.Unmarshal([]byte(result), &d.data); err != nil {
+	if err := json.Unmarshal([]byte(result), &j.data); err != nil {
 		return fmt.Errorf("unmarshal: %w", err)
 	}
 	return nil
 }
 
-func (d *jobFeedInstanceResourceInfo) updateDB() (err error) {
-	created, objectID, err := d.oDb.ObjectIDFindOrCreate(d.ctx, d.objectName, d.clusterID)
+func (j *jobFeedInstanceResourceInfo) updateDB() (err error) {
+	created, objectID, err := j.oDb.ObjectIDFindOrCreate(j.ctx, j.objectName, j.clusterID)
 	if err != nil {
 		return fmt.Errorf("ObjectIDFindOrCreate: %w", err)
 	}
 	if created {
-		slog.Info(fmt.Sprintf("jobFeedInstanceResourceInfo has created new object id %s@%s %s", d.objectName, d.clusterID, objectID))
+		slog.Info(fmt.Sprintf("jobFeedInstanceResourceInfo has created new object id %s@%s %s", j.objectName, j.clusterID, objectID))
 	}
-	d.objectID = objectID
-	err = d.oDb.InstanceResourceInfoUpdate(d.ctx, objectID, d.nodeID, d.data)
+	j.objectID = objectID
+	err = j.oDb.InstanceResourceInfoUpdate(j.ctx, objectID, j.nodeID, j.data)
 	if err != nil {
 		return fmt.Errorf("InstanceResourceInfoUpdate: %w", err)
 	}
@@ -95,15 +95,15 @@ func (d *jobFeedInstanceResourceInfo) updateDB() (err error) {
 	return nil
 }
 
-func (d *jobFeedInstanceResourceInfo) purgeDB() (err error) {
-	created, objectID, err := d.oDb.ObjectIDFindOrCreate(d.ctx, d.objectName, d.clusterID)
+func (j *jobFeedInstanceResourceInfo) purgeDB() (err error) {
+	created, objectID, err := j.oDb.ObjectIDFindOrCreate(j.ctx, j.objectName, j.clusterID)
 	if err != nil {
 		return fmt.Errorf("ObjectIDFindOrCreate: %w", err)
 	}
 	if created {
-		slog.Info(fmt.Sprintf("jobFeedInstanceResourceInfo has created new object id %s@%s %s", d.objectName, d.clusterID, objectID))
+		slog.Info(fmt.Sprintf("jobFeedInstanceResourceInfo has created new object id %s@%s %s", j.objectName, j.clusterID, objectID))
 	}
-	err = d.oDb.InstanceResourceInfoDelete(d.ctx, objectID, d.nodeID, d.now)
+	err = j.oDb.InstanceResourceInfoDelete(j.ctx, objectID, j.nodeID, j.now)
 	if err != nil {
 		return fmt.Errorf("InstanceResourceInfoDelete: %w", err)
 	}
