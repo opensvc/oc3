@@ -38,7 +38,7 @@ func cmdAPI() *cobra.Command {
 			if err := setup(); err != nil {
 				return err
 			}
-			return listen()
+			return startApi()
 		},
 	}
 }

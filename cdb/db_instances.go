@@ -575,6 +575,12 @@ func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID str
 	if err != nil {
 		return fmt.Errorf("db prepare: %w", err)
 	}
+	defer func() {
+		if err := stmt.Close(); err != nil {
+			slog.Error(fmt.Sprintf("InstanceResourceInfoUpdate close prepared context: %s", err))
+		}
+	}()
+
 	for _, info := range data.Info {
 		for _, key := range info.Keys {
 			if result, err := stmt.ExecContext(ctx, svcID, nodeID, info.Rid, key.Key, topology, key.Value); err != nil {

@@ -29,10 +29,10 @@ func (a *Api) pushUniqValue(ctx context.Context, key string, value string) error
 	}
 }
 
-// pushNotPending is alternate version of pushUniqValue that may be more efficient:
+// pushNotPending is an alternate version of pushUniqValue that may be more efficient:
 //
 // pendingKey is a hash on elements for queueKey.
-// Consumers of queueKey must remove pendingKey element when it pops a queueKeyn element.
+// Consumers of queueKey must remove the pendingKey element when it pops a queueKey element.
 //
 // It uses HGET O(1) instead of LPOS O(n).
 // LPOS requires redis 6.0.6,
@@ -42,7 +42,7 @@ func (a *Api) pushNotPending(ctx context.Context, pendingKey, queueKey string, v
 	_, err := a.Redis.HGet(ctx, pendingKey, value).Result()
 	switch err {
 	case nil:
-		// already in list
+		// already in the list
 		return nil
 	case redis.Nil:
 		// not in try push

@@ -19,7 +19,7 @@ var (
 	mwProm = echoprometheus.NewMiddleware("oc3_api")
 )
 
-func listen() error {
+func startApi() error {
 	addr := viper.GetString("listener.addr")
 	return listenAndServe(addr)
 }
