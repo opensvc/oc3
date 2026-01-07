@@ -188,7 +188,7 @@ func (oDb *DB) DashboardDeleteActionErrors(ctx context.Context) error {
 	return nil
 }
 
-func (oDb *DB) PurgeAlertsOnNodesWithoutAsset(ctx context.Context) error {
+func (oDb *DB) PurgeAlertsOnDeletedNodes(ctx context.Context) error {
 	const (
 		query = `DELETE d
 			FROM dashboard d
@@ -207,7 +207,28 @@ func (oDb *DB) PurgeAlertsOnNodesWithoutAsset(ctx context.Context) error {
 	return nil
 }
 
-func (oDb *DB) PurgeAlertsOnServicesWithoutAsset(ctx context.Context) error {
+func (oDb *DB) PurgeAlertsOnDeletedInstances(ctx context.Context) error {
+	const (
+		query = `DELETE d
+			FROM dashboard d
+			LEFT JOIN svcmon n ON d.node_id = n.node_id AND d.svc_id = n.svc_id
+			WHERE
+			  n.node_id IS NULL AND
+			  n.svc_id IS NULL AND
+			  d.node_id != "" AND
+			  d.svc_id != ""`
+	)
+	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return err
+	} else if count, err := result.RowsAffected(); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) PurgeAlertsOnDeletedServices(ctx context.Context) error {
 	const (
 		query = `DELETE d
 			FROM dashboard d
@@ -524,7 +545,7 @@ func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error 
                   NULL
                  FROM nodes
                  WHERE
-                   maintenance_end is not NULL AND
+                   maintenance_end IS NOT NULL AND
                    maintenance_end != "0000-00-00 00:00:00" AND
                    maintenance_end < @now
 		ON DUPLICATE KEY UPDATE

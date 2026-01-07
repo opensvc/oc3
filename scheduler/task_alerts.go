@@ -27,11 +27,11 @@ var TaskAlert1H = Task{
 		TaskAlertChecksNotUpdated,
 		TaskAlertNetworkWithWrongMask,
 		TaskAlertNodesNotUpdated,
-		TaskAlertOnNodesWithoutAsset,
-		TaskAlertOnServicesWithoutAsset,
 		TaskAlertServiceConfigNotUpdated,
 		TaskLogAppsWithoutResponsible,
 		TaskLogInstancesNotUpdated,
+		TaskPurgeAlertOnDeletedNodes,
+		TaskPurgeAlertOnDeletedServices,
 	},
 	period:  time.Hour,
 	timeout: 15 * time.Minute,
@@ -46,6 +46,7 @@ var TaskAlert1D = Task{
 		TaskAlertNodeMaintenanceExpired,
 		TaskAlertNodeWithoutMaintenanceEnd,
 		TaskAlertPurgeActionErrors,
+		TaskPurgeAlertsOnDeletedInstances,
 	},
 	period:  24 * time.Hour,
 	timeout: 15 * time.Minute,
@@ -81,15 +82,21 @@ var TaskAlertNodesNotUpdated = Task{
 	timeout: time.Minute,
 }
 
-var TaskAlertOnNodesWithoutAsset = Task{
-	name:    "alert_nodes_without_asset",
-	fn:      taskAlertOnNodesWithoutAsset,
+var TaskPurgeAlertsOnDeletedInstances = Task{
+	name:    "purge_alerts_on_deleted_instances",
+	fn:      taskPurgeAlertsOnDeletedInstances,
 	timeout: time.Minute,
 }
 
-var TaskAlertOnServicesWithoutAsset = Task{
-	name:    "alert_on_services_without_asset",
-	fn:      taskAlertOnServicesWithoutAsset,
+var TaskPurgeAlertOnDeletedNodes = Task{
+	name:    "purge_alerts_on_deleted_nodes",
+	fn:      taskAlertOnDeletedNodes,
+	timeout: time.Minute,
+}
+
+var TaskPurgeAlertOnDeletedServices = Task{
+	name:    "purge_alerts_on_deleted_services",
+	fn:      taskPurgeAlertOnDeletedServices,
 	timeout: time.Minute,
 }
 
@@ -328,14 +335,14 @@ func taskAlertActionErrorsNotAcked(ctx context.Context, task *Task) error {
 	return odb.Commit()
 }
 
-func taskAlertOnNodesWithoutAsset(ctx context.Context, task *Task) error {
+func taskAlertOnDeletedNodes(ctx context.Context, task *Task) error {
 	odb, err := task.DBX(ctx)
 	if err != nil {
 		return err
 	}
 	defer odb.Rollback()
 
-	if err := odb.PurgeAlertsOnNodesWithoutAsset(ctx); err != nil {
+	if err := odb.PurgeAlertsOnDeletedNodes(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -344,14 +351,14 @@ func taskAlertOnNodesWithoutAsset(ctx context.Context, task *Task) error {
 	return odb.Commit()
 }
 
-func taskAlertOnServicesWithoutAsset(ctx context.Context, task *Task) error {
+func taskPurgeAlertOnDeletedServices(ctx context.Context, task *Task) error {
 	odb, err := task.DBX(ctx)
 	if err != nil {
 		return err
 	}
 	defer odb.Rollback()
 
-	if err := odb.PurgeAlertsOnServicesWithoutAsset(ctx); err != nil {
+	if err := odb.PurgeAlertsOnDeletedServices(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -496,6 +503,22 @@ func taskAlertAppWithoutResponsible(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.DashboardUpdateAppWithoutResponsible(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskPurgeAlertsOnDeletedInstances(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.PurgeAlertsOnDeletedInstances(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
