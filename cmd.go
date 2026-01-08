@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/util/version"
 )
 
@@ -22,6 +23,10 @@ func cmdWorker() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setup(); err != nil {
 				return err
+			}
+			queues := make([]string, 0, len(args))
+			for _, q := range args {
+				queues = append(queues, cachekeys.QueuePrefix+q)
 			}
 			return work(maxRunners, args)
 		},
