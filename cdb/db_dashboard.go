@@ -188,7 +188,7 @@ func (oDb *DB) DashboardDeleteActionErrors(ctx context.Context) error {
 	return nil
 }
 
-func (oDb *DB) PurgeAlertsOnNodesWithoutAsset(ctx context.Context) error {
+func (oDb *DB) PurgeAlertsOnDeletedNodes(ctx context.Context) error {
 	const (
 		query = `DELETE d
 			FROM dashboard d
@@ -207,7 +207,28 @@ func (oDb *DB) PurgeAlertsOnNodesWithoutAsset(ctx context.Context) error {
 	return nil
 }
 
-func (oDb *DB) PurgeAlertsOnServicesWithoutAsset(ctx context.Context) error {
+func (oDb *DB) PurgeAlertsOnDeletedInstances(ctx context.Context) error {
+	const (
+		query = `DELETE d
+			FROM dashboard d
+			LEFT JOIN svcmon n ON d.node_id = n.node_id AND d.svc_id = n.svc_id
+			WHERE
+			  n.node_id IS NULL AND
+			  n.svc_id IS NULL AND
+			  d.node_id != "" AND
+			  d.svc_id != ""`
+	)
+	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+		return err
+	} else if count, err := result.RowsAffected(); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) PurgeAlertsOnDeletedServices(ctx context.Context) error {
 	const (
 		query = `DELETE d
 			FROM dashboard d
@@ -243,10 +264,514 @@ func (oDb *DB) DashboardUpdateNodesNotUpdated(ctx context.Context) error {
                  NULL,
                  NULL
                FROM nodes
-               WHERE updated < date_sub(now(), interval 25 hour)
+               WHERE updated < date_sub(NOW(), interval 25 hour)
                ON DUPLICATE KEY UPDATE
                  dash_updated=NOW()`
 	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardUpdateChecksNotUpdated(ctx context.Context) error {
+	request := `
+		DELETE FROM dashboard
+		WHERE
+		  dash_type = "check value not updated" AND
+		  node_id NOT IN (SELECT DISTINCT node_id FROM checks_live)
+	`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+
+	request = `
+		DELETE FROM dashboard
+		WHERE id IN (
+		    -- Suppression des "check out of bounds" non correspondants
+		    SELECT d.id FROM dashboard d
+		    LEFT JOIN checks_live c ON
+			d.dash_dict_md5 = MD5(CONCAT(
+			    '{"ctype": "', c.chk_type,
+			    '", "inst": "', c.chk_instance,
+			    '", "ttype": "', c.chk_threshold_provider,
+			    '", "val": ', c.chk_value,
+			    ', "min": ', c.chk_low,
+			    ', "max": ', c.chk_high, '}'))
+			AND d.node_id = c.node_id
+		    WHERE
+			d.dash_type = "check out of bounds"
+			AND c.id IS NULL
+
+		    UNION ALL
+
+		    -- Suppression des "check value not updated" non correspondants
+		    SELECT d.id FROM dashboard d
+		    LEFT JOIN checks_live c ON
+			d.dash_dict_md5 = MD5(CONCAT('{"i":"', c.chk_instance, '", "t":"', c.chk_type, '"}'))
+			AND d.node_id = c.node_id
+		    WHERE
+			d.dash_type = "check value not updated"
+			AND c.id IS NULL
+		)
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	request = `
+	INSERT INTO dashboard
+	SELECT
+	    NULL,
+	    "check value not updated",
+	    "",
+	    IF(n.node_env = "PRD", 1, 0),
+	    "%(t)s:%(i)s",
+	    CONCAT('{"i":"', chk_instance, '", "t":"', chk_type, '"}'),
+	    chk_updated,
+	    MD5(CONCAT('{"i":"', chk_instance, '", "t":"', chk_type, '"}')),
+	    n.node_env,
+	    NOW(),
+	    c.node_id,
+	    NULL,
+	    CONCAT(chk_type, ":", chk_instance)
+	FROM checks_live c
+	JOIN nodes n ON c.node_id = n.node_id
+	WHERE chk_updated < DATE_SUB(NOW(), INTERVAL 1 DAY)
+	ON DUPLICATE KEY UPDATE dash_updated = NOW();
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) AlertActionErrors(ctx context.Context, line BActionErrorCount) error {
+	var (
+		env      string
+		severity int
+	)
+	if line.SvcEnv != nil && *line.SvcEnv == "PRD" {
+		env = *line.SvcEnv
+		severity = 4
+	} else {
+		env = "TST"
+		severity = 3
+	}
+	request := `
+                 INSERT INTO dashboard
+                 SET
+                   dash_type="action errors",
+                   svc_id=?,
+                   node_id=?,
+                   dash_severity=?,
+                   dash_fmt="%(err)s action errors",
+                   dash_dict=CONCAT('{"err": "', ?, '"}'),
+                   dash_created=NOW(),
+                   dash_env=?,
+                   dash_updated=NOW()
+                 ON DUPLICATE KEY UPDATE
+                   dash_severity=?,
+                   dash_fmt="%(err)s action errors",
+                   dash_dict=CONCAT('{"err": "', ?, '"}'),
+                   dash_updated=NOW()`
+	result, err := oDb.DB.ExecContext(ctx, request, line.SvcID, line.NodeID, severity, line.ErrCount, env, severity, line.ErrCount)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardDeleteActionErrorsWithNoError(ctx context.Context) error {
+	request := `
+             DELETE FROM dashboard
+             WHERE
+               dash_dict='{"err": "0"}' and
+               dash_type='action errors'
+	`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardUpdateServiceConfigNotUpdated(ctx context.Context) error {
+	request := `
+	     INSERT INTO dashboard
+             SELECT
+               NULL,
+               "service configuration not updated",
+               svc_id,
+               IF(svc_env="PRD", 1, 0),
+               "",
+               "",
+               updated,
+               "",
+               svc_env,
+               NOW(),
+               "",
+               NULL,
+               NULL
+             FROM services
+             WHERE updated < DATE_SUB(NOW(), INTERVAL 25 HOUR)
+             ON DUPLICATE KEY UPDATE
+               dash_updated=NOW()
+	`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardUpdateInstancesNotUpdated(ctx context.Context) error {
+	request := `
+		INSERT INTO dashboard
+		SELECT
+		  NULL,
+		  "service status not updated",
+		  svc_id,
+		  IF(mon_svctype="PRD", 1, 0),
+		  "",
+		  "",
+		  mon_updated,
+		  "",
+		  mon_svctype,
+		  NOW(),
+		  node_id,
+		  NULL,
+		  NULL
+		FROM svcmon
+		WHERE mon_updated < DATE_SUB(NOW(), INTERVAL 16 MINUTE)
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=NOW()
+	`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	request = `
+		DELETE FROM dashboard
+		WHERE id IN (
+		    SELECT dashboard.id
+		    FROM dashboard
+		    LEFT JOIN svcmon ON
+			dashboard.svc_id = svcmon.svc_id AND
+			dashboard.node_id = svcmon.node_id
+		    WHERE
+			dashboard.dash_type = "service status not updated" AND
+			dashboard.svc_id != "" AND
+			dashboard.node_id != "" AND
+			(svcmon.id IS NULL OR svcmon.mon_updated >= DATE_SUB(NOW(), INTERVAL 16 MINUTE))
+		)
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error {
+	request := `SET @now = NOW()`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	request = `
+		INSERT INTO dashboard
+		SELECT
+		  NULL,
+                  "node maintenance expired",
+                  "",
+                  1,
+                  "",
+                  "",
+                  @now,
+                  "",
+                  node_env,
+                  @now,
+                  node_id,
+                  NULL,
+                  NULL
+                 FROM nodes
+                 WHERE
+                   maintenance_end IS NOT NULL AND
+                   maintenance_end != "0000-00-00 00:00:00" AND
+                   maintenance_end < @now
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=@now
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	request = `
+		DELETE FROM dashboard
+		WHERE
+		  dash_type="node maintenance expired" AND
+		  (
+		    dash_updated < @now or
+		    dash_updated IS NULL
+		  )
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) error {
+	request := `SET @now = NOW()`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	request = `
+		INSERT INTO dashboard
+		SELECT
+		  NULL,
+		  "node close to maintenance end",
+		  "",
+		  0,
+		  "",
+		  "",
+		  @now,
+		  "",
+		  node_env,
+		  @now,
+		  node_id,
+		  NULL,
+		  NULL
+		FROM nodes
+		WHERE
+		  maintenance_end IS NOT NULL AND
+		  maintenance_end != "0000-00-00 00:00:00" AND
+		  maintenance_end > DATE_SUB(@now, INTERVAL 30 DAY) AND
+		  maintenance_end > @now
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=@now
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	request = `
+		DELETE FROM dashboard
+		WHERE
+		  dash_type="node close to maintenance end" AND
+		  (
+		    dash_updated < @now or
+		    dash_updated IS NULL
+		  )
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardUpdateNodeWithoutMaintenanceEnd(ctx context.Context) error {
+	request := `SET @now = NOW()`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	request = `
+		INSERT INTO dashboard
+		SELECT
+		  NULL,
+		  "node without maintenance end date",
+		  "",
+		  0,
+		  "",
+		  "",
+		  @now,
+		  "",
+		  node_env,
+		  @now,
+		  node_id,
+		  NULL,
+		  NULL
+		FROM nodes
+		WHERE
+                 (warranty_end IS NULL OR
+                  warranty_end = "0000-00-00 00:00:00" OR
+                  warranty_end < @now) AND
+                 (maintenance_end IS NULL OR
+                  maintenance_end = "0000-00-00 00:00:00") AND
+                 model not like "%virt%" AND
+                 model not like "%Not Specified%" AND
+                 model not like "%KVM%"
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=@now
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	request = `
+		DELETE FROM dashboard
+		WHERE
+		  dash_type="node without maintenance end date" AND
+		  (
+		    dash_updated < @now or
+		    dash_updated IS NULL
+		  )
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardUpdateAppWithoutResponsible(ctx context.Context) error {
+	request := `
+		DELETE FROM dashboard
+		WHERE
+		  dash_type="application code without responsible" and
+		  (
+		    dash_dict IN (
+		      SELECT
+		        JSON_OBJECT("a", a.app)
+		      FROM apps a JOIN apps_responsibles ar ON a.id=ar.app_id
+		    ) OR
+		    dash_dict = "" OR
+		    dash_dict IS NULL
+		  )
+	`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	request = `
+		DELETE FROM dashboard
+		WHERE
+                  dash_type="application code without responsible" AND
+                  dash_dict NOT IN (
+                    SELECT
+                      JSON_OBJECT("a", a.app)
+                    FROM apps a
+                )
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+
+	request = `
+		INSERT INTO dashboard
+		SELECT
+		  NULL,
+		  "application code without responsible",
+		  "",
+		  2,
+		  "%(a)s",
+		  JSON_OBJECT("a", a.app),
+		  NOW(),
+		  MD5(JSON_OBJECT("a", a.app)),
+		  "",
+		  NOW(),
+		  "",
+		  NULL,
+		  a.app
+		FROM apps a LEFT JOIN apps_responsibles ar ON a.id=ar.app_id
+		WHERE
+		  ar.group_id IS NULL
+		ON DUPLICATE KEY UPDATE
+		  dash_updated=NOW()
+	`
+	result, err = oDb.DB.ExecContext(ctx, request)
 	if err != nil {
 		return err
 	}
