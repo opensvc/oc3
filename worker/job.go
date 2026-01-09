@@ -220,3 +220,30 @@ func (d *BaseJob) populateFeedObjectConfigForClusterIDH(clusterID string, byObje
 	}
 	return nil, nil
 }
+
+func (d *BaseJob) instanceStatusUpdate(objName string, nodename string, iStatus *instanceData) error {
+	slog.Debug(fmt.Sprintf("updating instance status %s@%s (%s@%s)", objName, nodename, iStatus.SvcID, iStatus.NodeID))
+	if err := d.oDb.InstanceStatusUpdate(d.ctx, &iStatus.DBInstanceStatus); err != nil {
+		return fmt.Errorf("update instance status: %w", err)
+	}
+	slog.Debug(fmt.Sprintf("instanceStatusUpdate updating status log %s@%s (%s@%s)", objName, nodename, iStatus.SvcID, iStatus.NodeID))
+	err := d.oDb.InstanceStatusLogUpdate(d.ctx, &iStatus.DBInstanceStatus)
+	if err != nil {
+		return fmt.Errorf("update instance status log: %w", err)
+	}
+	return nil
+}
+
+func (d *BaseJob) instanceResourceUpdate(objName string, nodename string, iStatus *instanceData) error {
+	for _, res := range iStatus.InstanceResources() {
+		slog.Debug(fmt.Sprintf("updating instance resource %s@%s %s (%s@%s)", objName, nodename, res.RID, iStatus.SvcID, iStatus.NodeID))
+		if err := d.oDb.InstanceResourceUpdate(d.ctx, res); err != nil {
+			return fmt.Errorf("update resource %s: %w", res.RID, err)
+		}
+		slog.Debug(fmt.Sprintf("updating instance resource log %s@%s %s (%s@%s)", objName, nodename, res.RID, iStatus.SvcID, iStatus.NodeID))
+		if err := d.oDb.InstanceResourceLogUpdate(d.ctx, res); err != nil {
+			return fmt.Errorf("update resource log %s: %w", res.RID, err)
+		}
+	}
+	return nil
+}

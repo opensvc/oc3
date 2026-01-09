@@ -466,102 +466,10 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 				continue
 			}
 			// set iStatus svcID and nodeID for db update
-			iStatus.SvcID = objID
-			iStatus.NodeID = nodeID
-			_, isChanged := d.changes[objectName+"@"+nodename]
-			if !isChanged && obj.AvailStatus != "undef" {
-				slog.Debug(fmt.Sprintf("ping instance %s@%s", objectName, nodename))
-				changes, err := d.oDb.InstancePing(d.ctx, objID, nodeID)
-				if err != nil {
-					return fmt.Errorf("dbUpdateInstances can't ping instance %s@%s: %w", objectName, nodename, err)
-				} else if changes {
-					// the instance already existed, and the updated tstamp has been refreshed
-					// skip the inserts/updates
-					continue
-				}
+			err := d.dbUpdateInstance(iStatus, objID, nodeID, objectName, nodename, obj, instanceMonitorStates, node, beginInstance, d.changes)
+			if err != nil {
+				return err
 			}
-			instanceMonitorStates[iStatus.MonSmonStatus] = true
-			if iStatus.encap == nil {
-				subNodeID, _, _, err := d.oDb.TranslateEncapNodename(d.ctx, objID, nodeID)
-				if err != nil {
-					return err
-				}
-				if subNodeID != "" && subNodeID != nodeID {
-					slog.Debug(fmt.Sprintf("dbUpdateInstances skip for %s@%s subNodeID:%s vs nodeID: %subNodeID", objectName, nodename, subNodeID, nodeID))
-					continue
-				}
-				if iStatus.resources == nil {
-					// scaler or wrapper, for example
-					if err := d.oDb.InstanceDeleteStatus(d.ctx, objID, nodeID); err != nil {
-						return fmt.Errorf("dbUpdateInstances delete status %s@%s: %w", objID, nodeID, err)
-					}
-					if err := d.oDb.InstanceResourcesDelete(d.ctx, objID, nodeID); err != nil {
-						return fmt.Errorf("dbUpdateInstances delete resources %s@%s: %w", objID, nodeID, err)
-					}
-				} else {
-					if err := d.instanceStatusUpdate(objectName, nodename, iStatus); err != nil {
-						return fmt.Errorf("dbUpdateInstances update status %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
-					}
-					if err := d.instanceResourceUpdate(objectName, nodename, iStatus); err != nil {
-						return fmt.Errorf("dbUpdateInstances update resource %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
-					}
-					slog.Debug(fmt.Sprintf("dbUpdateInstances deleting obsolete resources %s@%s", objectName, nodename))
-					if err := d.oDb.InstanceResourcesDeleteObsolete(d.ctx, objID, nodeID, d.now); err != nil {
-						return fmt.Errorf("dbUpdateInstances delete obsolete resources %s@%s: %w", objID, nodeID, err)
-					}
-				}
-			} else {
-				if iStatus.resources == nil {
-					// scaler or wrapper, for example
-					if err := d.oDb.InstanceDeleteStatus(d.ctx, objID, nodeID); err != nil {
-						return fmt.Errorf("dbUpdateInstances delete status %s@%s: %w", objID, nodeID, err)
-					}
-					if err := d.oDb.InstanceResourcesDelete(d.ctx, objID, nodeID); err != nil {
-						return fmt.Errorf("dbUpdateInstances delete resources %s@%s: %w", objID, nodeID, err)
-					}
-				} else {
-					for _, containerStatus := range iStatus.Containers() {
-						slog.Debug(fmt.Sprintf("dbUpdateInstances from container status %s@%s monVmName: %s monVmType: %s", objectName, nodename, containerStatus.MonVmName, containerStatus.MonVmType))
-						if containerStatus == nil {
-							continue
-						}
-						if containerStatus.fromOutsideStatus == "up" {
-							slog.Debug(fmt.Sprintf("dbUpdateInstances nodeContainerUpdateFromParentNode %s@%s encap hostname %s",
-								objID, nodeID, containerStatus.MonVmName))
-							if err := d.oDb.NodeContainerUpdateFromParentNode(d.ctx, containerStatus.MonVmName, obj.App, node); err != nil {
-								return fmt.Errorf("dbUpdateInstances nodeContainerUpdateFromParentNode %s@%s encap hostname %s: %w",
-									objID, nodeID, containerStatus.MonVmName, err)
-							}
-						}
-
-						if err := d.instanceStatusUpdate(objID, nodeID, containerStatus); err != nil {
-							return fmt.Errorf("dbUpdateInstances update container %s %s@%s (%s@%s): %w",
-								containerStatus.MonVmName, objID, nodeID, objectName, nodename, err)
-						}
-						if err := d.instanceResourceUpdate(objectName, nodename, iStatus); err != nil {
-							return fmt.Errorf("dbUpdateInstances update resource %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
-						}
-					}
-					slog.Debug(fmt.Sprintf("dbUpdateInstances deleting obsolete container resources %s@%s", objectName, nodename))
-					if err := d.oDb.InstanceResourcesDeleteObsolete(d.ctx, objID, nodeID, d.now); err != nil {
-						return fmt.Errorf("dbUpdateInstances delete obsolete container resources %s@%s: %w", objID, nodeID, err)
-					}
-				}
-			}
-			if err := d.oDb.DashboardInstanceFrozenUpdate(d.ctx, objID, nodeID, obj.Env, iStatus.MonFrozen > 0); err != nil {
-				return fmt.Errorf("dbUpdateInstances update dashboard instance frozen %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
-			}
-			if err := d.oDb.DashboardDeleteInstanceNotUpdated(d.ctx, objID, nodeID); err != nil {
-				return fmt.Errorf("dbUpdateInstances update dashboard instance not updated %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
-			}
-			// TODO: verify if we need a placement non optimal alert for object/instance
-			//     om2 has: monitor.services.'<path>'.placement = non-optimal
-			//     om3 has: cluster.object.<path>.placement_state = non-optimal
-			//				cluster.node.<node>.instance.<path>.monitor.is_ha_leader
-			//				cluster.node.<node>.instance.<path>.monitor.is_leader
-			//     collector v2 calls update_dash_service_not_on_primary (broken since no DEFAULT.autostart_node values)
-
-			slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances instance duration %s@%s %s", objectName, nodename, time.Since(beginInstance)))
 		}
 		beginObjDash := time.Now()
 		if len(instanceMonitorStates) == 1 && instanceMonitorStates["idle"] {
@@ -592,33 +500,6 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances() error {
 		slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances object duration %s %s", objectName, time.Since(beginObj)))
 	}
 
-	return nil
-}
-
-func (d *jobFeedDaemonStatus) instanceResourceUpdate(objName string, nodename string, iStatus *instanceData) error {
-	for _, res := range iStatus.InstanceResources() {
-		slog.Debug(fmt.Sprintf("updating instance resource %s@%s %s (%s@%s)", objName, nodename, res.RID, iStatus.SvcID, iStatus.NodeID))
-		if err := d.oDb.InstanceResourceUpdate(d.ctx, res); err != nil {
-			return fmt.Errorf("update resource %s: %w", res.RID, err)
-		}
-		slog.Debug(fmt.Sprintf("updating instance resource log %s@%s %s (%s@%s)", objName, nodename, res.RID, iStatus.SvcID, iStatus.NodeID))
-		if err := d.oDb.InstanceResourceLogUpdate(d.ctx, res); err != nil {
-			return fmt.Errorf("update resource log %s: %w", res.RID, err)
-		}
-	}
-	return nil
-}
-
-func (d *jobFeedDaemonStatus) instanceStatusUpdate(objName string, nodename string, iStatus *instanceData) error {
-	slog.Debug(fmt.Sprintf("updating instance status %s@%s (%s@%s)", objName, nodename, iStatus.SvcID, iStatus.NodeID))
-	if err := d.oDb.InstanceStatusUpdate(d.ctx, &iStatus.DBInstanceStatus); err != nil {
-		return fmt.Errorf("update instance status: %w", err)
-	}
-	slog.Debug(fmt.Sprintf("instanceStatusUpdate updating status log %s@%s (%s@%s)", objName, nodename, iStatus.SvcID, iStatus.NodeID))
-	err := d.oDb.InstanceStatusLogUpdate(d.ctx, &iStatus.DBInstanceStatus)
-	if err != nil {
-		return fmt.Errorf("update instance status log: %w", err)
-	}
 	return nil
 }
 
@@ -677,4 +558,104 @@ func logDuration(s string, begin time.Time) {
 
 func logDurationInfo(s string, begin time.Time) {
 	slog.Info(fmt.Sprintf("STAT: %s elapse: %s", s, time.Since(begin)))
+}
+
+func (d *BaseJob) dbUpdateInstance(iStatus *instanceData, objID string, nodeID string, objectName string, nodename string, obj *cdb.DBObject, instanceMonitorStates map[string]bool, node *cdb.DBNode, beginInstance time.Time, changes map[string]struct{}) error {
+	iStatus.SvcID = objID
+	iStatus.NodeID = nodeID
+	_, isChanged := changes[objectName+"@"+nodename]
+	if !isChanged && obj.AvailStatus != "undef" {
+		slog.Debug(fmt.Sprintf("ping instance %s@%s", objectName, nodename))
+		changes, err := d.oDb.InstancePing(d.ctx, objID, nodeID)
+		if err != nil {
+			return fmt.Errorf("dbUpdateInstances can't ping instance %s@%s: %w", objectName, nodename, err)
+		} else if changes {
+			// the instance already existed, and the updated tstamp has been refreshed
+			// skip the inserts/updates
+			return nil
+		}
+	}
+	instanceMonitorStates[iStatus.MonSmonStatus] = true
+	if iStatus.encap == nil {
+		subNodeID, _, _, err := d.oDb.TranslateEncapNodename(d.ctx, objID, nodeID)
+		if err != nil {
+			return err
+		}
+		if subNodeID != "" && subNodeID != nodeID {
+			slog.Debug(fmt.Sprintf("dbUpdateInstances skip for %s@%s subNodeID:%s vs nodeID: %subNodeID", objectName, nodename, subNodeID, nodeID))
+			return nil
+		}
+		if iStatus.resources == nil {
+			// scaler or wrapper, for example
+			if err := d.oDb.InstanceDeleteStatus(d.ctx, objID, nodeID); err != nil {
+				return fmt.Errorf("dbUpdateInstances delete status %s@%s: %w", objID, nodeID, err)
+			}
+			if err := d.oDb.InstanceResourcesDelete(d.ctx, objID, nodeID); err != nil {
+				return fmt.Errorf("dbUpdateInstances delete resources %s@%s: %w", objID, nodeID, err)
+			}
+		} else {
+			if err := d.instanceStatusUpdate(objectName, nodename, iStatus); err != nil {
+				return fmt.Errorf("dbUpdateInstances update status %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
+			}
+			if err := d.instanceResourceUpdate(objectName, nodename, iStatus); err != nil {
+				return fmt.Errorf("dbUpdateInstances update resource %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
+			}
+			slog.Debug(fmt.Sprintf("dbUpdateInstances deleting obsolete resources %s@%s", objectName, nodename))
+			if err := d.oDb.InstanceResourcesDeleteObsolete(d.ctx, objID, nodeID, d.now); err != nil {
+				return fmt.Errorf("dbUpdateInstances delete obsolete resources %s@%s: %w", objID, nodeID, err)
+			}
+		}
+	} else {
+		if iStatus.resources == nil {
+			// scaler or wrapper, for example
+			if err := d.oDb.InstanceDeleteStatus(d.ctx, objID, nodeID); err != nil {
+				return fmt.Errorf("dbUpdateInstances delete status %s@%s: %w", objID, nodeID, err)
+			}
+			if err := d.oDb.InstanceResourcesDelete(d.ctx, objID, nodeID); err != nil {
+				return fmt.Errorf("dbUpdateInstances delete resources %s@%s: %w", objID, nodeID, err)
+			}
+		} else {
+			for _, containerStatus := range iStatus.Containers() {
+				slog.Debug(fmt.Sprintf("dbUpdateInstances from container status %s@%s monVmName: %s monVmType: %s", objectName, nodename, containerStatus.MonVmName, containerStatus.MonVmType))
+				if containerStatus == nil {
+					continue
+				}
+				if containerStatus.fromOutsideStatus == "up" {
+					slog.Debug(fmt.Sprintf("dbUpdateInstances nodeContainerUpdateFromParentNode %s@%s encap hostname %s",
+						objID, nodeID, containerStatus.MonVmName))
+					if err := d.oDb.NodeContainerUpdateFromParentNode(d.ctx, containerStatus.MonVmName, obj.App, node); err != nil {
+						return fmt.Errorf("dbUpdateInstances nodeContainerUpdateFromParentNode %s@%s encap hostname %s: %w",
+							objID, nodeID, containerStatus.MonVmName, err)
+					}
+				}
+
+				if err := d.instanceStatusUpdate(objID, nodeID, containerStatus); err != nil {
+					return fmt.Errorf("dbUpdateInstances update container %s %s@%s (%s@%s): %w",
+						containerStatus.MonVmName, objID, nodeID, objectName, nodename, err)
+				}
+				if err := d.instanceResourceUpdate(objectName, nodename, iStatus); err != nil {
+					return fmt.Errorf("dbUpdateInstances update resource %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
+				}
+			}
+			slog.Debug(fmt.Sprintf("dbUpdateInstances deleting obsolete container resources %s@%s", objectName, nodename))
+			if err := d.oDb.InstanceResourcesDeleteObsolete(d.ctx, objID, nodeID, d.now); err != nil {
+				return fmt.Errorf("dbUpdateInstances delete obsolete container resources %s@%s: %w", objID, nodeID, err)
+			}
+		}
+	}
+	if err := d.oDb.DashboardInstanceFrozenUpdate(d.ctx, objID, nodeID, obj.Env, iStatus.MonFrozen > 0); err != nil {
+		return fmt.Errorf("dbUpdateInstances update dashboard instance frozen %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
+	}
+	if err := d.oDb.DashboardDeleteInstanceNotUpdated(d.ctx, objID, nodeID); err != nil {
+		return fmt.Errorf("dbUpdateInstances update dashboard instance not updated %s@%s (%s@%s): %w", objectName, nodename, objID, nodeID, err)
+	}
+	// TODO: verify if we need a placement non optimal alert for object/instance
+	//     om2 has: monitor.services.'<path>'.placement = non-optimal
+	//     om3 has: cluster.object.<path>.placement_state = non-optimal
+	//				cluster.node.<node>.instance.<path>.monitor.is_ha_leader
+	//				cluster.node.<node>.instance.<path>.monitor.is_leader
+	//     collector v2 calls update_dash_service_not_on_primary (broken since no DEFAULT.autostart_node values)
+
+	slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances instance duration %s@%s %s", objectName, nodename, time.Since(beginInstance)))
+	return nil
 }
