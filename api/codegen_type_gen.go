@@ -37,6 +37,15 @@ type InstanceResourceInfo struct {
 	Topology *string `json:"topology,omitempty"`
 }
 
+// InstanceStatus defines model for InstanceStatus.
+type InstanceStatus struct {
+	Data map[string]interface{} `json:"data"`
+	Path string                 `json:"path"`
+
+	// Version the opensvc client data version
+	Version string `json:"version"`
+}
+
 // NodeDisks defines model for NodeDisks.
 type NodeDisks struct {
 	Data *[]Disk `json:"data,omitempty"`
@@ -161,3 +170,6 @@ type PostFeedObjectConfigJSONRequestBody = ObjectConfig
 
 // PostFeedSystemJSONRequestBody defines body for PostFeedSystem for application/json ContentType.
 type PostFeedSystemJSONRequestBody = System
+
+// PostFeedInstanceStatusJSONRequestBody defines body for PostFeedInstanceStatus for application/json ContentType.
+type PostFeedInstanceStatusJSONRequestBody = InstanceStatus
