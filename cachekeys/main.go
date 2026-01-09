@@ -29,4 +29,8 @@ const (
 	FeedSystemQ        = "oc3:q:feed_system"
 	FeedSystemH        = "oc3:h:feed_system"
 	FeedSystemPendingH = "oc3:h:feed_system_pending"
+
+	FeedInstanceStatusH        = "oc3:h:feed_instance_status"
+	FeedInstanceStatusQ        = "oc3:q:feed_instance_status"
+	FeedInstanceStatusPendingH = "oc3:h:feed_instance_status_pending"
 )

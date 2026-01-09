@@ -146,6 +146,44 @@ paths:
       tags:
         - agent
 
+  /instance/status:
+    post:
+      description: |
+        Store instance status data and return an ID
+      operationId: PostFeedInstanceStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstanceStatus'
+      responses:
+        201:
+          description: instance status stored successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    description: unique identifier for the stored data
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /version:
     get:
       operationId: GetVersion
@@ -371,6 +409,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/package'
+
+    InstanceStatus:
+      type: object
+      required:
+        - path
+        - data
+        - version
+      properties:
+        path:
+          type: string
+        data:
+          type: object
+        version:
+          type: string
+          description: the opensvc client data version
 
     package:
       type: object

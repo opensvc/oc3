@@ -197,10 +197,10 @@ func (d *daemonDataV2) InstanceStatus(objectName string, nodename string) *insta
 		return nil
 	}
 	iStatus := &instanceStatusV2{data: a}
-	return iStatus.Status(objectName, nodename)
+	return iStatus.InstanceStatus(objectName, nodename)
 }
 
-func (d *instanceStatusV2) Status(objectName string, nodename string) *instanceData {
+func (d *instanceStatusV2) InstanceStatus(objectName string, nodename string) *instanceData {
 	var a, nilMap map[string]any
 	a = d.data
 	instanceStatus := &instanceData{
