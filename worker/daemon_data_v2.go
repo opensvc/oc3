@@ -12,6 +12,9 @@ type (
 	daemonDataV2 struct {
 		data data
 	}
+	instanceStatusV2 struct {
+		data map[string]any
+	}
 )
 
 func (d *daemonDataV2) nodeNames() (l []string, err error) {
@@ -187,12 +190,19 @@ func (d *daemonDataV2) objectStatus(objectName string) *cdb.DBObjStatus {
 }
 
 func (d *daemonDataV2) InstanceStatus(objectName string, nodename string) *instanceData {
-	var a, nilMap map[string]any
+	var a map[string]any
 	if i, ok := mapTo(d.data, "nodes", nodename, "services", "status", objectName); !ok {
 		return nil
 	} else if a, ok = i.(map[string]any); !ok {
 		return nil
 	}
+	iStatus := &instanceStatusV2{data: a}
+	return iStatus.Status(objectName, nodename)
+}
+
+func (d *instanceStatusV2) Status(objectName string, nodename string) *instanceData {
+	var a, nilMap map[string]any
+	a = d.data
 	instanceStatus := &instanceData{
 		DBInstanceStatus:  cdb.DBInstanceStatus{},
 		resourceMonitored: make(map[string]bool),
