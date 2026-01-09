@@ -28,7 +28,7 @@ func cmdWorker() *cobra.Command {
 			for _, q := range args {
 				queues = append(queues, cachekeys.QueuePrefix+q)
 			}
-			return work(maxRunners, args)
+			return work(maxRunners, queues)
 		},
 	}
 	cmd.Flags().IntVar(&maxRunners, "runners", 1, "maximun number of worker job runners")
