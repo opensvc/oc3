@@ -67,7 +67,7 @@ func (a *Api) PostFeedInstanceStatus(c echo.Context) error {
 	}
 
 	// Return the ID to the client
-	return c.JSON(http.StatusCreated, map[string]string{
+	return c.JSON(http.StatusAccepted, map[string]string{
 		"id": id,
 	})
 }
