@@ -162,6 +162,9 @@ type PostFeedDaemonStatusJSONRequestBody = PostFeedDaemonStatus
 // PostFeedInstanceResourceInfoJSONRequestBody defines body for PostFeedInstanceResourceInfo for application/json ContentType.
 type PostFeedInstanceResourceInfoJSONRequestBody = InstanceResourceInfo
 
+// PostFeedInstanceStatusJSONRequestBody defines body for PostFeedInstanceStatus for application/json ContentType.
+type PostFeedInstanceStatusJSONRequestBody = InstanceStatus
+
 // PostFeedNodeDiskJSONRequestBody defines body for PostFeedNodeDisk for application/json ContentType.
 type PostFeedNodeDiskJSONRequestBody = NodeDisks
 
@@ -170,6 +173,3 @@ type PostFeedObjectConfigJSONRequestBody = ObjectConfig
 
 // PostFeedSystemJSONRequestBody defines body for PostFeedSystem for application/json ContentType.
 type PostFeedSystemJSONRequestBody = System
-
-// PostFeedInstanceStatusJSONRequestBody defines body for PostFeedInstanceStatus for application/json ContentType.
-type PostFeedInstanceStatusJSONRequestBody = InstanceStatus

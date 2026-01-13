@@ -146,7 +146,7 @@ paths:
       tags:
         - agent
 
-  /instance/status:
+  /feed/instance/status:
     post:
       description: |
         Store instance status data and return an ID
