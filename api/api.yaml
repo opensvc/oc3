@@ -5,69 +5,9 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.7
+  version: 1.0.8
 
 paths:
-  /feed/node/disk:
-    post:
-      description: |
-        Update or create node disks configuration
-      operationId: PostFeedNodeDisk
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NodeDisks'
-      responses:
-        202:
-          description: node disks configuration will be refreshed
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
-  /feed/object/config:
-    post:
-      description: |
-        Update or create object configuration
-      operationId: PostFeedObjectConfig
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ObjectConfig'
-      responses:
-        202:
-          description: instance configuration will be refreshed
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
-  /feed/instance/resource_info:
-    post:
-      description: |
-        Update or create instance resource info
-      operationId: PostFeedInstanceResourceInfo
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InstanceResourceInfo'
-      responses:
-        202:
-          description: instance resource information will be refreshed
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
   /feed/daemon/ping:
     post:
       description: |
@@ -118,7 +58,46 @@ paths:
       tags:
         - agent
 
-  /feed/system:
+  /docs/openapi:
+    get:
+      operationId: GetSwagger
+      tags:
+        - public
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+
+  /feed/node/disk:
+    post:
+      description: |
+        Update or create node disks configuration
+      operationId: PostFeedNodeDisk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeDisks'
+      responses:
+        202:
+          description: node disks configuration will be refreshed
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
+  /feed/node/system:
     post:
       description: |
         Post system discovery
@@ -140,6 +119,26 @@ paths:
           $ref: '#/components/responses/403'
         500:
           $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
+  /feed/instance/resource_info:
+    post:
+      description: |
+        Update or create instance resource info
+      operationId: PostFeedInstanceResourceInfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstanceResourceInfo'
+      responses:
+        202:
+          description: instance resource information will be refreshed
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
@@ -178,6 +177,26 @@ paths:
       tags:
         - agent
 
+  /feed/object/config:
+    post:
+      description: |
+        Update or create object configuration
+      operationId: PostFeedObjectConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObjectConfig'
+      responses:
+        202:
+          description: instance configuration will be refreshed
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /version:
     get:
       operationId: GetVersion
@@ -191,25 +210,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/version'
-        500:
-          $ref: '#/components/responses/500'
-
-  /docs/openapi:
-    get:
-      operationId: GetSwagger
-      tags:
-        - public
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-        401:
-          $ref: '#/components/responses/401'
-        403:
-          $ref: '#/components/responses/403'
         500:
           $ref: '#/components/responses/500'
 
@@ -276,6 +276,21 @@ components:
                       type: string
                     value:
                       type: string
+
+    InstanceStatus:
+      type: object
+      required:
+        - path
+        - data
+        - version
+      properties:
+        path:
+          type: string
+        data:
+          type: object
+        version:
+          type: string
+          description: the opensvc client data version
 
     NodeDisks:
       type: object
@@ -404,21 +419,6 @@ components:
           items:
             $ref: '#/components/schemas/package'
 
-    InstanceStatus:
-      type: object
-      required:
-        - path
-        - data
-        - version
-      properties:
-        path:
-          type: string
-        data:
-          type: object
-        version:
-          type: string
-          description: the opensvc client data version
-
     package:
       type: object
       required:
@@ -452,17 +452,17 @@ components:
           example: "0.0.1"
 
   parameters:
-    inQuerySync:
-      in: query
-      name: sync
-      schema:
-        type: boolean
-
     ObjectPathHeader:
       name: OC3-ObjectPath
       in: header
       schema:
         type: string
+
+    inQuerySync:
+      in: query
+      name: sync
+      schema:
+        type: boolean
 
   securitySchemes:
     basicAuth:
