@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.6
+  version: 1.0.7
 
 paths:
   /feed/node/disk:
@@ -149,8 +149,10 @@ paths:
   /feed/instance/status:
     post:
       description: |
-        Store instance status data and return an ID
+        Store opensvc 2.1 instance status data.
       operationId: PostFeedInstanceStatus
+      parameters:
+        - $ref: '#/components/parameters/inQuerySync'
       requestBody:
         required: true
         content:
@@ -158,18 +160,10 @@ paths:
             schema:
               $ref: '#/components/schemas/InstanceStatus'
       responses:
+        200:
+          description: instance status stored successfully (synchronous)
         202:
-          description: instance status stored successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - id
-                properties:
-                  id:
-                    type: string
-                    description: unique identifier for the stored data
+          description: instance status refreshed accepted (asynchronous)
         400:
           $ref: '#/components/responses/400'
         401:
@@ -458,6 +452,12 @@ components:
           example: "0.0.1"
 
   parameters:
+    inQuerySync:
+      in: query
+      name: sync
+      schema:
+        type: boolean
+
     ObjectPathHeader:
       name: OC3-ObjectPath
       in: header

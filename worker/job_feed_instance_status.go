@@ -40,8 +40,8 @@ type jobFeedInstanceStatus struct {
 	obj *cdb.DBObject
 }
 
-func newInstanceStatus(objectName, nodeID, clusterID, requestId string) *jobFeedInstanceStatus {
-	idX := fmt.Sprintf("%s@%s@%s:%s", objectName, nodeID, clusterID, requestId)
+func newInstanceStatus(objectName, nodeID, clusterID string) *jobFeedInstanceStatus {
+	idX := fmt.Sprintf("%s@%s@%s", objectName, nodeID, clusterID)
 	return &jobFeedInstanceStatus{
 		BaseJob: &BaseJob{
 			name:            "instanceStatus",
@@ -81,8 +81,6 @@ func (d *jobFeedInstanceStatus) getData() error {
 		var nilMap map[string]any
 		clientVersion := mapToS(data, "", "version")
 		switch {
-		case strings.HasPrefix(clientVersion, "3."):
-			d.data = &daemonDataV3{data: mapToMap(data, nilMap, "data")}
 		case strings.HasPrefix(clientVersion, "2."):
 			d.data = &instanceStatusV2{data: mapToMap(data, nilMap, "data")}
 		default:
