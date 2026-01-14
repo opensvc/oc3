@@ -55,6 +55,7 @@ var (
 		TaskScrub1H,
 		TaskScrub1D,
 		TaskStat1D,
+		TaskAlert1M,
 		TaskAlert1H,
 		TaskAlert1D,
 		TaskMetrics,
