@@ -782,3 +782,151 @@ func (oDb *DB) DashboardUpdateAppWithoutResponsible(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (oDb *DB) DashboardUpdatePkgDiff(ctx context.Context) error {
+	request := `SET @now = NOW()`
+	result, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	request = `
+		INSERT INTO dashboard (
+		    dash_type,
+		    svc_id,
+		    node_id,
+		    dash_severity,
+		    dash_fmt,
+		    dash_dict,
+		    dash_dict_md5,
+		    dash_created,
+		    dash_updated,
+		    dash_env
+		)
+		WITH
+		pkg_cluster_counts AS (
+		    SELECT
+			nodes.cluster_id,
+			nodes.node_id,
+			packages.pkg_name,
+			packages.pkg_version,
+			packages.pkg_arch,
+			packages.pkg_type,
+			COUNT(DISTINCT nodes.node_id) AS node_count
+		    FROM packages
+		    JOIN nodes USING (node_id)
+		    WHERE packages.pkg_name NOT LIKE 'gpg-pubkey%'
+		    GROUP BY
+			nodes.cluster_id,
+			packages.pkg_name,
+			packages.pkg_version,
+			packages.pkg_arch,
+			packages.pkg_type
+		),
+
+		cluster_nodes_counts AS (
+		    SELECT
+			cluster_id,
+			COUNT(node_id) AS node_count,
+			GROUP_CONCAT(nodename SEPARATOR ", ") AS nodenames
+		    FROM nodes
+		    GROUP BY cluster_id
+		),
+
+		pkg_cluster_diffs AS (
+		    SELECT
+			pkg_cluster_counts.*,
+			cluster_nodes_counts.nodenames,
+			cluster_nodes_counts.node_count AS cluster_node_count
+		    FROM pkg_cluster_counts
+		    JOIN cluster_nodes_counts
+		    USING (cluster_id)
+		    WHERE
+			pkg_cluster_counts.node_count < cluster_nodes_counts.node_count
+		),
+
+		pkg_cluster_diffcount AS (
+		    SELECT
+			nodes.cluster_id,
+			nodes.nodename,
+			nodes.node_id,
+			pkg_cluster_diffs.nodenames,
+			COUNT(*) AS pkg_diffs,
+			GROUP_CONCAT(DISTINCT pkg_cluster_diffs.pkg_name SEPARATOR ", ") AS pkg_names
+		    FROM pkg_cluster_diffs
+		    JOIN nodes USING (node_id)
+		    GROUP BY
+			nodes.cluster_id
+		),
+
+		alerts AS (
+		    SELECT
+			services.svcname,
+			svcmon.svc_id,
+			svcmon.mon_svctype,
+			pkg_cluster_diffcount.*
+		    FROM svcmon 
+		    JOIN pkg_cluster_diffcount USING (node_id)
+		    JOIN services USING (svc_id)
+		)
+
+		SELECT
+		    'package differences in cluster' AS dash_type,
+		    a.svc_id,
+		    NULL AS node_id,
+		    IF(a.mon_svctype = "PRD", 1, 0) AS dash_severity,
+		    "%(n)d package differences in cluster %(nodes)s" AS dash_fmt,
+		    JSON_OBJECT(
+			'n', a.pkg_diffs,
+			'nodes', a.nodenames,
+			'cluster_id', a.cluster_id
+		    ) AS dash_dict,
+		    MD5(CONCAT(
+			a.pkg_diffs,
+			a.nodenames,
+			a.cluster_id
+		    )) AS dash_dict_md5,
+		    @now AS dash_created,
+		    @now AS dash_updated,
+		    a.mon_svctype AS dash_env
+		FROM alerts a
+
+		ON DUPLICATE KEY UPDATE
+		    dash_severity = VALUES(dash_severity),
+		    dash_fmt = VALUES(dash_fmt),
+		    dash_dict = VALUES(dash_dict),
+		    dash_dict_md5 = VALUES(dash_dict_md5),
+		    dash_updated = VALUES(dash_updated),
+		    dash_env = VALUES(dash_env)
+    	`
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+
+	request = `
+                DELETE FROM dashboard
+                WHERE
+                  dash_type="package differences in cluster" AND
+                  (
+                    dash_updated < @now or
+                    dash_updated IS NULL
+                  )
+        `
+	result, err = oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+
+	return nil
+}
