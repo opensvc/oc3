@@ -157,13 +157,13 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	case cachekeys.FeedSystemQ:
 		j = newDaemonSystem(unqueuedJob[1])
 	case cachekeys.FeedInstanceStatusQ:
-		objectName, nodeID, clusterID, requestID, err := w.jobToInstanceClusterIdAndRequestId(unqueuedJob[1])
+		objectName, nodeID, clusterID, err := w.jobToInstanceAndClusterID(unqueuedJob[1])
 		if err != nil {
 			err := fmt.Errorf("invalid feed instance status index: %s", unqueuedJob[1])
 			slog.Warn(err.Error())
 			return err
 		}
-		j = newInstanceStatus(objectName, nodeID, clusterID, requestID)
+		j = newInstanceStatus(objectName, nodeID, clusterID)
 	default:
 		slog.Debug(fmt.Sprintf("ignore queue '%s'", unqueuedJob[0]))
 		return nil
@@ -208,19 +208,5 @@ func (w *Worker) jobToInstanceAndClusterID(jobName string) (path, nodeID, cluste
 		nodeID = l[1]
 		clusterID = l[2]
 	}
-	return
-}
-
-func (w *Worker) jobToInstanceClusterIdAndRequestId(jobName string) (path, nodeID, clusterID, requestId string, err error) {
-	l := strings.Split(jobName, ":")
-	if len(l) != 2 {
-		err = fmt.Errorf("unexpected job name: %s", jobName)
-		return
-	}
-	if path, nodeID, clusterID, err = w.jobToInstanceAndClusterID(l[0]); err != nil {
-		err = fmt.Errorf("unexpected job name: %s", jobName)
-		return
-	}
-	requestId = l[1]
 	return
 }

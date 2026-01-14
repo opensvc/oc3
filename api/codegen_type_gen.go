@@ -129,6 +129,9 @@ type Version struct {
 	Version string `json:"version"`
 }
 
+// InQuerySync defines model for inQuerySync.
+type InQuerySync = bool
+
 // N400 defines model for 400.
 type N400 = Problem
 
@@ -151,6 +154,11 @@ type FeedDaemonPingAccepted struct {
 type FeedDaemonStatusAccepted struct {
 	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/object/config
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
+}
+
+// PostFeedInstanceStatusParams defines parameters for PostFeedInstanceStatus.
+type PostFeedInstanceStatusParams struct {
+	Sync *InQuerySync `form:"sync,omitempty" json:"sync,omitempty"`
 }
 
 // PostFeedDaemonPingJSONRequestBody defines body for PostFeedDaemonPing for application/json ContentType.

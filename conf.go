@@ -5,8 +5,9 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/opensvc/oc3/oc2websocket"
 	"github.com/spf13/viper"
+
+	"github.com/opensvc/oc3/oc2websocket"
 )
 
 var (
@@ -32,6 +33,7 @@ func initConfig() error {
 	viper.SetDefault("listener.pprof.enable", false)
 	viper.SetDefault("listener.metrics.enable", false)
 	viper.SetDefault("listener.ui.enable", false)
+	viper.SetDefault("listener.sync.timeout", "2s")
 	viper.SetDefault("db.username", "opensvc")
 	viper.SetDefault("db.host", "127.0.0.1")
 	viper.SetDefault("db.port", "3306")
