@@ -132,11 +132,11 @@ func (a *Api) PostFeedInstanceStatus(c echo.Context, params api.PostFeedInstance
 	if syncMode {
 		select {
 		case <-doneC:
-			return c.NoContent(http.StatusOK)
+			return c.JSON(http.StatusOK, nil)
 		case <-ctx.Done():
-			return c.NoContent(http.StatusAccepted)
+			return c.JSON(http.StatusAccepted, nil)
 		}
 	} else {
-		return c.NoContent(http.StatusAccepted)
+		return c.JSON(http.StatusAccepted, nil)
 	}
 }
