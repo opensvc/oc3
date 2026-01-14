@@ -56,9 +56,10 @@ func listenAndServe(addr string) error {
 	e.Use(apihandlers.AuthMiddleware(strategy))
 	slog.Info("register openapi handlers with base url: /oc3")
 	api.RegisterHandlersWithBaseURL(e, &apihandlers.Api{
-		DB:    db,
-		Redis: redisClient,
-		UI:    enableUI,
+		DB:          db,
+		Redis:       redisClient,
+		UI:          enableUI,
+		SyncTimeout: viper.GetDuration("listener.sync.timeout"),
 	}, "/oc3")
 	if enableUI {
 		registerAPIUI(e)

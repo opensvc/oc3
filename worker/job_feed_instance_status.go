@@ -65,6 +65,7 @@ func (d *jobFeedInstanceStatus) Operations() []operation {
 		{desc: "instanceStatus/findObjectFromDb", do: d.findObjectFromDb},
 		{desc: "instanceStatus/updateDB", do: d.updateDB},
 		{desc: "instanceStatus/pushFromTableChanges", do: d.pushFromTableChanges},
+		{desc: "instanceStatus/processed", do: d.processed},
 	}
 }
 
@@ -150,5 +151,10 @@ func (d *jobFeedInstanceStatus) updateDB() error {
 		return err
 	}
 
+	return nil
+}
+
+func (d *jobFeedInstanceStatus) processed() error {
+	_ = d.redis.Publish(d.ctx, cachekeys.FeedInstanceStatusP, d.idX)
 	return nil
 }

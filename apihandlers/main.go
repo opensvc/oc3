@@ -2,6 +2,7 @@ package apihandlers
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	redis "github.com/go-redis/redis/v8"
@@ -14,6 +15,9 @@ type (
 		DB    *sql.DB
 		Redis *redis.Client
 		UI    bool
+
+		// SyncTimeout is the timeout for synchronous api calls
+		SyncTimeout time.Duration
 	}
 )
 
