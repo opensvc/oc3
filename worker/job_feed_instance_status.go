@@ -17,6 +17,9 @@ type jobFeedInstanceStatus struct {
 	// idX is the id of the posted instance config with the expected pattern: <objectName>@<nodeID>@<clusterID>:<requestId>
 	idX string
 
+	// requestID is the api request id, published on job completion
+	requestID string
+
 	objectName string
 
 	// objectID is db ID of the object found or created in database
@@ -40,8 +43,8 @@ type jobFeedInstanceStatus struct {
 	obj *cdb.DBObject
 }
 
-func newInstanceStatus(objectName, nodeID, clusterID string) *jobFeedInstanceStatus {
-	idX := fmt.Sprintf("%s@%s@%s", objectName, nodeID, clusterID)
+func newInstanceStatus(objectName, nodeID, clusterID, requestID string) *jobFeedInstanceStatus {
+	idX := fmt.Sprintf("%s@%s@%s:%s", objectName, nodeID, clusterID, requestID)
 	return &jobFeedInstanceStatus{
 		BaseJob: &BaseJob{
 			name:            "instanceStatus",
@@ -50,6 +53,7 @@ func newInstanceStatus(objectName, nodeID, clusterID string) *jobFeedInstanceSta
 			cachePendingIDX: idX,
 		},
 		idX:        idX,
+		requestID:  requestID,
 		nodeID:     nodeID,
 		clusterID:  clusterID,
 		objectName: objectName,
@@ -155,6 +159,6 @@ func (d *jobFeedInstanceStatus) updateDB() error {
 }
 
 func (d *jobFeedInstanceStatus) processed() error {
-	_ = d.redis.Publish(d.ctx, cachekeys.FeedInstanceStatusP, d.idX)
+	_ = d.redis.Publish(d.ctx, cachekeys.FeedInstanceStatusP, d.requestID)
 	return nil
 }

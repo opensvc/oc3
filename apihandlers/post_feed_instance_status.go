@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	"github.com/opensvc/oc3/api"
@@ -64,7 +65,9 @@ func (a *Api) PostFeedInstanceStatus(c echo.Context, params api.PostFeedInstance
 		return JSONProblem(c, http.StatusInternalServerError, "Failed to re-encode config", err.Error())
 	}
 
-	id := fmt.Sprintf("%s@%s@%s", payload.Path, nodeID, clusterID)
+	// Generate unique requestID for this status submission
+	requestID := uuid.New().String()
+	id := fmt.Sprintf("%s@%s@%s:%s", payload.Path, nodeID, clusterID, requestID)
 
 	ctx, cancel := context.WithTimeout(c.Request().Context(), timeout)
 	defer cancel()
@@ -104,7 +107,7 @@ func (a *Api) PostFeedInstanceStatus(c echo.Context, params api.PostFeedInstance
 					case *redis.Message:
 						if m == nil {
 							continue
-						} else if m.Payload == id {
+						} else if m.Payload == requestID {
 							log.Debug(fmt.Sprintf("got from %s: %s", cachekeys.FeedInstanceStatusP, id))
 							doneC <- nil
 							return
@@ -129,14 +132,16 @@ func (a *Api) PostFeedInstanceStatus(c echo.Context, params api.PostFeedInstance
 		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", keyQ, id, err)
 	}
 
+	respData := map[string]string{"id": requestID}
+
 	if syncMode {
 		select {
 		case <-doneC:
-			return c.JSON(http.StatusOK, nil)
+			return c.JSON(http.StatusOK, respData)
 		case <-ctx.Done():
-			return c.JSON(http.StatusAccepted, nil)
+			return c.JSON(http.StatusAccepted, respData)
 		}
 	} else {
-		return c.JSON(http.StatusAccepted, nil)
+		return c.JSON(http.StatusAccepted, respData)
 	}
 }
