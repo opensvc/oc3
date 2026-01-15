@@ -930,3 +930,175 @@ func (oDb *DB) DashboardUpdatePkgDiff(ctx context.Context) error {
 
 	return nil
 }
+
+// DashboardUpdatePkgDiffForNode refreshes only "package differences in cluster" alerts
+// for the node's cluster.
+func (oDb *DB) DashboardUpdatePkgDiffForNode(ctx context.Context, nodeID string) error {
+	request := `SET @now = NOW()`
+	_, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return fmt.Errorf("failed to set @now: %v", err)
+	}
+	request = `
+		INSERT INTO dashboard (
+		    dash_type,
+		    svc_id,
+		    node_id,
+		    dash_severity,
+		    dash_fmt,
+		    dash_dict,
+		    dash_dict_md5,
+		    dash_created,
+		    dash_updated,
+		    dash_env
+		)
+
+		WITH
+		svc_nodes AS (
+		    SELECT
+			svcmon.svc_id,
+			nodes.node_id,
+			nodes.nodename,
+			nodes.cluster_id
+		    FROM svcmon
+		    JOIN nodes ON svcmon.node_id = nodes.node_id
+		    WHERE
+		        svcmon.mon_updated > DATE_SUB(@now, INTERVAL 20 MINUTE) AND
+			svcmon.node_id = ?
+		),
+
+		pkg_svc_counts AS (
+		    SELECT
+			svc_nodes.svc_id,
+			svc_nodes.node_id,
+			packages.pkg_name,
+			packages.pkg_version,
+			packages.pkg_arch,
+			packages.pkg_type,
+			COUNT(DISTINCT svc_nodes.node_id) AS node_count
+		    FROM packages
+		    JOIN svc_nodes ON packages.node_id = svc_nodes.node_id
+		    WHERE packages.pkg_name NOT LIKE 'gpg-pubkey%'
+		    GROUP BY
+			svc_nodes.svc_id,
+			packages.pkg_name,
+			packages.pkg_version,
+			packages.pkg_arch,
+			packages.pkg_type
+		),
+
+		svc_node_counts AS (
+		    SELECT
+			svc_id,
+			COUNT(node_id) AS node_count,
+			GROUP_CONCAT(nodename SEPARATOR ", ") AS nodenames
+		    FROM svc_nodes
+		    GROUP BY svc_id
+		),
+
+		pkg_svc_diffs AS (
+		    SELECT
+			pkg_svc_counts.*,
+			svc_node_counts.nodenames,
+			svc_node_counts.node_count AS svc_node_count
+		    FROM pkg_svc_counts
+		    JOIN svc_node_counts ON pkg_svc_counts.svc_id = svc_node_counts.svc_id
+		    WHERE
+			pkg_svc_counts.node_count < svc_node_counts.node_count
+		),
+
+		pkg_svc_diffcount AS (
+		    SELECT
+			svc_nodes.svc_id,
+			svc_nodes.nodename,
+			svc_nodes.node_id,
+			svc_nodes.cluster_id,
+			pkg_svc_diffs.nodenames,
+			COUNT(*) AS pkg_diffs,
+			GROUP_CONCAT(DISTINCT pkg_svc_diffs.pkg_name SEPARATOR ", ") AS pkg_names
+		    FROM pkg_svc_diffs
+		    JOIN svc_nodes ON pkg_svc_diffs.node_id = svc_nodes.node_id
+		    GROUP BY
+			svc_nodes.svc_id,
+			svc_nodes.nodename,
+			svc_nodes.node_id,
+			svc_nodes.cluster_id,
+			pkg_svc_diffs.nodenames
+		),
+
+		alerts AS (
+		    SELECT
+			services.svcname,
+			svcmon.mon_svctype,
+			pkg_svc_diffcount.*
+		    FROM pkg_svc_diffcount
+		    JOIN svcmon ON pkg_svc_diffcount.node_id = svcmon.node_id AND pkg_svc_diffcount.svc_id = svcmon.svc_id
+		    JOIN services ON pkg_svc_diffcount.svc_id = services.svc_id
+		)
+
+		SELECT
+		    'package differences in service' AS dash_type,
+		    a.svc_id,
+		    NULL AS node_id,
+		    IF(a.mon_svctype = 'PRD', 1, 0) AS dash_severity,
+		    CONCAT(a.pkg_diffs, ' package differences in service ', a.nodenames) AS dash_fmt,
+		    JSON_OBJECT(
+			'n', a.pkg_diffs,
+			'nodes', a.nodenames,
+			'svc_id', a.svc_id,
+			'cluster_id', a.cluster_id
+		    ) AS dash_dict,
+		    MD5(CONCAT(
+			a.pkg_diffs,
+			a.nodenames,
+			a.svc_id,
+			a.cluster_id
+		    )) AS dash_dict_md5,
+		    @now AS dash_created,
+		    @now AS dash_updated,
+		    a.mon_svctype AS dash_env
+		FROM alerts a
+		ON DUPLICATE KEY UPDATE
+		    dash_severity = VALUES(dash_severity),
+		    dash_fmt = VALUES(dash_fmt),
+		    dash_dict = VALUES(dash_dict),
+		    dash_dict_md5 = VALUES(dash_dict_md5),
+		    dash_updated = VALUES(dash_updated),
+		    dash_env = VALUES(dash_env);
+	    `
+
+	result, err := oDb.DB.ExecContext(ctx, request, nodeID)
+	if err != nil {
+		return fmt.Errorf("failed to update dashboard: %v", err)
+	}
+
+	rowAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get affected rows: %v", err)
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+
+	request = `
+		DELETE d FROM dashboard d
+		LEFT JOIN svcmon m ON d.svc_id=m.svc_id
+		WHERE
+		    m.node_id = ? AND
+		    dash_type = "package differences in cluster" AND
+		    dash_updated < @now
+        `
+
+	result, err = oDb.DB.ExecContext(ctx, request, nodeID)
+	if err != nil {
+		return fmt.Errorf("failed to delete old dashboard entries: %v", err)
+	}
+
+	rowAffected, err = result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get affected rows: %v", err)
+	} else if rowAffected > 0 {
+		oDb.SetChange("dashboard")
+	}
+
+	return nil
+}
