@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -208,4 +209,27 @@ func (oDb *DB) GetUnfinishedActions(ctx context.Context) (lines []SvcAction, err
 	err = rows.Err()
 	return
 
+}
+
+func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, action string, begin time.Time, status_log string, sid string) (int64, error) {
+	query := `INSERT INTO svcactions (svc_id, node_id, action, begin, status_log, sid)
+		VALUES (?, ?, ?, ?, ?, ?)`
+
+	result, err := oDb.DB.ExecContext(ctx, query, svcID, nodeID, action, begin, status_log, sid)
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	if rowsAffected, err := result.RowsAffected(); err != nil {
+		return id, err
+	} else if rowsAffected > 0 {
+		oDb.SetChange("svcactions")
+	}
+
+	return id, nil
 }

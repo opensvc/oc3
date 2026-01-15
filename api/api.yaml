@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.8
+  version: 1.0.9
 
 paths:
   /feed/daemon/ping:
@@ -197,6 +197,34 @@ paths:
       tags:
         - agent
 
+  /feed/action:
+    post:
+      description: |
+        Begin an action for a given object path
+      operationId: PostFeedActionBegin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionBegin'
+      responses:
+        202:
+          description: action begin accepted
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /version:
     get:
       operationId: GetVersion
@@ -291,6 +319,35 @@ components:
         version:
           type: string
           description: the opensvc client data version
+
+    ActionBegin:
+      type: object
+      required:
+        - path
+        - action
+        - version
+        - begin
+        - cron
+        - session_uuid
+        - argv
+      properties:
+        path:
+          type: string
+        action:
+          type: string
+        version:
+          type: string
+          description: the opensvc client data version
+        begin:
+          type: string
+        cron:
+          type: boolean
+        session_uuid:
+          type: string
+        argv:
+          type: array
+          items:
+            type: string
 
     NodeDisks:
       type: object
@@ -558,3 +615,5 @@ components:
                 items:
                   type: string
                   description: object name
+
+    

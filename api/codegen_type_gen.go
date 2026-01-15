@@ -12,6 +12,19 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// ActionBegin defines model for ActionBegin.
+type ActionBegin struct {
+	Action      string   `json:"action"`
+	Argv        []string `json:"argv"`
+	Begin       string   `json:"begin"`
+	Cron        bool     `json:"cron"`
+	Path        string   `json:"path"`
+	SessionUuid string   `json:"session_uuid"`
+
+	// Version the opensvc client data version
+	Version string `json:"version"`
+}
+
 // Disk defines model for Disk.
 type Disk struct {
 	Dg         string  `json:"dg"`
@@ -160,6 +173,9 @@ type FeedDaemonStatusAccepted struct {
 type PostFeedInstanceStatusParams struct {
 	Sync *InQuerySync `form:"sync,omitempty" json:"sync,omitempty"`
 }
+
+// PostFeedActionBeginJSONRequestBody defines body for PostFeedActionBegin for application/json ContentType.
+type PostFeedActionBeginJSONRequestBody = ActionBegin
 
 // PostFeedDaemonPingJSONRequestBody defines body for PostFeedDaemonPing for application/json ContentType.
 type PostFeedDaemonPingJSONRequestBody = PostFeedDaemonPing
