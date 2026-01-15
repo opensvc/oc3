@@ -44,6 +44,10 @@ func (t *Scheduler) Debugf(format string, args ...any) {
 
 func (t *Scheduler) toggleTasks(ctx context.Context, states map[string]State) {
 	for _, task := range Tasks {
+		if task.period == 0 {
+			//task.Debugf("skip: no period")
+			continue
+		}
 		name := task.Name()
 		storedState, _ := states[name]
 		cachedState, hasCachedState := t.states[name]
