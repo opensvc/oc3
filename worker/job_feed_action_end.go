@@ -111,7 +111,7 @@ func (d *jobFeedActionEnd) updateDb() error {
 		return fmt.Errorf("invalid end time format: %w", err)
 	}
 
-	actionId, err := d.oDb.FindActionID(d.ctx, d.nodeID, d.objectID, beginTime)
+	actionId, err := d.oDb.FindActionID(d.ctx, d.nodeID, d.objectID, beginTime, d.data.Action)
 	if err != nil {
 		return fmt.Errorf("find action ID failed: %w", err)
 	}
