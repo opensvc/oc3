@@ -161,9 +161,10 @@ func runOps(ops ...operation) error {
 				With(prometheus.Labels{"desc": op.desc, "status": operationStatusFailed}).
 				Observe(duration.Seconds())
 			if op.blocking {
-				continue
+				return err
 			}
-			return err
+			slog.Warn("%s: non blocking error: %s", op.desc, err)
+			continue
 		}
 		operationDuration.
 			With(prometheus.Labels{"desc": op.desc, "status": operationStatusOk}).
