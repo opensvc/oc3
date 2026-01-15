@@ -437,3 +437,64 @@ func (oDb *DB) UpdateVirtualAssets(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (oDb *DB) UpdateVirtualAsset(ctx context.Context, svcID, nodeID string) error {
+	request := `
+	UPDATE nodes n
+        JOIN (
+            SELECT
+                svcmon.mon_vmname AS vmname,
+                services.svc_app AS svc_app,
+                nodes.app AS node_app,
+                nodes.loc_addr,
+                nodes.loc_city,
+                nodes.loc_zip,
+                nodes.loc_room,
+                nodes.loc_building,
+                nodes.loc_floor,
+                nodes.loc_rack,
+                nodes.power_cabinet1,
+                nodes.power_cabinet2,
+                nodes.power_supply_nb,
+                nodes.power_protect,
+                nodes.power_protect_breaker,
+                nodes.power_breaker1,
+                nodes.power_breaker2,
+                nodes.loc_country,
+                nodes.enclosure
+            FROM svcmon
+            JOIN services ON svcmon.svc_id = services.svc_id
+            JOIN nodes ON svcmon.node_id = nodes.node_id
+            WHERE svcmon.svc_id = ? AND svcmon.node_id = ?
+        ) AS source
+        SET
+            n.loc_addr = COALESCE(NULLIF(source.loc_addr, ''), n.loc_addr),
+            n.loc_city = COALESCE(NULLIF(source.loc_city, ''), n.loc_city),
+            n.loc_zip = COALESCE(NULLIF(source.loc_zip, ''), n.loc_zip),
+            n.loc_room = COALESCE(NULLIF(source.loc_room, ''), n.loc_room),
+            n.loc_building = COALESCE(NULLIF(source.loc_building, ''), n.loc_building),
+            n.loc_floor = COALESCE(NULLIF(source.loc_floor, ''), n.loc_floor),
+            n.loc_rack = COALESCE(NULLIF(source.loc_rack, ''), n.loc_rack),
+            n.power_cabinet1 = COALESCE(NULLIF(source.power_cabinet1, ''), n.power_cabinet1),
+            n.power_cabinet2 = COALESCE(NULLIF(source.power_cabinet2, ''), n.power_cabinet2),
+            n.power_supply_nb = COALESCE(NULLIF(source.power_supply_nb, ''), n.power_supply_nb),
+            n.power_protect = COALESCE(NULLIF(source.power_protect, ''), n.power_protect),
+            n.power_protect_breaker = COALESCE(NULLIF(source.power_protect_breaker, ''), n.power_protect_breaker),
+            n.power_breaker1 = COALESCE(NULLIF(source.power_breaker1, ''), n.power_breaker1),
+            n.power_breaker2 = COALESCE(NULLIF(source.power_breaker2, ''), n.power_breaker2),
+            n.loc_country = COALESCE(NULLIF(source.loc_country, ''), n.loc_country),
+            n.enclosure = COALESCE(NULLIF(source.enclosure, ''), n.enclosure)
+        WHERE
+            n.nodename = source.vmname AND
+            n.app IN (source.svc_app, source.node_app)`
+	result, err := oDb.DB.ExecContext(ctx, request, svcID, nodeID)
+	if err != nil {
+		return err
+	}
+	if rowAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowAffected > 0 {
+		oDb.SetChange("nodes")
+	}
+	return nil
+}
