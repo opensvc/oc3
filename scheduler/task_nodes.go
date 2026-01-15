@@ -8,7 +8,7 @@ import (
 var TaskUpdateVirtualAssets = Task{
 	name:    "update_virtual_assets",
 	fn:      taskUpdateVirtualAssets,
-	timeout: time.Minute,
+	timeout: 10 * time.Second,
 }
 
 func taskUpdateVirtualAssets(ctx context.Context, task *Task) error {
