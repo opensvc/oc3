@@ -120,5 +120,14 @@ func (d *jobFeedActionEnd) updateDb() error {
 		return fmt.Errorf("end svc action failed: %w", err)
 	}
 
+	if d.data.Status == "err" {
+		if err := d.oDb.UpdateActionErrors(d.ctx, d.objectID, d.nodeID); err != nil {
+			return fmt.Errorf("update action errors failed: %w", err)
+		}
+		if err := d.oDb.UpdateDashActionErrors(d.ctx, d.objectID, d.nodeID); err != nil {
+			return fmt.Errorf("update dash action errors failed: %w", err)
+		}
+	}
+
 	return nil
 }
