@@ -25,6 +25,18 @@ type ActionBegin struct {
 	Version string `json:"version"`
 }
 
+// ActionEnd defines model for ActionEnd.
+type ActionEnd struct {
+	Action        string `json:"action"`
+	Actionlogfile string `json:"actionlogfile"`
+	Begin         string `json:"begin"`
+	Cron          bool   `json:"cron"`
+	End           string `json:"end"`
+	Err           int    `json:"err"`
+	Path          string `json:"path"`
+	Sid           string `json:"sid"`
+}
+
 // Disk defines model for Disk.
 type Disk struct {
 	Dg         string  `json:"dg"`
@@ -176,6 +188,9 @@ type PostFeedInstanceStatusParams struct {
 
 // PostFeedActionBeginJSONRequestBody defines body for PostFeedActionBegin for application/json ContentType.
 type PostFeedActionBeginJSONRequestBody = ActionBegin
+
+// PutFeedActionEndJSONRequestBody defines body for PutFeedActionEnd for application/json ContentType.
+type PutFeedActionEndJSONRequestBody = ActionEnd
 
 // PostFeedDaemonPingJSONRequestBody defines body for PostFeedDaemonPing for application/json ContentType.
 type PostFeedDaemonPingJSONRequestBody = PostFeedDaemonPing

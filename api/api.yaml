@@ -198,6 +198,32 @@ paths:
         - agent
 
   /feed/action:
+    put:
+      description: |
+        End an action for a given object path
+      operationId: PutFeedActionEnd
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionEnd'
+      responses:
+        202:
+          description: action end accepted
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
     post:
       description: |
         Begin an action for a given object path
@@ -348,6 +374,35 @@ components:
           type: array
           items:
             type: string
+
+    ActionEnd:
+      type: object
+      required:
+        - path
+        - action
+        - begin
+        - end
+        - cron
+        - sid
+        - actionlogfile
+        - err
+      properties:
+        path:
+          type: string
+        action:
+          type: string
+        begin:
+          type: string
+        end:
+          type: string
+        cron:
+          type: boolean
+        sid:
+          type: string
+        actionlogfile:
+          type: string
+        err:
+          type: integer
 
     NodeDisks:
       type: object
