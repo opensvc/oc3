@@ -385,7 +385,7 @@ components:
         - cron
         - sid
         - actionlogfile
-        - err
+        - status
       properties:
         path:
           type: string
@@ -401,8 +401,8 @@ components:
           type: string
         actionlogfile:
           type: string
-        err:
-          type: integer
+        status:
+          type: string
 
     NodeDisks:
       type: object

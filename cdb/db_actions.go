@@ -233,3 +233,28 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, act
 
 	return id, nil
 }
+
+func (oDb *DB) EndSvcAction(ctx context.Context, svcActionID int64, end time.Time, status string) error {
+	const query = `UPDATE svcactions SET end = ?, status = ?, time = TIMESTAMPDIFF(SECOND, begin, ?) WHERE id = ?`
+	result, err := oDb.DB.ExecContext(ctx, query, end, status, end, svcActionID)
+	if err != nil {
+		return err
+	}
+	if rowsAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowsAffected > 0 {
+		oDb.SetChange("svcactions")
+	}
+	return nil
+}
+
+// FindActionID finds the action ID for the given parameters.
+func (oDb *DB) FindActionID(ctx context.Context, nodeID string, svcID string, begin time.Time) (int64, error) {
+	// todo : check if there is only one result
+	const query = "SELECT id FROM svcactions WHERE node_id = ? AND svc_id = ? AND begin = ? AND pid IS NULL"
+	var id int64
+	if err := oDb.DB.QueryRowContext(ctx, query, nodeID, svcID, begin).Scan(&id); err != nil {
+		return 0, err
+	}
+	return id, nil
+}

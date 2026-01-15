@@ -172,6 +172,14 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 			return err
 		}
 		j = newActionBegin(objectName, nodeID, ClusterID)
+	case cachekeys.FeedActionEndQ:
+		objectName, nodeID, ClusterID, err := w.jobToInstanceAndClusterID(unqueuedJob[1])
+		if err != nil {
+			err := fmt.Errorf("invalid feed end action index: %s", unqueuedJob[1])
+			slog.Warn(err.Error())
+			return err
+		}
+		j = newActionEnd(objectName, nodeID, ClusterID)
 
 	default:
 		slog.Debug(fmt.Sprintf("ignore queue '%s'", unqueuedJob[0]))

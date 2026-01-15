@@ -32,9 +32,9 @@ type ActionEnd struct {
 	Begin         string `json:"begin"`
 	Cron          bool   `json:"cron"`
 	End           string `json:"end"`
-	Err           int    `json:"err"`
 	Path          string `json:"path"`
 	Sid           string `json:"sid"`
+	Status        string `json:"status"`
 }
 
 // Disk defines model for Disk.
