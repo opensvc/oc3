@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -25,21 +24,11 @@ var TaskMetrics = Task{
 }
 
 func MakeWSPFilename(format string, args ...any) (string, error) {
-	var dir string
-	candidates := viper.GetStringSlice("scheduler.task.metrics.directories")
-	if len(candidates) == 0 {
-		return "", fmt.Errorf("scheduler.task.metrics.directories is not set")
+	directory := viper.GetString("scheduler.directories.uploads")
+	if directory == "" {
+		return "", fmt.Errorf("define scheduler.directories.uploads")
 	}
-	for _, d := range candidates {
-		if _, err := os.Stat(d); err == nil {
-			dir = d
-			break
-		}
-	}
-	if dir == "" {
-		return "", fmt.Errorf("scheduler.task.metrics.directories has no existing entry")
-	}
-	return filepath.Join(dir, fmt.Sprintf(format+".wsp", args...)), nil
+	return filepath.Join(directory, "stats", fmt.Sprintf(format+".wsp", args...)), nil
 }
 
 func taskMetrics(ctx context.Context, task *Task) error {
