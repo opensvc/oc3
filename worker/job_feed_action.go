@@ -1,19 +1,23 @@
 package worker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/opensvc/oc3/api"
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
 )
 
 type jobFeedAction struct {
-	*BaseJob
+	JobBase
+	JobRedis
+	JobDB
 
 	nodeID    string
 	clusterID string
@@ -35,9 +39,11 @@ func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedAction {
 	idX := fmt.Sprintf("%s@%s@%s:%s", objectName, nodeID, clusterID, uuid)
 
 	return &jobFeedAction{
-		BaseJob: &BaseJob{
-			name:            "action",
-			detail:          "ID: " + idX,
+		JobBase: JobBase{
+			name:   "action",
+			detail: "ID: " + idX,
+		},
+		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedActionPendingH,
 			cachePendingIDX: idX,
 		},
@@ -50,20 +56,20 @@ func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedAction {
 
 func (d *jobFeedAction) Operations() []operation {
 	return []operation{
-		{desc: "actionBegin/dropPending", do: d.dropPending},
-		{desc: "actionBegin/getData", do: d.getData},
-		{desc: "actionBegin/findNodeFromDb", do: d.findNodeFromDb},
-		{desc: "actionBegin/findObjectFromDb", do: d.findObjectFromDb},
-		{desc: "actionBegin/processAction", do: d.updateDB},
-		{desc: "actionBegin/pushFromTableChanges", do: d.pushFromTableChanges},
+		{desc: "actionBegin/dropPending", doCtx: d.dropPending},
+		{desc: "actionBegin/getData", doCtx: d.getData},
+		{desc: "actionBegin/findNodeFromDb", doCtx: d.findNodeFromDb},
+		{desc: "actionBegin/findObjectFromDb", doCtx: d.findObjectFromDb},
+		{desc: "actionBegin/processAction", doCtx: d.updateDB},
+		{desc: "actionBegin/pushFromTableChanges", doCtx: d.pushFromTableChanges},
 	}
 }
 
-func (d *jobFeedAction) getData() error {
+func (d *jobFeedAction) getData(ctx context.Context) error {
 	var (
 		data api.PostFeedActionJSONRequestBody
 	)
-	if b, err := d.redis.HGet(d.ctx, cachekeys.FeedActionH, d.idX).Bytes(); err != nil {
+	if b, err := d.redis.HGet(ctx, cachekeys.FeedActionH, d.idX).Bytes(); err != nil {
 		return fmt.Errorf("getData: HGET %s %s: %w", cachekeys.FeedActionH, d.idX, err)
 	} else if err = json.Unmarshal(b, &data); err != nil {
 		return fmt.Errorf("getData: unexpected data from %s %s: %w", cachekeys.FeedActionH, d.idX, err)
@@ -76,8 +82,8 @@ func (d *jobFeedAction) getData() error {
 	return nil
 }
 
-func (d *jobFeedAction) findNodeFromDb() error {
-	if n, err := d.oDb.NodeByNodeID(d.ctx, d.nodeID); err != nil {
+func (d *jobFeedAction) findNodeFromDb(ctx context.Context) error {
+	if n, err := d.oDb.NodeByNodeID(ctx, d.nodeID); err != nil {
 		return fmt.Errorf("findNodeFromDb: node %s: %w", d.nodeID, err)
 	} else {
 		d.node = n
@@ -86,8 +92,8 @@ func (d *jobFeedAction) findNodeFromDb() error {
 	return nil
 }
 
-func (d *jobFeedAction) findObjectFromDb() error {
-	if isNew, objId, err := d.oDb.ObjectIDFindOrCreate(d.ctx, d.objectName, d.clusterID); err != nil {
+func (d *jobFeedAction) findObjectFromDb(ctx context.Context) error {
+	if isNew, objId, err := d.oDb.ObjectIDFindOrCreate(ctx, d.objectName, d.clusterID); err != nil {
 		return fmt.Errorf("find or create object ID failed for %s: %w", d.objectName, err)
 	} else if isNew {
 		slog.Info(fmt.Sprintf("jobFeedActionBegin has created new object id %s@%s %s", d.objectName, d.clusterID, objId))
@@ -99,7 +105,7 @@ func (d *jobFeedAction) findObjectFromDb() error {
 	return nil
 }
 
-func (d *jobFeedAction) updateDB() error {
+func (d *jobFeedAction) updateDB(ctx context.Context) error {
 	if d.data == nil || d.data.Path == "" {
 		return fmt.Errorf("invalid action data: missing path")
 	}
@@ -117,11 +123,11 @@ func (d *jobFeedAction) updateDB() error {
 		return fmt.Errorf("invalid begin time format: %w", err)
 	}
 
-	status_log := ""
+	statusLog := ""
 	if len(d.data.Argv) > 0 {
-		status_log = fmt.Sprintf("%s", d.data.Argv[0])
+		statusLog = fmt.Sprintf("%s", d.data.Argv[0])
 		for i := 1; i < len(d.data.Argv); i++ {
-			status_log += " " + d.data.Argv[i]
+			statusLog += " " + d.data.Argv[i]
 		}
 	}
 
@@ -132,35 +138,37 @@ func (d *jobFeedAction) updateDB() error {
 			return fmt.Errorf("invalid end time format: %w", err)
 		}
 
-		actionId, err := d.oDb.FindActionID(d.ctx, d.nodeID, d.objectID, beginTime, d.data.Action)
+		actionId, err := d.oDb.FindActionID(ctx, d.nodeID, d.objectID, beginTime, d.data.Action)
 		if err != nil {
 			return fmt.Errorf("find action ID failed: %w", err)
 		}
 
 		if actionId == 0 {
 			// begin not processed yet, insert full record
-			if _, err := d.oDb.InsertSvcAction(d.ctx, objectUUID, nodeUUID, d.data.Action, beginTime, status_log, d.data.SessionUuid, d.data.Cron, endTime, d.data.Status); err != nil {
+			if _, err := d.oDb.InsertSvcAction(ctx, objectUUID, nodeUUID, d.data.Action, beginTime, statusLog, d.data.SessionUuid, d.data.Cron, endTime, d.data.Status); err != nil {
 				return fmt.Errorf("insert svc action failed: %w", err)
 			}
 		} else {
 			// begin already processed, update record with end info
-			if err := d.oDb.UpdateSvcAction(d.ctx, actionId, endTime, d.data.Status); err != nil {
+			if err := d.oDb.UpdateSvcAction(ctx, actionId, endTime, d.data.Status); err != nil {
 				return fmt.Errorf("end svc action failed: %w", err)
 			}
 		}
 
 		if d.data.Status == "err" {
-			if err := d.oDb.UpdateActionErrors(d.ctx, d.objectID, d.nodeID); err != nil {
+			if err := d.oDb.UpdateActionErrors(ctx, d.objectID, d.nodeID); err != nil {
 				return fmt.Errorf("update action errors failed: %w", err)
 			}
-			if err := d.oDb.UpdateDashActionErrors(d.ctx, d.objectID, d.nodeID); err != nil {
+			if err := d.oDb.UpdateDashActionErrors(ctx, d.objectID, d.nodeID); err != nil {
 				return fmt.Errorf("update dash action errors failed: %w", err)
 			}
 		}
 
 	} else {
 		// field End is not present, process as action begin
-		d.oDb.InsertSvcAction(d.ctx, objectUUID, nodeUUID, d.data.Action, beginTime, status_log, d.data.SessionUuid, d.data.Cron, time.Time{}, "")
+		if _, err := d.oDb.InsertSvcAction(ctx, objectUUID, nodeUUID, d.data.Action, beginTime, statusLog, d.data.SessionUuid, d.data.Cron, time.Time{}, ""); err != nil {
+			return fmt.Errorf("insert new action failed: %w", err)
+		}
 	}
 
 	return nil
