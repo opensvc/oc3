@@ -1,12 +1,13 @@
 package worker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
 
-	redis "github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/mariadb"
@@ -14,7 +15,9 @@ import (
 
 type (
 	jobFeedNodeDisk struct {
-		*BaseJob
+		JobBase
+		JobRedis
+		JobDB
 
 		nodename  string
 		nodeID    string
@@ -25,10 +28,11 @@ type (
 
 func newNodeDisk(nodename, nodeID, clusterID string) *jobFeedNodeDisk {
 	return &jobFeedNodeDisk{
-		BaseJob: &BaseJob{
+		JobBase: JobBase{
 			name:   "nodeDisk",
 			detail: "nodename: " + nodename + " nodeID: " + nodeID,
-
+		},
+		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedNodeDiskPendingH,
 			cachePendingIDX: nodename + "@" + nodeID + "@" + clusterID,
 		},
@@ -48,8 +52,8 @@ func (d *jobFeedNodeDisk) Operations() []operation {
 	}
 }
 
-func (d *jobFeedNodeDisk) getData() error {
-	cmd := d.redis.HGet(d.ctx, cachekeys.FeedNodeDiskH, d.cachePendingIDX)
+func (d *jobFeedNodeDisk) getData(ctx context.Context) error {
+	cmd := d.redis.HGet(ctx, cachekeys.FeedNodeDiskH, d.cachePendingIDX)
 	result, err := cmd.Result()
 	switch err {
 	case nil:
@@ -116,9 +120,9 @@ func (d *jobFeedNodeDisk) getData() error {
 //			   KEY `k_svc_id` (`svc_id`),
 //			   KEY `k_svcdisks_1` (`svc_id`,`node_id`)
 //			) ENGINE=InnoDB AUTO_INCREMENT=4641237 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
-func (d *jobFeedNodeDisk) updateDB() error {
+func (d *jobFeedNodeDisk) updateDB(ctx context.Context) error {
 	var (
-		// pathToObjectID is a map of object path to object ID, to cache db results
+		// pathToObjectID is a map of an object path to object ID, to cache db results
 		pathToObjectID = make(map[string]string)
 
 		// appIDM is a map of objectID@nodeID to app ID, to cache appIDFromObjectOrNodeIDs results
@@ -156,16 +160,16 @@ func (d *jobFeedNodeDisk) updateDB() error {
 			}
 			devID := strings.ToUpper(diskID[26:28] + ":" + diskID[28:30] + ":" + diskID[30:])
 			portnamePrefix := "50" + devID[2:12] + `%`
-			if newDiskID, err := d.oDb.DiskIDFromDiskinfoWithDevIDAndTargetID(d.ctx, devID, portnamePrefix, diskID); err != nil {
+			if newDiskID, err := d.oDb.DiskIDFromDiskinfoWithDevIDAndTargetID(ctx, devID, portnamePrefix, diskID); err != nil {
 				return fmt.Errorf("search diskinfo on OPEN-V disk with diskID %s: %w", diskID, err)
 			} else if newDiskID != "" {
-				if err := d.oDb.UpdateDiskinfoDiskID(d.ctx, diskID, newDiskID); err != nil {
+				if err := d.oDb.UpdateDiskinfoDiskID(ctx, diskID, newDiskID); err != nil {
 					return fmt.Errorf("UpdateDiskinfoDiskID on OPEN-V disk: %w", err)
 				}
 			}
 		}
 
-		diskL, err := d.oDb.DiskinfoByDiskID(d.ctx, diskID)
+		diskL, err := d.oDb.DiskinfoByDiskID(ctx, diskID)
 		if err != nil {
 			return fmt.Errorf("DiskinfoByDiskID: %w", err)
 		}
@@ -177,7 +181,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 				// diskinfo registered as a stub for a local disk
 				line["local"] = "T"
 				if len(diskL) == 1 {
-					if changed, err := d.oDb.UpdateDiskinfoArrayID(d.ctx, diskID, nodeID); err != nil {
+					if changed, err := d.oDb.UpdateDiskinfoArrayID(ctx, diskID, nodeID); err != nil {
 						return fmt.Errorf("UpdateDiskinfoArrayID: %w", err)
 					} else if changed {
 						d.oDb.SetChange("diskinfo")
@@ -191,20 +195,20 @@ func (d *jobFeedNodeDisk) updateDB() error {
 		if strings.HasPrefix(diskID, d.nodeID+".") && len(diskL) == 0 {
 			line["local"] = "T"
 			devID := strings.TrimPrefix(diskID, d.nodeID+".")
-			if changed, err := d.oDb.UpdateDiskinfoArrayAndDevIDsAndSize(d.ctx, diskID, nodeID, devID, int32(line["size"].(float64))); err != nil {
+			if changed, err := d.oDb.UpdateDiskinfoArrayAndDevIDsAndSize(ctx, diskID, nodeID, devID, int32(line["size"].(float64))); err != nil {
 				return fmt.Errorf("updateDiskinfoArrayAndDevIDsAndSize: %w", err)
 			} else if changed {
 				d.oDb.SetChange("diskinfo")
 			}
 		} else if len(diskL) == 0 {
 			line["local"] = "F"
-			if changed, err := d.oDb.UpdateDiskinfoForDiskSize(d.ctx, diskID, int32(line["size"].(float64))); err != nil {
+			if changed, err := d.oDb.UpdateDiskinfoForDiskSize(ctx, diskID, int32(line["size"].(float64))); err != nil {
 				return fmt.Errorf("updateDiskinfoForDiskSize: %w", err)
 			} else if changed {
 				d.oDb.SetChange("diskinfo")
 			}
 
-			if changed, err := d.oDb.UpdateDiskinfoSetMissingArrayID(d.ctx, diskID, nodeID); err != nil {
+			if changed, err := d.oDb.UpdateDiskinfoSetMissingArrayID(ctx, diskID, nodeID); err != nil {
 				return fmt.Errorf("updateDiskinfoSetMissingArrayID: %w", err)
 			} else if changed {
 				d.oDb.SetChange("diskinfo")
@@ -219,7 +223,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 		if objectPath != "" {
 			if objectID, ok := pathToObjectID[objectPath]; ok {
 				line["svc_id"] = objectID
-			} else if created, objectID, err := d.oDb.ObjectIDFindOrCreate(d.ctx, objectPath, d.clusterID); err != nil {
+			} else if created, objectID, err := d.oDb.ObjectIDFindOrCreate(ctx, objectPath, d.clusterID); err != nil {
 				return fmt.Errorf("objectIDFindOrCreate: %w", err)
 			} else {
 				if created {
@@ -236,7 +240,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 
 		// Assigns line["app_id"] with appID, or nil if appID is not detected
 		// line["app_id"] must be defined (mapping doesn't support Optional when its data
-		// is []any.
+		// is []any).
 		objectID := line["svc_id"].(string)
 		if appID, ok := appIDM[objectID+"@"+nodeID]; ok {
 			if appID != 0 {
@@ -244,7 +248,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 			} else {
 				line["app_id"] = nil
 			}
-		} else if appID, ok, err := d.oDb.AppIDFromObjectOrNodeIDs(d.ctx, nodeID, objectID); err != nil {
+		} else if appID, ok, err := d.oDb.AppIDFromObjectOrNodeIDs(ctx, nodeID, objectID); err != nil {
 			return fmt.Errorf("appIDFromObjectOrNodeIDs: %w", err)
 		} else if !ok {
 			appIDM[objectID+"@"+nodeID] = 0
@@ -280,14 +284,14 @@ func (d *jobFeedNodeDisk) updateDB() error {
 		Keys: []string{"disk_id", "svc_id", "node_id", "disk_dg"},
 		Data: data,
 	}
-	if affected, err := request.ExecContextAndCountRowsAffected(d.ctx, d.db); err != nil {
+	if affected, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return fmt.Errorf("updateDB insert: %w", err)
 	} else if affected > 0 {
 		d.oDb.SetChange("svcdisks")
 	}
 
 	query := "DELETE FROM `svcdisks` WHERE `node_id` = ? AND `disk_updated` < ?"
-	if result, err := d.db.ExecContext(d.ctx, query, nodeID, now); err != nil {
+	if result, err := d.db.ExecContext(ctx, query, nodeID, now); err != nil {
 		return fmt.Errorf("query %s: %w", query, err)
 	} else if affected, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("query %s count row affected: %w", query, err)
@@ -297,7 +301,7 @@ func (d *jobFeedNodeDisk) updateDB() error {
 
 	// TODO: validate delete query
 	query = "DELETE FROM `diskinfo` WHERE `disk_arrayid` = ? AND `disk_updated` < ?"
-	if result, err := d.db.ExecContext(d.ctx, query, nodeID, now); err != nil {
+	if result, err := d.db.ExecContext(ctx, query, nodeID, now); err != nil {
 		return fmt.Errorf("query %s: %w", query, err)
 	} else if affected, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("query %s count row affected: %w", query, err)

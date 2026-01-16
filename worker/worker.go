@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	redis "github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -47,7 +47,6 @@ type (
 	JobRunner interface {
 		Operationer
 
-		DBGetter
 		Name() string
 		Detail() string
 	}
@@ -125,6 +124,7 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	var j JobRunner
 	slog.Debug(fmt.Sprintf("BLPOP %s -> %s", unqueuedJob[0], unqueuedJob[1]))
 	ctx := context.Background()
+	withTx := w.WithTx
 	switch unqueuedJob[0] {
 	case cachekeys.FeedDaemonPingQ:
 		j = newDaemonPing(unqueuedJob[1])
@@ -179,10 +179,15 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 		return nil
 	}
 	workType := j.Name()
+
+	if a, ok := j.(RedisSetter); ok {
+		a.SetRedis(w.Redis)
+	}
+
 	if a, ok := j.(PrepareDBer); ok {
-		if err := a.PrepareDB(ctx, w.DB, w.Ev, w.WithTx); err != nil {
-			slog.Error(fmt.Sprintf("🔴can't get db for %s: %s", workType, err))
-			return fmt.Errorf("can't get db for %s: %w", workType, err)
+		if err := a.PrepareDB(ctx, w.DB, w.Ev, withTx); err != nil {
+			slog.Error(fmt.Sprintf("🔴can't prepare db for %s: %s", workType, err))
+			return fmt.Errorf("can't prepare db for %s: %w", workType, err)
 		}
 	}
 
@@ -194,7 +199,7 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 		a.SetEv(w.Ev)
 	}
 	status := operationStatusOk
-	err := RunJob(j)
+	err := RunJob(ctx, j)
 	duration := time.Since(begin)
 	if err != nil {
 		status = operationStatusFailed
@@ -208,7 +213,7 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 
 // jobToInstanceAndClusterID splits a jobName string into path, nodeID, and clusterID based on "@" delimiter.
 // Returns an error if the format is invalid or elements are empty.
-// expected jobName: foo@<nodeID>@<clusterID>
+// Expected jobName: foo@<nodeID>@<clusterID>
 func (w *Worker) jobToInstanceAndClusterID(jobName string) (path, nodeID, clusterID string, err error) {
 	l := strings.Split(jobName, "@")
 	if len(l) != 3 || l[0] == "" || l[1] == "" || l[2] == "" {

@@ -1,11 +1,12 @@
 package worker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 
-	redis "github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/mariadb"
@@ -13,7 +14,9 @@ import (
 
 type (
 	jobFeedSystem struct {
-		*BaseJob
+		JobBase
+		JobRedis
+		JobDB
 
 		nodeID string
 		data   map[string]any
@@ -22,10 +25,11 @@ type (
 
 func newDaemonSystem(nodeID string) *jobFeedSystem {
 	return &jobFeedSystem{
-		BaseJob: &BaseJob{
+		JobBase: JobBase{
 			name:   "daemonSystem",
 			detail: "nodeID: " + nodeID,
-
+		},
+		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedSystemPendingH,
 			cachePendingIDX: nodeID,
 		},
@@ -55,7 +59,7 @@ func (d *jobFeedSystem) Operations() []operation {
 	}
 }
 
-func (d *jobFeedSystem) pkg() error {
+func (d *jobFeedSystem) pkg(ctx context.Context) error {
 	pkgList, ok := d.data["package"].([]any)
 	if !ok {
 		slog.Warn(fmt.Sprint("unsupported json format for packages"))
@@ -91,22 +95,22 @@ func (d *jobFeedSystem) pkg() error {
 		Data: pkgList,
 	}
 
-	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
+	if _, err := request.QueryContext(ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM packages WHERE node_id = ? AND pkg_updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(ctx, "DELETE FROM packages WHERE node_id = ? AND pkg_updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 	}
-	if err := d.oDb.DashboardUpdatePkgDiffForNode(d.ctx, nodeID); err != nil {
+	if err := d.oDb.DashboardUpdatePkgDiffForNode(ctx, nodeID); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (d *jobFeedSystem) targets() error {
+func (d *jobFeedSystem) targets(ctx context.Context) error {
 	data, ok := d.data["targets"].([]any)
 	if !ok {
 		slog.Warn("unsupported system targets data format")
@@ -115,7 +119,7 @@ func (d *jobFeedSystem) targets() error {
 
 	nodeID := d.nodeID
 	now := d.now
-	for i, _ := range data {
+	for i := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
 			slog.Warn("unsupported system targets entry format")
@@ -138,20 +142,20 @@ func (d *jobFeedSystem) targets() error {
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
+	if _, err := request.QueryContext(ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM stor_zone WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(ctx, "DELETE FROM stor_zone WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 	}
 
 	return nil
 }
 
-func (d *jobFeedSystem) hba() error {
+func (d *jobFeedSystem) hba(ctx context.Context) error {
 	data, ok := d.data["hba"].([]any)
 	if !ok {
 		slog.Warn("unsupported system hba data format")
@@ -160,7 +164,7 @@ func (d *jobFeedSystem) hba() error {
 
 	nodeID := d.nodeID
 	now := d.now
-	for i, _ := range data {
+	for i := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
 			slog.Warn("unsupported system hba entry format")
@@ -183,20 +187,20 @@ func (d *jobFeedSystem) hba() error {
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
+	if _, err := request.QueryContext(ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM node_hba WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(ctx, "DELETE FROM node_hba WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 	}
 
 	return nil
 }
 
-func (d *jobFeedSystem) lan() error {
+func (d *jobFeedSystem) lan(ctx context.Context) error {
 	var l []any
 	data, ok := d.data["lan"].(map[string]any)
 	if !ok {
@@ -241,20 +245,20 @@ func (d *jobFeedSystem) lan() error {
 		Data: l,
 	}
 
-	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
+	if _, err := request.QueryContext(ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM node_ip WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(ctx, "DELETE FROM node_ip WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 	}
 
 	return nil
 }
 
-func (d *jobFeedSystem) groups() error {
+func (d *jobFeedSystem) groups(ctx context.Context) error {
 	data, ok := d.data["gids"].([]any)
 	if !ok {
 		slog.Warn("unsupported system groups data format")
@@ -263,7 +267,7 @@ func (d *jobFeedSystem) groups() error {
 
 	nodeID := d.nodeID
 	now := d.now
-	for i, _ := range data {
+	for i := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
 			slog.Warn("unsupported system groups entry format")
@@ -286,20 +290,20 @@ func (d *jobFeedSystem) groups() error {
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
+	if _, err := request.QueryContext(ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM node_groups WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(ctx, "DELETE FROM node_groups WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 	}
 
 	return nil
 }
 
-func (d *jobFeedSystem) users() error {
+func (d *jobFeedSystem) users(ctx context.Context) error {
 	data, ok := d.data["uids"].([]any)
 	if !ok {
 		slog.Warn("unsupported system users data format")
@@ -308,7 +312,7 @@ func (d *jobFeedSystem) users() error {
 
 	nodeID := d.nodeID
 	now := d.now
-	for i, _ := range data {
+	for i := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
 			slog.Warn("unsupported system users entry format")
@@ -331,20 +335,20 @@ func (d *jobFeedSystem) users() error {
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
+	if _, err := request.QueryContext(ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM node_users WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(ctx, "DELETE FROM node_users WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 	}
 
 	return nil
 }
 
-func (d *jobFeedSystem) hardware() error {
+func (d *jobFeedSystem) hardware(ctx context.Context) error {
 	data, ok := d.data["hardware"].([]any)
 	if !ok {
 		slog.Warn("unsupported system hardware data format")
@@ -352,7 +356,7 @@ func (d *jobFeedSystem) hardware() error {
 	}
 	nodeID := d.nodeID
 	now := d.now
-	for i, _ := range data {
+	for i := range data {
 		line, ok := data[i].(map[string]any)
 		if !ok {
 			slog.Warn("unsupported system hardware entry format")
@@ -378,20 +382,20 @@ func (d *jobFeedSystem) hardware() error {
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(d.ctx, d.db); err != nil {
+	if _, err := request.QueryContext(ctx, d.db); err != nil {
 		return err
 	}
 
-	if rows, err := d.db.QueryContext(d.ctx, "DELETE FROM node_hw WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if rows, err := d.db.QueryContext(ctx, "DELETE FROM node_hw WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else {
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 	}
 
 	return nil
 }
 
-func (d *jobFeedSystem) properties() error {
+func (d *jobFeedSystem) properties(ctx context.Context) error {
 	data, ok := d.data["properties"].(map[string]any)
 	if !ok {
 		slog.Warn("unsupported system properties format")
@@ -464,13 +468,13 @@ func (d *jobFeedSystem) properties() error {
 		Data: data,
 	}
 
-	_, err := request.QueryContext(d.ctx, d.db)
+	_, err := request.QueryContext(ctx, d.db)
 
 	return err
 }
 
-func (d *jobFeedSystem) getData() error {
-	cmd := d.redis.HGet(d.ctx, cachekeys.FeedSystemH, d.nodeID)
+func (d *jobFeedSystem) getData(ctx context.Context) error {
+	cmd := d.redis.HGet(ctx, cachekeys.FeedSystemH, d.nodeID)
 	result, err := cmd.Result()
 	switch err {
 	case nil:
