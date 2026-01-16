@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -8,7 +9,7 @@ import (
 	"reflect"
 	"strings"
 
-	redis "github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
@@ -16,7 +17,9 @@ import (
 
 type (
 	jobFeedObjectConfig struct {
-		*BaseJob
+		JobBase
+		JobRedis
+		JobDB
 
 		// idX is the id of the posted object config with the expected pattern: <objectName>@<nodeID>@<clusterID>
 		idX string
@@ -37,10 +40,11 @@ type (
 func newFeedObjectConfig(objectName, nodeID, clusterID string) *jobFeedObjectConfig {
 	idX := fmt.Sprintf("%s@%s@%s", objectName, nodeID, clusterID)
 	return &jobFeedObjectConfig{
-		BaseJob: &BaseJob{
+		JobBase: JobBase{
 			name:   "objectConfig",
 			detail: "ID: " + idX,
-
+		},
+		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedObjectConfigPendingH,
 			cachePendingIDX: idX,
 		},
@@ -53,16 +57,16 @@ func newFeedObjectConfig(objectName, nodeID, clusterID string) *jobFeedObjectCon
 
 func (d *jobFeedObjectConfig) Operations() []operation {
 	return []operation{
-		{desc: "objectConfig/dropPending", do: d.dropPending},
-		{desc: "objectConfig/getData", do: d.getData},
-		{desc: "objectConfig/dbNow", do: d.dbNow},
-		{desc: "objectConfig/updateDB", do: d.updateDB},
-		{desc: "objectConfig/pushFromTableChanges", do: d.pushFromTableChanges},
+		{desc: "objectConfig/dropPending", doCtx: d.dropPending},
+		{desc: "objectConfig/getData", doCtx: d.getData},
+		{desc: "objectConfig/dbNow", doCtx: d.dbNow},
+		{desc: "objectConfig/updateDB", doCtx: d.updateDB},
+		{desc: "objectConfig/pushFromTableChanges", doCtx: d.pushFromTableChanges},
 	}
 }
 
-func (d *jobFeedObjectConfig) getData() error {
-	cmd := d.redis.HGet(d.ctx, cachekeys.FeedObjectConfigH, d.idX)
+func (d *jobFeedObjectConfig) getData(ctx context.Context) error {
+	cmd := d.redis.HGet(ctx, cachekeys.FeedObjectConfigH, d.idX)
 	result, err := cmd.Result()
 	switch err {
 	case nil:
@@ -77,7 +81,7 @@ func (d *jobFeedObjectConfig) getData() error {
 	return nil
 }
 
-func (d *jobFeedObjectConfig) updateDB() (err error) {
+func (d *jobFeedObjectConfig) updateDB(ctx context.Context) (err error) {
 	// expected data
 	//instanceConfigPost struct {
 	//	Path string `json:"path"`
@@ -103,7 +107,7 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 	//	RawConfig []byte `json:"raw_config"`
 	//}
 	var cfg *cdb.DBObjectConfig
-	if created, objectID, err := d.oDb.ObjectIDFindOrCreate(d.ctx, d.objectName, d.clusterID); err != nil {
+	if created, objectID, err := d.oDb.ObjectIDFindOrCreate(ctx, d.objectName, d.clusterID); err != nil {
 		return err
 	} else {
 		if created {
@@ -155,7 +159,7 @@ func (d *jobFeedObjectConfig) updateDB() (err error) {
 		cfg.Env = &s
 	}
 	slog.Info(fmt.Sprintf("insertOrUpdateObjectConfig %s@%s@%s", cfg.Name, cfg.SvcID, cfg.ClusterID))
-	if hasRowAffected, err := d.oDb.InsertOrUpdateObjectConfig(d.ctx, cfg); err != nil {
+	if hasRowAffected, err := d.oDb.InsertOrUpdateObjectConfig(ctx, cfg); err != nil {
 		return err
 	} else if hasRowAffected {
 		d.oDb.SetChange("services")

@@ -23,6 +23,9 @@ type (
 		DBLck *DBLocker
 
 		Session *Session
+
+		dbPool *sql.DB
+		hasTx  bool
 	}
 
 	// DBLocker combines a database connection and a sync.Locker
@@ -55,6 +58,31 @@ func InitDbLocker(db *sql.DB) *DBLocker {
 		dbLocker = &DBLocker{DB: db, Locker: &sync.Mutex{}}
 	})
 	return dbLocker
+}
+
+func New(dbPool *sql.DB) *DB {
+	return &DB{DB: dbPool, DBLck: InitDbLocker(dbPool), dbPool: dbPool}
+}
+
+func (odb *DB) CreateTx(ctx context.Context, opts *sql.TxOptions) error {
+	if odb.hasTx {
+		return fmt.Errorf("already in a transaction")
+	}
+	if tx, err := odb.dbPool.BeginTx(ctx, opts); err != nil {
+		return err
+	} else {
+		odb.DB = tx
+		odb.hasTx = true
+		return nil
+	}
+}
+
+func (odb *DB) CreateSession(ev eventPublisher) {
+	odb.Session = &Session{
+		db:     odb.DB,
+		ev:     ev,
+		tables: make(map[string]struct{}),
+	}
 }
 
 func (oDb *DB) Commit() error {

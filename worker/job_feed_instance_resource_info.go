@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -13,7 +14,9 @@ import (
 
 type (
 	jobFeedInstanceResourceInfo struct {
-		*BaseJob
+		JobBase
+		JobRedis
+		JobDB
 
 		// idX is the id of the posted instance config with the expected pattern: <objectName>@<nodeID>@<clusterID>
 		idX string
@@ -37,10 +40,11 @@ type (
 func newjobFeedInstanceResourceInfo(objectName, nodeID, clusterID string) *jobFeedInstanceResourceInfo {
 	idX := fmt.Sprintf("%s@%s@%s", objectName, nodeID, clusterID)
 	return &jobFeedInstanceResourceInfo{
-		BaseJob: &BaseJob{
+		JobBase: JobBase{
 			name:   "instanceResourceInfo",
 			detail: "ID: " + idX,
-
+		},
+		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedInstanceResourceInfoPendingH,
 			cachePendingIDX: idX,
 		},
@@ -53,17 +57,17 @@ func newjobFeedInstanceResourceInfo(objectName, nodeID, clusterID string) *jobFe
 
 func (j *jobFeedInstanceResourceInfo) Operations() []operation {
 	return []operation{
-		{desc: "instanceResourceInfo/dropPending", do: j.dropPending},
-		{desc: "instanceResourceInfo/getData", do: j.getData},
-		{desc: "instanceResourceInfo/dbNow", do: j.dbNow},
-		{desc: "instanceResourceInfo/updateDB", do: j.updateDB},
-		{desc: "instanceResourceInfo/purgeDB", do: j.purgeDB},
-		{desc: "instanceResourceInfo/pushFromTableChanges", do: j.pushFromTableChanges},
+		{desc: "instanceResourceInfo/dropPending", doCtx: j.dropPending},
+		{desc: "instanceResourceInfo/getData", doCtx: j.getData},
+		{desc: "instanceResourceInfo/dbNow", doCtx: j.dbNow},
+		{desc: "instanceResourceInfo/updateDB", doCtx: j.updateDB},
+		{desc: "instanceResourceInfo/purgeDB", doCtx: j.purgeDB},
+		{desc: "instanceResourceInfo/pushFromTableChanges", doCtx: j.pushFromTableChanges},
 	}
 }
 
-func (j *jobFeedInstanceResourceInfo) getData() error {
-	cmd := j.redis.HGet(j.ctx, cachekeys.FeedInstanceResourceInfoH, j.idX)
+func (j *jobFeedInstanceResourceInfo) getData(ctx context.Context) error {
+	cmd := j.redis.HGet(ctx, cachekeys.FeedInstanceResourceInfoH, j.idX)
 	result, err := cmd.Result()
 	switch err {
 	case nil:
@@ -78,8 +82,8 @@ func (j *jobFeedInstanceResourceInfo) getData() error {
 	return nil
 }
 
-func (j *jobFeedInstanceResourceInfo) updateDB() (err error) {
-	created, objectID, err := j.oDb.ObjectIDFindOrCreate(j.ctx, j.objectName, j.clusterID)
+func (j *jobFeedInstanceResourceInfo) updateDB(ctx context.Context) (err error) {
+	created, objectID, err := j.oDb.ObjectIDFindOrCreate(ctx, j.objectName, j.clusterID)
 	if err != nil {
 		return fmt.Errorf("ObjectIDFindOrCreate: %w", err)
 	}
@@ -87,7 +91,7 @@ func (j *jobFeedInstanceResourceInfo) updateDB() (err error) {
 		slog.Info(fmt.Sprintf("jobFeedInstanceResourceInfo has created new object id %s@%s %s", j.objectName, j.clusterID, objectID))
 	}
 	j.objectID = objectID
-	err = j.oDb.InstanceResourceInfoUpdate(j.ctx, objectID, j.nodeID, j.data)
+	err = j.oDb.InstanceResourceInfoUpdate(ctx, objectID, j.nodeID, j.data)
 	if err != nil {
 		return fmt.Errorf("InstanceResourceInfoUpdate: %w", err)
 	}
@@ -95,11 +99,11 @@ func (j *jobFeedInstanceResourceInfo) updateDB() (err error) {
 	return nil
 }
 
-func (j *jobFeedInstanceResourceInfo) purgeDB() (err error) {
+func (j *jobFeedInstanceResourceInfo) purgeDB(ctx context.Context) (err error) {
 	if j.objectID == "" {
 		return fmt.Errorf("purgeDB: objectID is empty")
 	}
-	err = j.oDb.InstanceResourceInfoDelete(j.ctx, j.objectID, j.nodeID, j.now)
+	err = j.oDb.InstanceResourceInfoDelete(ctx, j.objectID, j.nodeID, j.now)
 	if err != nil {
 		return fmt.Errorf("InstanceResourceInfoDelete: %w", err)
 	}

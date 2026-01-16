@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -12,14 +13,16 @@ import (
 )
 
 type jobFeedInstanceStatus struct {
-	*BaseJob
+	JobBase
+	JobRedis
+	JobDB
 
 	// idX is the id of the posted instance config with the expected pattern: <objectName>@<nodeID>@<clusterID>:<requestId>
 	idX string
 
 	objectName string
 
-	// objectID is db ID of the object found or created in database
+	// objectID is db ID of the object found or created in the database
 	objectID string
 
 	// nodeID is db ID of the node that have posted object data
@@ -43,9 +46,11 @@ type jobFeedInstanceStatus struct {
 func newInstanceStatus(objectName, nodeID, clusterID string) *jobFeedInstanceStatus {
 	idX := fmt.Sprintf("%s@%s@%s", objectName, nodeID, clusterID)
 	return &jobFeedInstanceStatus{
-		BaseJob: &BaseJob{
-			name:            "instanceStatus",
-			detail:          "ID: " + idX,
+		JobBase: JobBase{
+			name:   "instanceStatus",
+			detail: "ID: " + idX,
+		},
+		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedInstanceStatusPendingH,
 			cachePendingIDX: idX,
 		},
@@ -58,22 +63,22 @@ func newInstanceStatus(objectName, nodeID, clusterID string) *jobFeedInstanceSta
 
 func (d *jobFeedInstanceStatus) Operations() []operation {
 	return []operation{
-		{desc: "instanceStatus/dropPending", do: d.dropPending},
-		{desc: "instanceStatus/findNodeFromDb", do: d.findNodeFromDb},
-		{desc: "instanceStatus/getData", do: d.getData},
-		{desc: "instanceStatus/dbNow", do: d.dbNow},
-		{desc: "instanceStatus/findObjectFromDb", do: d.findObjectFromDb},
-		{desc: "instanceStatus/updateDB", do: d.updateDB},
-		{desc: "instanceStatus/pushFromTableChanges", do: d.pushFromTableChanges},
-		{desc: "instanceStatus/processed", do: d.processed},
+		{desc: "instanceStatus/dropPending", doCtx: d.dropPending},
+		{desc: "instanceStatus/findNodeFromDb", doCtx: d.findNodeFromDb},
+		{desc: "instanceStatus/getData", doCtx: d.getData},
+		{desc: "instanceStatus/dbNow", doCtx: d.dbNow},
+		{desc: "instanceStatus/findObjectFromDb", doCtx: d.findObjectFromDb},
+		{desc: "instanceStatus/updateDB", doCtx: d.updateDB},
+		{desc: "instanceStatus/pushFromTableChanges", doCtx: d.pushFromTableChanges},
+		{desc: "instanceStatus/processed", doCtx: d.processed},
 	}
 }
 
-func (d *jobFeedInstanceStatus) getData() error {
+func (d *jobFeedInstanceStatus) getData(ctx context.Context) error {
 	var (
 		data map[string]any
 	)
-	if b, err := d.redis.HGet(d.ctx, cachekeys.FeedInstanceStatusH, d.idX).Bytes(); err != nil {
+	if b, err := d.redis.HGet(ctx, cachekeys.FeedInstanceStatusH, d.idX).Bytes(); err != nil {
 		return fmt.Errorf("getData: HGET %s %s: %w", cachekeys.FeedInstanceStatusH, d.idX, err)
 	} else if err = json.Unmarshal(b, &data); err != nil {
 		return fmt.Errorf("getData: unexpected data from %s %s: %w", cachekeys.FeedInstanceStatusH, d.idX, err)
@@ -100,8 +105,8 @@ func (d *jobFeedInstanceStatus) getData() error {
 	return nil
 }
 
-func (d *jobFeedInstanceStatus) findNodeFromDb() error {
-	if n, err := d.oDb.NodeByNodeID(d.ctx, d.nodeID); err != nil {
+func (d *jobFeedInstanceStatus) findNodeFromDb(ctx context.Context) error {
+	if n, err := d.oDb.NodeByNodeID(ctx, d.nodeID); err != nil {
 		return fmt.Errorf("findFromDb: node %s: %w", d.nodeID, err)
 	} else {
 		d.node = n
@@ -112,8 +117,8 @@ func (d *jobFeedInstanceStatus) findNodeFromDb() error {
 
 }
 
-func (d *jobFeedInstanceStatus) findObjectFromDb() error {
-	if isNew, objId, err := d.oDb.ObjectIDFindOrCreate(d.ctx, d.objectName, d.clusterID); err != nil {
+func (d *jobFeedInstanceStatus) findObjectFromDb(ctx context.Context) error {
+	if isNew, objId, err := d.oDb.ObjectIDFindOrCreate(ctx, d.objectName, d.clusterID); err != nil {
 		return fmt.Errorf("find or create object ID failed for %s: %w", d.objectName, err)
 	} else if isNew {
 		slog.Info(fmt.Sprintf("jobFeedInstanceStatus has created new object id %s@%s %s", d.objectName, d.clusterID, objId))
@@ -121,7 +126,7 @@ func (d *jobFeedInstanceStatus) findObjectFromDb() error {
 		d.objectID = objId
 	}
 
-	if obj, err := d.oDb.ObjectFromID(d.ctx, d.objectID); err != nil {
+	if obj, err := d.oDb.ObjectFromID(ctx, d.objectID); err != nil {
 		return fmt.Errorf("findFromDb: object %s: %w", d.objectID, err)
 	} else if obj == nil {
 		return fmt.Errorf("findFromDb: object %s: not found", d.objectID)
@@ -133,10 +138,11 @@ func (d *jobFeedInstanceStatus) findObjectFromDb() error {
 	return nil
 }
 
-func (d *jobFeedInstanceStatus) updateDB() error {
+func (d *jobFeedInstanceStatus) updateDB(ctx context.Context) error {
 	imonStates := make(map[string]bool)
 	changes := make(map[string]struct{})
 	err := d.dbUpdateInstance(
+		ctx,
 		d.status,
 		d.objectID,
 		d.nodeID,
@@ -154,7 +160,7 @@ func (d *jobFeedInstanceStatus) updateDB() error {
 	return nil
 }
 
-func (d *jobFeedInstanceStatus) processed() error {
-	_ = d.redis.Publish(d.ctx, cachekeys.FeedInstanceStatusP, d.idX)
+func (d *jobFeedInstanceStatus) processed(ctx context.Context) error {
+	_ = d.redis.Publish(ctx, cachekeys.FeedInstanceStatusP, d.idX)
 	return nil
 }

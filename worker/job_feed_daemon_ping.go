@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -12,7 +13,9 @@ import (
 
 type (
 	jobFeedDaemonPing struct {
-		*BaseJob
+		JobBase
+		JobRedis
+		JobDB
 
 		nodeID     string
 		clusterID  string
@@ -31,10 +34,11 @@ type (
 
 func newDaemonPing(nodeID string) *jobFeedDaemonPing {
 	return &jobFeedDaemonPing{
-		BaseJob: &BaseJob{
+		JobBase: JobBase{
 			name:   "daemonPing",
 			detail: "nodeID: " + nodeID,
-
+		},
+		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedDaemonPingPendingH,
 			cachePendingIDX: nodeID,
 		},
@@ -50,20 +54,20 @@ func newDaemonPing(nodeID string) *jobFeedDaemonPing {
 
 func (d *jobFeedDaemonPing) Operations() []operation {
 	return []operation{
-		{desc: "daemonPing/dropPending", do: d.dropPending},
-		{desc: "daemonPing/getData", do: d.getData},
-		{desc: "daemonPing/dbFetchNodes", do: d.dbFetchNodes},
-		{desc: "daemonPing/dbFetchObjects", do: d.dbFetchObjects},
-		{desc: "daemonPing/dbPingInstances", do: d.dbPingInstances},
-		{desc: "daemonPing/dbPingObjects", do: d.dbPingObjects},
-		{desc: "daemonPing/cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
-		{desc: "daemonPing/pushFromTableChanges", do: d.pushFromTableChanges},
+		{desc: "daemonPing/dropPending", doCtx: d.dropPending},
+		{desc: "daemonPing/getData", doCtx: d.getData},
+		{desc: "daemonPing/dbFetchNodes", doCtx: d.dbFetchNodes},
+		{desc: "daemonPing/dbFetchObjects", doCtx: d.dbFetchObjects},
+		{desc: "daemonPing/dbPingInstances", doCtx: d.dbPingInstances},
+		{desc: "daemonPing/dbPingObjects", doCtx: d.dbPingObjects},
+		{desc: "daemonPing/cacheObjectsWithoutConfig", doCtx: d.cacheObjectsWithoutConfig},
+		{desc: "daemonPing/pushFromTableChanges", doCtx: d.pushFromTableChanges},
 	}
 }
 
-func (d *jobFeedDaemonPing) getData() error {
+func (d *jobFeedDaemonPing) getData(ctx context.Context) error {
 	var data api.PostFeedDaemonPing
-	if b, err := d.redis.HGet(d.ctx, cachekeys.FeedDaemonPingH, d.nodeID).Bytes(); err != nil {
+	if b, err := d.redis.HGet(ctx, cachekeys.FeedDaemonPingH, d.nodeID).Bytes(); err != nil {
 		return fmt.Errorf("getData: HGET %s %s: %w", cachekeys.FeedDaemonPingH, d.nodeID, err)
 	} else if err = json.Unmarshal(b, &data); err != nil {
 		return fmt.Errorf("getData: unexpected data from %s %s: %w", cachekeys.FeedDaemonPingH, d.nodeID, err)
@@ -81,11 +85,11 @@ func (d *jobFeedDaemonPing) getData() error {
 
 // dbFetchNodes fetch nodes (that are associated with caller node ID) from database
 // and sets d.byNodeID and d.clusterID.
-func (d *jobFeedDaemonPing) dbFetchNodes() (err error) {
+func (d *jobFeedDaemonPing) dbFetchNodes(ctx context.Context) (err error) {
 	var (
 		dbNodes []*cdb.DBNode
 	)
-	if dbNodes, err = d.oDb.ClusterNodesFromNodeID(d.ctx, d.nodeID); err != nil {
+	if dbNodes, err = d.oDb.ClusterNodesFromNodeID(ctx, d.nodeID); err != nil {
 		return fmt.Errorf("dbFetchNodes %s: %w", d.nodeID, err)
 	}
 	for _, n := range dbNodes {
@@ -104,11 +108,11 @@ func (d *jobFeedDaemonPing) dbFetchNodes() (err error) {
 	return nil
 }
 
-func (d *jobFeedDaemonPing) dbFetchObjects() (err error) {
+func (d *jobFeedDaemonPing) dbFetchObjects(ctx context.Context) (err error) {
 	var (
 		objects []*cdb.DBObject
 	)
-	if objects, err = d.oDb.ObjectsFromClusterID(d.ctx, d.clusterID); err != nil {
+	if objects, err = d.oDb.ObjectsFromClusterID(ctx, d.clusterID); err != nil {
 		return fmt.Errorf("dbFetchObjects query node %s (%s) clusterID: %s: %w",
 			d.callerNode.Nodename, d.nodeID, d.clusterID, err)
 	}
@@ -124,9 +128,9 @@ func (d *jobFeedDaemonPing) dbFetchObjects() (err error) {
 }
 
 // dbPingInstances call oDb.InstancePingFromNodeID for all db fetched nodes
-func (d *jobFeedDaemonPing) dbPingInstances() error {
+func (d *jobFeedDaemonPing) dbPingInstances(ctx context.Context) error {
 	for nodeID := range d.byNodeID {
-		if ok, err := d.oDb.InstancePingFromNodeID(d.ctx, nodeID); err != nil {
+		if ok, err := d.oDb.InstancePingFromNodeID(ctx, nodeID); err != nil {
 			return fmt.Errorf("dbPingInstances: %w", err)
 		} else if ok {
 			continue
@@ -136,12 +140,12 @@ func (d *jobFeedDaemonPing) dbPingInstances() error {
 }
 
 // dbPingObjects call oDb.objectPing for all db fetched objects
-func (d *jobFeedDaemonPing) dbPingObjects() (err error) {
+func (d *jobFeedDaemonPing) dbPingObjects(ctx context.Context) (err error) {
 	for objectID, obj := range d.byObjectID {
 		objectName := obj.Svcname
 		if obj.AvailStatus != "undef" {
 			slog.Debug(fmt.Sprintf("ping svc %s %s", objectName, objectID))
-			if _, err := d.oDb.ObjectPing(d.ctx, objectID); err != nil {
+			if _, err := d.oDb.ObjectPing(ctx, objectID); err != nil {
 				return fmt.Errorf("dbPingObjects can't ping object %s %s: %w", objectName, objectID, err)
 			}
 		}
@@ -150,8 +154,8 @@ func (d *jobFeedDaemonPing) dbPingObjects() (err error) {
 }
 
 // cacheObjectsWithoutConfig populate FeedObjectConfigForClusterIDH with names of objects without config
-func (d *jobFeedDaemonPing) cacheObjectsWithoutConfig() error {
-	objects, err := d.populateFeedObjectConfigForClusterIDH(d.clusterID, d.byObjectID)
+func (d *jobFeedDaemonPing) cacheObjectsWithoutConfig(ctx context.Context) error {
+	objects, err := d.populateFeedObjectConfigForClusterIDH(ctx, d.clusterID, d.byObjectID)
 	if len(objects) > 0 {
 		slog.Info(fmt.Sprintf("daemonPing nodeID: %s need object config: %s", d.nodeID, objects))
 	}
