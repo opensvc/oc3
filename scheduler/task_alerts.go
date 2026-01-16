@@ -45,7 +45,6 @@ var TaskAlert1D = Task{
 		TaskAlertNodeCloseToMaintenanceEnd,
 		TaskAlertNodeMaintenanceExpired,
 		TaskAlertNodeWithoutMaintenanceEnd,
-		TaskAlertPackageDifferencesInCluster,
 		TaskAlertPurgeActionErrors,
 		TaskPurgeAlertsOnDeletedInstances,
 	},
@@ -128,12 +127,6 @@ var TaskLogAppsWithoutResponsible = Task{
 var TaskLogInstancesNotUpdated = Task{
 	name:    "log_instances_not_updated",
 	fn:      taskLogInstancesNotUpdated,
-	timeout: 5 * time.Minute,
-}
-
-var TaskAlertPackageDifferencesInCluster = Task{
-	name:    "alert_package_differences_in_cluster",
-	fn:      taskAlertPackageDifferencesInCluster,
 	timeout: 5 * time.Minute,
 }
 
@@ -264,21 +257,6 @@ func taskLogInstancesNotUpdated(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 	if err := odb.LogInstancesNotUpdated(ctx); err != nil {
-		return err
-	}
-	if err := odb.Session.NotifyChanges(ctx); err != nil {
-		return err
-	}
-	return odb.Commit()
-}
-
-func taskAlertPackageDifferencesInCluster(ctx context.Context, task *Task) error {
-	odb, err := task.DBX(ctx)
-	if err != nil {
-		return err
-	}
-	defer odb.Rollback()
-	if err := odb.DashboardUpdatePkgDiff(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
