@@ -93,6 +93,12 @@ var TaskScrubSvcdisks = Task{
 	timeout: time.Minute,
 }
 
+var TaskScrubStatic = Task{
+	name:    "scrub_static",
+	fn:      taskScrubStatic,
+	timeout: time.Minute,
+}
+
 var TaskScrubTempviz = Task{
 	name:    "scrub_tempviz",
 	fn:      taskScrubTempviz,
@@ -157,6 +163,7 @@ var TaskScrub1D = Task{
 		TaskScrubPatches,
 		TaskScrubPdf,
 		TaskScrubResmon,
+		TaskScrubStatic,
 		TaskScrubStorArray,
 		TaskScrubSvcdisks,
 		TaskUpdateStorArrayDGQuota,
@@ -578,21 +585,12 @@ func taskUpdateStorArrayDGQuota(ctx context.Context, task *Task) error {
 	return odb.Commit()
 }
 
-func taskScrubTempviz(ctx context.Context, task *Task) error {
-	threshold := time.Now().Add(-1 * time.Hour)
-	directories := viper.GetStringSlice("scheduler.task.scrub_tempviz.directories")
-	if len(directories) == 0 {
-		slog.Warn("skip: define scheduler.task.scrub_tempviz.directories")
-		return nil
-	}
+func scrubFiles(pattern string, threshold time.Time) error {
 	var matches []string
-	for _, directory := range directories {
-		pattern := filepath.Join(directory, "tempviz*")
-		if m, err := filepath.Glob(pattern); err != nil {
-			return fmt.Errorf("failed to glob files: %w", err)
-		} else {
-			matches = append(matches, m...)
-		}
+	if m, err := filepath.Glob(pattern); err != nil {
+		return fmt.Errorf("failed to glob files: %w", err)
+	} else {
+		matches = append(matches, m...)
 	}
 	for _, fpath := range matches {
 		fileInfo, err := os.Stat(fpath)
@@ -610,36 +608,53 @@ func taskScrubTempviz(ctx context.Context, task *Task) error {
 	return nil
 }
 
-func taskScrubPdf(ctx context.Context, task *Task) error {
-	threshold := time.Now().Add(-24 * time.Hour)
-	directories := viper.GetStringSlice("scheduler.task.scrub_pdf.directories")
-	if len(directories) == 0 {
-		slog.Warn("skip: define scheduler.task.scrub_pdf.directories")
+func taskScrubStatic(ctx context.Context, task *Task) error {
+	threshold := time.Now().Add(-1 * time.Hour)
+	directory := viper.GetString("scheduler.directories.static")
+	if directory == "" {
+		slog.Warn("skip: define scheduler.directories.static")
 		return nil
 	}
-	var matches []string
-	for _, directory := range directories {
-		pattern := filepath.Join(directory, "*-*-*-*-*.pdf")
-		if m, err := filepath.Glob(pattern); err != nil {
-			return fmt.Errorf("failed to glob files: %w", err)
-		} else {
-			matches = append(matches, m...)
-		}
+	if err := scrubFiles(filepath.Join(directory, "tempviz*.png"), threshold); err != nil {
+		return err
 	}
-	for _, fpath := range matches {
-		fileInfo, err := os.Stat(fpath)
-		if err != nil {
-			return err
-		}
-		mtime := fileInfo.ModTime()
-		if mtime.Before(threshold) {
-			slog.Info(fmt.Sprintf("rm %s mtime %s", fpath, mtime))
-			if err := os.Remove(fpath); err != nil {
-				return fmt.Errorf("failed to rm %s: %w", fpath, err)
-			}
-		}
+	if err := scrubFiles(filepath.Join(directory, "tempviz*.dot"), threshold); err != nil {
+		return err
+	}
+	if err := scrubFiles(filepath.Join(directory, "stats_*_[0-9]*.png"), threshold); err != nil {
+		return err
+	}
+	if err := scrubFiles(filepath.Join(directory, "stat_*_[0-9]*.png"), threshold); err != nil {
+		return err
+	}
+	if err := scrubFiles(filepath.Join(directory, "stats_*_[0-9]*.svg"), threshold); err != nil {
+		return err
+	}
+	if err := scrubFiles(filepath.Join(directory, "*-*-*-*.pdf"), threshold); err != nil {
+		return err
 	}
 	return nil
+
+}
+
+func taskScrubTempviz(ctx context.Context, task *Task) error {
+	threshold := time.Now().Add(-1 * time.Hour)
+	directory := viper.GetString("scheduler.directories.static")
+	if directory == "" {
+		slog.Warn("skip: define scheduler.directories.static")
+		return nil
+	}
+	return scrubFiles(filepath.Join(directory, "tempviz*"), threshold)
+}
+
+func taskScrubPdf(ctx context.Context, task *Task) error {
+	threshold := time.Now().Add(-24 * time.Hour)
+	directory := viper.GetString("scheduler.directories.static")
+	if directory == "" {
+		slog.Warn("skip: define scheduler.directories.static")
+		return nil
+	}
+	return scrubFiles(filepath.Join(directory, "*-*-*-*-*.pdf"), threshold)
 }
 
 func taskScrubUnfinishedActions(ctx context.Context, task *Task) error {
