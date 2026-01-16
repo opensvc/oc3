@@ -134,7 +134,7 @@ func (d *jobFeedActionBegin) updateDB() error {
 		}
 	}
 
-	d.oDb.InsertSvcAction(d.ctx, objectUUID, nodeUUID, d.data.Action, beginTime, status_log, d.data.SessionUuid)
+	d.oDb.InsertSvcAction(d.ctx, objectUUID, nodeUUID, d.data.Action, beginTime, status_log, d.data.SessionUuid, d.data.Cron)
 
 	return nil
 }

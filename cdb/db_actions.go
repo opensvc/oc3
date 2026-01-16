@@ -211,11 +211,11 @@ func (oDb *DB) GetUnfinishedActions(ctx context.Context) (lines []SvcAction, err
 
 }
 
-func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, action string, begin time.Time, status_log string, sid string) (int64, error) {
-	query := `INSERT INTO svcactions (svc_id, node_id, action, begin, status_log, sid)
-		VALUES (?, ?, ?, ?, ?, ?)`
+func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, action string, begin time.Time, status_log string, sid string, cron bool) (int64, error) {
+	query := `INSERT INTO svcactions (svc_id, node_id, action, begin, status_log, sid, cron)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`
 
-	result, err := oDb.DB.ExecContext(ctx, query, svcID, nodeID, action, begin, status_log, sid)
+	result, err := oDb.DB.ExecContext(ctx, query, svcID, nodeID, action, begin, status_log, sid, cron)
 	if err != nil {
 		return 0, err
 	}
