@@ -63,7 +63,6 @@ func (d *jobFeedAction) getData() error {
 	var (
 		data api.PostFeedActionJSONRequestBody
 	)
-	slog.Info(fmt.Sprintf("xxx - get - %S", d.idX))
 	if b, err := d.redis.HGet(d.ctx, cachekeys.FeedActionH, d.idX).Bytes(); err != nil {
 		return fmt.Errorf("getData: HGET %s %s: %w", cachekeys.FeedActionH, d.idX, err)
 	} else if err = json.Unmarshal(b, &data); err != nil {
@@ -78,7 +77,6 @@ func (d *jobFeedAction) getData() error {
 }
 
 func (d *jobFeedAction) findNodeFromDb() error {
-	slog.Info(fmt.Sprintf("xxx - NOdename - %s", d.nodeID))
 	if n, err := d.oDb.NodeByNodeID(d.ctx, d.nodeID); err != nil {
 		return fmt.Errorf("findNodeFromDb: node %s: %w", d.nodeID, err)
 	} else {
