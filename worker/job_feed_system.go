@@ -100,7 +100,9 @@ func (d *jobFeedSystem) pkg() error {
 	} else {
 		defer rows.Close()
 	}
-
+	if err := d.oDb.DashboardUpdatePkgDiffForNode(d.ctx, nodeID); err != nil {
+		return err
+	}
 	return nil
 }
 

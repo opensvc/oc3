@@ -2,8 +2,11 @@ package cdb
 
 import (
 	"context"
+	"crypto/md5"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -780,5 +783,216 @@ func (oDb *DB) DashboardUpdateAppWithoutResponsible(ctx context.Context) error {
 	} else if rowAffected > 0 {
 		oDb.SetChange("dashboard")
 	}
+	return nil
+}
+
+func (oDb *DB) DashboardUpdatePkgDiffForNode(ctx context.Context, nodeID string) error {
+	request := `SET @now = NOW()`
+	_, err := oDb.DB.ExecContext(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	processSvcID := func(svcID, monSvctype, monVmtype string) error {
+		var query string
+		if monVmtype != "" {
+			// encap peers
+			query = `
+				SELECT DISTINCT nodes.node_id, nodes.nodename
+				FROM svcmon
+				JOIN nodes ON svcmon.node_id = nodes.node_id
+				WHERE svcmon.svc_id = ?
+				AND svcmon.mon_updated > DATE_SUB(NOW(), INTERVAL 20 MINUTE)
+				AND svcmon.mon_vmtype != ""
+				ORDER BY nodes.nodename
+			`
+		} else {
+			// non-encap peers
+			query = `
+				SELECT DISTINCT nodes.node_id, nodes.nodename
+				FROM svcmon
+				JOIN nodes ON svcmon.node_id = nodes.node_id
+				WHERE svcmon.svc_id = ?
+				AND svcmon.mon_updated > DATE_SUB(NOW(), INTERVAL 20 MINUTE)
+				AND svcmon.mon_vmtype = ""
+				ORDER BY nodes.nodename
+			`
+		}
+
+		rows, err := oDb.DB.QueryContext(ctx, query, svcID)
+		if err != nil {
+			return fmt.Errorf("failed to query nodes: %v", err)
+		}
+		defer rows.Close()
+
+		var nodeIDs []string
+		var nodenames []string
+		for rows.Next() {
+			var nodeID string
+			var nodename string
+			if err := rows.Scan(&nodeID, &nodename); err != nil {
+				return fmt.Errorf("failed to scan node row: %v", err)
+			}
+			nodeIDs = append(nodeIDs, nodeID)
+			nodenames = append(nodenames, nodename)
+		}
+
+		if len(nodeIDs) < 2 {
+			return nil
+		}
+
+		// Count pkg diffs
+		var pkgDiffCount int
+		placeholders := make([]string, len(nodeIDs))
+		args := make([]any, len(nodeIDs))
+		for i, id := range nodeIDs {
+			placeholders[i] = "?"
+			args[i] = id
+		}
+		query = fmt.Sprintf(`
+			SELECT COUNT(pkg_name)
+			FROM (
+				SELECT
+					pkg_name,
+					pkg_version,
+					pkg_arch,
+					pkg_type,
+					COUNT(DISTINCT node_id) AS c
+				FROM packages
+				WHERE
+					node_id IN (%s)
+					AND pkg_name NOT LIKE "gpg-pubkey%%"
+				GROUP BY
+					pkg_name,
+					pkg_version,
+					pkg_arch,
+					pkg_type
+			) AS t
+			WHERE t.c != ?
+		`, strings.Join(placeholders, ","))
+		args = append(args, len(nodeIDs))
+
+		err = oDb.DB.QueryRowContext(ctx, query, args...).Scan(&pkgDiffCount)
+		if err != nil {
+			return fmt.Errorf("failed to count package differences: %v", err)
+		}
+
+		if pkgDiffCount == 0 {
+			return nil
+		}
+
+		sev := 0
+		if monSvctype == "PRD" {
+			sev = 1
+		}
+
+		// truncate too long node names list
+		skip := 0
+		trail := ""
+		nodesStr := strings.Join(nodenames, ",")
+		for len(nodesStr)+len(trail) > 50 {
+			skip++
+			nodenames = nodenames[:len(nodenames)-1]
+			nodesStr = strings.Join(nodenames, ",")
+			trail = fmt.Sprintf(", ... (+%d)", skip)
+		}
+		nodesStr += trail
+
+		// Format dash_dict JSON content
+		dashDict := map[string]any{
+			"n":     pkgDiffCount,
+			"nodes": nodesStr,
+		}
+		dashDictJSON, err := json.Marshal(dashDict)
+		if err != nil {
+			return fmt.Errorf("failed to marshal dash_dict: %v", err)
+		}
+
+		dashDictMD5 := fmt.Sprintf("%x", md5.Sum(dashDictJSON))
+
+		query = `
+			INSERT INTO dashboard
+			SET
+				dash_type = "package differences in cluster",
+				svc_id = ?,
+				node_id = "",
+				dash_severity = ?,
+				dash_fmt = "%(n)s package differences in cluster %(nodes)s",
+				dash_dict = ?,
+				dash_dict_md5 = ?,
+				dash_created = @now,
+				dash_updated = @now,
+				dash_env = ?
+			ON DUPLICATE KEY UPDATE
+				dash_severity = ?,
+				dash_fmt = "%(n)s package differences in cluster %(nodes)s",
+				dash_dict = ?,
+				dash_dict_md5 = ?,
+				dash_updated = @now,
+				dash_env = ?
+		`
+
+		_, err = oDb.DB.ExecContext(ctx, query,
+			svcID, sev, dashDictJSON, dashDictMD5, monSvctype,
+			sev, dashDictJSON, dashDictMD5, monSvctype,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to insert/update dashboard: %v", err)
+		}
+
+		return nil
+	}
+
+	// Get the list of svc_id for instances having recently updated status
+	rows, err := oDb.DB.QueryContext(ctx, `
+		SELECT svcmon.svc_id, svcmon.mon_svctype, svcmon.mon_vmtype
+		FROM svcmon
+		JOIN nodes ON svcmon.node_id = nodes.node_id
+		WHERE svcmon.node_id = ? AND svcmon.mon_updated > DATE_SUB(NOW(), INTERVAL 19 MINUTE)
+	`, nodeID)
+	if err != nil {
+		return fmt.Errorf("failed to query svcmon: %v", err)
+	}
+	defer rows.Close()
+
+	var svcIDs []any
+	todo := make(map[string]func() error)
+	for rows.Next() {
+		var svcID string
+		var monSvctype, monVmtype sql.NullString
+		if err := rows.Scan(&svcID, &monSvctype, &monVmtype); err != nil {
+			return fmt.Errorf("failed to scan svcmon row: %v", err)
+		}
+
+		// Remember which svc_id needs non-updated alert clean up
+		svcIDs = append(svcIDs, svcID)
+
+		// Defer after rows.Close() to avoid busy db conn errors
+		todo[svcID] = func() error {
+			return processSvcID(svcID, monSvctype.String, monVmtype.String)
+		}
+	}
+	rows.Close()
+	for svcID, fn := range todo {
+		if err := fn(); err != nil {
+			return fmt.Errorf("failed to process svc_id %s: %v", svcID, err)
+		}
+	}
+
+	// Clean up non updated alerts
+	if len(svcIDs) > 0 {
+		query := fmt.Sprintf(`
+			DELETE FROM dashboard
+			WHERE svc_id IN (%s)
+			AND dash_type = "package differences in cluster"
+			AND dash_updated < @now
+		`, Placeholders(len(svcIDs)))
+
+		_, err := oDb.DB.ExecContext(ctx, query, svcIDs...)
+		if err != nil {
+			return fmt.Errorf("failed to delete old dashboard entries: %v", err)
+		}
+	}
+
 	return nil
 }

@@ -16,7 +16,7 @@ var TaskAlert1M = Task{
 		TaskAlertInstancesNotUpdated,
 	},
 	period:  time.Minute,
-	timeout: 15 * time.Minute,
+	timeout: 15 * time.Second,
 }
 
 var TaskAlert1H = Task{
