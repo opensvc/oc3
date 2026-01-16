@@ -298,7 +298,7 @@ func (oDb *DB) UpdateActionErrors(ctx context.Context, svcID string, nodeID stri
 }
 
 // UpdateDashActionErrors updates the dashboard with action errors.
-func (oDb *DB) UpdateDashActionErrors(ctx context.Context, svcID, nodeID string) error {
+func (oDb *DB) UpdateDashActionErrors(ctx context.Context, svcID string, nodeID string) error {
 	const query = `SELECT e.err, s.svc_env FROM b_action_errors e
              JOIN services s ON e.svc_id=s.svc_id
              WHERE
@@ -306,7 +306,7 @@ func (oDb *DB) UpdateDashActionErrors(ctx context.Context, svcID, nodeID string)
                e.node_id = ?`
 
 	var errCount int
-	var svcEnv string
+	var svcEnv sql.NullString
 	var err error
 
 	err = oDb.DB.QueryRowContext(ctx, query, svcID, nodeID).Scan(&errCount, &svcEnv)
@@ -316,7 +316,7 @@ func (oDb *DB) UpdateDashActionErrors(ctx context.Context, svcID, nodeID string)
 
 	if err == nil {
 		sev := 3
-		if svcEnv == "PRD" {
+		if svcEnv.Valid && svcEnv.String == "PRD" {
 			sev = 4
 		}
 		const queryInsert = `INSERT INTO dashboard
