@@ -220,16 +220,16 @@ func (oDb *DB) AppIDFromObjectID(ctx context.Context, objectID string) (int64, b
 //		               q &= db.apps.app == db.nodes.app
 //		               return db(q).select(db.apps.ALL).first()
 //		           return row
-func (odb *DB) AppIDFromObjectOrNodeIDs(ctx context.Context, nodeID, objectID string) (int64, bool, error) {
+func (oDb *DB) AppIDFromObjectOrNodeIDs(ctx context.Context, nodeID, objectID string) (int64, bool, error) {
 	if objectID != "" {
-		if found, ok, err := odb.AppIDFromObjectID(ctx, objectID); err == nil {
+		if found, ok, err := oDb.AppIDFromObjectID(ctx, objectID); err == nil {
 			// abort on error
 			return found, ok, err
 		} else if ok {
 			return found, ok, err
 		}
 	}
-	return odb.AppIDFromNodeID(ctx, nodeID)
+	return oDb.AppIDFromNodeID(ctx, nodeID)
 }
 
 func (oDb *DB) AppsWithoutResponsible(ctx context.Context) (apps []string, err error) {

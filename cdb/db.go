@@ -64,28 +64,31 @@ func New(dbPool *sql.DB) *DB {
 	return &DB{DB: dbPool, DBLck: InitDbLocker(dbPool), dbPool: dbPool}
 }
 
-func (odb *DB) CreateTx(ctx context.Context, opts *sql.TxOptions) error {
-	if odb.hasTx {
+func (oDb *DB) CreateTx(ctx context.Context, opts *sql.TxOptions) error {
+	if oDb.hasTx {
 		return fmt.Errorf("already in a transaction")
 	}
-	if tx, err := odb.dbPool.BeginTx(ctx, opts); err != nil {
+	if tx, err := oDb.dbPool.BeginTx(ctx, opts); err != nil {
 		return err
 	} else {
-		odb.DB = tx
-		odb.hasTx = true
+		oDb.DB = tx
+		oDb.hasTx = true
 		return nil
 	}
 }
 
-func (odb *DB) CreateSession(ev eventPublisher) {
-	odb.Session = &Session{
-		db:     odb.DB,
+func (oDb *DB) CreateSession(ev eventPublisher) {
+	oDb.Session = &Session{
+		db:     oDb.DB,
 		ev:     ev,
 		tables: make(map[string]struct{}),
 	}
 }
 
 func (oDb *DB) Commit() error {
+	if !oDb.hasTx {
+		return nil
+	}
 	tx, ok := oDb.DB.(DBTxer)
 	if !ok {
 		return nil
@@ -94,6 +97,10 @@ func (oDb *DB) Commit() error {
 }
 
 func (oDb *DB) Rollback() error {
+	if !oDb.hasTx {
+		return nil
+	}
+	defer func() { oDb.hasTx = false }()
 	tx, ok := oDb.DB.(DBTxer)
 	if !ok {
 		return nil
