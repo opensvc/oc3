@@ -42,7 +42,7 @@ func (a *Api) PutFeedActionEnd(c echo.Context) error {
 
 	reqCtx := c.Request().Context()
 
-	idx := fmt.Sprintf("%s@%s@%s", payload.Path, nodeID, ClusterID)
+	idx := fmt.Sprintf("%s@%s@%s:%s", payload.Path, nodeID, ClusterID, payload.Action)
 
 	s := fmt.Sprintf("HSET %s %s", keyH, idx)
 	if _, err := a.Redis.HSet(reqCtx, keyH, idx, b).Result(); err != nil {

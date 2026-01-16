@@ -18,7 +18,7 @@ type jobFeedActionBegin struct {
 	clusterID string
 	node      *cdb.DBNode
 
-	// idX is the id of the posted action begin with the pattern: <nodeID>@<clusterID>
+	// idX is the id of the posted action begin with the pattern: <objectName>@<nodeID>@<clusterID>:<action>
 	idX string
 
 	objectName string
@@ -30,8 +30,8 @@ type jobFeedActionBegin struct {
 	rawData []byte // necessaire ?
 }
 
-func newActionBegin(objectName, nodeID, clusterID string) *jobFeedActionBegin {
-	idX := fmt.Sprintf("%s@%s@%s", objectName, nodeID, clusterID)
+func newActionBegin(objectName, nodeID, clusterID, action string) *jobFeedActionBegin {
+	idX := fmt.Sprintf("%s@%s@%s:%s", objectName, nodeID, clusterID, action)
 	return &jobFeedActionBegin{
 		BaseJob: &BaseJob{
 			name:            "actionBegin",

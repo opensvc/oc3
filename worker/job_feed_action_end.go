@@ -17,7 +17,7 @@ type jobFeedActionEnd struct {
 	clusterID string
 	node      *cdb.DBNode
 
-	// idX is the id of the posted action end with the pattern: <nodeID>@<clusterID>
+	// idX is the id of the posted action end with the pattern: <objectName>@<nodeID>@<clusterID>:<action>
 	idX string
 
 	objectName string
@@ -29,8 +29,8 @@ type jobFeedActionEnd struct {
 	rawData []byte
 }
 
-func newActionEnd(objectName, nodeID, clusterID string) *jobFeedActionEnd {
-	idX := fmt.Sprintf("%s@%s@%s", objectName, nodeID, clusterID)
+func newActionEnd(objectName, nodeID, clusterID, action string) *jobFeedActionEnd {
+	idX := fmt.Sprintf("%s@%s@%s:%s", objectName, nodeID, clusterID, action)
 	return &jobFeedActionEnd{
 		BaseJob: &BaseJob{
 			name:            "actionEnd",
