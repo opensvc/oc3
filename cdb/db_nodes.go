@@ -28,6 +28,7 @@ type (
 		EnclosureSlot string
 		Enclosure     string
 		Hv            string
+		Tz            string
 	}
 )
 
@@ -43,19 +44,19 @@ func (oDb *DB) NodeByNodeID(ctx context.Context, nodeID string) (*DBNode, error)
 	var (
 		query = `SELECT nodename, cluster_id, node_env, app, hv, node_frozen,
 				loc_country, loc_city, loc_addr, loc_building, loc_floor, loc_room,
-				loc_rack, loc_zip, enclosure, enclosureslot
+				loc_rack, loc_zip, enclosure, enclosureslot, tz
 			FROM nodes WHERE node_id = ? LIMIT 1`
 
 		nodename, clusterID, nodeEnv, app, hv, frozen, locCountry sql.NullString
 		locCity, locAddr, locBuilding, locFloor, locRoom, locRack sql.NullString
-		locZip, enclosure, enclosureSlot                          sql.NullString
+		locZip, enclosure, enclosureSlot, tz                      sql.NullString
 	)
 	err := oDb.DB.
 		QueryRowContext(ctx, query, nodeID).
 		Scan(
 			&nodename, &clusterID, &nodeEnv, &app, &hv, &frozen,
 			&locCountry, &locCity, &locAddr, &locBuilding, &locFloor, &locRoom,
-			&locRack, &locZip, &enclosure, &enclosureSlot)
+			&locRack, &locZip, &enclosure, &enclosureSlot, &tz)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -80,6 +81,7 @@ func (oDb *DB) NodeByNodeID(ctx context.Context, nodeID string) (*DBNode, error)
 			Enclosure:     enclosure.String,
 			EnclosureSlot: enclosureSlot.String,
 			Hv:            hv.String,
+			Tz:            tz.String,
 		}
 		return &node, nil
 	}

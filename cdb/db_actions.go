@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -208,4 +209,163 @@ func (oDb *DB) GetUnfinishedActions(ctx context.Context) (lines []SvcAction, err
 	err = rows.Err()
 	return
 
+}
+
+func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, action string, begin time.Time, status_log string, sid string, cron bool, end time.Time, status string) (int64, error) {
+	query := "INSERT INTO svcactions (svc_id, node_id, action, begin, status_log, sid, cron"
+	placeholders := "?, ?, ?, ?, ?, ?, ?"
+	args := []any{svcID, nodeID, action, begin, status_log, sid, cron}
+
+	if !end.IsZero() {
+		query += ", end"
+		placeholders += ", ?"
+		args = append(args, end)
+	}
+	if status != "" {
+		query += ", status"
+		placeholders += ", ?"
+		args = append(args, status)
+	}
+	query += fmt.Sprintf(") VALUES (%s)", placeholders)
+
+	result, err := oDb.DB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	if rowsAffected, err := result.RowsAffected(); err != nil {
+		return id, err
+	} else if rowsAffected > 0 {
+		oDb.SetChange("svcactions")
+	}
+
+	return id, nil
+}
+
+func (oDb *DB) UpdateSvcAction(ctx context.Context, svcActionID int64, end time.Time, status string) error {
+	const query = `UPDATE svcactions SET end = ?, status = ?, time = TIMESTAMPDIFF(SECOND, begin, ?) WHERE id = ?`
+	result, err := oDb.DB.ExecContext(ctx, query, end, status, end, svcActionID)
+	if err != nil {
+		return err
+	}
+	if rowsAffected, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rowsAffected > 0 {
+		oDb.SetChange("svcactions")
+	}
+	return nil
+}
+
+// FindActionID finds the action ID for the given parameters.
+func (oDb *DB) FindActionID(ctx context.Context, nodeID string, svcID string, begin time.Time, action string) (int64, error) {
+	// todo : check if there is only one result
+	const query = "SELECT id FROM svcactions WHERE node_id = ? AND svc_id = ? AND begin = ? AND action = ? AND pid IS NULL"
+	var id int64
+	if err := oDb.DB.QueryRowContext(ctx, query, nodeID, svcID, begin, action).Scan(&id); err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+// UpdateActionErrors updates the action errors in the database.
+func (oDb *DB) UpdateActionErrors(ctx context.Context, svcID string, nodeID string) error {
+	const queryCount = `SELECT count(id) FROM svcactions a
+             WHERE
+               a.svc_id = ? AND
+               a.node_id = ? AND
+               a.status = "err" AND
+               ((a.ack <> 1) OR (a.ack IS NULL)) AND
+               a.begin > DATE_SUB(NOW(), INTERVAL 2 DAY)`
+
+	var errCount int
+	if err := oDb.DB.QueryRowContext(ctx, queryCount, svcID, nodeID).Scan(&errCount); err != nil {
+		return fmt.Errorf("UpdateActionErrors: count failed: %w", err)
+	}
+
+	if errCount == 0 {
+		const queryDelete = `DELETE FROM b_action_errors
+                  WHERE
+                    svc_id = ? AND
+                    node_id = ?`
+		if _, err := oDb.DB.ExecContext(ctx, queryDelete, svcID, nodeID); err != nil {
+			return fmt.Errorf("UpdateActionErrors: delete failed: %w", err)
+		}
+	} else {
+		const queryInsert = `INSERT INTO b_action_errors
+                 SET
+                   svc_id= ?,
+                   node_id= ?,
+                   err= ?
+                 ON DUPLICATE KEY UPDATE
+                   err= ?`
+		if _, err := oDb.DB.ExecContext(ctx, queryInsert, svcID, nodeID, errCount, errCount); err != nil {
+			return fmt.Errorf("UpdateActionErrors: insert/update failed: %w", err)
+		}
+	}
+	return nil
+}
+
+// UpdateDashActionErrors updates the dashboard with action errors.
+func (oDb *DB) UpdateDashActionErrors(ctx context.Context, svcID string, nodeID string) error {
+	const query = `SELECT e.err, s.svc_env FROM b_action_errors e
+             JOIN services s ON e.svc_id=s.svc_id
+             WHERE
+               e.svc_id = ? AND
+               e.node_id = ?`
+
+	var errCount int
+	var svcEnv sql.NullString
+	var err error
+
+	err = oDb.DB.QueryRowContext(ctx, query, svcID, nodeID).Scan(&errCount, &svcEnv)
+	if err != nil && err != sql.ErrNoRows {
+		return fmt.Errorf("UpdateDashActionErrors: select failed: %w", err)
+	}
+
+	if err == nil {
+		sev := 3
+		if svcEnv.Valid && svcEnv.String == "PRD" {
+			sev = 4
+		}
+		const queryInsert = `INSERT INTO dashboard
+                 SET
+                   dash_type="action errors",
+                   svc_id = ?,
+                   node_id = ?,
+                   dash_severity = ?,
+                   dash_fmt = "%(err)s action errors",
+                   dash_dict = ?,
+                   dash_created = NOW(),
+                   dash_updated = NOW(),
+                   dash_env = ?
+                 ON DUPLICATE KEY UPDATE
+                   dash_severity = ?,
+                   dash_fmt = "%(err)s action errors",
+                   dash_dict = ?,
+                   dash_updated = NOW(),
+                   dash_env = ?`
+
+		dashDict := fmt.Sprintf(`{"err": "%d"}`, errCount)
+
+		if _, err := oDb.DB.ExecContext(ctx, queryInsert, svcID, nodeID, sev, dashDict, svcEnv, sev, dashDict, svcEnv); err != nil {
+			return fmt.Errorf("UpdateDashActionErrors: insert/update failed: %w", err)
+		}
+		// TODO: WebSocket notification
+	} else {
+		// TODO: WebSocket notification
+		const queryDelete = `DELETE FROM dashboard
+                 WHERE
+                   dash_type="action errors" AND
+                   svc_id = ? AND
+                   node_id = ?`
+		if _, err := oDb.DB.ExecContext(ctx, queryDelete, svcID, nodeID); err != nil {
+			return fmt.Errorf("UpdateDashActionErrors: delete failed: %w", err)
+		}
+	}
+	return nil
 }

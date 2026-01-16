@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.8
+  version: 1.0.9
 
 paths:
   /feed/daemon/ping:
@@ -197,6 +197,64 @@ paths:
       tags:
         - agent
 
+  /feed/action:
+    put:
+      description: |
+        End an action for a given object path
+      operationId: PutFeedActionEnd
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Action'
+      responses:
+        202:
+          description: action end accepted
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+    post:
+      description: |
+        Begin an action for a given object path
+      operationId: PostFeedAction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Action'
+      responses:
+        202:
+          description: action begin accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRequestAccepted'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /version:
     get:
       operationId: GetVersion
@@ -291,6 +349,55 @@ components:
         version:
           type: string
           description: the opensvc client data version
+
+    ActionRequestAccepted:
+      type: object
+      required:
+        - uuid
+      properties:
+        uuid:
+          type: string
+
+    Action:
+      type: object
+      required:
+        - path
+        - action
+        - version
+        - begin
+        - cron
+        - session_uuid
+        - argv
+        - uuid
+        - end
+        - actionlogfile
+        - status
+      properties:
+        path:
+          type: string
+        action:
+          type: string
+        version:
+          type: string
+          description: the opensvc client data version
+        begin:
+          type: string
+        cron:
+          type: boolean
+        session_uuid:
+          type: string
+        argv:
+          type: array
+          items:
+            type: string
+        uuid:
+          type: string
+        end:
+          type: string
+        actionlogfile:
+          type: string
+        status:
+          type: string
 
     NodeDisks:
       type: object
@@ -558,3 +665,5 @@ components:
                 items:
                   type: string
                   description: object name
+
+    
