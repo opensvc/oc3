@@ -111,25 +111,25 @@ func newDaemonStatus(nodeID string) *jobFeedDaemonStatus {
 
 func (d *jobFeedDaemonStatus) Operations() []operation {
 	return []operation{
-		{desc: "daemonStatus/dropPending", doCtx: d.dropPending},
-		{desc: "daemonStatus/dbNow", doCtx: d.dbNow},
-		{desc: "daemonStatus/getChanges", doCtx: d.getChanges},
-		{desc: "daemonStatus/getData", doCtx: d.getData},
-		{desc: "daemonStatus/dbCheckClusterIDForNodeID", doCtx: d.dbCheckClusterIDForNodeID},
-		{desc: "daemonStatus/dbCheckClusters", doCtx: d.dbCheckClusters},
-		{desc: "daemonStatus/dbFindNodes", doCtx: d.dbFindNodes},
-		{desc: "daemonStatus/dataToNodeFrozen", doCtx: d.dataToNodeFrozen},
+		{desc: "daemonStatus/dropPending", do: d.dropPending},
+		{desc: "daemonStatus/dbNow", do: d.dbNow},
+		{desc: "daemonStatus/getChanges", do: d.getChanges},
+		{desc: "daemonStatus/getData", do: d.getData},
+		{desc: "daemonStatus/dbCheckClusterIDForNodeID", do: d.dbCheckClusterIDForNodeID},
+		{desc: "daemonStatus/dbCheckClusters", do: d.dbCheckClusters},
+		{desc: "daemonStatus/dbFindNodes", do: d.dbFindNodes},
+		{desc: "daemonStatus/dataToNodeFrozen", do: d.dataToNodeFrozen},
 		{desc: "daemonStatus/dataToNodeHeartbeat", do: d.dataToNodeHeartbeat},
-		{desc: "daemonStatus/heartbeatToDB", doCtx: d.heartbeatToDB},
-		{desc: "daemonStatus/dbFindServices", doCtx: d.dbFindServices},
-		{desc: "daemonStatus/dbCreateServices", doCtx: d.dbCreateServices},
-		{desc: "daemonStatus/dbFindInstances", doCtx: d.dbFindInstances},
-		{desc: "daemonStatus/dbUpdateServices", doCtx: d.dbUpdateServices},
-		{desc: "daemonStatus/dbUpdateInstances", doCtx: d.dbUpdateInstances},
-		{desc: "daemonStatus/dbPurgeInstances", doCtx: d.dbPurgeInstances},
-		{desc: "daemonStatus/dbPurgeServices", doCtx: d.dbPurgeServices},
-		{desc: "daemonStatus/cacheObjectsWithoutConfig", doCtx: d.cacheObjectsWithoutConfig},
-		{desc: "daemonStatus/pushFromTableChanges", doCtx: d.pushFromTableChanges},
+		{desc: "daemonStatus/heartbeatToDB", do: d.heartbeatToDB},
+		{desc: "daemonStatus/dbFindServices", do: d.dbFindServices},
+		{desc: "daemonStatus/dbCreateServices", do: d.dbCreateServices},
+		{desc: "daemonStatus/dbFindInstances", do: d.dbFindInstances},
+		{desc: "daemonStatus/dbUpdateServices", do: d.dbUpdateServices},
+		{desc: "daemonStatus/dbUpdateInstances", do: d.dbUpdateInstances},
+		{desc: "daemonStatus/dbPurgeInstances", do: d.dbPurgeInstances},
+		{desc: "daemonStatus/dbPurgeServices", do: d.dbPurgeServices},
+		{desc: "daemonStatus/cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
+		{desc: "daemonStatus/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 
@@ -293,7 +293,7 @@ func (d *jobFeedDaemonStatus) dataToNodeFrozen(ctx context.Context) error {
 	return nil
 }
 
-func (d *jobFeedDaemonStatus) dataToNodeHeartbeat() error {
+func (d *jobFeedDaemonStatus) dataToNodeHeartbeat(_ context.Context) error {
 	for nodeID, dbNode := range d.byNodeID {
 		nodename := dbNode.Nodename
 		l, err := d.data.nodeHeartbeat(nodename)

@@ -45,17 +45,17 @@ func (d *jobFeedSystem) Operations() []operation {
 		}
 	}
 	return []operation{
-		{desc: "system/dropPending", doCtx: d.dropPending},
-		{desc: "system/getData", doCtx: d.getData},
-		{desc: "system/dbNow", doCtx: d.dbNow},
-		{desc: "system/hardware", doCtx: d.hardware, condition: hasProp("hardware"), blocking: true},
-		{desc: "system/properties", doCtx: d.properties, condition: hasProp("properties"), blocking: true},
-		{desc: "system/groups", doCtx: d.groups, condition: hasProp("gids"), blocking: true},
-		{desc: "system/users", doCtx: d.users, condition: hasProp("uids"), blocking: true},
-		{desc: "system/lan", doCtx: d.lan, condition: hasProp("lan"), blocking: true},
-		{desc: "system/hba", doCtx: d.hba, condition: hasProp("hba"), blocking: true},
-		{desc: "system/targets", doCtx: d.targets, condition: hasProp("targets"), blocking: true},
-		{desc: "system/package", doCtx: d.pkg, condition: hasProp("package"), blocking: true},
+		{desc: "system/dropPending", do: d.dropPending},
+		{desc: "system/getData", do: d.getData},
+		{desc: "system/dbNow", do: d.dbNow},
+		{desc: "system/hardware", do: d.hardware, condition: hasProp("hardware"), blocking: true},
+		{desc: "system/properties", do: d.properties, condition: hasProp("properties"), blocking: true},
+		{desc: "system/groups", do: d.groups, condition: hasProp("gids"), blocking: true},
+		{desc: "system/users", do: d.users, condition: hasProp("uids"), blocking: true},
+		{desc: "system/lan", do: d.lan, condition: hasProp("lan"), blocking: true},
+		{desc: "system/hba", do: d.hba, condition: hasProp("hba"), blocking: true},
+		{desc: "system/targets", do: d.targets, condition: hasProp("targets"), blocking: true},
+		{desc: "system/package", do: d.pkg, condition: hasProp("package"), blocking: true},
 	}
 }
 

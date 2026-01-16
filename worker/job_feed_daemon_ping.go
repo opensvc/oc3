@@ -54,14 +54,14 @@ func newDaemonPing(nodeID string) *jobFeedDaemonPing {
 
 func (d *jobFeedDaemonPing) Operations() []operation {
 	return []operation{
-		{desc: "daemonPing/dropPending", doCtx: d.dropPending},
-		{desc: "daemonPing/getData", doCtx: d.getData},
-		{desc: "daemonPing/dbFetchNodes", doCtx: d.dbFetchNodes},
-		{desc: "daemonPing/dbFetchObjects", doCtx: d.dbFetchObjects},
-		{desc: "daemonPing/dbPingInstances", doCtx: d.dbPingInstances},
-		{desc: "daemonPing/dbPingObjects", doCtx: d.dbPingObjects},
-		{desc: "daemonPing/cacheObjectsWithoutConfig", doCtx: d.cacheObjectsWithoutConfig},
-		{desc: "daemonPing/pushFromTableChanges", doCtx: d.pushFromTableChanges},
+		{desc: "daemonPing/dropPending", do: d.dropPending},
+		{desc: "daemonPing/getData", do: d.getData},
+		{desc: "daemonPing/dbFetchNodes", do: d.dbFetchNodes},
+		{desc: "daemonPing/dbFetchObjects", do: d.dbFetchObjects},
+		{desc: "daemonPing/dbPingInstances", do: d.dbPingInstances},
+		{desc: "daemonPing/dbPingObjects", do: d.dbPingObjects},
+		{desc: "daemonPing/cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
+		{desc: "daemonPing/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 

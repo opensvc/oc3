@@ -44,11 +44,11 @@ func newNodeDisk(nodename, nodeID, clusterID string) *jobFeedNodeDisk {
 
 func (d *jobFeedNodeDisk) Operations() []operation {
 	return []operation{
-		{desc: "nodeDisk/dropPending", doCtx: d.dropPending},
-		{desc: "nodeDisk/getData", doCtx: d.getData},
-		{desc: "nodeDisk/dbNow", doCtx: d.dbNow},
-		{desc: "nodeDisk/updateDB", doCtx: d.updateDB},
-		{desc: "nodeDisk/pushFromTableChanges", doCtx: d.pushFromTableChanges},
+		{desc: "nodeDisk/dropPending", do: d.dropPending},
+		{desc: "nodeDisk/getData", do: d.getData},
+		{desc: "nodeDisk/dbNow", do: d.dbNow},
+		{desc: "nodeDisk/updateDB", do: d.updateDB},
+		{desc: "nodeDisk/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 

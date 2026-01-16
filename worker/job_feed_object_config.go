@@ -57,11 +57,11 @@ func newFeedObjectConfig(objectName, nodeID, clusterID string) *jobFeedObjectCon
 
 func (d *jobFeedObjectConfig) Operations() []operation {
 	return []operation{
-		{desc: "objectConfig/dropPending", doCtx: d.dropPending},
-		{desc: "objectConfig/getData", doCtx: d.getData},
-		{desc: "objectConfig/dbNow", doCtx: d.dbNow},
-		{desc: "objectConfig/updateDB", doCtx: d.updateDB},
-		{desc: "objectConfig/pushFromTableChanges", doCtx: d.pushFromTableChanges},
+		{desc: "objectConfig/dropPending", do: d.dropPending},
+		{desc: "objectConfig/getData", do: d.getData},
+		{desc: "objectConfig/dbNow", do: d.dbNow},
+		{desc: "objectConfig/updateDB", do: d.updateDB},
+		{desc: "objectConfig/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 

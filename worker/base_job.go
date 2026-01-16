@@ -18,9 +18,8 @@ type (
 	}
 
 	operation struct {
-		desc  string
-		do    func() error
-		doCtx func(context.Context) error
+		desc string
+		do   func(context.Context) error
 
 		// blocking stops the operation chain on operation error
 		blocking bool
@@ -87,11 +86,7 @@ func runOps(ctx context.Context, ops ...operation) error {
 			continue
 		}
 		begin := time.Now()
-		if op.doCtx != nil {
-			err = op.doCtx(ctx)
-		} else if op.do != nil {
-			err = op.do()
-		}
+		err = op.do(ctx)
 		duration := time.Since(begin)
 		if err != nil {
 			operationDuration.

@@ -63,14 +63,14 @@ func newInstanceStatus(objectName, nodeID, clusterID string) *jobFeedInstanceSta
 
 func (d *jobFeedInstanceStatus) Operations() []operation {
 	return []operation{
-		{desc: "instanceStatus/dropPending", doCtx: d.dropPending},
-		{desc: "instanceStatus/findNodeFromDb", doCtx: d.findNodeFromDb},
-		{desc: "instanceStatus/getData", doCtx: d.getData},
-		{desc: "instanceStatus/dbNow", doCtx: d.dbNow},
-		{desc: "instanceStatus/findObjectFromDb", doCtx: d.findObjectFromDb},
-		{desc: "instanceStatus/updateDB", doCtx: d.updateDB},
-		{desc: "instanceStatus/pushFromTableChanges", doCtx: d.pushFromTableChanges},
-		{desc: "instanceStatus/processed", doCtx: d.processed},
+		{desc: "instanceStatus/dropPending", do: d.dropPending},
+		{desc: "instanceStatus/findNodeFromDb", do: d.findNodeFromDb},
+		{desc: "instanceStatus/getData", do: d.getData},
+		{desc: "instanceStatus/dbNow", do: d.dbNow},
+		{desc: "instanceStatus/findObjectFromDb", do: d.findObjectFromDb},
+		{desc: "instanceStatus/updateDB", do: d.updateDB},
+		{desc: "instanceStatus/pushFromTableChanges", do: d.pushFromTableChanges},
+		{desc: "instanceStatus/processed", do: d.processed},
 	}
 }
 

@@ -56,12 +56,12 @@ func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedAction {
 
 func (d *jobFeedAction) Operations() []operation {
 	return []operation{
-		{desc: "actionBegin/dropPending", doCtx: d.dropPending},
-		{desc: "actionBegin/getData", doCtx: d.getData},
-		{desc: "actionBegin/findNodeFromDb", doCtx: d.findNodeFromDb},
-		{desc: "actionBegin/findObjectFromDb", doCtx: d.findObjectFromDb},
-		{desc: "actionBegin/processAction", doCtx: d.updateDB},
-		{desc: "actionBegin/pushFromTableChanges", doCtx: d.pushFromTableChanges},
+		{desc: "actionBegin/dropPending", do: d.dropPending},
+		{desc: "actionBegin/getData", do: d.getData},
+		{desc: "actionBegin/findNodeFromDb", do: d.findNodeFromDb},
+		{desc: "actionBegin/findObjectFromDb", do: d.findObjectFromDb},
+		{desc: "actionBegin/processAction", do: d.updateDB},
+		{desc: "actionBegin/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 
