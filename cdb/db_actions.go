@@ -260,7 +260,7 @@ func (oDb *DB) FindActionID(ctx context.Context, nodeID string, svcID string, be
 }
 
 // UpdateActionErrors updates the action errors in the database.
-func (oDb *DB) UpdateActionErrors(ctx context.Context, svcID, nodeID string) error {
+func (oDb *DB) UpdateActionErrors(ctx context.Context, svcID string, nodeID string) error {
 	const queryCount = `SELECT count(id) FROM svcactions a
              WHERE
                a.svc_id = ? AND
