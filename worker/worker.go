@@ -165,22 +165,14 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 		}
 		j = newInstanceStatus(objectName, nodeID, clusterID)
 
-	case cachekeys.FeedActionBeginQ:
-		objectName, nodeID, ClusterID, action, err := w.jobToInstanceClusterIdAndAction(unqueuedJob[1])
+	case cachekeys.FeedActionQ:
+		objectName, nodeID, ClusterID, uuid, err := w.jobToInstanceClusterIdAndUuid(unqueuedJob[1])
 		if err != nil {
 			err := fmt.Errorf("invalid feed begin action index: %s", unqueuedJob[1])
 			slog.Warn(err.Error())
 			return err
 		}
-		j = newActionBegin(objectName, nodeID, ClusterID, action)
-	case cachekeys.FeedActionEndQ:
-		objectName, nodeID, ClusterID, action, err := w.jobToInstanceClusterIdAndAction(unqueuedJob[1])
-		if err != nil {
-			err := fmt.Errorf("invalid feed end action index: %s", unqueuedJob[1])
-			slog.Warn(err.Error())
-			return err
-		}
-		j = newActionEnd(objectName, nodeID, ClusterID, action)
+		j = newAction(objectName, nodeID, ClusterID, uuid)
 
 	default:
 		slog.Debug(fmt.Sprintf("ignore queue '%s'", unqueuedJob[0]))
@@ -229,7 +221,7 @@ func (w *Worker) jobToInstanceAndClusterID(jobName string) (path, nodeID, cluste
 	return
 }
 
-func (w *Worker) jobToInstanceClusterIdAndAction(jobName string) (path, nodeID, clusterID, action string, err error) {
+func (w *Worker) jobToInstanceClusterIdAndUuid(jobName string) (path, nodeID, clusterID, uuid string, err error) {
 	l := strings.Split(jobName, ":")
 	if len(l) != 2 {
 		err = fmt.Errorf("unexpected job name: %s", jobName)
@@ -239,6 +231,6 @@ func (w *Worker) jobToInstanceClusterIdAndAction(jobName string) (path, nodeID, 
 		err = fmt.Errorf("unexpected job name: %s", jobName)
 		return
 	}
-	action = l[1]
+	uuid = l[1]
 	return
 }

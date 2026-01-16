@@ -207,7 +207,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ActionEnd'
+              $ref: '#/components/schemas/Action'
       responses:
         202:
           description: action end accepted
@@ -227,16 +227,20 @@ paths:
     post:
       description: |
         Begin an action for a given object path
-      operationId: PostFeedActionBegin
+      operationId: PostFeedAction
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ActionBegin'
+              $ref: '#/components/schemas/Action'
       responses:
         202:
           description: action begin accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRequestAccepted'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -346,7 +350,15 @@ components:
           type: string
           description: the opensvc client data version
 
-    ActionBegin:
+    ActionRequestAccepted:
+      type: object
+      required:
+        - uuid
+      properties:
+        uuid:
+          type: string
+
+    Action:
       type: object
       required:
         - path
@@ -356,6 +368,10 @@ components:
         - cron
         - session_uuid
         - argv
+        - uuid
+        - end
+        - actionlogfile
+        - status
       properties:
         path:
           type: string
@@ -374,30 +390,9 @@ components:
           type: array
           items:
             type: string
-
-    ActionEnd:
-      type: object
-      required:
-        - path
-        - action
-        - begin
-        - end
-        - cron
-        - sid
-        - actionlogfile
-        - status
-      properties:
-        path:
-          type: string
-        action:
-          type: string
-        begin:
+        uuid:
           type: string
         end:
-          type: string
-        cron:
-          type: boolean
-        sid:
           type: string
         actionlogfile:
           type: string

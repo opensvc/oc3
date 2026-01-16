@@ -211,11 +211,24 @@ func (oDb *DB) GetUnfinishedActions(ctx context.Context) (lines []SvcAction, err
 
 }
 
-func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, action string, begin time.Time, status_log string, sid string, cron bool) (int64, error) {
-	query := `INSERT INTO svcactions (svc_id, node_id, action, begin, status_log, sid, cron)
-		VALUES (?, ?, ?, ?, ?, ?, ?)`
+func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, action string, begin time.Time, status_log string, sid string, cron bool, end time.Time, status string) (int64, error) {
+	query := "INSERT INTO svcactions (svc_id, node_id, action, begin, status_log, sid, cron"
+	placeholders := "?, ?, ?, ?, ?, ?, ?"
+	args := []any{svcID, nodeID, action, begin, status_log, sid, cron}
 
-	result, err := oDb.DB.ExecContext(ctx, query, svcID, nodeID, action, begin, status_log, sid, cron)
+	if !end.IsZero() {
+		query += ", end"
+		placeholders += ", ?"
+		args = append(args, end)
+	}
+	if status != "" {
+		query += ", status"
+		placeholders += ", ?"
+		args = append(args, status)
+	}
+	query += fmt.Sprintf(") VALUES (%s)", placeholders)
+
+	result, err := oDb.DB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -234,7 +247,7 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, act
 	return id, nil
 }
 
-func (oDb *DB) EndSvcAction(ctx context.Context, svcActionID int64, end time.Time, status string) error {
+func (oDb *DB) UpdateSvcAction(ctx context.Context, svcActionID int64, end time.Time, status string) error {
 	const query = `UPDATE svcactions SET end = ?, status = ?, time = TIMESTAMPDIFF(SECOND, begin, ?) WHERE id = ?`
 	result, err := oDb.DB.ExecContext(ctx, query, end, status, end, svcActionID)
 	if err != nil {

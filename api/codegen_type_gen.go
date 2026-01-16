@@ -12,29 +12,26 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
-// ActionBegin defines model for ActionBegin.
-type ActionBegin struct {
-	Action      string   `json:"action"`
-	Argv        []string `json:"argv"`
-	Begin       string   `json:"begin"`
-	Cron        bool     `json:"cron"`
-	Path        string   `json:"path"`
-	SessionUuid string   `json:"session_uuid"`
+// Action defines model for Action.
+type Action struct {
+	Action        string   `json:"action"`
+	Actionlogfile string   `json:"actionlogfile"`
+	Argv          []string `json:"argv"`
+	Begin         string   `json:"begin"`
+	Cron          bool     `json:"cron"`
+	End           string   `json:"end"`
+	Path          string   `json:"path"`
+	SessionUuid   string   `json:"session_uuid"`
+	Status        string   `json:"status"`
+	Uuid          string   `json:"uuid"`
 
 	// Version the opensvc client data version
 	Version string `json:"version"`
 }
 
-// ActionEnd defines model for ActionEnd.
-type ActionEnd struct {
-	Action        string `json:"action"`
-	Actionlogfile string `json:"actionlogfile"`
-	Begin         string `json:"begin"`
-	Cron          bool   `json:"cron"`
-	End           string `json:"end"`
-	Path          string `json:"path"`
-	Sid           string `json:"sid"`
-	Status        string `json:"status"`
+// ActionRequestAccepted defines model for ActionRequestAccepted.
+type ActionRequestAccepted struct {
+	Uuid string `json:"uuid"`
 }
 
 // Disk defines model for Disk.
@@ -186,11 +183,11 @@ type PostFeedInstanceStatusParams struct {
 	Sync *InQuerySync `form:"sync,omitempty" json:"sync,omitempty"`
 }
 
-// PostFeedActionBeginJSONRequestBody defines body for PostFeedActionBegin for application/json ContentType.
-type PostFeedActionBeginJSONRequestBody = ActionBegin
+// PostFeedActionJSONRequestBody defines body for PostFeedAction for application/json ContentType.
+type PostFeedActionJSONRequestBody = Action
 
 // PutFeedActionEndJSONRequestBody defines body for PutFeedActionEnd for application/json ContentType.
-type PutFeedActionEndJSONRequestBody = ActionEnd
+type PutFeedActionEndJSONRequestBody = Action
 
 // PostFeedDaemonPingJSONRequestBody defines body for PostFeedDaemonPing for application/json ContentType.
 type PostFeedDaemonPingJSONRequestBody = PostFeedDaemonPing

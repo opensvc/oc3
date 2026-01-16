@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	"github.com/opensvc/oc3/api"
@@ -26,11 +27,11 @@ import (
 //   "version": "2.1-1977"
 // }
 
-// PostFeedActionBegin handles POST /action/begin
-func (a *Api) PostFeedActionBegin(c echo.Context) error {
-	keyH := cachekeys.FeedActionBeginH
-	keyQ := cachekeys.FeedActionBeginQ
-	keyPendingH := cachekeys.FeedActionBeginPendingH
+// PostFeedAction handles POST /action/begin
+func (a *Api) PostFeedAction(c echo.Context) error {
+	keyH := cachekeys.FeedActionH
+	keyQ := cachekeys.FeedActionQ
+	keyPendingH := cachekeys.FeedActionPendingH
 
 	log := getLog(c)
 
@@ -45,7 +46,7 @@ func (a *Api) PostFeedActionBegin(c echo.Context) error {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
 
-	var payload api.PostFeedActionBeginJSONRequestBody
+	var payload api.PostFeedActionJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}
@@ -62,7 +63,8 @@ func (a *Api) PostFeedActionBegin(c echo.Context) error {
 
 	reqCtx := c.Request().Context()
 
-	idx := fmt.Sprintf("%s@%s@%s:%s", payload.Path, nodeID, ClusterID, payload.Action)
+	uuid := uuid.New().String()
+	idx := fmt.Sprintf("%s@%s@%s:%s", payload.Path, nodeID, ClusterID, uuid)
 
 	s := fmt.Sprintf("HSET %s %s", keyH, idx)
 	if _, err := a.Redis.HSet(reqCtx, keyH, idx, b).Result(); err != nil {
@@ -77,5 +79,5 @@ func (a *Api) PostFeedActionBegin(c echo.Context) error {
 	}
 
 	log.Debug("action begin accepted")
-	return c.NoContent(http.StatusAccepted)
+	return c.JSON(http.StatusAccepted, api.ActionRequestAccepted{Uuid: uuid})
 }
