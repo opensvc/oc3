@@ -86,6 +86,9 @@ func (odb *DB) CreateSession(ev eventPublisher) {
 }
 
 func (oDb *DB) Commit() error {
+	if !oDb.hasTx {
+		return nil
+	}
 	tx, ok := oDb.DB.(DBTxer)
 	if !ok {
 		return nil
@@ -94,6 +97,10 @@ func (oDb *DB) Commit() error {
 }
 
 func (oDb *DB) Rollback() error {
+	if !oDb.hasTx {
+		return nil
+	}
+	defer func() { oDb.hasTx = false }()
 	tx, ok := oDb.DB.(DBTxer)
 	if !ok {
 		return nil
