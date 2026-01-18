@@ -46,6 +46,20 @@ func (j *JobDB) PrepareDB(ctx context.Context, dbPool *sql.DB, ev EventPublisher
 	return nil
 }
 
+func (j *JobDB) CreateTx(ctx context.Context) error {
+	return j.oDb.CreateTx(ctx, nil)
+}
+
+func (j *JobDB) CommitAndCreateTx(ctx context.Context) error {
+	if err := j.oDb.Commit(); err != nil {
+		return fmt.Errorf("CommitAndCreateTx pre-commit: %w", err)
+	}
+	if err := j.oDb.CreateTx(ctx, nil); err != nil {
+		return fmt.Errorf("CommitAndCreateTx: %w", err)
+	}
+	return nil
+}
+
 func (j *JobDB) Commit() error {
 	return j.oDb.Commit()
 }
