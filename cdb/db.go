@@ -93,7 +93,11 @@ func (oDb *DB) Commit() error {
 	if !ok {
 		return nil
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	oDb.hasTx = false
+	return nil
 }
 
 func (oDb *DB) Rollback() error {
