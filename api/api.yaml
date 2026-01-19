@@ -125,6 +125,64 @@ paths:
       tags:
         - agent
 
+  /feed/instance/action:
+    put:
+      description: |
+        End an action for a given object path
+      operationId: PutFeedActionEnd
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Action'
+      responses:
+        202:
+          description: action end accepted
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+    post:
+      description: |
+        Begin an action for a given object path
+      operationId: PostFeedAction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Action'
+      responses:
+        202:
+          description: action begin accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRequestAccepted'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /feed/instance/resource_info:
     post:
       description: |
@@ -191,64 +249,6 @@ paths:
       responses:
         202:
           description: instance configuration will be refreshed
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
-  /feed/action:
-    put:
-      description: |
-        End an action for a given object path
-      operationId: PutFeedActionEnd
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Action'
-      responses:
-        202:
-          description: action end accepted
-        400:
-          $ref: '#/components/responses/400'
-        401:
-          $ref: '#/components/responses/401'
-        403:
-          $ref: '#/components/responses/403'
-        500:
-          $ref: '#/components/responses/500'
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-    post:
-      description: |
-        Begin an action for a given object path
-      operationId: PostFeedAction
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Action'
-      responses:
-        202:
-          description: action begin accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ActionRequestAccepted'
-        400:
-          $ref: '#/components/responses/400'
-        401:
-          $ref: '#/components/responses/401'
-        403:
-          $ref: '#/components/responses/403'
-        500:
-          $ref: '#/components/responses/500'
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
