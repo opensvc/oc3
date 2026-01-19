@@ -62,7 +62,7 @@ func (d *jobFeedSystem) Operations() []operation {
 func (d *jobFeedSystem) pkg(ctx context.Context) error {
 	pkgList, ok := d.data["package"].([]any)
 	if !ok {
-		slog.Warn(fmt.Sprint("unsupported json format for packages"))
+		slog.Warn("unsupported json format for packages")
 		return nil
 	}
 	nodeID := d.nodeID
@@ -71,7 +71,7 @@ func (d *jobFeedSystem) pkg(ctx context.Context) error {
 	for i := range pkgList {
 		line, ok := pkgList[i].(map[string]any)
 		if !ok {
-			slog.Warn(fmt.Sprint("unsupported package entry format"))
+			slog.Warn("unsupported package entry format")
 			return nil
 		}
 		line["node_id"] = nodeID

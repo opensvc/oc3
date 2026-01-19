@@ -95,7 +95,7 @@ func runOps(ctx context.Context, ops ...operation) error {
 			if op.blocking {
 				return err
 			}
-			slog.Warn("%s: non blocking error: %s", op.desc, err)
+			slog.Warn(fmt.Sprintf("%s: non blocking error: %s", op.desc, err))
 			continue
 		}
 		operationDuration.
