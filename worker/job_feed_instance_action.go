@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -123,12 +124,11 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 		return fmt.Errorf("invalid begin time format: %w", err)
 	}
 
-	statusLog := ""
-	if len(d.data.Argv) > 0 {
-		statusLog = fmt.Sprintf("%s", d.data.Argv[0])
-		for i := 1; i < len(d.data.Argv); i++ {
-			statusLog += " " + d.data.Argv[i]
-		}
+	var statusLog string
+	if d.data.StatusLog != nil && len(*d.data.StatusLog) > 0 {
+		statusLog = *d.data.StatusLog
+	} else if len(d.data.Argv) > 0 {
+		statusLog = strings.Join(d.data.Argv, " ")
 	}
 
 	if d.data.End != "" {
@@ -150,7 +150,7 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 			}
 		} else {
 			// begin already processed, update record with end info
-			if err := d.oDb.UpdateSvcAction(ctx, actionId, endTime, d.data.Status); err != nil {
+			if err := d.oDb.UpdateSvcAction(ctx, actionId, endTime, d.data.Status, statusLog); err != nil {
 				return fmt.Errorf("end svc action failed: %w", err)
 			}
 		}
