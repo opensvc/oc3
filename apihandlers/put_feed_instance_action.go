@@ -63,7 +63,7 @@ func (a *Api) PutFeedInstanceActionEnd(c echo.Context) error {
 			if err := json.Unmarshal(currentBytes, &currentAction); err == nil {
 				currentAction.End = payload.End
 				currentAction.Status = payload.Status
-				currentAction.Actionlogfile = payload.Actionlogfile
+				currentAction.StatusLog = payload.StatusLog
 
 				if updatedBytes, err := json.Marshal(currentAction); err == nil {
 					b = updatedBytes
@@ -85,5 +85,5 @@ func (a *Api) PutFeedInstanceActionEnd(c echo.Context) error {
 	}
 
 	log.Debug("action end accepted")
-	return c.NoContent(http.StatusAccepted)
+	return c.JSON(http.StatusAccepted, nil)
 }

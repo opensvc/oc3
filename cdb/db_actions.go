@@ -247,9 +247,9 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, act
 	return id, nil
 }
 
-func (oDb *DB) UpdateSvcAction(ctx context.Context, svcActionID int64, end time.Time, status string) error {
-	const query = `UPDATE svcactions SET end = ?, status = ?, time = TIMESTAMPDIFF(SECOND, begin, ?) WHERE id = ?`
-	result, err := oDb.DB.ExecContext(ctx, query, end, status, end, svcActionID)
+func (oDb *DB) UpdateSvcAction(ctx context.Context, svcActionID int64, end time.Time, status, statusLog string) error {
+	const query = `UPDATE svcactions SET end = ?, status = ?, time = TIMESTAMPDIFF(SECOND, begin, ?), status_log = ? WHERE id = ?`
+	result, err := oDb.DB.ExecContext(ctx, query, end, status, end, statusLog, svcActionID)
 	if err != nil {
 		return err
 	}

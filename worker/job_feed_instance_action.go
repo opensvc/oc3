@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,7 +41,7 @@ func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedInstanceActio
 
 	return &jobFeedInstanceAction{
 		JobBase: JobBase{
-			name:   "action",
+			name:   "instanceAction",
 			detail: "ID: " + idX,
 		},
 		JobRedis: JobRedis{
@@ -56,12 +57,12 @@ func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedInstanceActio
 
 func (d *jobFeedInstanceAction) Operations() []operation {
 	return []operation{
-		{desc: "actionBegin/dropPending", do: d.dropPending},
-		{desc: "actionBegin/getData", do: d.getData},
-		{desc: "actionBegin/findNodeFromDb", do: d.findNodeFromDb},
-		{desc: "actionBegin/findObjectFromDb", do: d.findObjectFromDb},
-		{desc: "actionBegin/processAction", do: d.updateDB},
-		{desc: "actionBegin/pushFromTableChanges", do: d.pushFromTableChanges},
+		{desc: "instanceAction/dropPending", do: d.dropPending},
+		{desc: "instanceAction/getData", do: d.getData},
+		{desc: "instanceAction/findNodeFromDb", do: d.findNodeFromDb},
+		{desc: "instanceAction/findObjectFromDb", do: d.findObjectFromDb},
+		{desc: "instanceAction/processAction", do: d.updateDB},
+		{desc: "instanceAction/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 
@@ -78,7 +79,7 @@ func (d *jobFeedInstanceAction) getData(ctx context.Context) error {
 		d.data = &data
 	}
 
-	slog.Info(fmt.Sprintf("got action begin data for node %s:%#v", d.nodeID, d.data))
+	slog.Debug(fmt.Sprintf("got action begin data for node %s:%#v", d.nodeID, d.data))
 	return nil
 }
 
@@ -88,7 +89,7 @@ func (d *jobFeedInstanceAction) findNodeFromDb(ctx context.Context) error {
 	} else {
 		d.node = n
 	}
-	slog.Info(fmt.Sprintf("jobFeedInstanceActionBegin found node %s for id %s", d.node.Nodename, d.nodeID))
+	slog.Debug(fmt.Sprintf("jobFeedInstanceAction found node %s for id %s", d.node.Nodename, d.nodeID))
 	return nil
 }
 
@@ -96,10 +97,10 @@ func (d *jobFeedInstanceAction) findObjectFromDb(ctx context.Context) error {
 	if isNew, objId, err := d.oDb.ObjectIDFindOrCreate(ctx, d.objectName, d.clusterID); err != nil {
 		return fmt.Errorf("find or create object ID failed for %s: %w", d.objectName, err)
 	} else if isNew {
-		slog.Info(fmt.Sprintf("jobFeedInstanceActionBegin has created new object id %s@%s %s", d.objectName, d.clusterID, objId))
+		slog.Info(fmt.Sprintf("jobFeedInstanceAction has created new object id %s@%s %s", d.objectName, d.clusterID, objId))
 	} else {
 		d.objectID = objId
-		slog.Info(fmt.Sprintf("jobFeedInstanceActionBegin found object id %s@%s %s", d.objectName, d.clusterID, objId))
+		slog.Debug(fmt.Sprintf("jobFeedInstanceAction found object id %s@%s %s", d.objectName, d.clusterID, objId))
 	}
 
 	return nil
@@ -123,12 +124,11 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 		return fmt.Errorf("invalid begin time format: %w", err)
 	}
 
-	statusLog := ""
-	if len(d.data.Argv) > 0 {
-		statusLog = fmt.Sprintf("%s", d.data.Argv[0])
-		for i := 1; i < len(d.data.Argv); i++ {
-			statusLog += " " + d.data.Argv[i]
-		}
+	var statusLog string
+	if d.data.StatusLog != nil && len(*d.data.StatusLog) > 0 {
+		statusLog = *d.data.StatusLog
+	} else if len(d.data.Argv) > 0 {
+		statusLog = strings.Join(d.data.Argv, " ")
 	}
 
 	if d.data.End != "" {
@@ -150,7 +150,7 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 			}
 		} else {
 			// begin already processed, update record with end info
-			if err := d.oDb.UpdateSvcAction(ctx, actionId, endTime, d.data.Status); err != nil {
+			if err := d.oDb.UpdateSvcAction(ctx, actionId, endTime, d.data.Status, statusLog); err != nil {
 				return fmt.Errorf("end svc action failed: %w", err)
 			}
 		}
