@@ -79,7 +79,7 @@ func (d *jobFeedInstanceAction) getData(ctx context.Context) error {
 		d.data = &data
 	}
 
-	slog.Info(fmt.Sprintf("got action begin data for node %s:%#v", d.nodeID, d.data))
+	slog.Debug(fmt.Sprintf("got action begin data for node %s:%#v", d.nodeID, d.data))
 	return nil
 }
 
