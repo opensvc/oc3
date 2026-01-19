@@ -129,7 +129,7 @@ paths:
     put:
       description: |
         End an action for a given object path
-      operationId: PutFeedActionEnd
+      operationId: PutFeedInstanceActionEnd
       requestBody:
         required: true
         content:
@@ -155,7 +155,7 @@ paths:
     post:
       description: |
         Begin an action for a given object path
-      operationId: PostFeedAction
+      operationId: PostFeedInstanceAction
       requestBody:
         required: true
         content:

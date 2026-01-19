@@ -31,10 +31,10 @@ type ServerInterface interface {
 	PostFeedDaemonStatus(ctx echo.Context) error
 
 	// (POST /feed/instance/action)
-	PostFeedAction(ctx echo.Context) error
+	PostFeedInstanceAction(ctx echo.Context) error
 
 	// (PUT /feed/instance/action)
-	PutFeedActionEnd(ctx echo.Context) error
+	PutFeedInstanceActionEnd(ctx echo.Context) error
 
 	// (POST /feed/instance/resource_info)
 	PostFeedInstanceResourceInfo(ctx echo.Context) error
@@ -95,8 +95,8 @@ func (w *ServerInterfaceWrapper) PostFeedDaemonStatus(ctx echo.Context) error {
 	return err
 }
 
-// PostFeedAction converts echo context to params.
-func (w *ServerInterfaceWrapper) PostFeedAction(ctx echo.Context) error {
+// PostFeedInstanceAction converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFeedInstanceAction(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -104,12 +104,12 @@ func (w *ServerInterfaceWrapper) PostFeedAction(ctx echo.Context) error {
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostFeedAction(ctx)
+	err = w.Handler.PostFeedInstanceAction(ctx)
 	return err
 }
 
-// PutFeedActionEnd converts echo context to params.
-func (w *ServerInterfaceWrapper) PutFeedActionEnd(ctx echo.Context) error {
+// PutFeedInstanceActionEnd converts echo context to params.
+func (w *ServerInterfaceWrapper) PutFeedInstanceActionEnd(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -117,7 +117,7 @@ func (w *ServerInterfaceWrapper) PutFeedActionEnd(ctx echo.Context) error {
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PutFeedActionEnd(ctx)
+	err = w.Handler.PutFeedInstanceActionEnd(ctx)
 	return err
 }
 
@@ -235,8 +235,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/docs/openapi", wrapper.GetSwagger)
 	router.POST(baseURL+"/feed/daemon/ping", wrapper.PostFeedDaemonPing)
 	router.POST(baseURL+"/feed/daemon/status", wrapper.PostFeedDaemonStatus)
-	router.POST(baseURL+"/feed/instance/action", wrapper.PostFeedAction)
-	router.PUT(baseURL+"/feed/instance/action", wrapper.PutFeedActionEnd)
+	router.POST(baseURL+"/feed/instance/action", wrapper.PostFeedInstanceAction)
+	router.PUT(baseURL+"/feed/instance/action", wrapper.PutFeedInstanceActionEnd)
 	router.POST(baseURL+"/feed/instance/resource_info", wrapper.PostFeedInstanceResourceInfo)
 	router.POST(baseURL+"/feed/instance/status", wrapper.PostFeedInstanceStatus)
 	router.POST(baseURL+"/feed/node/disk", wrapper.PostFeedNodeDisk)
@@ -276,13 +276,13 @@ var swaggerSpec = []string{
 	"I9bde80myzySKNu9FYuUUfxgnrkhmRtWjfOyXxNK96vseze7qpqkoeGhrVJtvANtoeMrKP1axJvnGxP3",
 	"FW3buaFlAdte0M/3ozgwTd5G+Hzyqo9WxpSt922Uyqlf5MeUHni/yhSqDG0mKp7etVL07mEbfW2l4d3D",
 	"9qEOMEkMkP341of7EyK8N6yz8sQ5fWC9qucPbWeebbNxckg2Tn43Wf5spCnb+nE9eg7T5jWY5o5w5DZa",
-	"khOUsDXw8iZl6vMOAl2WM9VTUMcLP5wsz6i1O7YNHBAetIUD8XtmXoTzIkCvtzx+GrmKBrfe2rH774Je",
-	"wfCDcfKPstMsO9U0rewUw9Xng737IyERlWD+VwpApQBkBOyoPsFh/WnIElT1VOqEHTV9uGFU75PjicK0",
-	"r6mYaSHrgcr56KwOkG97YqLJ6ID4VA1G88chd2HA6y3j5o9HjEunjOsxjclkR0Q9MsrOlZEqKAWllkWa",
-	"btALteF0JQUXhXrp2s/z/ZLqD89llUEvSFfS91t0TE8+jstvoIfVGTt6Nu8o5ObyhePuDiaX321OVF3q",
-	"z0JPLSlDPp26mlj8G9OXYAQMishtMjZSsQa52YH2zMk7Ddbe2KcCXbpBNNnzY5vvNynbP905PDF9W3ho",
-	"UrY+bZ6GLC0Vv/m4/1aZ2Zg/+ila2yAJupAckZw1vo30Bm3/q5Z+06BtF7yl9sHx25PGZJTkZMFSZsex",
-	"D1uHqlyXXUchUzzFY0Ev8PZh+2sAAAD//32uxFHAKgAA",
+	"khOUsDXw8iZl6vMOApVDmstytnoKCnnhh5PmGbV2x7eBg8KDt3Bgfs8MjHBeBGj2lsdPI1kR4NhbO4b/",
+	"XdAsSAMwzv5RhpplqJqulZ1juBp9sLMAJCSiEsz/SgGoFICMgAOqUWt4fxqyBFU9lTphR01fbhjV+wR5",
+	"ojDtazJmWsh6wHI+OqsD5NugmGgyOiA+VcPR/LHIXRjwesu4+WMS49Ip43pMozLZEVGPjLJzZqQKSkGp",
+	"ZZGmG/RCbThdScFFoV66dvR8v6T6Q3RZZdAL0pX0/RYd06OP4/Kb6GF1xo6izTsKuTl94bi7g8nld5wT",
+	"VZf6M9FTS8qQT6euJhb/xjQmGAGDInKbjI1UrEFudqA9c/JOg7U39qlAl24QTfb8+Ob7Tcr2T3kOT0zf",
+	"Hh6alK1PnachS0vFbz7uv1VmNuaRfqrWNkiCLiRHJGeNbyW9wdv/qqXfNHjbBW+pfXAc96SxGSU5WbCU",
+	"2fHsw9ahKtdl11HIFE/xWNALvH3Y/hoAAP//vDOrYNAqAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

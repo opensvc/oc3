@@ -189,11 +189,11 @@ type PostFeedDaemonPingJSONRequestBody = PostFeedDaemonPing
 // PostFeedDaemonStatusJSONRequestBody defines body for PostFeedDaemonStatus for application/json ContentType.
 type PostFeedDaemonStatusJSONRequestBody = PostFeedDaemonStatus
 
-// PostFeedActionJSONRequestBody defines body for PostFeedAction for application/json ContentType.
-type PostFeedActionJSONRequestBody = Action
+// PostFeedInstanceActionJSONRequestBody defines body for PostFeedInstanceAction for application/json ContentType.
+type PostFeedInstanceActionJSONRequestBody = Action
 
-// PutFeedActionEndJSONRequestBody defines body for PutFeedActionEnd for application/json ContentType.
-type PutFeedActionEndJSONRequestBody = Action
+// PutFeedInstanceActionEndJSONRequestBody defines body for PutFeedInstanceActionEnd for application/json ContentType.
+type PutFeedInstanceActionEndJSONRequestBody = Action
 
 // PostFeedInstanceResourceInfoJSONRequestBody defines body for PostFeedInstanceResourceInfo for application/json ContentType.
 type PostFeedInstanceResourceInfoJSONRequestBody = InstanceResourceInfo

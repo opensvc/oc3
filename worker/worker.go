@@ -165,7 +165,7 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 		}
 		j = newInstanceStatus(objectName, nodeID, clusterID)
 
-	case cachekeys.FeedActionQ:
+	case cachekeys.FeedInstanceActionQ:
 		objectName, nodeID, ClusterID, uuid, err := w.jobToInstanceClusterIdAndUuid(unqueuedJob[1])
 		if err != nil {
 			err := fmt.Errorf("invalid feed begin action index: %s", unqueuedJob[1])
