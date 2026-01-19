@@ -41,6 +41,8 @@ var TaskAlert1D = Task{
 	name: "alerts_1d",
 	children: TaskList{
 		TaskAlertActionErrorsNotAcked,
+		TaskAlertCompModDiff,
+		TaskAlertCompRsetDiff,
 		TaskAlertMACDup,
 		TaskAlertNodeCloseToMaintenanceEnd,
 		TaskAlertNodeMaintenanceExpired,
@@ -98,6 +100,18 @@ var TaskPurgeAlertOnDeletedServices = Task{
 	name:    "purge_alerts_on_deleted_services",
 	fn:      taskPurgeAlertOnDeletedServices,
 	timeout: time.Minute,
+}
+
+var TaskAlertCompModDiff = Task{
+	name:    "alert_compliance_moduleset_attachment_differences_in_cluster",
+	fn:      taskCompModDiff,
+	timeout: 5 * time.Minute,
+}
+
+var TaskAlertCompRsetDiff = Task{
+	name:    "alert_compliance_ruleset_attachment_differences_in_cluster",
+	fn:      taskCompRsetDiff,
+	timeout: 5 * time.Minute,
 }
 
 var TaskAlertMACDup = Task{
@@ -519,6 +533,38 @@ func taskPurgeAlertsOnDeletedInstances(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	if err := odb.PurgeAlertsOnDeletedInstances(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskCompModDiff(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.DashboardUpdateCompModDiff(ctx); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskCompRsetDiff(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.DashboardUpdateCompRsetDiff(ctx); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
