@@ -183,17 +183,17 @@ type PostFeedInstanceStatusParams struct {
 	Sync *InQuerySync `form:"sync,omitempty" json:"sync,omitempty"`
 }
 
-// PostFeedActionJSONRequestBody defines body for PostFeedAction for application/json ContentType.
-type PostFeedActionJSONRequestBody = Action
-
-// PutFeedActionEndJSONRequestBody defines body for PutFeedActionEnd for application/json ContentType.
-type PutFeedActionEndJSONRequestBody = Action
-
 // PostFeedDaemonPingJSONRequestBody defines body for PostFeedDaemonPing for application/json ContentType.
 type PostFeedDaemonPingJSONRequestBody = PostFeedDaemonPing
 
 // PostFeedDaemonStatusJSONRequestBody defines body for PostFeedDaemonStatus for application/json ContentType.
 type PostFeedDaemonStatusJSONRequestBody = PostFeedDaemonStatus
+
+// PostFeedInstanceActionJSONRequestBody defines body for PostFeedInstanceAction for application/json ContentType.
+type PostFeedInstanceActionJSONRequestBody = Action
+
+// PutFeedInstanceActionEndJSONRequestBody defines body for PutFeedInstanceActionEnd for application/json ContentType.
+type PutFeedInstanceActionEndJSONRequestBody = Action
 
 // PostFeedInstanceResourceInfoJSONRequestBody defines body for PostFeedInstanceResourceInfo for application/json ContentType.
 type PostFeedInstanceResourceInfoJSONRequestBody = InstanceResourceInfo

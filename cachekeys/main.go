@@ -35,7 +35,7 @@ const (
 	FeedInstanceStatusP        = "oc3:p:feed_instance_status"
 	FeedInstanceStatusPendingH = "oc3:h:feed_instance_status_pending"
 
-	FeedActionH        = "oc3:h:feed_action"
-	FeedActionQ        = "oc3:q:feed_action"
-	FeedActionPendingH = "oc3:h:feed_action_pending"
+	FeedInstanceActionH        = "oc3:h:feed_instance_action"
+	FeedInstanceActionQ        = "oc3:q:feed_instance_action"
+	FeedInstanceActionPendingH = "oc3:h:feed_instance_action_pending"
 )

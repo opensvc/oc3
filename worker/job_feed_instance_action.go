@@ -14,7 +14,7 @@ import (
 	"github.com/opensvc/oc3/cdb"
 )
 
-type jobFeedAction struct {
+type jobFeedInstanceAction struct {
 	JobBase
 	JobRedis
 	JobDB
@@ -30,21 +30,21 @@ type jobFeedAction struct {
 	objectID   string
 
 	// data is the posted action begin payload
-	data *api.PostFeedActionJSONRequestBody
+	data *api.PostFeedInstanceActionJSONRequestBody
 
 	rawData []byte
 }
 
-func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedAction {
+func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedInstanceAction {
 	idX := fmt.Sprintf("%s@%s@%s:%s", objectName, nodeID, clusterID, uuid)
 
-	return &jobFeedAction{
+	return &jobFeedInstanceAction{
 		JobBase: JobBase{
 			name:   "action",
 			detail: "ID: " + idX,
 		},
 		JobRedis: JobRedis{
-			cachePendingH:   cachekeys.FeedActionPendingH,
+			cachePendingH:   cachekeys.FeedInstanceActionPendingH,
 			cachePendingIDX: idX,
 		},
 		idX:        idX,
@@ -54,7 +54,7 @@ func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedAction {
 	}
 }
 
-func (d *jobFeedAction) Operations() []operation {
+func (d *jobFeedInstanceAction) Operations() []operation {
 	return []operation{
 		{desc: "actionBegin/dropPending", do: d.dropPending},
 		{desc: "actionBegin/getData", do: d.getData},
@@ -65,14 +65,14 @@ func (d *jobFeedAction) Operations() []operation {
 	}
 }
 
-func (d *jobFeedAction) getData(ctx context.Context) error {
+func (d *jobFeedInstanceAction) getData(ctx context.Context) error {
 	var (
-		data api.PostFeedActionJSONRequestBody
+		data api.PostFeedInstanceActionJSONRequestBody
 	)
-	if b, err := d.redis.HGet(ctx, cachekeys.FeedActionH, d.idX).Bytes(); err != nil {
-		return fmt.Errorf("getData: HGET %s %s: %w", cachekeys.FeedActionH, d.idX, err)
+	if b, err := d.redis.HGet(ctx, cachekeys.FeedInstanceActionH, d.idX).Bytes(); err != nil {
+		return fmt.Errorf("getData: HGET %s %s: %w", cachekeys.FeedInstanceActionH, d.idX, err)
 	} else if err = json.Unmarshal(b, &data); err != nil {
-		return fmt.Errorf("getData: unexpected data from %s %s: %w", cachekeys.FeedActionH, d.idX, err)
+		return fmt.Errorf("getData: unexpected data from %s %s: %w", cachekeys.FeedInstanceActionH, d.idX, err)
 	} else {
 		d.rawData = b
 		d.data = &data
@@ -82,30 +82,30 @@ func (d *jobFeedAction) getData(ctx context.Context) error {
 	return nil
 }
 
-func (d *jobFeedAction) findNodeFromDb(ctx context.Context) error {
+func (d *jobFeedInstanceAction) findNodeFromDb(ctx context.Context) error {
 	if n, err := d.oDb.NodeByNodeID(ctx, d.nodeID); err != nil {
 		return fmt.Errorf("findNodeFromDb: node %s: %w", d.nodeID, err)
 	} else {
 		d.node = n
 	}
-	slog.Info(fmt.Sprintf("jobFeedActionBegin found node %s for id %s", d.node.Nodename, d.nodeID))
+	slog.Info(fmt.Sprintf("jobFeedInstanceActionBegin found node %s for id %s", d.node.Nodename, d.nodeID))
 	return nil
 }
 
-func (d *jobFeedAction) findObjectFromDb(ctx context.Context) error {
+func (d *jobFeedInstanceAction) findObjectFromDb(ctx context.Context) error {
 	if isNew, objId, err := d.oDb.ObjectIDFindOrCreate(ctx, d.objectName, d.clusterID); err != nil {
 		return fmt.Errorf("find or create object ID failed for %s: %w", d.objectName, err)
 	} else if isNew {
-		slog.Info(fmt.Sprintf("jobFeedActionBegin has created new object id %s@%s %s", d.objectName, d.clusterID, objId))
+		slog.Info(fmt.Sprintf("jobFeedInstanceActionBegin has created new object id %s@%s %s", d.objectName, d.clusterID, objId))
 	} else {
 		d.objectID = objId
-		slog.Info(fmt.Sprintf("jobFeedActionBegin found object id %s@%s %s", d.objectName, d.clusterID, objId))
+		slog.Info(fmt.Sprintf("jobFeedInstanceActionBegin found object id %s@%s %s", d.objectName, d.clusterID, objId))
 	}
 
 	return nil
 }
 
-func (d *jobFeedAction) updateDB(ctx context.Context) error {
+func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 	if d.data == nil || d.data.Path == "" {
 		return fmt.Errorf("invalid action data: missing path")
 	}

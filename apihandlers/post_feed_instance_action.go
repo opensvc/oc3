@@ -27,11 +27,11 @@ import (
 //   "version": "2.1-1977"
 // }
 
-// PostFeedAction handles POST /action/begin
-func (a *Api) PostFeedAction(c echo.Context) error {
-	keyH := cachekeys.FeedActionH
-	keyQ := cachekeys.FeedActionQ
-	keyPendingH := cachekeys.FeedActionPendingH
+// PostFeedInstanceAction handles POST /action/begin
+func (a *Api) PostFeedInstanceAction(c echo.Context) error {
+	keyH := cachekeys.FeedInstanceActionH
+	keyQ := cachekeys.FeedInstanceActionQ
+	keyPendingH := cachekeys.FeedInstanceActionPendingH
 
 	log := getLog(c)
 
@@ -46,7 +46,7 @@ func (a *Api) PostFeedAction(c echo.Context) error {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
 
-	var payload api.PostFeedActionJSONRequestBody
+	var payload api.PostFeedInstanceActionJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}
