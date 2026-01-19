@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 )
@@ -992,6 +993,322 @@ func (oDb *DB) DashboardUpdatePkgDiffForNode(ctx context.Context, nodeID string)
 		if err != nil {
 			return fmt.Errorf("failed to delete old dashboard entries: %v", err)
 		}
+	}
+
+	return nil
+}
+
+func (oDb *DB) DashboardUpdateCompModDiff(ctx context.Context) error {
+	svcIDs, err := oDb.ObjectIDsUpdatedLast(ctx, 2)
+	if err != nil {
+		return err
+	}
+	for _, svcID := range svcIDs {
+		if err := oDb.DashboardUpdateCompModDiffForSvc(ctx, svcID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardUpdateCompModDiffForSvc(ctx context.Context, svcID string) error {
+	_, err := oDb.DB.ExecContext(ctx, "SET @now = NOW()")
+	if err != nil {
+		return fmt.Errorf("failed to set @now: %v", err)
+	}
+
+	defer func() {
+		_, err := oDb.DB.ExecContext(ctx, `
+			DELETE FROM dashboard
+			WHERE
+				dash_type = "compliance moduleset attachment differences in cluster" AND
+				svc_id = ? AND
+				dash_updated < @now
+		`, svcID)
+		if err != nil {
+			slog.Warn(fmt.Sprintf("failed to clean up old dashboard entries: %v", err))
+		}
+	}()
+
+	// Récupérer les nœuds associés au svc_id
+	rows, err := oDb.DB.QueryContext(ctx, `
+		SELECT node_id, mon_svctype
+		FROM svcmon
+		WHERE svc_id = ?
+		ORDER BY node_id
+	`, svcID)
+	if err != nil {
+		return fmt.Errorf("failed to query svcmon: %v", err)
+	}
+	defer rows.Close()
+
+	var nodes []string
+	var monSvctype sql.NullString
+	for rows.Next() {
+		var nodeID string
+		if err := rows.Scan(&nodeID, &monSvctype); err != nil {
+			return fmt.Errorf("failed to scan svcmon row: %v", err)
+		}
+		nodes = append(nodes, nodeID)
+	}
+
+	n := len(nodes)
+	if n < 2 {
+		return nil
+	}
+
+	// Déterminer la sévérité
+	sev := 0
+	if monSvctype.String == "PRD" {
+		sev = 1
+	}
+
+	// Tronquer la liste des nodes si trop longue
+	skip := 0
+	trail := ""
+	nodesStr := strings.Join(nodes, ",")
+	for len(nodesStr)+len(trail) > 50 {
+		skip++
+		nodes = nodes[:len(nodes)-1]
+		nodesStr = strings.Join(nodes, ",")
+		trail = fmt.Sprintf(", ... (+%d)", skip)
+	}
+	nodesStr += trail
+
+	// Compter les différences de moduleset
+	var ndiff int64
+	err = oDb.DB.QueryRowContext(ctx, `
+		SELECT COUNT(t.n)
+		FROM (
+			SELECT
+				COUNT(nm.node_id) AS n,
+				GROUP_CONCAT(nm.node_id) AS nodes,
+				ms.modset_name AS modset
+			FROM
+				comp_node_moduleset nm,
+				svcmon m,
+				comp_moduleset ms
+			WHERE
+				m.svc_id = ? AND
+				m.node_id = nm.node_id AND
+				nm.modset_id = ms.id
+			GROUP BY
+				modset_name
+		) AS t
+		WHERE t.n != ?
+	`, svcID, n).Scan(&ndiff)
+	if err != nil {
+		return fmt.Errorf("failed to count moduleset differences: %v", err)
+	}
+
+	// Si aucune différence, nettoyer et retourner
+	if ndiff == 0 {
+		return nil
+	}
+
+	// Créer le JSON pour dash_dict
+	dashDict := map[string]interface{}{
+		"n":     ndiff,
+		"nodes": nodesStr,
+	}
+	dashDictJSON, err := json.Marshal(dashDict)
+	if err != nil {
+		return fmt.Errorf("failed to marshal dash_dict: %v", err)
+	}
+
+	// Calculer le MD5 de dash_dict
+	dashDictMD5 := fmt.Sprintf("%x", md5.Sum(dashDictJSON))
+
+	// Insérer ou mettre à jour l'alerte
+	query := `
+		INSERT INTO dashboard
+		SET
+			dash_type = "compliance moduleset attachment differences in cluster",
+			svc_id = ?,
+			node_id = "",
+			dash_severity = ?,
+			dash_fmt = '%(n)d differences in cluster %(nodes)s',
+			dash_dict = ?,
+			dash_dict_md5 = ?,
+			dash_created = @now,
+			dash_updated = @now,
+			dash_env = ?
+		ON DUPLICATE KEY UPDATE
+			dash_updated = @now
+	`
+	_, err = oDb.DB.ExecContext(ctx, query, svcID, sev, dashDictJSON, dashDictMD5, monSvctype.String)
+	if err != nil {
+		return fmt.Errorf("failed to insert/update dashboard: %v", err)
+	}
+
+	return nil
+}
+
+func (oDb *DB) ObjectIDsUpdatedLast(ctx context.Context, days int) ([]string, error) {
+	rows, err := oDb.DB.QueryContext(ctx, `
+		SELECT svc_id
+		FROM services
+		WHERE updated > DATE_SUB(NOW(), INTERVAL ? DAY)
+	`, days)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query svcmon: %v", err)
+	}
+	defer rows.Close()
+
+	var svcIDs []string
+	for rows.Next() {
+		var svcID string
+		if err := rows.Scan(&svcID); err != nil {
+			return nil, fmt.Errorf("failed to scan services row: %v", err)
+		}
+		svcIDs = append(svcIDs, svcID)
+	}
+	return svcIDs, nil
+}
+
+func (oDb *DB) DashboardUpdateCompRsetDiff(ctx context.Context) error {
+	svcIDs, err := oDb.ObjectIDsUpdatedLast(ctx, 2)
+	if err != nil {
+		return err
+	}
+	for _, svcID := range svcIDs {
+		if err := oDb.DashboardUpdateCompRsetDiffForSvc(ctx, svcID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (oDb *DB) DashboardUpdateCompRsetDiffForSvc(ctx context.Context, svcID string) error {
+	_, err := oDb.DB.ExecContext(ctx, "SET @now = NOW()")
+	if err != nil {
+		return fmt.Errorf("failed to set @now: %v", err)
+	}
+
+	defer func() {
+		_, err := oDb.DB.ExecContext(ctx, `
+			DELETE FROM dashboard
+			WHERE
+				dash_type = "compliance ruleset attachment differences in cluster" AND
+				svc_id = ? AND
+				dash_updated < @now
+		`, svcID)
+		if err != nil {
+			slog.Warn(fmt.Sprintf("failed to clean up old dashboard entries: %v", err))
+		}
+	}()
+
+	// Récupérer les nœuds associés au svc_id
+	rows, err := oDb.DB.QueryContext(ctx, `
+		SELECT node_id, mon_svctype
+		FROM svcmon
+		WHERE svc_id = ?
+		ORDER BY node_id
+	`, svcID)
+	if err != nil {
+		return fmt.Errorf("failed to query svcmon: %v", err)
+	}
+	defer rows.Close()
+
+	var nodes []string
+	var monSvctype sql.NullString
+	for rows.Next() {
+		var nodeID string
+		if err := rows.Scan(&nodeID, &monSvctype); err != nil {
+			return fmt.Errorf("failed to scan svcmon row: %v", err)
+		}
+		nodes = append(nodes, nodeID)
+	}
+
+	n := len(nodes)
+	if n < 2 {
+		return nil
+	}
+
+	// Déterminer la sévérité
+	sev := 0
+	if monSvctype.String == "PRD" {
+		sev = 1
+	}
+
+	// Tronquer la liste des nodes si trop longue
+	skip := 0
+	trail := ""
+	nodesStr := strings.Join(nodes, ",")
+	for len(nodesStr)+len(trail) > 50 {
+		skip++
+		nodes = nodes[:len(nodes)-1]
+		nodesStr = strings.Join(nodes, ",")
+		trail = fmt.Sprintf(", ... (+%d)", skip)
+	}
+	nodesStr += trail
+
+	// Compter les différences de ruleset
+	var ndiff int64
+	err = oDb.DB.QueryRowContext(ctx, `
+		SELECT COUNT(t.n)
+		FROM (
+			SELECT
+				COUNT(rn.node_id) AS n,
+				GROUP_CONCAT(rn.node_id) AS nodes,
+				rs.ruleset_name AS ruleset
+			FROM
+				comp_rulesets_nodes rn,
+				svcmon m,
+				comp_ruleset rs
+			WHERE
+				m.svc_id = ? AND
+				m.node_id = rn.node_id AND
+				rn.ruleset_id = rs.id
+			GROUP BY
+				ruleset_name
+			ORDER BY
+				ruleset_name
+		) AS t
+		WHERE t.n != ?
+	`, svcID, n).Scan(&ndiff)
+	if err != nil {
+		return fmt.Errorf("failed to count ruleset differences: %v", err)
+	}
+
+	// Si aucune différence, nettoyer et retourner
+	if ndiff == 0 {
+		return nil
+	}
+
+	// Créer le JSON pour dash_dict
+	dashDict := map[string]interface{}{
+		"n":     ndiff,
+		"nodes": nodesStr,
+	}
+	dashDictJSON, err := json.Marshal(dashDict)
+	if err != nil {
+		return fmt.Errorf("failed to marshal dash_dict: %v", err)
+	}
+
+	// Calculer le MD5 de dash_dict
+	dashDictMD5 := fmt.Sprintf("%x", md5.Sum(dashDictJSON))
+
+	// Insérer ou mettre à jour l'alerte
+	query := `
+		INSERT INTO dashboard
+		SET
+			dash_type = "compliance ruleset attachment differences in cluster",
+			svc_id = ?,
+			node_id = "",
+			dash_severity = ?,
+			dash_fmt = '%(n)d differences in cluster %(nodes)s',
+			dash_dict = ?,
+			dash_dict_md5 = ?,
+			dash_created = @now,
+			dash_updated = @now,
+			dash_env = ?
+		ON DUPLICATE KEY UPDATE
+			dash_updated = @now
+	`
+	_, err = oDb.DB.ExecContext(ctx, query, svcID, sev, dashDictJSON, dashDictMD5, monSvctype.String)
+	if err != nil {
+		return fmt.Errorf("failed to insert/update dashboard: %v", err)
 	}
 
 	return nil
