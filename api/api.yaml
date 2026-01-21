@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.10
+  version: 1.0.11
 
 paths:
   /feed/daemon/ping:
@@ -382,6 +382,7 @@ components:
           description: the opensvc client data version
         begin:
           type: string
+          description: begin action timestamp in RFC3339Nano format
         cron:
           type: boolean
         session_uuid:
@@ -394,6 +395,7 @@ components:
           type: string
         end:
           type: string
+          description: end action timestamp in RFC3339Nano format
         status_log:
           type: string
         status:
