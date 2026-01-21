@@ -13,19 +13,21 @@ import (
 	"github.com/opensvc/oc3/cachekeys"
 )
 
-// {
-//   "action": "thaw",
-//   "argv": [
-//     "foo",
-//     "thaw",
-//     "--local"
-//   ],
-//   "begin": "2026-01-12 10:57:12",
-//   "cron": false,
-//   "path": "foo",
-//   "session_uuid": "b9d795bc-498e-4c20-aada-9feec2eaa947",
-//   "version": "2.1-1977"
-// }
+/*
+{
+  "action": "thaw",
+  "argv": [
+    "foo",
+    "thaw",
+    "--local"
+  ],
+  "begin": "2026-01-21T18:00:00.357669+01:00",
+  "cron": false,
+  "path": "foo",
+  "session_uuid": "b9d795bc-498e-4c20-aada-9feec2eaa947",
+  "version": "2.1-1977"
+}
+*/
 
 // PostFeedInstanceAction handles POST /action/begin
 func (a *Api) PostFeedInstanceAction(c echo.Context) error {
