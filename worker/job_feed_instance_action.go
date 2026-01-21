@@ -119,7 +119,7 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("invalid node ID UUID: %w", err)
 	}
-	beginTime, err := cdb.ParseTimeWithTimezone(d.data.Begin, d.node.Tz)
+	beginTime, err := time.Parse(time.RFC3339Nano, d.data.Begin)
 	if err != nil {
 		return fmt.Errorf("invalid begin time format: %w", err)
 	}
@@ -132,8 +132,8 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 	}
 
 	if d.data.End != "" {
-		// field End is present, process as action end
-		endTime, err := cdb.ParseTimeWithTimezone(d.data.End, d.node.Tz)
+		// field End is present, process as an end action
+		endTime, err := time.Parse(time.RFC3339Nano, d.data.End)
 		if err != nil {
 			return fmt.Errorf("invalid end time format: %w", err)
 		}
