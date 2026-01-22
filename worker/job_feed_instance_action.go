@@ -138,19 +138,19 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 			return fmt.Errorf("invalid end time format: %w", err)
 		}
 
-		actionId, err := d.oDb.FindActionID(ctx, d.nodeID, d.objectID, beginTime, d.data.Action)
+		actionID, found, err := d.oDb.FindInstanceActionIDFromSID(ctx, d.nodeID, d.objectID, d.data.SessionUuid)
 		if err != nil {
 			return fmt.Errorf("find action ID failed: %w", err)
 		}
 
-		if actionId == 0 {
+		if !found {
 			// begin not processed yet, insert full record
 			if _, err := d.oDb.InsertSvcAction(ctx, objectUUID, nodeUUID, d.data.Action, beginTime, statusLog, d.data.SessionUuid, d.data.Cron, endTime, d.data.Status); err != nil {
 				return fmt.Errorf("insert svc action failed: %w", err)
 			}
 		} else {
 			// begin already processed, update record with end info
-			if err := d.oDb.UpdateSvcAction(ctx, actionId, endTime, d.data.Status, statusLog); err != nil {
+			if err := d.oDb.UpdateSvcAction(ctx, actionID, endTime, d.data.Status, statusLog); err != nil {
 				return fmt.Errorf("end svc action failed: %w", err)
 			}
 		}
