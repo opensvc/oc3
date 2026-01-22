@@ -81,6 +81,16 @@ func cmdScheduler() *cobra.Command {
 	}
 }
 
+func cmdActions() *cobra.Command {
+	return &cobra.Command{
+		Use:   "actions",
+		Short: "start the daemon dispatching actions to the agents",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return actions()
+		},
+	}
+}
+
 func cmdVersion() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
@@ -109,6 +119,7 @@ func cmdRoot(args []string) *cobra.Command {
 		grpScheduler,
 		cmdVersion(),
 		cmdWorker(),
+		cmdActions(),
 	)
 	return cmd
 }
