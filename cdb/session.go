@@ -32,11 +32,18 @@ func (t *Session) NotifyChanges(ctx context.Context) error {
 		return fmt.Errorf("NotifyChanges: eventPublisher is not configured")
 	}
 	for _, tableName := range t.listChanges() {
-		if err := t.ev.EventPublish(tableName+"_change", nil); err != nil {
-			return fmt.Errorf("EventPublish send %s: %w", tableName, err)
+		if err := t.NotifyTableChangeWithData(ctx, tableName, nil); err != nil {
+			return err
 		}
-		slog.Debug(fmt.Sprintf("table %s change notified", tableName))
 	}
+	return nil
+}
+
+func (t *Session) NotifyTableChangeWithData(ctx context.Context, tableName string, data map[string]any) error {
+	if err := t.ev.EventPublish(tableName+"_change", data); err != nil {
+		return fmt.Errorf("EventPublish send %s: %w", tableName, err)
+	}
+	slog.Debug(fmt.Sprintf("table %s change notified", tableName))
 	return nil
 }
 
