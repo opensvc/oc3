@@ -155,6 +155,13 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 			}
 		}
 
+		if (d.data.Action == "start" || d.data.Action == "startcontainer") && d.data.Status == "ok" {
+			err := d.oDb.UpdateVirtualAsset(ctx, d.objectID, d.nodeID)
+			if err != nil {
+				return fmt.Errorf("update virtual asset failed: %w", err)
+			}
+		}
+
 		if d.data.Status == "err" {
 			if err := d.oDb.UpdateActionErrors(ctx, d.objectID, d.nodeID); err != nil {
 				return fmt.Errorf("update action errors failed: %w", err)
