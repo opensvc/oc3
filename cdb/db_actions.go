@@ -3,6 +3,7 @@ package cdb
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -261,15 +262,18 @@ func (oDb *DB) UpdateSvcAction(ctx context.Context, svcActionID int64, end time.
 	return nil
 }
 
-// FindActionID finds the action ID for the given parameters.
-func (oDb *DB) FindActionID(ctx context.Context, nodeID string, svcID string, begin time.Time, action string) (int64, error) {
-	// todo : check if there is only one result
-	const query = "SELECT id FROM svcactions WHERE node_id = ? AND svc_id = ? AND begin = ? AND action = ? AND pid IS NULL"
-	var id int64
-	if err := oDb.DB.QueryRowContext(ctx, query, nodeID, svcID, begin, action).Scan(&id); err != nil {
-		return 0, err
+// FindInstanceActionIDFromSID finds the instance action ID from the sid.
+func (oDb *DB) FindInstanceActionIDFromSID(ctx context.Context, nodeID string, svcID string, sid string) (id int64, found bool, err error) {
+	const query = "SELECT id FROM svcactions WHERE node_id = ? AND svc_id = ? AND sid = ?"
+	err = oDb.DB.QueryRowContext(ctx, query, nodeID, svcID, sid).Scan(&id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
+	} else {
+		found = true
 	}
-	return id, nil
+	return
 }
 
 // UpdateActionErrors updates the action errors in the database.
