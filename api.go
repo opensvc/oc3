@@ -10,22 +10,22 @@ import (
 	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 	"github.com/spf13/viper"
 
-	"github.com/opensvc/oc3/apifeeder"
-	"github.com/opensvc/oc3/apifeederhandlers"
+	"github.com/opensvc/oc3/api"
+	"github.com/opensvc/oc3/apihandlers"
 	"github.com/opensvc/oc3/xauth"
 )
 
 var (
-	mwProm = echoprometheus.NewMiddleware("oc3_api")
+	mwPromCollector = echoprometheus.NewMiddleware("oc3_api")
 )
 
-func startApi() error {
-	addr := viper.GetString("listener_feed.addr")
-	return listenAndServe(addr)
+func startApiCollector() error {
+	addr := viper.GetString("listener_api.addr")
+	return listenAndServeCollector(addr)
 }
 
-func listenAndServe(addr string) error {
-	enableUI := viper.GetBool("listener_feed.ui.enable")
+func listenAndServeCollector(addr string) error {
+	enableUI := viper.GetBool("listener_api.ui.enable")
 
 	db, err := newDatabase()
 	if err != nil {
@@ -38,38 +38,37 @@ func listenAndServe(addr string) error {
 	e.HideBanner = true
 	e.HidePort = true
 
-	if viper.GetBool("listener_feed.pprof.enable") {
-		slog.Info("add handler /oc3/public/pprof")
-		// TODO: move to authenticated path
-		pprof.Register(e, "/oc3/public/pprof")
+	if viper.GetBool("listener_api.pprof.enable") {
+		slog.Info("add handler /oc3/api/public/pprof")
+		pprof.Register(e, "/oc3/api/public/pprof")
 	}
 
 	strategy := union.New(
-		xauth.NewPublicStrategy("/oc3/public/", "/oc3/docs", "/oc3/version/"),
+		xauth.NewPublicStrategy("/oc3/api/public/", "/oc3/api/docs", "/oc3/api/version", "/oc3/api/openapi"),
 		xauth.NewBasicNode(db),
 	)
-	if viper.GetBool("listener_feed.metrics.enable") {
-		slog.Info("add handler /oc3/public/metrics")
-		e.Use(mwProm)
-		e.GET("/oc3/public/metrics", echoprometheus.NewHandler())
+	if viper.GetBool("listener_api.metrics.enable") {
+		slog.Info("add handler /oc3/api/public/metrics")
+		e.Use(mwPromCollector)
+		e.GET("/oc3/api/public/metrics", echoprometheus.NewHandler())
 	}
-	e.Use(apifeederhandlers.AuthMiddleware(strategy))
-	slog.Info("register openapi handlers with base url: /oc3")
-	apifeeder.RegisterHandlersWithBaseURL(e, &apifeederhandlers.Api{
+	e.Use(apihandlers.AuthMiddleware(strategy))
+	slog.Info("register openapi handlers with base url: /oc3/api")
+	api.RegisterHandlersWithBaseURL(e, &apihandlers.Api{
 		DB:          db,
 		Redis:       redisClient,
 		UI:          enableUI,
-		SyncTimeout: viper.GetDuration("listener_feed.sync.timeout"),
-	}, "/oc3")
+		SyncTimeout: viper.GetDuration("listener_api.sync.timeout"),
+	}, "/oc3/api")
 	if enableUI {
-		registerAPIUI(e)
+		registerApiCollectorUI(e)
 	}
 	slog.Info("listen on " + addr)
 	return e.Start(addr)
 }
 
-func registerAPIUI(e *echo.Echo) {
-	slog.Info("add handler /oc3/docs/")
-	g := e.Group("/oc3/docs")
-	g.Use(apifeederhandlers.UIMiddleware(context.Background()))
+func registerApiCollectorUI(e *echo.Echo) {
+	slog.Info("add handler /oc3/api/docs/")
+	g := e.Group("/oc3/api/docs")
+	g.Use(apihandlers.UIMiddleware(context.Background()))
 }
