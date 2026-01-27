@@ -45,7 +45,7 @@ func listenAndServe(addr string) error {
 	}
 
 	strategy := union.New(
-		xauth.NewPublicStrategy("/oc3/public/", "/oc3/docs"),
+		xauth.NewPublicStrategy("/oc3/public/", "/oc3/docs", "/oc3/version/"),
 		xauth.NewBasicNode(db),
 	)
 	if viper.GetBool("listener.metrics.enable") {
