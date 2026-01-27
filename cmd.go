@@ -38,12 +38,25 @@ func cmdWorker() *cobra.Command {
 func cmdAPI() *cobra.Command {
 	return &cobra.Command{
 		Use:   "api",
-		Short: "serve the collector api",
+		Short: "serve the feeder api",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setup(); err != nil {
 				return err
 			}
 			return startApi()
+		},
+	}
+}
+
+func cmdApiCollector() *cobra.Command {
+	return &cobra.Command{
+		Use:   "apicollector",
+		Short: "serve the collector api",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := setup(); err != nil {
+				return err
+			}
+			return startApiCollector()
 		},
 	}
 }
@@ -116,6 +129,7 @@ func cmdRoot(args []string) *cobra.Command {
 	)
 	cmd.AddCommand(
 		cmdAPI(),
+		cmdApiCollector(),
 		grpScheduler,
 		cmdVersion(),
 		cmdWorker(),

@@ -4,7 +4,7 @@ servers:
   - url: /oc3
 
 info:
-  title: opensvc collector api
+  title: opensvc feeder api
   version: 1.0.11
 
 paths:
