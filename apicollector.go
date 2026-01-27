@@ -10,8 +10,8 @@ import (
 	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 	"github.com/spf13/viper"
 
-	"github.com/opensvc/oc3/apicollector"
-	"github.com/opensvc/oc3/apicollectorhandlers"
+	"github.com/opensvc/oc3/api"
+	"github.com/opensvc/oc3/apihandlers"
 	"github.com/opensvc/oc3/xauth"
 )
 
@@ -52,9 +52,9 @@ func listenAndServeCollector(addr string) error {
 		e.Use(mwPromCollector)
 		e.GET("/oc3/api/public/metrics", echoprometheus.NewHandler())
 	}
-	e.Use(apicollectorhandlers.AuthMiddleware(strategy))
+	e.Use(apihandlers.AuthMiddleware(strategy))
 	slog.Info("register openapi handlers with base url: /oc3/api")
-	apicollector.RegisterHandlersWithBaseURL(e, &apicollectorhandlers.Api{
+	api.RegisterHandlersWithBaseURL(e, &apihandlers.Api{
 		DB:          db,
 		Redis:       redisClient,
 		UI:          enableUI,
@@ -70,5 +70,5 @@ func listenAndServeCollector(addr string) error {
 func registerApiCollectorUI(e *echo.Echo) {
 	slog.Info("add handler /oc3/api/docs/")
 	g := e.Group("/oc3/api/docs")
-	g.Use(apicollectorhandlers.UIMiddleware(context.Background()))
+	g.Use(apihandlers.UIMiddleware(context.Background()))
 }

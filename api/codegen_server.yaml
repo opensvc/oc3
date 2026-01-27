@@ -1,4 +1,4 @@
-package: apicollector
+package: api
 generate:
   echo-server: true
   models: false

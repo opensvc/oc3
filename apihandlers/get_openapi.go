@@ -1,4 +1,4 @@
-package apicollectorhandlers
+package apihandlers
 
 import (
 	"net/http"
