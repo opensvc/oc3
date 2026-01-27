@@ -29,11 +29,11 @@ func initConfig() error {
 	viper.AutomaticEnv()
 
 	// defaults
-	viper.SetDefault("listener.addr", "127.0.0.1:8080")
-	viper.SetDefault("listener.pprof.enable", false)
-	viper.SetDefault("listener.metrics.enable", false)
-	viper.SetDefault("listener.ui.enable", false)
-	viper.SetDefault("listener.sync.timeout", "2s")
+	viper.SetDefault("listener_feed.addr", "127.0.0.1:8080")
+	viper.SetDefault("listener_feed.pprof.enable", false)
+	viper.SetDefault("listener_feed.metrics.enable", false)
+	viper.SetDefault("listener_feed.ui.enable", false)
+	viper.SetDefault("listener_feed.sync.timeout", "2s")
 	viper.SetDefault("listener2.addr", "127.0.0.1:8081")
 	viper.SetDefault("listener2.pprof.enable", false)
 	viper.SetDefault("listener2.metrics.enable", false)

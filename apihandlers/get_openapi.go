@@ -8,7 +8,7 @@ import (
 
 func (a *Api) GetSwagger(ctx echo.Context) error {
 	if !a.UI {
-		return JSONProblem(ctx, http.StatusUnauthorized, "serve schema is disabled by configuration.", "listener.ui.enable = false")
+		return JSONProblem(ctx, http.StatusUnauthorized, "serve schema is disabled by configuration.", "listener_feed.ui.enable = false")
 	}
 	return ctx.JSON(http.StatusOK, SCHEMA)
 }

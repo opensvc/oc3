@@ -20,12 +20,12 @@ var (
 )
 
 func startApi() error {
-	addr := viper.GetString("listener.addr")
+	addr := viper.GetString("listener_feed.addr")
 	return listenAndServe(addr)
 }
 
 func listenAndServe(addr string) error {
-	enableUI := viper.GetBool("listener.ui.enable")
+	enableUI := viper.GetBool("listener_feed.ui.enable")
 
 	db, err := newDatabase()
 	if err != nil {
@@ -38,7 +38,7 @@ func listenAndServe(addr string) error {
 	e.HideBanner = true
 	e.HidePort = true
 
-	if viper.GetBool("listener.pprof.enable") {
+	if viper.GetBool("listener_feed.pprof.enable") {
 		slog.Info("add handler /oc3/public/pprof")
 		// TODO: move to authenticated path
 		pprof.Register(e, "/oc3/public/pprof")
@@ -48,7 +48,7 @@ func listenAndServe(addr string) error {
 		xauth.NewPublicStrategy("/oc3/public/", "/oc3/docs", "/oc3/version/"),
 		xauth.NewBasicNode(db),
 	)
-	if viper.GetBool("listener.metrics.enable") {
+	if viper.GetBool("listener_feed.metrics.enable") {
 		slog.Info("add handler /oc3/public/metrics")
 		e.Use(mwProm)
 		e.GET("/oc3/public/metrics", echoprometheus.NewHandler())
@@ -59,7 +59,7 @@ func listenAndServe(addr string) error {
 		DB:          db,
 		Redis:       redisClient,
 		UI:          enableUI,
-		SyncTimeout: viper.GetDuration("listener.sync.timeout"),
+		SyncTimeout: viper.GetDuration("listener_feed.sync.timeout"),
 	}, "/oc3")
 	if enableUI {
 		registerAPIUI(e)
