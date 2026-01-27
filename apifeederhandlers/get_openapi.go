@@ -1,4 +1,4 @@
-package apihandlers
+package apifeederhandlers
 
 import (
 	"net/http"

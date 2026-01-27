@@ -8,7 +8,7 @@ import (
 
 	redis "github.com/go-redis/redis/v8"
 
-	"github.com/opensvc/oc3/api"
+	"github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
 )
 
@@ -33,7 +33,7 @@ type (
 		clusterID string
 
 		// data is the posted instance resource info
-		data api.InstanceResourceInfo
+		data apifeeder.InstanceResourceInfo
 	}
 )
 
