@@ -39,28 +39,28 @@ func listenAndServe(addr string) error {
 	e.HidePort = true
 
 	if viper.GetBool("listener_feed.pprof.enable") {
-		slog.Info("add handler /oc3/public/pprof")
+		slog.Info("add handler /oc3/feed/api/public/pprof")
 		// TODO: move to authenticated path
-		pprof.Register(e, "/oc3/public/pprof")
+		pprof.Register(e, "/oc3/feed/api/public/pprof")
 	}
 
 	strategy := union.New(
-		xauth.NewPublicStrategy("/oc3/public/", "/oc3/docs", "/oc3/version/"),
+		xauth.NewPublicStrategy("/oc3/feed/api/public/", "/oc3/feed/api/docs", "/oc3/feed/api/version"),
 		xauth.NewBasicNode(db),
 	)
 	if viper.GetBool("listener_feed.metrics.enable") {
-		slog.Info("add handler /oc3/public/metrics")
+		slog.Info("add handler /oc3/feed/api/public/metrics")
 		e.Use(mwProm)
-		e.GET("/oc3/public/metrics", echoprometheus.NewHandler())
+		e.GET("/oc3/feed/api/public/metrics", echoprometheus.NewHandler())
 	}
 	e.Use(apifeederhandlers.AuthMiddleware(strategy))
-	slog.Info("register openapi handlers with base url: /oc3")
+	slog.Info("register openapi handlers with base url: /oc3/feed/api")
 	apifeeder.RegisterHandlersWithBaseURL(e, &apifeederhandlers.Api{
 		DB:          db,
 		Redis:       redisClient,
 		UI:          enableUI,
 		SyncTimeout: viper.GetDuration("listener_feed.sync.timeout"),
-	}, "/oc3")
+	}, "/oc3/feed/api")
 	if enableUI {
 		registerAPIUI(e)
 	}
@@ -69,7 +69,7 @@ func listenAndServe(addr string) error {
 }
 
 func registerAPIUI(e *echo.Echo) {
-	slog.Info("add handler /oc3/docs/")
-	g := e.Group("/oc3/docs")
+	slog.Info("add handler /oc3/feed/api/docs/")
+	g := e.Group("/oc3/feed/api/docs")
 	g.Use(apifeederhandlers.UIMiddleware(context.Background()))
 }
