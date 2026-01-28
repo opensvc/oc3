@@ -5,10 +5,10 @@ servers:
 
 info:
   title: opensvc feeder api
-  version: 1.0.11
+  version: 2.0.0
 
 paths:
-  /feed/daemon/ping:
+  /daemon/ping:
     post:
       description: |
         Refresh cluster daemon status timestamps
@@ -30,7 +30,7 @@ paths:
       tags:
         - agent
 
-  /feed/daemon/status:
+  /daemon/status:
     post:
       description: |
         Refresh cluster daemon status
@@ -77,7 +77,7 @@ paths:
         500:
           $ref: '#/components/responses/500'
 
-  /feed/node/disk:
+  /node/disk:
     post:
       description: |
         Update or create node disks configuration
@@ -97,7 +97,7 @@ paths:
       tags:
         - agent
 
-  /feed/node/system:
+  /node/system:
     post:
       description: |
         Post system discovery
@@ -125,7 +125,7 @@ paths:
       tags:
         - agent
 
-  /feed/instance/action:
+  /instance/action:
     put:
       description: |
         End an action for a given object path
@@ -183,7 +183,7 @@ paths:
       tags:
         - agent
 
-  /feed/instance/resource_info:
+  /instance/resource_info:
     post:
       description: |
         Update or create instance resource info
@@ -203,7 +203,7 @@ paths:
       tags:
         - agent
 
-  /feed/instance/status:
+  /instance/status:
     post:
       description: |
         Store opensvc 2.1 instance status data.
@@ -235,7 +235,7 @@ paths:
       tags:
         - agent
 
-  /feed/object/config:
+  /object/config:
     post:
       description: |
         Update or create object configuration
@@ -649,7 +649,7 @@ components:
             properties:
               object_without_config:
                 type: array
-                description: list of object names that requires POST /oc3/feed/object/config
+                description: list of object names that requires POST /oc3/feed/api/object/config
                 items:
                   type: string
                   description: object name
@@ -663,7 +663,7 @@ components:
             properties:
               object_without_config:
                 type: array
-                description: list of object names that requires POST /oc3/feed/object/config
+                description: list of object names that requires POST /oc3/feed/api/object/config
                 items:
                   type: string
                   description: object name
