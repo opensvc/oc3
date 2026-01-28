@@ -43,7 +43,7 @@ func cmdAPI() *cobra.Command {
 			if err := setup(); err != nil {
 				return err
 			}
-			return startApi()
+			return startApiFeeder()
 		},
 	}
 }
@@ -56,7 +56,7 @@ func cmdApiCollector() *cobra.Command {
 			if err := setup(); err != nil {
 				return err
 			}
-			return startApiCollector()
+			return startApi()
 		},
 	}
 }

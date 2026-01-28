@@ -15,12 +15,12 @@ import (
 	"github.com/opensvc/oc3/xauth"
 )
 
-func startApi() error {
+func startApiFeeder() error {
 	addr := viper.GetString("listener_feed.addr")
-	return listenAndServe(addr)
+	return listenAndServeApiFeeder(addr)
 }
 
-func listenAndServe(addr string) error {
+func listenAndServeApiFeeder(addr string) error {
 	enableUI := viper.GetBool("listener_feed.ui.enable")
 
 	db, err := newDatabase()
