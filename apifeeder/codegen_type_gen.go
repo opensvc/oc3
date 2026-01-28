@@ -172,13 +172,13 @@ type N500 = Problem
 
 // FeedDaemonPingAccepted defines model for FeedDaemonPingAccepted.
 type FeedDaemonPingAccepted struct {
-	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/object/config
+	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/api/object/config
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
 }
 
 // FeedDaemonStatusAccepted defines model for FeedDaemonStatusAccepted.
 type FeedDaemonStatusAccepted struct {
-	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/object/config
+	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/api/object/config
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
 }
 

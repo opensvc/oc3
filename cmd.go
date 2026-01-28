@@ -35,9 +35,9 @@ func cmdWorker() *cobra.Command {
 	return cmd
 }
 
-func cmdAPI() *cobra.Command {
+func cmdApiFeeder() *cobra.Command {
 	return &cobra.Command{
-		Use:   "api",
+		Use:   "apifeeder",
 		Short: "serve the feeder api",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setup(); err != nil {
@@ -128,7 +128,7 @@ func cmdRoot(args []string) *cobra.Command {
 		cmdSchedulerList(),
 	)
 	cmd.AddCommand(
-		cmdAPI(),
+		cmdApiFeeder(),
 		cmdApiCollector(),
 		grpScheduler,
 		cmdVersion(),
