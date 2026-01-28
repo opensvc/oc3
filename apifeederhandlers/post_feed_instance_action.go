@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	"github.com/opensvc/oc3/apifeeder"
+	api "github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
 )
 
@@ -48,7 +48,7 @@ func (a *Api) PostFeedInstanceAction(c echo.Context) error {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
 
-	var payload apifeeder.PostFeedInstanceActionJSONRequestBody
+	var payload api.PostFeedInstanceActionJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}
@@ -81,5 +81,5 @@ func (a *Api) PostFeedInstanceAction(c echo.Context) error {
 	}
 
 	log.Debug("action begin accepted")
-	return c.JSON(http.StatusAccepted, apifeeder.ActionRequestAccepted{Uuid: uuid})
+	return c.JSON(http.StatusAccepted, api.ActionRequestAccepted{Uuid: uuid})
 }

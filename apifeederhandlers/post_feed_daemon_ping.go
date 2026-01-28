@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/opensvc/oc3/apifeeder"
+	api "github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
 )
 
@@ -59,10 +59,10 @@ func (a *Api) PostFeedDaemonPing(c echo.Context) error {
 					log.Error(fmt.Sprintf("%s", err))
 				}
 				log.Info(fmt.Sprintf("accepted %s, cluster id %s need object config: %s", nodeID, clusterID, objects))
-				return c.JSON(http.StatusAccepted, apifeeder.FeedDaemonPingAccepted{ObjectWithoutConfig: &objects})
+				return c.JSON(http.StatusAccepted, api.FeedDaemonPingAccepted{ObjectWithoutConfig: &objects})
 			}
 		}
 	}
 	log.Info(fmt.Sprintf("accepted %s", nodeID))
-	return c.JSON(http.StatusAccepted, apifeeder.FeedDaemonPingAccepted{})
+	return c.JSON(http.StatusAccepted, api.FeedDaemonPingAccepted{})
 }

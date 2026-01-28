@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/opensvc/oc3/apifeeder"
+	api "github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
 )
 
@@ -44,7 +44,7 @@ func (a *Api) PutFeedInstanceActionEnd(c echo.Context) error {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
 
-	var payload apifeeder.PutFeedInstanceActionEndJSONRequestBody
+	var payload api.PutFeedInstanceActionEndJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}
