@@ -104,6 +104,16 @@ func cmdActions() *cobra.Command {
 	}
 }
 
+func cmdComet() *cobra.Command {
+	return &cobra.Command{
+		Use:   "comet",
+		Short: "websocket group messaging daemon",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cometRun()
+		},
+	}
+}
+
 func cmdVersion() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
@@ -134,6 +144,7 @@ func cmdRoot(args []string) *cobra.Command {
 		cmdVersion(),
 		cmdWorker(),
 		cmdActions(),
+		cmdComet(),
 	)
 	return cmd
 }
