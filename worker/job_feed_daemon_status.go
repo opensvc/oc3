@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	redis "github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"

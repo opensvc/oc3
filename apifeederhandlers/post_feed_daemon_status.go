@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	redis "github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 
 	api "github.com/opensvc/oc3/apifeeder"
