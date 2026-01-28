@@ -15,10 +15,6 @@ import (
 	"github.com/opensvc/oc3/xauth"
 )
 
-var (
-	mwProm = echoprometheus.NewMiddleware("oc3_apifeeder")
-)
-
 func startApi() error {
 	addr := viper.GetString("listener_feed.addr")
 	return listenAndServe(addr)
@@ -50,7 +46,7 @@ func listenAndServe(addr string) error {
 	)
 	if viper.GetBool("listener_feed.metrics.enable") {
 		slog.Info("add handler /oc3/feed/api/public/metrics")
-		e.Use(mwProm)
+		e.Use(echoprometheus.NewMiddleware("oc3_apifeeder"))
 		e.GET("/oc3/feed/api/public/metrics", echoprometheus.NewHandler())
 	}
 	e.Use(apifeederhandlers.AuthMiddleware(strategy))
