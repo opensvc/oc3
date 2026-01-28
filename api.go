@@ -15,17 +15,13 @@ import (
 	"github.com/opensvc/oc3/xauth"
 )
 
-var (
-	mwProm = echoprometheus.NewMiddleware("oc3_api")
-)
-
 func startApi() error {
-	addr := viper.GetString("listener.addr")
-	return listenAndServe(addr)
+	addr := viper.GetString("listener_api.addr")
+	return listenAndServeApi(addr)
 }
 
-func listenAndServe(addr string) error {
-	enableUI := viper.GetBool("listener.ui.enable")
+func listenAndServeApi(addr string) error {
+	enableUI := viper.GetBool("listener_api.ui.enable")
 
 	db, err := newDatabase()
 	if err != nil {
@@ -38,38 +34,37 @@ func listenAndServe(addr string) error {
 	e.HideBanner = true
 	e.HidePort = true
 
-	if viper.GetBool("listener.pprof.enable") {
-		slog.Info("add handler /oc3/public/pprof")
-		// TODO: move to authenticated path
-		pprof.Register(e, "/oc3/public/pprof")
+	if viper.GetBool("listener_api.pprof.enable") {
+		slog.Info("add handler /oc3/api/public/pprof")
+		pprof.Register(e, "/oc3/api/public/pprof")
 	}
 
 	strategy := union.New(
-		xauth.NewPublicStrategy("/oc3/public/", "/oc3/docs", "/oc3/version/"),
+		xauth.NewPublicStrategy("/oc3/api/public/", "/oc3/api/docs", "/oc3/api/version", "/oc3/api/openapi"),
 		xauth.NewBasicNode(db),
 	)
-	if viper.GetBool("listener.metrics.enable") {
-		slog.Info("add handler /oc3/public/metrics")
-		e.Use(mwProm)
-		e.GET("/oc3/public/metrics", echoprometheus.NewHandler())
+	if viper.GetBool("listener_api.metrics.enable") {
+		slog.Info("add handler /oc3/api/public/metrics")
+		e.Use(echoprometheus.NewMiddleware("oc3_api"))
+		e.GET("/oc3/api/public/metrics", echoprometheus.NewHandler())
 	}
 	e.Use(apihandlers.AuthMiddleware(strategy))
-	slog.Info("register openapi handlers with base url: /oc3")
+	slog.Info("register openapi handlers with base url: /oc3/api")
 	api.RegisterHandlersWithBaseURL(e, &apihandlers.Api{
 		DB:          db,
 		Redis:       redisClient,
 		UI:          enableUI,
-		SyncTimeout: viper.GetDuration("listener.sync.timeout"),
-	}, "/oc3")
+		SyncTimeout: viper.GetDuration("listener_api.sync.timeout"),
+	}, "/oc3/api")
 	if enableUI {
-		registerAPIUI(e)
+		registerApiCollectorUI(e)
 	}
 	slog.Info("listen on " + addr)
 	return e.Start(addr)
 }
 
-func registerAPIUI(e *echo.Echo) {
-	slog.Info("add handler /oc3/docs/")
-	g := e.Group("/oc3/docs")
+func registerApiCollectorUI(e *echo.Echo) {
+	slog.Info("add handler /oc3/api/docs/")
+	g := e.Group("/oc3/api/docs")
 	g.Use(apihandlers.UIMiddleware(context.Background()))
 }

@@ -1,4 +1,4 @@
-package apihandlers
+package apifeederhandlers
 
 import (
 	"context"
@@ -8,9 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// UIMiddleware creates a middleware for UI-related handlers that passes context
 func UIMiddleware(_ context.Context) echo.MiddlewareFunc {
-	uiHandler := http.StripPrefix("/oc3/api/docs", swaggerui.Handler("/oc3/api/docs/openapi"))
+	uiHandler := http.StripPrefix("/oc3/feed/api/docs", swaggerui.Handler("/oc3/feed/api/docs/openapi"))
 	echoUI := echo.WrapHandler(uiHandler)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {

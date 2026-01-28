@@ -1,63 +1,13 @@
 openapi: 3.0.0
 
 servers:
-  - url: /oc3
+  - url: /oc3/api
 
 info:
   title: opensvc collector api
-  version: 1.0.11
+  version: 1.0.0
 
 paths:
-  /feed/daemon/ping:
-    post:
-      description: |
-        Refresh cluster daemon status timestamps
-      operationId: PostFeedDaemonPing
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PostFeedDaemonPing'
-      responses:
-        202:
-          $ref: '#/components/responses/FeedDaemonPingAccepted'
-        204:
-          description: missing daemon status for node, POST /daemon/status is required
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
-  /feed/daemon/status:
-    post:
-      description: |
-        Refresh cluster daemon status
-      operationId: PostFeedDaemonStatus
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PostFeedDaemonStatus'
-      responses:
-        202:
-          $ref: '#/components/responses/FeedDaemonStatusAccepted'
-        400:
-          $ref: '#/components/responses/400'
-        401:
-          $ref: '#/components/responses/401'
-        403:
-          $ref: '#/components/responses/403'
-        500:
-          $ref: '#/components/responses/500'
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
   /docs/openapi:
     get:
       operationId: GetSwagger
@@ -77,184 +27,6 @@ paths:
         500:
           $ref: '#/components/responses/500'
 
-  /feed/node/disk:
-    post:
-      description: |
-        Update or create node disks configuration
-      operationId: PostFeedNodeDisk
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NodeDisks'
-      responses:
-        202:
-          description: node disks configuration will be refreshed
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
-  /feed/node/system:
-    post:
-      description: |
-        Post system discovery
-      operationId: PostFeedSystem
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/system'
-      responses:
-        202:
-          description: system data will be refreshed for node
-        400:
-          $ref: '#/components/responses/400'
-        401:
-          $ref: '#/components/responses/401'
-        403:
-          $ref: '#/components/responses/403'
-        500:
-          $ref: '#/components/responses/500'
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
-  /feed/instance/action:
-    put:
-      description: |
-        End an action for a given object path
-      operationId: PutFeedInstanceActionEnd
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Action'
-      responses:
-        202:
-          description: action end accepted
-        400:
-          $ref: '#/components/responses/400'
-        401:
-          $ref: '#/components/responses/401'
-        403:
-          $ref: '#/components/responses/403'
-        500:
-          $ref: '#/components/responses/500'
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-    post:
-      description: |
-        Begin an action for a given object path
-      operationId: PostFeedInstanceAction
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Action'
-      responses:
-        202:
-          description: action begin accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ActionRequestAccepted'
-        400:
-          $ref: '#/components/responses/400'
-        401:
-          $ref: '#/components/responses/401'
-        403:
-          $ref: '#/components/responses/403'
-        500:
-          $ref: '#/components/responses/500'
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
-  /feed/instance/resource_info:
-    post:
-      description: |
-        Update or create instance resource info
-      operationId: PostFeedInstanceResourceInfo
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InstanceResourceInfo'
-      responses:
-        202:
-          description: instance resource information will be refreshed
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
-  /feed/instance/status:
-    post:
-      description: |
-        Store opensvc 2.1 instance status data.
-      operationId: PostFeedInstanceStatus
-      parameters:
-        - $ref: '#/components/parameters/inQuerySync'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InstanceStatus'
-      responses:
-        200:
-          description: instance status stored successfully (synchronous)
-        202:
-          description: instance status refreshed accepted (asynchronous)
-        400:
-          $ref: '#/components/responses/400'
-        401:
-          $ref: '#/components/responses/401'
-        403:
-          $ref: '#/components/responses/403'
-        500:
-          $ref: '#/components/responses/500'
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
-  /feed/object/config:
-    post:
-      description: |
-        Update or create object configuration
-      operationId: PostFeedObjectConfig
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ObjectConfig'
-      responses:
-        202:
-          description: instance configuration will be refreshed
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - agent
-
   /version:
     get:
       operationId: GetVersion
@@ -272,315 +44,6 @@ paths:
           $ref: '#/components/responses/500'
 
 components:
-  schemas:
-    Disk:
-      type: object
-      required:
-        - id
-        - object_path
-        - size
-        - used
-        - vendor
-        - model
-        - dg
-      properties:
-        id:
-          type: string
-        object_path:
-          type: string
-        size:
-          type: integer
-          format: int32
-        used:
-          type: integer
-        vendor:
-          type: string
-        model:
-          type: string
-        dg:
-          type: string
-        region:
-          type: string
-
-    InstanceResourceInfo:
-      type: object
-      required:
-        - path
-        - info
-      properties:
-        path:
-          type: string
-        topology:
-          type: string
-        info:
-          type: array
-          items:
-            type: object
-            required:
-              - rid
-              - keys
-            properties:
-              rid:
-                type: string
-              keys:
-                type: array
-                items:
-                  type: object
-                  required:
-                    - key
-                    - value
-                  properties:
-                    key:
-                      type: string
-                    value:
-                      type: string
-
-    InstanceStatus:
-      type: object
-      required:
-        - path
-        - data
-        - version
-      properties:
-        path:
-          type: string
-        data:
-          type: object
-        version:
-          type: string
-          description: the opensvc client data version
-
-    ActionRequestAccepted:
-      type: object
-      required:
-        - uuid
-      properties:
-        uuid:
-          type: string
-
-    Action:
-      type: object
-      required:
-        - path
-        - action
-        - version
-        - begin
-        - cron
-        - session_uuid
-        - argv
-        - uuid
-        - end
-        - actionlogfile
-        - status
-      properties:
-        path:
-          type: string
-        action:
-          type: string
-        version:
-          type: string
-          description: the opensvc client data version
-        begin:
-          type: string
-          description: begin action timestamp in RFC3339Nano format
-        cron:
-          type: boolean
-        session_uuid:
-          type: string
-        argv:
-          type: array
-          items:
-            type: string
-        uuid:
-          type: string
-        end:
-          type: string
-          description: end action timestamp in RFC3339Nano format
-        status_log:
-          type: string
-        status:
-          type: string
-
-    NodeDisks:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Disk'
-
-    ObjectConfig:
-      type: object
-      required:
-        - path
-      properties:
-        path:
-          type: string
-        orchestrate:
-          type: string
-        topology:
-          type: string
-        scope:
-          type: array
-          items:
-            type: string
-        drp_node:
-          type: string
-        drp_nodes:
-          type: array
-          items:
-            type: string
-        flex_min:
-          type: integer
-        flex_max:
-          type: integer
-        flex_target:
-          type: integer
-        monitored_resource_count:
-          type: integer
-        app:
-          type: string
-        env:
-          type: string
-        comment:
-          type: string
-        raw_config:
-          type: string
-          format: byte
-
-    PostFeedDaemonPing:
-      type: object
-      required:
-        - nodes
-        - objects
-        - version
-      properties:
-        nodes:
-          type: array
-          description: list of cluster node
-          items:
-            type: string
-            description: cluster node name
-        objects:
-          type: array
-          description: list of cluster object names
-          items:
-            type: string
-            description: object name
-        version:
-          type: string
-          description: the opensvc client data version
-
-    PostFeedDaemonStatus:
-      type: object
-      required:
-        - data
-        - changes
-        - version
-      properties:
-        previous_updated_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        data:
-          type: object
-        changes:
-          type: array
-          items:
-            type: string
-            description: object or instance
-        version:
-          type: string
-          description: the opensvc client data version
-
-    Problem:
-      type: object
-      properties:
-        detail:
-          description: |
-            A human-readable explanation specific to this occurrence of the
-            problem.
-          type: string
-        status:
-          type: integer
-          description: |
-            The HTTP status code ([RFC7231], Section 6) generated by the
-            origin server for this occurrence of the problem.
-        title:
-          type: string
-          description: |
-            A short, human-readable summary of the problem type.  It SHOULD
-            NOT change from occurrence to occurrence of the problem, except
-            for purposes of localization (e.g., using proactive content
-            negotiation; see [RFC7231], Section 3.4).
-      required:
-        - detail
-        - status
-        - title
-
-    system:
-      type: object
-      properties:
-        package:
-          type: array
-          items:
-            $ref: '#/components/schemas/package'
-
-    package:
-      type: object
-      required:
-        - name
-        - version
-        - arch
-        - type
-        - sig
-      properties:
-        name:
-          type: string
-        version:
-          type: string
-        arch:
-          type: string
-        type:
-          type: string
-        sig:
-          type: string
-        installed_at:
-          type: string
-          format: date-time
-
-    version:
-      type: object
-      required:
-        - version
-      properties:
-        version:
-          type: string
-          example: "0.0.1"
-
-  parameters:
-    ObjectPathHeader:
-      name: OC3-ObjectPath
-      in: header
-      schema:
-        type: string
-
-    inQuerySync:
-      in: query
-      name: sync
-      schema:
-        type: boolean
-
-  securitySchemes:
-    basicAuth:
-      type: http
-      scheme: basic
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
 
   responses:
     '200':
@@ -640,32 +103,46 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
 
-    FeedDaemonPingAccepted:
-      description: daemon status timestamps will be refreshed for node
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              object_without_config:
-                type: array
-                description: list of object names that requires POST /oc3/feed/object/config
-                items:
-                  type: string
-                  description: object name
+  schemas:
+    Problem:
+      type: object
+      properties:
+        detail:
+          description: |
+            A human-readable explanation specific to this occurrence of the
+            problem.
+          type: string
+        status:
+          type: integer
+          description: |
+            The HTTP status code ([RFC7231], Section 6) generated by the
+            origin server for this occurrence of the problem.
+        title:
+          type: string
+          description: |
+            A short, human-readable summary of the problem type.  It SHOULD
+            NOT change from occurrence to occurrence of the problem, except
+            for purposes of localization (e.g., using proactive content
+            negotiation; see [RFC7231], Section 3.4).
+      required:
+        - detail
+        - status
+        - title
 
-    FeedDaemonStatusAccepted:
-      description: daemon status will be refreshed for node
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              object_without_config:
-                type: array
-                description: list of object names that requires POST /oc3/feed/object/config
-                items:
-                  type: string
-                  description: object name
+    version:
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          type: string
+          example: "0.0.1"
 
-    
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

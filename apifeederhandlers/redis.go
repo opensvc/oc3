@@ -1,11 +1,11 @@
-package apihandlers
+package apifeederhandlers
 
 import (
 	"context"
 	"fmt"
 	"log/slog"
 
-	redis "github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v8"
 )
 
 func (a *Api) pushUniqValue(ctx context.Context, key string, value string) error {

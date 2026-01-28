@@ -1,4 +1,4 @@
-package apihandlers
+package apifeederhandlers
 
 import (
 	"encoding/json"
@@ -7,41 +7,40 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/opensvc/oc3/api"
+	api "github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
 )
 
-// PostFeedInstanceResourceInfo will populate FeedInstanceResourceInfo <path>@<nodeID>@<clusterID>
-// with posted instance resource information. The auth middleware has prepared nodeID and clusterID.
-func (a *Api) PostFeedInstanceResourceInfo(c echo.Context) error {
-	var data api.PostFeedInstanceResourceInfoJSONRequestBody
-	keyH := cachekeys.FeedInstanceResourceInfoH
-	keyQ := cachekeys.FeedInstanceResourceInfoQ
-	keyPendingH := cachekeys.FeedInstanceResourceInfoPendingH
+// PostFeedNodeDisk will populate FeedNodeDiskH <nodename>@<nodeID>@<clusterID>
+// with posted disk, auth middleware has prepared nodeID, clusterID, and nodename.
+func (a *Api) PostFeedNodeDisk(c echo.Context) error {
+	keyH := cachekeys.FeedNodeDiskH
+	keyQ := cachekeys.FeedNodeDiskQ
+	keyPendingH := cachekeys.FeedNodeDiskPendingH
 	log := getLog(c)
 	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {
 		log.Debug("node auth problem")
 		return JSONNodeAuthProblem(c)
 	}
+	nodename := nodenameFromContext(c)
+	if nodename == "" {
+		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define nodename")
+	}
 	clusterID := clusterIDFromContext(c)
 	if clusterID == "" {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
-
-	if err := c.Bind(&data); err != nil {
+	var payload api.PostFeedNodeDiskJSONRequestBody
+	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}
-	if data.Path == "" {
-		log.Debug("bad request: missing or empty instance path")
-		return JSONProblem(c, http.StatusBadRequest, "BadRequest: missing or empty instance path", "")
-	}
-	b, err := json.Marshal(data)
+	b, err := json.Marshal(payload)
 	if err != nil {
 		return JSONProblem(c, http.StatusInternalServerError, "Failed to re-encode config", err.Error())
 	}
 	ctx := c.Request().Context()
-	idx := data.Path + "@" + nodeID + "@" + clusterID
+	idx := nodename + "@" + nodeID + "@" + clusterID
 	log.Info(fmt.Sprintf("HSET %s %s", keyH, idx))
 	if err := a.Redis.HSet(ctx, keyH, idx, b).Err(); err != nil {
 		log.Error(fmt.Sprintf("HSET %s %s", keyH, idx))

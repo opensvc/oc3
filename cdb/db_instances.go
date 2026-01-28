@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/opensvc/oc3/api"
+	"github.com/opensvc/oc3/apifeeder"
 )
 
 type (
@@ -549,7 +549,7 @@ func (oDb *DB) InstanceResourcesDeleteObsolete(ctx context.Context, svcID, nodeI
 	return nil
 }
 
-func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID string, data api.InstanceResourceInfo) error {
+func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID string, data apifeeder.InstanceResourceInfo) error {
 	defer logDuration("InstanceResourceInfoUpdate "+svcID+"@"+nodeID, time.Now())
 	const (
 		query = "" +

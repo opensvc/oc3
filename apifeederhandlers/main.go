@@ -1,4 +1,4 @@
-package apihandlers
+package apifeederhandlers
 
 import (
 	"database/sql"
@@ -7,7 +7,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-redis/redis/v8"
 
-	"github.com/opensvc/oc3/api"
+	api "github.com/opensvc/oc3/apifeeder"
 )
 
 type (

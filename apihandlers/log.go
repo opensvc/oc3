@@ -2,17 +2,12 @@ package apihandlers
 
 import (
 	"log/slog"
-
-	"github.com/labstack/echo/v4"
 )
 
-var (
-	defaultLogger = slog.Default()
-)
+func log(args ...any) {
+	slog.Info("apicollector", args...)
+}
 
-func getLog(c echo.Context) *slog.Logger {
-	if l, ok := c.Get("logger").(*slog.Logger); ok {
-		return l
-	}
-	return defaultLogger
+func logErr(args ...any) {
+	slog.Error("apicollector", args...)
 }
