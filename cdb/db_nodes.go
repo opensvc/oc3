@@ -6,7 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type (
@@ -471,4 +474,89 @@ func (oDb *DB) UpdateVirtualAsset(ctx context.Context, svcID, nodeID string) err
 		oDb.SetChange("nodes")
 	}
 	return nil
+}
+
+func (oDb *DB) NodeByNodeIDOrNodename(ctx context.Context, nodeIdOrName string) (*DBNode, error) {
+	defer logDuration("nodeByNodeIDOrNodename", time.Now())
+	if nodeIdOrName == "" {
+		return nil, fmt.Errorf("nodeByNodeIDOrNodename: called with empty node ID or name")
+	}
+
+	// Valid UUID : should be a node_id
+	if _, err := uuid.Parse(nodeIdOrName); err == nil {
+		n, err := oDb.NodeByNodeID(ctx, nodeIdOrName)
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	}
+
+	// Otherwise treat it as a nodename and resolve the node_id first.
+	const query = `SELECT node_id FROM nodes WHERE nodename = ?`
+	rows, err := oDb.DB.QueryContext(ctx, query, nodeIdOrName)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	var nodeIDs []string
+	for rows.Next() {
+		var nodeID sql.NullString
+		if err := rows.Scan(&nodeID); err != nil {
+			return nil, err
+		}
+		if nodeID.Valid {
+			nodeIDs = append(nodeIDs, nodeID.String)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	switch len(nodeIDs) {
+	case 0:
+		return nil, fmt.Errorf("node %s not found", nodeIdOrName)
+	case 1:
+		n, err := oDb.NodeByNodeID(ctx, nodeIDs[0])
+		if err != nil {
+			return nil, err
+		}
+		return n, nil
+	default:
+		return nil, fmt.Errorf("nodeByNodeIDOrNodename: multiple node_ids found for nodename %s", nodeIdOrName)
+	}
+}
+
+// check if a user is responsible for a given node
+func (oDb *DB) NodeResponsible(ctx context.Context, nodeID string, groups []string, isManager bool) (bool, error) {
+	if nodeID == "" {
+		return false, fmt.Errorf("nodeResponsible: must have a not empty node_id parameter")
+	}
+	if isManager {
+		return true, nil
+	}
+
+	const query = `SELECT app FROM nodes WHERE node_id = ? LIMIT 1`
+	var app sql.NullString
+	if err := oDb.DB.QueryRowContext(ctx, query, nodeID).Scan(&app); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, fmt.Errorf("nodeResponsible: node %s does not exist", nodeID)
+		}
+		return false, fmt.Errorf("nodeResponsible: %w", err)
+	}
+
+	allowedApps, err := oDb.PublishedAppsForGroups(ctx, groups)
+	if err != nil {
+		return false, fmt.Errorf("nodeResponsible: %w", err)
+	}
+	if len(allowedApps) == 0 {
+		return false, nil
+	}
+
+	for _, a := range allowedApps {
+		if strings.EqualFold(a, app.String) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
