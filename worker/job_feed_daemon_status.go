@@ -325,7 +325,7 @@ func (d *jobFeedDaemonStatus) heartbeatToDB(ctx context.Context) error {
 	for _, hb := range d.heartbeats {
 		slog.Debug(fmt.Sprintf("inserting: %s", hb))
 		if err := d.oDb.HBUpdate(ctx, hb.DBHeartbeat); err != nil {
-			return fmt.Errorf("1 heartbeatToDB hbUpdate %s: %w", hb, err)
+			return fmt.Errorf("heartbeatToDB hbUpdate %s: %w", hb, err)
 		}
 		if err := d.oDb.HBLogUpdate(ctx, hb.DBHeartbeat); err != nil {
 			return fmt.Errorf("heartbeatToDB hbLogUpdate %s: %w", hb, err)

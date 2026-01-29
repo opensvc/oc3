@@ -153,7 +153,7 @@ func (oDb *DB) HBLogUpdate(ctx context.Context, hb DBHeartbeat) error {
 			"INSERT INTO `hbmon_log_last` (`cluster_id`, `node_id`, `peer_node_id`, `name`, `state`, `beating`, `begin`, `end`) " +
 			" VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())" +
 			" ON DUPLICATE KEY UPDATE " +
-			"  `cluster_id`= VALUES(`cluster_id`), `state` = VALUES(`state`), `beating` = VALUES(`beating`), `end` = VALUES(`begin`), `end` = VALUES(`end`)"
+			"  `cluster_id`= VALUES(`cluster_id`), `state` = VALUES(`state`), `beating` = VALUES(`beating`), `begin` = VALUES(`begin`), `end` = VALUES(`end`)"
 
 		queryExtendIntervalOfCurrent = "" +
 			"UPDATE `hbmon_log_last` SET `end` = NOW() " +
