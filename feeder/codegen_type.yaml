@@ -1,0 +1,5 @@
+package: feeder
+generate:
+  models: true
+  embedded-spec: false
+output: codegen_type_gen.go

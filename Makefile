@@ -20,8 +20,8 @@ deps:
 	$(GOCMD) get -tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 
 api:
-	$(GOGEN) ./apifeeder
-	$(GOGEN) ./api
+	$(GOGEN) ./feeder
+	$(GOGEN) ./server
 
 clean:
 	$(GOCLEAN)

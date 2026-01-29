@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-redis/redis/v8"
 
-	"github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/feeder"
 )
 
 type (
@@ -33,7 +33,7 @@ type (
 		clusterID string
 
 		// data is the posted instance resource info
-		data apifeeder.InstanceResourceInfo
+		data feeder.InstanceResourceInfo
 	}
 )
 

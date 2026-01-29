@@ -1,0 +1,4 @@
+package: server
+generate:
+  models: true
+output: codegen_type_gen.go
