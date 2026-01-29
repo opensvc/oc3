@@ -10,9 +10,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/feeder"
 )
 
 type jobFeedInstanceAction struct {
@@ -31,7 +31,7 @@ type jobFeedInstanceAction struct {
 	objectID   string
 
 	// data is the posted action begin payload
-	data *apifeeder.PostFeedInstanceActionJSONRequestBody
+	data *feeder.PostInstanceActionJSONRequestBody
 
 	rawData []byte
 }
@@ -68,7 +68,7 @@ func (d *jobFeedInstanceAction) Operations() []operation {
 
 func (d *jobFeedInstanceAction) getData(ctx context.Context) error {
 	var (
-		data apifeeder.PostFeedInstanceActionJSONRequestBody
+		data feeder.PostInstanceActionJSONRequestBody
 	)
 	if b, err := d.redis.HGet(ctx, cachekeys.FeedInstanceActionH, d.idX).Bytes(); err != nil {
 		return fmt.Errorf("getData: HGET %s %s: %w", cachekeys.FeedInstanceActionH, d.idX, err)

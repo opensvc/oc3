@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/feeder"
 )
 
 type (
@@ -66,7 +66,7 @@ func (d *jobFeedDaemonPing) Operations() []operation {
 }
 
 func (d *jobFeedDaemonPing) getData(ctx context.Context) error {
-	var data apifeeder.PostFeedDaemonPing
+	var data feeder.PostDaemonPing
 	if b, err := d.redis.HGet(ctx, cachekeys.FeedDaemonPingH, d.nodeID).Bytes(); err != nil {
 		return fmt.Errorf("getData: HGET %s %s: %w", cachekeys.FeedDaemonPingH, d.nodeID, err)
 	} else if err = json.Unmarshal(b, &data); err != nil {
