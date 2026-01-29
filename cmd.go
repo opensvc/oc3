@@ -13,13 +13,23 @@ import (
 
 var (
 	debug bool
+
+	GroupIDSubsystems = "subsystems"
 )
+
+func NewGroupSubsystems() *cobra.Group {
+	return &cobra.Group{
+		ID:    GroupIDSubsystems,
+		Title: "Subsystems:",
+	}
+}
 
 func cmdWorker() *cobra.Command {
 	var maxRunners int
 	cmd := &cobra.Command{
-		Use:   "worker",
-		Short: "run queued jobs",
+		GroupID: GroupIDSubsystems,
+		Use:     "worker",
+		Short:   "run queued jobs",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setup(); err != nil {
 				return err
@@ -35,10 +45,11 @@ func cmdWorker() *cobra.Command {
 	return cmd
 }
 
-func cmdApiFeeder() *cobra.Command {
+func cmdFeeder() *cobra.Command {
 	return &cobra.Command{
-		Use:   "feeder",
-		Short: "serve the data feed api to nodes",
+		GroupID: GroupIDSubsystems,
+		Use:     "feeder",
+		Short:   "serve the data feed api to nodes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setup(); err != nil {
 				return err
@@ -50,13 +61,47 @@ func cmdApiFeeder() *cobra.Command {
 
 func cmdApiCollector() *cobra.Command {
 	return &cobra.Command{
-		Use:   "apicollector",
-		Short: "serve the collector api",
+		GroupID: GroupIDSubsystems,
+		Use:     "apicollector",
+		Short:   "serve the collector api",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setup(); err != nil {
 				return err
 			}
 			return startApi()
+		},
+	}
+}
+
+func cmdScheduler() *cobra.Command {
+	return &cobra.Command{
+		GroupID: GroupIDSubsystems,
+		Use:     "scheduler",
+		Short:   "start running db maintenance tasks",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return startScheduler()
+		},
+	}
+}
+
+func cmdRunner() *cobra.Command {
+	return &cobra.Command{
+		GroupID: GroupIDSubsystems,
+		Use:     "runner",
+		Short:   "dispatch actions to nodes",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return startRunner()
+		},
+	}
+}
+
+func cmdMessenger() *cobra.Command {
+	return &cobra.Command{
+		GroupID: GroupIDSubsystems,
+		Use:     "messenger",
+		Short:   "notify clients of data changes",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return startMessenger()
 		},
 	}
 }
@@ -84,36 +129,6 @@ func cmdSchedulerExec() *cobra.Command {
 	return cmd
 }
 
-func cmdScheduler() *cobra.Command {
-	return &cobra.Command{
-		Use:   "scheduler",
-		Short: "start running db maintenance tasks",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return startScheduler()
-		},
-	}
-}
-
-func cmdActions() *cobra.Command {
-	return &cobra.Command{
-		Use:   "runner",
-		Short: "dispatch actions to nodes",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return startRunner()
-		},
-	}
-}
-
-func cmdComet() *cobra.Command {
-	return &cobra.Command{
-		Use:   "messenger",
-		Short: "notify clients of data changes",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return startMessenger()
-		},
-	}
-}
-
 func cmdVersion() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
@@ -131,6 +146,7 @@ func cmdRoot(args []string) *cobra.Command {
 		Short:        "Manage the opensvc collector infrastructure components.",
 		SilenceUsage: true,
 	}
+	cmd.AddGroup(NewGroupSubsystems())
 	cmd.PersistentFlags().BoolVar(&debug, "debug", false, "set log level to debug")
 	grpScheduler := cmdScheduler()
 	grpScheduler.AddCommand(
@@ -138,13 +154,13 @@ func cmdRoot(args []string) *cobra.Command {
 		cmdSchedulerList(),
 	)
 	cmd.AddCommand(
-		cmdApiFeeder(),
+		cmdFeeder(),
 		cmdApiCollector(),
 		grpScheduler,
 		cmdVersion(),
 		cmdWorker(),
-		cmdActions(),
-		cmdComet(),
+		cmdRunner(),
+		cmdMessenger(),
 	)
 	return cmd
 }
