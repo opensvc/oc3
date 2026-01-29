@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/feeder"
-	"github.com/opensvc/oc3/feederhandlers"
+	feederhandlers "github.com/opensvc/oc3/feeder/handlers"
 	"github.com/opensvc/oc3/xauth"
 )
 

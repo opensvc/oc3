@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -140,7 +140,7 @@ func cmdVersion() *cobra.Command {
 	return cmd
 }
 
-func cmdRoot(args []string) *cobra.Command {
+func Root(args []string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          filepath.Base(args[0]),
 		Short:        "Manage the opensvc collector infrastructure components.",
