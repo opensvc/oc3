@@ -1,4 +1,4 @@
-package comet
+package messenger
 
 import (
 	"crypto/hmac"

@@ -1,4 +1,4 @@
-package apifeederhandlers
+package feederhandlers
 
 import (
 	"encoding/json"
@@ -7,8 +7,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	api "github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/feeder"
 )
 
 // PostFeedObjectConfig will populate FeedObjectConfigH <path>@<nodeID>@<clusterID>
@@ -27,7 +27,7 @@ func (a *Api) PostFeedObjectConfig(c echo.Context) error {
 	if clusterID == "" {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
-	var payload api.PostFeedObjectConfigJSONRequestBody
+	var payload feeder.PostFeedObjectConfigJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}

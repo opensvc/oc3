@@ -1,4 +1,4 @@
-package: apifeeder
+package: feeder
 generate:
   echo-server: true
   models: false

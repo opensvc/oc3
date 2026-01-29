@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 
-	"github.com/opensvc/oc3/actiond"
+	"github.com/opensvc/oc3/runner"
 )
 
-func actions() error {
+func startRunner() error {
 	if err := setup(); err != nil {
 		return err
 	}
@@ -15,7 +15,7 @@ func actions() error {
 		return err
 	}
 
-	ad := &actiond.ActionDaemon{
+	ad := &runner.ActionDaemon{
 		DB:  db,
 		Ev:  newEv(),
 		Ctx: context.Background(),

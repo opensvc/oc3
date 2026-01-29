@@ -5,12 +5,11 @@ import (
 	"log/slog"
 	"net/url"
 
+	"github.com/opensvc/oc3/messenger"
 	"github.com/spf13/viper"
-
-	"github.com/opensvc/oc3/comet"
 )
 
-func cometRun() error {
+func startMessenger() error {
 	if err := setup(); err != nil {
 		return err
 	}
@@ -21,7 +20,7 @@ func cometRun() error {
 		return err
 	}
 
-	cometCmd := comet.CmdComet{
+	cometCmd := messenger.CmdComet{
 		Address:      u.Hostname(),
 		Port:         u.Port(),
 		Key:          viper.GetString("websocket.key"),

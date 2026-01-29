@@ -31,7 +31,7 @@ func scheduleList() error {
 	return nil
 }
 
-func schedule() error {
+func startScheduler() error {
 	if err := setup(); err != nil {
 		return err
 	}

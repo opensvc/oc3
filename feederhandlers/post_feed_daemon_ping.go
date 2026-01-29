@@ -1,4 +1,4 @@
-package apifeederhandlers
+package feederhandlers
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	api "github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/feeder"
 )
 
 func (a *Api) PostFeedDaemonPing(c echo.Context) error {
@@ -59,10 +59,10 @@ func (a *Api) PostFeedDaemonPing(c echo.Context) error {
 					log.Error(fmt.Sprintf("%s", err))
 				}
 				log.Info(fmt.Sprintf("accepted %s, cluster id %s need object config: %s", nodeID, clusterID, objects))
-				return c.JSON(http.StatusAccepted, api.FeedDaemonPingAccepted{ObjectWithoutConfig: &objects})
+				return c.JSON(http.StatusAccepted, feeder.FeedDaemonPingAccepted{ObjectWithoutConfig: &objects})
 			}
 		}
 	}
 	log.Info(fmt.Sprintf("accepted %s", nodeID))
-	return c.JSON(http.StatusAccepted, api.FeedDaemonPingAccepted{})
+	return c.JSON(http.StatusAccepted, feeder.FeedDaemonPingAccepted{})
 }

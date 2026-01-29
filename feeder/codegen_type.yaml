@@ -1,4 +1,4 @@
-package: apifeeder
+package: feeder
 generate:
   models: true
   embedded-spec: false

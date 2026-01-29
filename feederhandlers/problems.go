@@ -1,4 +1,4 @@
-package apifeederhandlers
+package feederhandlers
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	api "github.com/opensvc/oc3/apifeeder"
+	"github.com/opensvc/oc3/feeder"
 )
 
 func JSONProblemf(ctx echo.Context, code int, title, detail string, args ...any) error {
@@ -17,7 +17,7 @@ func JSONProblem(ctx echo.Context, code int, title, detail string) error {
 	if title == "" {
 		title = http.StatusText(code)
 	}
-	return ctx.JSON(code, api.Problem{
+	return ctx.JSON(code, feeder.Problem{
 		Detail: detail,
 		Title:  title,
 		Status: code,

@@ -1,4 +1,4 @@
-package apifeederhandlers
+package feederhandlers
 
 import (
 	"log/slog"

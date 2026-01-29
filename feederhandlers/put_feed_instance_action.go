@@ -1,36 +1,32 @@
-package apifeederhandlers
+package feederhandlers
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	api "github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/feeder"
 )
 
 /*
 {
-  "action": "thaw",
-  "argv": [
-    "foo",
-    "thaw",
-    "--local"
-  ],
-  "begin": "2026-01-21T18:00:00.357669+01:00",
-  "cron": false,
-  "path": "foo",
-  "session_uuid": "b9d795bc-498e-4c20-aada-9feec2eaa947",
-  "version": "2.1-1977"
+    "uuid": "ea9a8373-3dda-4fe7-8c4b-08f5290c6c8b",
+    "path": "foo",
+    "action": "thaw",
+    "begin": "2026-01-21T18:00:00.357669+01:00",
+    "end": "2026-01-21T18:05:00.357669+01:00",
+    "cron": false,
+    "session_uuid": "7f2df7b2-8a4a-4bc1-9a8b-03acffaacd45",
+    "actionlogfile": "/var/tmp/opensvc/foo.freezeupdfl98l",
+    "status": "ok"
 }
 */
 
-// PostFeedInstanceAction handles POST /action/begin
-func (a *Api) PostFeedInstanceAction(c echo.Context) error {
+// PutFeedInstanceActionEnd handles PUT /feed/action
+func (a *Api) PutFeedInstanceActionEnd(c echo.Context) error {
 	keyH := cachekeys.FeedInstanceActionH
 	keyQ := cachekeys.FeedInstanceActionQ
 	keyPendingH := cachekeys.FeedInstanceActionPendingH
@@ -48,14 +44,9 @@ func (a *Api) PostFeedInstanceAction(c echo.Context) error {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
 
-	var payload api.PostFeedInstanceActionJSONRequestBody
+	var payload feeder.PutFeedInstanceActionEndJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
-	}
-
-	if !strings.HasPrefix(payload.Version, "2.") && !strings.HasPrefix(payload.Version, "3.") {
-		log.Error(fmt.Sprintf("unexpected version %s", payload.Version))
-		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "unsupported data client version: %s", payload.Version)
 	}
 
 	b, err := json.Marshal(payload)
@@ -65,8 +56,7 @@ func (a *Api) PostFeedInstanceAction(c echo.Context) error {
 
 	reqCtx := c.Request().Context()
 
-	uuid := uuid.New().String()
-	idx := fmt.Sprintf("%s@%s@%s:%s", payload.Path, nodeID, ClusterID, uuid)
+	idx := fmt.Sprintf("%s@%s@%s:%s", payload.Path, nodeID, ClusterID, payload.Uuid)
 
 	s := fmt.Sprintf("HSET %s %s", keyH, idx)
 	if _, err := a.Redis.HSet(reqCtx, keyH, idx, b).Result(); err != nil {
@@ -80,6 +70,6 @@ func (a *Api) PostFeedInstanceAction(c echo.Context) error {
 		return JSONProblemf(c, http.StatusInternalServerError, "redis operation", "can't push %s %s: %s", keyQ, idx, err)
 	}
 
-	log.Debug("action begin accepted")
-	return c.JSON(http.StatusAccepted, api.ActionRequestAccepted{Uuid: uuid})
+	log.Debug("action end accepted")
+	return c.JSON(http.StatusAccepted, nil)
 }

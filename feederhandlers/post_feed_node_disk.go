@@ -1,4 +1,4 @@
-package apifeederhandlers
+package feederhandlers
 
 import (
 	"encoding/json"
@@ -7,8 +7,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	api "github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/feeder"
 )
 
 // PostFeedNodeDisk will populate FeedNodeDiskH <nodename>@<nodeID>@<clusterID>
@@ -31,7 +31,7 @@ func (a *Api) PostFeedNodeDisk(c echo.Context) error {
 	if clusterID == "" {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
-	var payload api.PostFeedNodeDiskJSONRequestBody
+	var payload feeder.PostFeedNodeDiskJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}

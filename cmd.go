@@ -19,7 +19,7 @@ func cmdWorker() *cobra.Command {
 	var maxRunners int
 	cmd := &cobra.Command{
 		Use:   "worker",
-		Short: "run jobs from a list of queues",
+		Short: "run queued jobs",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setup(); err != nil {
 				return err
@@ -28,7 +28,7 @@ func cmdWorker() *cobra.Command {
 			for _, q := range args {
 				queues = append(queues, cachekeys.QueuePrefix+q)
 			}
-			return work(maxRunners, queues)
+			return startWorker(maxRunners, queues)
 		},
 	}
 	cmd.Flags().IntVar(&maxRunners, "runners", 1, "maximun number of worker job runners")
@@ -37,13 +37,13 @@ func cmdWorker() *cobra.Command {
 
 func cmdApiFeeder() *cobra.Command {
 	return &cobra.Command{
-		Use:   "apifeeder",
-		Short: "serve the feeder api",
+		Use:   "feeder",
+		Short: "serve the data feed api to nodes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setup(); err != nil {
 				return err
 			}
-			return startApiFeeder()
+			return startFeeder()
 		},
 	}
 }
@@ -89,27 +89,27 @@ func cmdScheduler() *cobra.Command {
 		Use:   "scheduler",
 		Short: "start running db maintenance tasks",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return schedule()
+			return startScheduler()
 		},
 	}
 }
 
 func cmdActions() *cobra.Command {
 	return &cobra.Command{
-		Use:   "actions",
-		Short: "start the daemon dispatching actions to the agents",
+		Use:   "runner",
+		Short: "dispatch actions to nodes",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return actions()
+			return startRunner()
 		},
 	}
 }
 
 func cmdComet() *cobra.Command {
 	return &cobra.Command{
-		Use:   "comet",
-		Short: "websocket group messaging daemon",
+		Use:   "messenger",
+		Short: "notify clients of data changes",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return cometRun()
+			return startMessenger()
 		},
 	}
 }

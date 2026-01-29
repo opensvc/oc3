@@ -1,4 +1,4 @@
-package actiond
+package runner
 
 import (
 	"bytes"

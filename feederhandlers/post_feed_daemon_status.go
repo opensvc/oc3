@@ -1,4 +1,4 @@
-package apifeederhandlers
+package feederhandlers
 
 import (
 	"encoding/json"
@@ -10,8 +10,8 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 
-	api "github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/feeder"
 )
 
 func (a *Api) PostFeedDaemonStatus(c echo.Context) error {
@@ -40,7 +40,7 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context) error {
 	if err != nil {
 		return JSONProblemf(c, http.StatusInternalServerError, "", "read request body: %s", err)
 	}
-	postData := &api.PostFeedDaemonStatus{}
+	postData := &feeder.PostFeedDaemonStatus{}
 	if err := json.Unmarshal(b, postData); err != nil {
 		log.Error(fmt.Sprintf("Unmarshal %s", err))
 		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "unexpected body: %s", err)
@@ -99,9 +99,9 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context) error {
 					log.Error(fmt.Sprintf("%s", err))
 				}
 				log.Info(fmt.Sprintf("accepted %s, cluster id %s need object config: %s", nodeID, clusterID, objects))
-				return c.JSON(http.StatusAccepted, api.FeedDaemonStatusAccepted{ObjectWithoutConfig: &objects})
+				return c.JSON(http.StatusAccepted, feeder.FeedDaemonStatusAccepted{ObjectWithoutConfig: &objects})
 			}
 		}
 	}
-	return c.JSON(http.StatusAccepted, api.FeedDaemonStatusAccepted{})
+	return c.JSON(http.StatusAccepted, feeder.FeedDaemonStatusAccepted{})
 }

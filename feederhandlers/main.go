@@ -1,4 +1,4 @@
-package apifeederhandlers
+package feederhandlers
 
 import (
 	"database/sql"
@@ -7,7 +7,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-redis/redis/v8"
 
-	api "github.com/opensvc/oc3/apifeeder"
+	"github.com/opensvc/oc3/feeder"
 )
 
 type (
@@ -26,7 +26,7 @@ var (
 )
 
 func init() {
-	if schema, err := api.GetSwagger(); err == nil {
+	if schema, err := feeder.GetSwagger(); err == nil {
 		SCHEMA = *schema
 	}
 }

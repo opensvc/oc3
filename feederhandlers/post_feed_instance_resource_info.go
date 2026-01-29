@@ -1,4 +1,4 @@
-package apifeederhandlers
+package feederhandlers
 
 import (
 	"encoding/json"
@@ -7,14 +7,14 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	api "github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/feeder"
 )
 
 // PostFeedInstanceResourceInfo will populate FeedInstanceResourceInfo <path>@<nodeID>@<clusterID>
 // with posted instance resource information. The auth middleware has prepared nodeID and clusterID.
 func (a *Api) PostFeedInstanceResourceInfo(c echo.Context) error {
-	var data api.PostFeedInstanceResourceInfoJSONRequestBody
+	var data feeder.PostFeedInstanceResourceInfoJSONRequestBody
 	keyH := cachekeys.FeedInstanceResourceInfoH
 	keyQ := cachekeys.FeedInstanceResourceInfoQ
 	keyPendingH := cachekeys.FeedInstanceResourceInfoPendingH

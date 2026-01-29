@@ -1,11 +1,11 @@
-package apifeederhandlers
+package feederhandlers
 
 import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
-	api "github.com/opensvc/oc3/apifeeder"
+	api "github.com/opensvc/oc3/feeder"
 )
 
 func (a *Api) GetVersion(c echo.Context) error {

@@ -12,7 +12,7 @@ import (
 	"github.com/opensvc/oc3/worker"
 )
 
-func work(runners int, queues []string) error {
+func startWorker(runners int, queues []string) error {
 	db, err := newDatabase()
 	if err != nil {
 		return err

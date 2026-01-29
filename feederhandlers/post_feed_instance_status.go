@@ -1,4 +1,4 @@
-package apifeederhandlers
+package feederhandlers
 
 import (
 	"context"
@@ -11,11 +11,11 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 
-	api "github.com/opensvc/oc3/apifeeder"
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/feeder"
 )
 
-func (a *Api) PostFeedInstanceStatus(c echo.Context, params api.PostFeedInstanceStatusParams) error {
+func (a *Api) PostFeedInstanceStatus(c echo.Context, params feeder.PostFeedInstanceStatusParams) error {
 	var (
 		keyH        = cachekeys.FeedInstanceStatusH
 		keyQ        = cachekeys.FeedInstanceStatusQ
@@ -42,7 +42,7 @@ func (a *Api) PostFeedInstanceStatus(c echo.Context, params api.PostFeedInstance
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
 
-	var payload api.PostFeedInstanceStatusJSONRequestBody
+	var payload feeder.PostFeedInstanceStatusJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}

@@ -10,17 +10,17 @@ import (
 	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 	"github.com/spf13/viper"
 
-	"github.com/opensvc/oc3/apifeeder"
-	"github.com/opensvc/oc3/apifeederhandlers"
+	"github.com/opensvc/oc3/feeder"
+	"github.com/opensvc/oc3/feederhandlers"
 	"github.com/opensvc/oc3/xauth"
 )
 
-func startApiFeeder() error {
+func startFeeder() error {
 	addr := viper.GetString("listener_feed.addr")
-	return listenAndServeApiFeeder(addr)
+	return listenAndServeFeeder(addr)
 }
 
-func listenAndServeApiFeeder(addr string) error {
+func listenAndServeFeeder(addr string) error {
 	enableUI := viper.GetBool("listener_feed.ui.enable")
 
 	db, err := newDatabase()
@@ -46,12 +46,12 @@ func listenAndServeApiFeeder(addr string) error {
 	)
 	if viper.GetBool("listener_feed.metrics.enable") {
 		slog.Info("add handler /oc3/feed/api/public/metrics")
-		e.Use(echoprometheus.NewMiddleware("oc3_apifeeder"))
+		e.Use(echoprometheus.NewMiddleware("oc3_feeder"))
 		e.GET("/oc3/feed/api/public/metrics", echoprometheus.NewHandler())
 	}
-	e.Use(apifeederhandlers.AuthMiddleware(strategy))
+	e.Use(feederhandlers.AuthMiddleware(strategy))
 	slog.Info("register openapi handlers with base url: /oc3/feed/api")
-	apifeeder.RegisterHandlersWithBaseURL(e, &apifeederhandlers.Api{
+	feeder.RegisterHandlersWithBaseURL(e, &feederhandlers.Api{
 		DB:          db,
 		Redis:       redisClient,
 		UI:          enableUI,
@@ -67,5 +67,5 @@ func listenAndServeApiFeeder(addr string) error {
 func registerAPIUI(e *echo.Echo) {
 	slog.Info("add handler /oc3/feed/api/docs/")
 	g := e.Group("/oc3/feed/api/docs")
-	g.Use(apifeederhandlers.UIMiddleware(context.Background()))
+	g.Use(feederhandlers.UIMiddleware(context.Background()))
 }
