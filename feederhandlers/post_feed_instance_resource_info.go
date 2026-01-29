@@ -11,10 +11,10 @@ import (
 	"github.com/opensvc/oc3/feeder"
 )
 
-// PostFeedInstanceResourceInfo will populate FeedInstanceResourceInfo <path>@<nodeID>@<clusterID>
+// PostInstanceResourceInfo will populate FeedInstanceResourceInfo <path>@<nodeID>@<clusterID>
 // with posted instance resource information. The auth middleware has prepared nodeID and clusterID.
-func (a *Api) PostFeedInstanceResourceInfo(c echo.Context) error {
-	var data feeder.PostFeedInstanceResourceInfoJSONRequestBody
+func (a *Api) PostInstanceResourceInfo(c echo.Context) error {
+	var data feeder.PostInstanceResourceInfoJSONRequestBody
 	keyH := cachekeys.FeedInstanceResourceInfoH
 	keyQ := cachekeys.FeedInstanceResourceInfoQ
 	keyPendingH := cachekeys.FeedInstanceResourceInfoPendingH

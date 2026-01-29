@@ -66,7 +66,7 @@ func (d *jobFeedDaemonPing) Operations() []operation {
 }
 
 func (d *jobFeedDaemonPing) getData(ctx context.Context) error {
-	var data feeder.PostFeedDaemonPing
+	var data feeder.PostDaemonPing
 	if b, err := d.redis.HGet(ctx, cachekeys.FeedDaemonPingH, d.nodeID).Bytes(); err != nil {
 		return fmt.Errorf("getData: HGET %s %s: %w", cachekeys.FeedDaemonPingH, d.nodeID, err)
 	} else if err = json.Unmarshal(b, &data); err != nil {

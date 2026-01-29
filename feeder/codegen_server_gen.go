@@ -22,34 +22,34 @@ import (
 type ServerInterface interface {
 
 	// (POST /daemon/ping)
-	PostFeedDaemonPing(ctx echo.Context) error
+	PostDaemonPing(ctx echo.Context) error
 
 	// (POST /daemon/status)
-	PostFeedDaemonStatus(ctx echo.Context) error
+	PostDaemonStatus(ctx echo.Context) error
 
 	// (GET /docs/openapi)
 	GetSwagger(ctx echo.Context) error
 
 	// (POST /instance/action)
-	PostFeedInstanceAction(ctx echo.Context) error
+	PostInstanceAction(ctx echo.Context) error
 
 	// (PUT /instance/action)
-	PutFeedInstanceActionEnd(ctx echo.Context) error
+	PutInstanceActionEnd(ctx echo.Context) error
 
 	// (POST /instance/resource_info)
-	PostFeedInstanceResourceInfo(ctx echo.Context) error
+	PostInstanceResourceInfo(ctx echo.Context) error
 
 	// (POST /instance/status)
-	PostFeedInstanceStatus(ctx echo.Context, params PostFeedInstanceStatusParams) error
+	PostInstanceStatus(ctx echo.Context, params PostInstanceStatusParams) error
 
 	// (POST /node/disk)
-	PostFeedNodeDisk(ctx echo.Context) error
+	PostNodeDisk(ctx echo.Context) error
 
 	// (POST /node/system)
-	PostFeedSystem(ctx echo.Context) error
+	PostSystem(ctx echo.Context) error
 
 	// (POST /object/config)
-	PostFeedObjectConfig(ctx echo.Context) error
+	PostObjectConfig(ctx echo.Context) error
 
 	// (GET /version)
 	GetVersion(ctx echo.Context) error
@@ -60,8 +60,8 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
-// PostFeedDaemonPing converts echo context to params.
-func (w *ServerInterfaceWrapper) PostFeedDaemonPing(ctx echo.Context) error {
+// PostDaemonPing converts echo context to params.
+func (w *ServerInterfaceWrapper) PostDaemonPing(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -69,12 +69,12 @@ func (w *ServerInterfaceWrapper) PostFeedDaemonPing(ctx echo.Context) error {
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostFeedDaemonPing(ctx)
+	err = w.Handler.PostDaemonPing(ctx)
 	return err
 }
 
-// PostFeedDaemonStatus converts echo context to params.
-func (w *ServerInterfaceWrapper) PostFeedDaemonStatus(ctx echo.Context) error {
+// PostDaemonStatus converts echo context to params.
+func (w *ServerInterfaceWrapper) PostDaemonStatus(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -82,7 +82,7 @@ func (w *ServerInterfaceWrapper) PostFeedDaemonStatus(ctx echo.Context) error {
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostFeedDaemonStatus(ctx)
+	err = w.Handler.PostDaemonStatus(ctx)
 	return err
 }
 
@@ -95,8 +95,8 @@ func (w *ServerInterfaceWrapper) GetSwagger(ctx echo.Context) error {
 	return err
 }
 
-// PostFeedInstanceAction converts echo context to params.
-func (w *ServerInterfaceWrapper) PostFeedInstanceAction(ctx echo.Context) error {
+// PostInstanceAction converts echo context to params.
+func (w *ServerInterfaceWrapper) PostInstanceAction(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -104,12 +104,12 @@ func (w *ServerInterfaceWrapper) PostFeedInstanceAction(ctx echo.Context) error 
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostFeedInstanceAction(ctx)
+	err = w.Handler.PostInstanceAction(ctx)
 	return err
 }
 
-// PutFeedInstanceActionEnd converts echo context to params.
-func (w *ServerInterfaceWrapper) PutFeedInstanceActionEnd(ctx echo.Context) error {
+// PutInstanceActionEnd converts echo context to params.
+func (w *ServerInterfaceWrapper) PutInstanceActionEnd(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -117,12 +117,12 @@ func (w *ServerInterfaceWrapper) PutFeedInstanceActionEnd(ctx echo.Context) erro
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PutFeedInstanceActionEnd(ctx)
+	err = w.Handler.PutInstanceActionEnd(ctx)
 	return err
 }
 
-// PostFeedInstanceResourceInfo converts echo context to params.
-func (w *ServerInterfaceWrapper) PostFeedInstanceResourceInfo(ctx echo.Context) error {
+// PostInstanceResourceInfo converts echo context to params.
+func (w *ServerInterfaceWrapper) PostInstanceResourceInfo(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -130,12 +130,12 @@ func (w *ServerInterfaceWrapper) PostFeedInstanceResourceInfo(ctx echo.Context) 
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostFeedInstanceResourceInfo(ctx)
+	err = w.Handler.PostInstanceResourceInfo(ctx)
 	return err
 }
 
-// PostFeedInstanceStatus converts echo context to params.
-func (w *ServerInterfaceWrapper) PostFeedInstanceStatus(ctx echo.Context) error {
+// PostInstanceStatus converts echo context to params.
+func (w *ServerInterfaceWrapper) PostInstanceStatus(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -143,7 +143,7 @@ func (w *ServerInterfaceWrapper) PostFeedInstanceStatus(ctx echo.Context) error 
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params PostFeedInstanceStatusParams
+	var params PostInstanceStatusParams
 	// ------------- Optional query parameter "sync" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "sync", ctx.QueryParams(), &params.Sync)
@@ -152,12 +152,12 @@ func (w *ServerInterfaceWrapper) PostFeedInstanceStatus(ctx echo.Context) error 
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostFeedInstanceStatus(ctx, params)
+	err = w.Handler.PostInstanceStatus(ctx, params)
 	return err
 }
 
-// PostFeedNodeDisk converts echo context to params.
-func (w *ServerInterfaceWrapper) PostFeedNodeDisk(ctx echo.Context) error {
+// PostNodeDisk converts echo context to params.
+func (w *ServerInterfaceWrapper) PostNodeDisk(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -165,12 +165,12 @@ func (w *ServerInterfaceWrapper) PostFeedNodeDisk(ctx echo.Context) error {
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostFeedNodeDisk(ctx)
+	err = w.Handler.PostNodeDisk(ctx)
 	return err
 }
 
-// PostFeedSystem converts echo context to params.
-func (w *ServerInterfaceWrapper) PostFeedSystem(ctx echo.Context) error {
+// PostSystem converts echo context to params.
+func (w *ServerInterfaceWrapper) PostSystem(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -178,12 +178,12 @@ func (w *ServerInterfaceWrapper) PostFeedSystem(ctx echo.Context) error {
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostFeedSystem(ctx)
+	err = w.Handler.PostSystem(ctx)
 	return err
 }
 
-// PostFeedObjectConfig converts echo context to params.
-func (w *ServerInterfaceWrapper) PostFeedObjectConfig(ctx echo.Context) error {
+// PostObjectConfig converts echo context to params.
+func (w *ServerInterfaceWrapper) PostObjectConfig(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BasicAuthScopes, []string{})
@@ -191,7 +191,7 @@ func (w *ServerInterfaceWrapper) PostFeedObjectConfig(ctx echo.Context) error {
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostFeedObjectConfig(ctx)
+	err = w.Handler.PostObjectConfig(ctx)
 	return err
 }
 
@@ -232,16 +232,16 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.POST(baseURL+"/daemon/ping", wrapper.PostFeedDaemonPing)
-	router.POST(baseURL+"/daemon/status", wrapper.PostFeedDaemonStatus)
+	router.POST(baseURL+"/daemon/ping", wrapper.PostDaemonPing)
+	router.POST(baseURL+"/daemon/status", wrapper.PostDaemonStatus)
 	router.GET(baseURL+"/docs/openapi", wrapper.GetSwagger)
-	router.POST(baseURL+"/instance/action", wrapper.PostFeedInstanceAction)
-	router.PUT(baseURL+"/instance/action", wrapper.PutFeedInstanceActionEnd)
-	router.POST(baseURL+"/instance/resource_info", wrapper.PostFeedInstanceResourceInfo)
-	router.POST(baseURL+"/instance/status", wrapper.PostFeedInstanceStatus)
-	router.POST(baseURL+"/node/disk", wrapper.PostFeedNodeDisk)
-	router.POST(baseURL+"/node/system", wrapper.PostFeedSystem)
-	router.POST(baseURL+"/object/config", wrapper.PostFeedObjectConfig)
+	router.POST(baseURL+"/instance/action", wrapper.PostInstanceAction)
+	router.PUT(baseURL+"/instance/action", wrapper.PutInstanceActionEnd)
+	router.POST(baseURL+"/instance/resource_info", wrapper.PostInstanceResourceInfo)
+	router.POST(baseURL+"/instance/status", wrapper.PostInstanceStatus)
+	router.POST(baseURL+"/node/disk", wrapper.PostNodeDisk)
+	router.POST(baseURL+"/node/system", wrapper.PostSystem)
+	router.POST(baseURL+"/object/config", wrapper.PostObjectConfig)
 	router.GET(baseURL+"/version", wrapper.GetVersion)
 
 }
@@ -249,40 +249,40 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xaW3PbuhH+Kxi0D8kMjyRbaTtVn5yLe9x2Ytdy2gfbo4HAFYUTEmAAULGS0X/v4EaR",
-	"EijJjpU5M+6TLWK5l28vWCz4HVNRlIID1wqPvuOSSFKABml/Mf7vCuRyvOTU/cQj/MU8wQnmpAA8wsqs",
-	"JVjRORTEEOllaZ5PhciBcLxarRIsQZWCK7BM3wwG5g8VXAPX5l9SljmjRDPB+78pwc2zNcM/SpjhEf5D",
-	"f61p362q/pUU0xwKJyUFRSUrDRs8wm9Jiq7hSwVK41WC3wxOfobUT5xUei4k+wapEzv8GWLPhZyyNAVu",
-	"ZP7p5wB8wTVITnI0BrkAiT5IKaSRfw6QvidQCH7FeHZGKZQa0kepVEpRgtTMRYyY/gZUT74yPReVnlDB",
-	"ZywzC22FcqY0EjPkyJEJUIX0nGgk4UvFJCh0dTm+QX1Bh/0ZQNonJes76r5nmmCmoVDbzBtMcRKCXGnJ",
-	"eGZs9g+IlGSJV+sH7rUYfKlFCClNdKWQZgUoTYpSoa8sz9EUkISZBDWHFM2ERFyk0AZ3bN/8P7yHwLsL",
-	"01WoXlatM+oYbIJE6udbyhGZLWx5DKbtUT/BU8gY3wbBPkZO0joiEOPo+vzdcDj860fChdG8IDqGEpUt",
-	"DesSnGDg6bY44OkPCCuJnkeNVaAUE3xSVSyNE1if7Fia5CKLLneyXIBU3j1tG/UckCiBqwVFNGfANUqJ",
-	"Jii8sGWY3a1sOKd4dOusTIL314KCDz3oG1b7mPAKO/gDk1xkM5abKPc43G9Fc+Kj0G9fzRRvB2UHHhs2",
-	"WKqYlPdMfd5mmsax70C+ECnk0RVfVjrjRELWlVGKfQOz4KNvhBnXw9O1sxjXkIHdbCoFTcUaKwvgqZD7",
-	"4bEeairr5XveNaNga2IQisF5wZUmnMI1KFFJChd8JrbhZf5pXS3ay59hqXYvxxOA5BXst9W8HohjJmwW",
-	"KnlIfEmLoFX8EJ6dAaFFKXKRLfdL9G6yUO7yxLiuNBshTnSzV12/2KnbsQuM1WgtJmbUR5GCydgd9tRB",
-	"s6uls1l/wJ6a4Ev737u6H9jYEcsyChUVReG7kK21VJYTu+vuWlSP20yBL6J0sxweJgV5iFcHt8r4jlVN",
-	"ZAY6TlAIzrSQkE6kz/YJFRXvoBaSzkFpSXTc8u4aSb42+rG6HE6XOtomKSpKeBx6j0y6WGBeCaXbPf92",
-	"sNR+jfeUNK+UBt+RdTaJTaoDW8VQ2Q+Q3exrn6lRPWLdcICuzdtdO9ou6iqLdE54tpF+UeuFRMyX2ENA",
-	"6C63EhZMVGpSlSnRkE6IbsW5efiL6U1jUp7yztHc4et3QHCPN/yheruOgyYs39buDM2rgvBfJJCUTHNA",
-	"8FDmhNvjHVIlUDZjFGmB9JwpJCitpAROwYS3nsMdL53E3h2Plo06Htpib+aAfr25uQqnKGry7tXt9fm7",
-	"v5wOT+4TNAZ3fPjza5QBB1PfUjRdOplCMnOcUW46YM5bce1QTLlG8dRM5xDDRM2F1MkmNKoqCiKXG8yR",
-	"4dtD6EKj8a+Xn/71/o5/vLxBzl9oJkXRVEyLbjUTBA+mH7/jxqSykqVQoAxRLijJ2TfnlVfQy3oJqhTj",
-	"mXnVNP8LQP6Ifsc5ZEIzS/s3pABQBNZh783rqMs2g8+FTe3IgFks9kpCP5MMItu5pPE9yGZ6nj8y09x4",
-	"MNrbZzs2pt2t156S6GryOmWtSZ6zExxDRC2VjiVjA6mD+qpAf1Br1TCqLbWxAA+kKE3o40Fv0DvZGwbd",
-	"JceeymklmV6OjbZO1JQoRs8q13pYK+zUwDxdy5prXbqRBZEgA7X7dR4i4R//vQkzYMvCrm7yWK2S+vDj",
-	"cxqHkjsDSEEiUrKGA0f4tDfoDewmXgI3iyM8tI9cy2St6LtJT78MfYdQertaXLvBT73Zd03fbLYZf9jM",
-	"vEjxKNbeONxB6bciXT7frHVb0KrtYy0r2Bynnw5OuxjXdP2OkewqwaeDN9toFUzZutVGKYzMEj/n88D7",
-	"VaZQrWgz4PDothVqt/er5HsrnG7vVyZkSaZMFJPMAHlvWLQlPNG5ez06DkXz+D71op7fqxuzYHvxMNjP",
-	"wBCt70b20Z40LjT20Q4bFxG7aQ3Rs8WLoKpf14rv2B/f2t7/O+jxV5JltkJtgP64i5O9Q+jLf/5u4A1w",
-	"ldU0Z9TjFZr4/nq6Hc+wt24yXQ+nTSkgKGML4OHcZAryjlwLI5mzMEk9RrZ55ofn1zNK3RzWRsLBgxfG",
-	"/C84WRNcVpEw+8DTpwVZFYmxD3bo/rsIs2gYuOuXF16x6wpUj9FCixgvRJ/soR8JiagE819ggAIDZBgc",
-	"UIhaU/rjxElU1FOjJm6oacBNMG1dcD6/h/Z1YWMt5HqIcto7WfvGt4gp0aR3gGvqjqz5NcptHOs1Sb/5",
-	"tYqx5pgufUwnN9jhTI+MsrNkpCpKQalZledL9EotOZ1LwUWlXrtW/XQ/p/UNd6gt6BXZ5PQiS405uvTT",
-	"cOV5WHWxk2bzjkJuDF+5sN0RxOGa5kg1ZX0L9NRC0mXTEWuIhb4xZ4mCbwBEjsioR8UC5HIH0GPH7zgw",
-	"e2WfinEwg2iy53ueF5mK7Y+CDk9H3wUemoqt+8vjxElLxA9v7T8rHxtDRn9EbiskQVeSI1KyxgXI1in6",
-	"P/XSD52id8EbpHeerZ90BqakJFOWMztzvV85VOUitBmVzPEItz5jw6v71f8CAAD//wBaVLIrKwAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

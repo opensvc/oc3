@@ -25,8 +25,8 @@ import (
 }
 */
 
-// PutFeedInstanceActionEnd handles PUT /feed/action
-func (a *Api) PutFeedInstanceActionEnd(c echo.Context) error {
+// PutInstanceActionEnd handles PUT /feed/action
+func (a *Api) PutInstanceActionEnd(c echo.Context) error {
 	keyH := cachekeys.FeedInstanceActionH
 	keyQ := cachekeys.FeedInstanceActionQ
 	keyPendingH := cachekeys.FeedInstanceActionPendingH
@@ -44,7 +44,7 @@ func (a *Api) PutFeedInstanceActionEnd(c echo.Context) error {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
 
-	var payload feeder.PutFeedInstanceActionEndJSONRequestBody
+	var payload feeder.PutInstanceActionEndJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}

@@ -11,9 +11,9 @@ import (
 	"github.com/opensvc/oc3/feeder"
 )
 
-// PostFeedNodeDisk will populate FeedNodeDiskH <nodename>@<nodeID>@<clusterID>
+// PostNodeDisk will populate FeedNodeDiskH <nodename>@<nodeID>@<clusterID>
 // with posted disk, auth middleware has prepared nodeID, clusterID, and nodename.
-func (a *Api) PostFeedNodeDisk(c echo.Context) error {
+func (a *Api) PostNodeDisk(c echo.Context) error {
 	keyH := cachekeys.FeedNodeDiskH
 	keyQ := cachekeys.FeedNodeDiskQ
 	keyPendingH := cachekeys.FeedNodeDiskPendingH
@@ -31,7 +31,7 @@ func (a *Api) PostFeedNodeDisk(c echo.Context) error {
 	if clusterID == "" {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
-	var payload feeder.PostFeedNodeDiskJSONRequestBody
+	var payload feeder.PostNodeDiskJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}

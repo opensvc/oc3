@@ -31,7 +31,7 @@ type jobFeedInstanceAction struct {
 	objectID   string
 
 	// data is the posted action begin payload
-	data *feeder.PostFeedInstanceActionJSONRequestBody
+	data *feeder.PostInstanceActionJSONRequestBody
 
 	rawData []byte
 }
@@ -68,7 +68,7 @@ func (d *jobFeedInstanceAction) Operations() []operation {
 
 func (d *jobFeedInstanceAction) getData(ctx context.Context) error {
 	var (
-		data feeder.PostFeedInstanceActionJSONRequestBody
+		data feeder.PostInstanceActionJSONRequestBody
 	)
 	if b, err := d.redis.HGet(ctx, cachekeys.FeedInstanceActionH, d.idX).Bytes(); err != nil {
 		return fmt.Errorf("getData: HGET %s %s: %w", cachekeys.FeedInstanceActionH, d.idX, err)

@@ -95,8 +95,8 @@ type ObjectConfig struct {
 	Topology               *string   `json:"topology,omitempty"`
 }
 
-// PostFeedDaemonPing defines model for PostFeedDaemonPing.
-type PostFeedDaemonPing struct {
+// PostDaemonPing defines model for PostDaemonPing.
+type PostDaemonPing struct {
 	// Nodes list of cluster node
 	Nodes []string `json:"nodes"`
 
@@ -107,8 +107,8 @@ type PostFeedDaemonPing struct {
 	Version string `json:"version"`
 }
 
-// PostFeedDaemonStatus defines model for PostFeedDaemonStatus.
-type PostFeedDaemonStatus struct {
+// PostDaemonStatus defines model for PostDaemonStatus.
+type PostDaemonStatus struct {
 	Changes           []string               `json:"changes"`
 	Data              map[string]interface{} `json:"data"`
 	PreviousUpdatedAt *time.Time             `json:"previous_updated_at,omitempty"`
@@ -170,46 +170,46 @@ type N403 = Problem
 // N500 defines model for 500.
 type N500 = Problem
 
-// FeedDaemonPingAccepted defines model for FeedDaemonPingAccepted.
-type FeedDaemonPingAccepted struct {
+// DaemonPingAccepted defines model for DaemonPingAccepted.
+type DaemonPingAccepted struct {
 	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/api/object/config
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
 }
 
-// FeedDaemonStatusAccepted defines model for FeedDaemonStatusAccepted.
-type FeedDaemonStatusAccepted struct {
+// DaemonStatusAccepted defines model for DaemonStatusAccepted.
+type DaemonStatusAccepted struct {
 	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/api/object/config
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
 }
 
-// PostFeedInstanceStatusParams defines parameters for PostFeedInstanceStatus.
-type PostFeedInstanceStatusParams struct {
+// PostInstanceStatusParams defines parameters for PostInstanceStatus.
+type PostInstanceStatusParams struct {
 	Sync *InQuerySync `form:"sync,omitempty" json:"sync,omitempty"`
 }
 
-// PostFeedDaemonPingJSONRequestBody defines body for PostFeedDaemonPing for application/json ContentType.
-type PostFeedDaemonPingJSONRequestBody = PostFeedDaemonPing
+// PostDaemonPingJSONRequestBody defines body for PostDaemonPing for application/json ContentType.
+type PostDaemonPingJSONRequestBody = PostDaemonPing
 
-// PostFeedDaemonStatusJSONRequestBody defines body for PostFeedDaemonStatus for application/json ContentType.
-type PostFeedDaemonStatusJSONRequestBody = PostFeedDaemonStatus
+// PostDaemonStatusJSONRequestBody defines body for PostDaemonStatus for application/json ContentType.
+type PostDaemonStatusJSONRequestBody = PostDaemonStatus
 
-// PostFeedInstanceActionJSONRequestBody defines body for PostFeedInstanceAction for application/json ContentType.
-type PostFeedInstanceActionJSONRequestBody = Action
+// PostInstanceActionJSONRequestBody defines body for PostInstanceAction for application/json ContentType.
+type PostInstanceActionJSONRequestBody = Action
 
-// PutFeedInstanceActionEndJSONRequestBody defines body for PutFeedInstanceActionEnd for application/json ContentType.
-type PutFeedInstanceActionEndJSONRequestBody = Action
+// PutInstanceActionEndJSONRequestBody defines body for PutInstanceActionEnd for application/json ContentType.
+type PutInstanceActionEndJSONRequestBody = Action
 
-// PostFeedInstanceResourceInfoJSONRequestBody defines body for PostFeedInstanceResourceInfo for application/json ContentType.
-type PostFeedInstanceResourceInfoJSONRequestBody = InstanceResourceInfo
+// PostInstanceResourceInfoJSONRequestBody defines body for PostInstanceResourceInfo for application/json ContentType.
+type PostInstanceResourceInfoJSONRequestBody = InstanceResourceInfo
 
-// PostFeedInstanceStatusJSONRequestBody defines body for PostFeedInstanceStatus for application/json ContentType.
-type PostFeedInstanceStatusJSONRequestBody = InstanceStatus
+// PostInstanceStatusJSONRequestBody defines body for PostInstanceStatus for application/json ContentType.
+type PostInstanceStatusJSONRequestBody = InstanceStatus
 
-// PostFeedNodeDiskJSONRequestBody defines body for PostFeedNodeDisk for application/json ContentType.
-type PostFeedNodeDiskJSONRequestBody = NodeDisks
+// PostNodeDiskJSONRequestBody defines body for PostNodeDisk for application/json ContentType.
+type PostNodeDiskJSONRequestBody = NodeDisks
 
-// PostFeedSystemJSONRequestBody defines body for PostFeedSystem for application/json ContentType.
-type PostFeedSystemJSONRequestBody = System
+// PostSystemJSONRequestBody defines body for PostSystem for application/json ContentType.
+type PostSystemJSONRequestBody = System
 
-// PostFeedObjectConfigJSONRequestBody defines body for PostFeedObjectConfig for application/json ContentType.
-type PostFeedObjectConfigJSONRequestBody = ObjectConfig
+// PostObjectConfigJSONRequestBody defines body for PostObjectConfig for application/json ContentType.
+type PostObjectConfigJSONRequestBody = ObjectConfig

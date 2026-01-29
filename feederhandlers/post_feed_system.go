@@ -10,7 +10,7 @@ import (
 	"github.com/opensvc/oc3/cachekeys"
 )
 
-func (a *Api) PostFeedSystem(c echo.Context) error {
+func (a *Api) PostSystem(c echo.Context) error {
 	log := getLog(c)
 	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {

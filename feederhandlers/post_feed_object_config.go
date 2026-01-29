@@ -11,9 +11,9 @@ import (
 	"github.com/opensvc/oc3/feeder"
 )
 
-// PostFeedObjectConfig will populate FeedObjectConfigH <path>@<nodeID>@<clusterID>
+// PostObjectConfig will populate FeedObjectConfigH <path>@<nodeID>@<clusterID>
 // with posted object config. The auth middleware has prepared nodeID and clusterID.
-func (a *Api) PostFeedObjectConfig(c echo.Context) error {
+func (a *Api) PostObjectConfig(c echo.Context) error {
 	keyH := cachekeys.FeedObjectConfigH
 	keyQ := cachekeys.FeedObjectConfigQ
 	keyPendingH := cachekeys.FeedObjectConfigPendingH
@@ -27,7 +27,7 @@ func (a *Api) PostFeedObjectConfig(c echo.Context) error {
 	if clusterID == "" {
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
-	var payload feeder.PostFeedObjectConfigJSONRequestBody
+	var payload feeder.PostObjectConfigJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}

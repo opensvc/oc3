@@ -14,8 +14,8 @@ import (
 	"github.com/opensvc/oc3/feeder"
 )
 
-func (a *Api) PostFeedDaemonStatus(c echo.Context) error {
-	log := getLog(c).With("handler", "PostFeedDaemonStatus")
+func (a *Api) PostDaemonStatus(c echo.Context) error {
+	log := getLog(c).With("handler", "PostDaemonStatus")
 	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {
 		log.Debug("node auth problem")
@@ -40,7 +40,7 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context) error {
 	if err != nil {
 		return JSONProblemf(c, http.StatusInternalServerError, "", "read request body: %s", err)
 	}
-	postData := &feeder.PostFeedDaemonStatus{}
+	postData := &feeder.PostDaemonStatus{}
 	if err := json.Unmarshal(b, postData); err != nil {
 		log.Error(fmt.Sprintf("Unmarshal %s", err))
 		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "unexpected body: %s", err)
@@ -99,9 +99,9 @@ func (a *Api) PostFeedDaemonStatus(c echo.Context) error {
 					log.Error(fmt.Sprintf("%s", err))
 				}
 				log.Info(fmt.Sprintf("accepted %s, cluster id %s need object config: %s", nodeID, clusterID, objects))
-				return c.JSON(http.StatusAccepted, feeder.FeedDaemonStatusAccepted{ObjectWithoutConfig: &objects})
+				return c.JSON(http.StatusAccepted, feeder.DaemonStatusAccepted{ObjectWithoutConfig: &objects})
 			}
 		}
 	}
-	return c.JSON(http.StatusAccepted, feeder.FeedDaemonStatusAccepted{})
+	return c.JSON(http.StatusAccepted, feeder.DaemonStatusAccepted{})
 }

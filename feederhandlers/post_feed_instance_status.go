@@ -15,7 +15,7 @@ import (
 	"github.com/opensvc/oc3/feeder"
 )
 
-func (a *Api) PostFeedInstanceStatus(c echo.Context, params feeder.PostFeedInstanceStatusParams) error {
+func (a *Api) PostInstanceStatus(c echo.Context, params feeder.PostInstanceStatusParams) error {
 	var (
 		keyH        = cachekeys.FeedInstanceStatusH
 		keyQ        = cachekeys.FeedInstanceStatusQ
@@ -42,7 +42,7 @@ func (a *Api) PostFeedInstanceStatus(c echo.Context, params feeder.PostFeedInsta
 		return JSONProblemf(c, http.StatusConflict, "Refused", "authenticated node doesn't define cluster id")
 	}
 
-	var payload feeder.PostFeedInstanceStatusJSONRequestBody
+	var payload feeder.PostInstanceStatusJSONRequestBody
 	if err := c.Bind(&payload); err != nil {
 		return JSONProblem(c, http.StatusBadRequest, "Failed to json decode request body", err.Error())
 	}

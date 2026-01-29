@@ -11,8 +11,8 @@ import (
 	"github.com/opensvc/oc3/feeder"
 )
 
-func (a *Api) PostFeedDaemonPing(c echo.Context) error {
-	log := getLog(c).With("handler", "PostFeedDaemonPing")
+func (a *Api) PostDaemonPing(c echo.Context) error {
+	log := getLog(c).With("handler", "PostDaemonPing")
 	nodeID := nodeIDFromContext(c)
 	if nodeID == "" {
 		log.Debug("node auth problem")
@@ -59,10 +59,10 @@ func (a *Api) PostFeedDaemonPing(c echo.Context) error {
 					log.Error(fmt.Sprintf("%s", err))
 				}
 				log.Info(fmt.Sprintf("accepted %s, cluster id %s need object config: %s", nodeID, clusterID, objects))
-				return c.JSON(http.StatusAccepted, feeder.FeedDaemonPingAccepted{ObjectWithoutConfig: &objects})
+				return c.JSON(http.StatusAccepted, feeder.DaemonPingAccepted{ObjectWithoutConfig: &objects})
 			}
 		}
 	}
 	log.Info(fmt.Sprintf("accepted %s", nodeID))
-	return c.JSON(http.StatusAccepted, feeder.FeedDaemonPingAccepted{})
+	return c.JSON(http.StatusAccepted, feeder.DaemonPingAccepted{})
 }

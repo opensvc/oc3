@@ -12,16 +12,16 @@ paths:
     post:
       description: |
         Refresh cluster daemon status timestamps
-      operationId: PostFeedDaemonPing
+      operationId: PostDaemonPing
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PostFeedDaemonPing'
+              $ref: '#/components/schemas/PostDaemonPing'
       responses:
         202:
-          $ref: '#/components/responses/FeedDaemonPingAccepted'
+          $ref: '#/components/responses/DaemonPingAccepted'
         204:
           description: missing daemon status for node, POST /daemon/status is required
       security:
@@ -34,16 +34,16 @@ paths:
     post:
       description: |
         Refresh cluster daemon status
-      operationId: PostFeedDaemonStatus
+      operationId: PostDaemonStatus
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PostFeedDaemonStatus'
+              $ref: '#/components/schemas/PostDaemonStatus'
       responses:
         202:
-          $ref: '#/components/responses/FeedDaemonStatusAccepted'
+          $ref: '#/components/responses/DaemonStatusAccepted'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -81,7 +81,7 @@ paths:
     post:
       description: |
         Update or create node disks configuration
-      operationId: PostFeedNodeDisk
+      operationId: PostNodeDisk
       requestBody:
         required: true
         content:
@@ -101,7 +101,7 @@ paths:
     post:
       description: |
         Post system discovery
-      operationId: PostFeedSystem
+      operationId: PostSystem
       requestBody:
         required: true
         content:
@@ -129,7 +129,7 @@ paths:
     put:
       description: |
         End an action for a given object path
-      operationId: PutFeedInstanceActionEnd
+      operationId: PutInstanceActionEnd
       requestBody:
         required: true
         content:
@@ -155,7 +155,7 @@ paths:
     post:
       description: |
         Begin an action for a given object path
-      operationId: PostFeedInstanceAction
+      operationId: PostInstanceAction
       requestBody:
         required: true
         content:
@@ -187,7 +187,7 @@ paths:
     post:
       description: |
         Update or create instance resource info
-      operationId: PostFeedInstanceResourceInfo
+      operationId: PostInstanceResourceInfo
       requestBody:
         required: true
         content:
@@ -207,7 +207,7 @@ paths:
     post:
       description: |
         Store opensvc 2.1 instance status data.
-      operationId: PostFeedInstanceStatus
+      operationId: PostInstanceStatus
       parameters:
         - $ref: '#/components/parameters/inQuerySync'
       requestBody:
@@ -239,7 +239,7 @@ paths:
     post:
       description: |
         Update or create object configuration
-      operationId: PostFeedObjectConfig
+      operationId: PostObjectConfig
       requestBody:
         required: true
         content:
@@ -448,7 +448,7 @@ components:
           type: string
           format: byte
 
-    PostFeedDaemonPing:
+    PostDaemonPing:
       type: object
       required:
         - nodes
@@ -471,7 +471,7 @@ components:
           type: string
           description: the opensvc client data version
 
-    PostFeedDaemonStatus:
+    PostDaemonStatus:
       type: object
       required:
         - data
@@ -640,7 +640,7 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
 
-    FeedDaemonPingAccepted:
+    DaemonPingAccepted:
       description: daemon status timestamps will be refreshed for node
       content:
         application/json:
@@ -654,7 +654,7 @@ components:
                   type: string
                   description: object name
 
-    FeedDaemonStatusAccepted:
+    DaemonStatusAccepted:
       description: daemon status will be refreshed for node
       content:
         application/json:
