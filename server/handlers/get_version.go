@@ -1,4 +1,4 @@
-package apihandlers
+package serverhandlers
 
 import (
 	"net/http"
@@ -12,6 +12,6 @@ func (a *Api) GetVersion(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, map[string]string{
 		"version": SCHEMA.Info.Version,
-		"service": "apicollector",
+		"service": "server",
 	})
 }

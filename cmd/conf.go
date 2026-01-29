@@ -29,16 +29,16 @@ func initConfig() error {
 	viper.AutomaticEnv()
 
 	// defaults
-	viper.SetDefault("listener_feed.addr", "127.0.0.1:8080")
-	viper.SetDefault("listener_feed.pprof.enable", false)
-	viper.SetDefault("listener_feed.metrics.enable", false)
-	viper.SetDefault("listener_feed.ui.enable", false)
-	viper.SetDefault("listener_feed.sync.timeout", "2s")
-	viper.SetDefault("listener_api.addr", "127.0.0.1:8081")
-	viper.SetDefault("listener_api.pprof.enable", false)
-	viper.SetDefault("listener_api.metrics.enable", false)
-	viper.SetDefault("listener_api.ui.enable", false)
-	viper.SetDefault("listener_api.sync.timeout", "2s")
+	viper.SetDefault("feeder.addr", "127.0.0.1:8080")
+	viper.SetDefault("feeder.pprof.enable", false)
+	viper.SetDefault("feeder.metrics.enable", false)
+	viper.SetDefault("feeder.ui.enable", false)
+	viper.SetDefault("feeder.sync.timeout", "2s")
+	viper.SetDefault("server.addr", "127.0.0.1:8081")
+	viper.SetDefault("server.pprof.enable", false)
+	viper.SetDefault("server.metrics.enable", false)
+	viper.SetDefault("server.ui.enable", false)
+	viper.SetDefault("server.sync.timeout", "2s")
 	viper.SetDefault("db.username", "opensvc")
 	viper.SetDefault("db.host", "127.0.0.1")
 	viper.SetDefault("db.port", "3306")
@@ -48,11 +48,11 @@ func initConfig() error {
 	viper.SetDefault("redis.address", "localhost:6379")
 	viper.SetDefault("redis.password", "")
 	viper.SetDefault("feeder.tx", true)
-	viper.SetDefault("websocket.key", "magix123")
-	viper.SetDefault("websocket.url", "http://127.0.0.1:8889")
-	viper.SetDefault("websocket.require_token", false)
-	viper.SetDefault("websocket.key_file", "")
-	viper.SetDefault("websocket.cert_file", "")
+	viper.SetDefault("messenger.key", "magix123")
+	viper.SetDefault("messenger.url", "http://127.0.0.1:8889")
+	viper.SetDefault("messenger.require_token", false)
+	viper.SetDefault("messenger.key_file", "")
+	viper.SetDefault("messenger.cert_file", "")
 	viper.SetDefault("worker.runners", 1)
 	viper.SetDefault("worker.pprof.uxsocket", "/var/run/oc3_worker_pprof.sock")
 	//viper.SetDefault("worker.pprof.addr", "127.0.0.1:9999")
@@ -85,7 +85,7 @@ func initConfig() error {
 
 func newEv() *oc2websocket.T {
 	return &oc2websocket.T{
-		Url: viper.GetString("websocket.url"),
-		Key: []byte(viper.GetString("websocket.key")),
+		Url: viper.GetString("messenger.url"),
+		Key: []byte(viper.GetString("messenger.key")),
 	}
 }

@@ -21,7 +21,7 @@ deps:
 
 api:
 	$(GOGEN) ./feeder
-	$(GOGEN) ./api
+	$(GOGEN) ./server
 
 clean:
 	$(GOCLEAN)

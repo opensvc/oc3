@@ -62,13 +62,13 @@ func cmdFeeder() *cobra.Command {
 func cmdApiCollector() *cobra.Command {
 	return &cobra.Command{
 		GroupID: GroupIDSubsystems,
-		Use:     "apicollector",
-		Short:   "serve the collector api",
+		Use:     "server",
+		Short:   "serve the collector api to clients",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setup(); err != nil {
 				return err
 			}
-			return startApi()
+			return startServer()
 		},
 	}
 }

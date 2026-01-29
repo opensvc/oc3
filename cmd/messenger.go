@@ -14,19 +14,19 @@ func startMessenger() error {
 		return err
 	}
 
-	u, err := url.Parse(viper.GetString("websocket.url"))
+	u, err := url.Parse(viper.GetString("messenger.url"))
 	if err != nil {
-		slog.Warn(fmt.Sprintf("parsing websocket.url: %v", err))
+		slog.Warn(fmt.Sprintf("parsing messenger.url: %v", err))
 		return err
 	}
 
 	cometCmd := messenger.CmdComet{
 		Address:      u.Hostname(),
 		Port:         u.Port(),
-		Key:          viper.GetString("websocket.key"),
-		RequireToken: viper.GetBool("websocket.require_token"),
-		CertFile:     viper.GetString("websocket.cert_file"),
-		KeyFile:      viper.GetString("websocket.key_file"),
+		Key:          viper.GetString("messenger.key"),
+		RequireToken: viper.GetBool("messenger.require_token"),
+		CertFile:     viper.GetString("messenger.cert_file"),
+		KeyFile:      viper.GetString("messenger.key_file"),
 	}
 
 	return cometCmd.Run()

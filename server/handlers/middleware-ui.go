@@ -1,4 +1,4 @@
-package apihandlers
+package serverhandlers
 
 import (
 	"context"
