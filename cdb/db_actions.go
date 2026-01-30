@@ -67,13 +67,9 @@ func (oDb *DB) AutoAckActionErrors(ctx context.Context, ids []int64) error {
 	     WHERE
                  id IN (%s)`, Placeholders(len(ids)))
 	args := argsFromIDs(ids)
-	result, err := oDb.DB.ExecContext(ctx, request, args...)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request, args...); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("svcactions")
 	}
 	return nil
@@ -97,13 +93,9 @@ func (oDb *DB) LogActionErrorsNotAcked(ctx context.Context, ids []int64) error {
                WHERE
                  id IN (%s)`, Placeholders(len(ids)))
 	args := argsFromIDs(ids)
-	result, err := oDb.DB.ExecContext(ctx, request, args...)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request, args...); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("log")
 	}
 	return nil
@@ -175,13 +167,9 @@ func (oDb *DB) UpdateUnfinishedActions(ctx context.Context) error {
 		    AND end IS NULL
 		    AND status IS NULL
 		    AND action NOT LIKE "%#%"`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("svcactions")
 	}
 	return nil
@@ -232,6 +220,8 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, act
 	result, err := oDb.DB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
+	} else if result == nil {
+		return 0, errors.New("insert svcactions returns unexpected nil result")
 	}
 
 	id, err := result.LastInsertId()
@@ -253,6 +243,8 @@ func (oDb *DB) UpdateSvcAction(ctx context.Context, svcActionID int64, end time.
 	result, err := oDb.DB.ExecContext(ctx, query, end, status, end, statusLog, svcActionID)
 	if err != nil {
 		return err
+	} else if result == nil {
+		return errors.New("update svcactions returns unexpected nil result")
 	}
 	if rowsAffected, err := result.RowsAffected(); err != nil {
 		return err

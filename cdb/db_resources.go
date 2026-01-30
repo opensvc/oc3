@@ -114,12 +114,9 @@ func (oDb *DB) ResourceUpdateStatus(ctx context.Context, resources []ResourceMet
 		args[i+1] = resource.ID
 	}
 
-	result, err := oDb.DB.ExecContext(ctx, sql, args...)
-	if err != nil {
+	if n, err = oDb.execCountContext(ctx, sql, args...); err != nil {
 		return 0, err
-	}
-	n, err = result.RowsAffected()
-	if err == nil && n > 0 {
+	} else if n > 0 {
 		oDb.Session.SetChanges("resmon")
 	}
 	return n, err
@@ -130,11 +127,9 @@ func (oDb *DB) PurgeResmonOutdated(ctx context.Context) error {
 		FROM resmon
 		WHERE
 		  updated < DATE_SUB(NOW(), INTERVAL 1 DAY)`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("resmon")
 	}
 	return nil

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 )
 
@@ -77,7 +76,7 @@ func (oDb *DB) HBUpdate(ctx context.Context, hb DBHeartbeat) error {
 	defer logDuration("HBUpdate cluster id:"+hb.ClusterID+" "+hb.Driver, time.Now())
 	const (
 		qUpdate = "" +
-			"INSERT INTO `hbmon` (`cluster_id`, `node_id`, `peer_node_id`, `driver`, `name`, `desc`, `state`, `beating`, `last_beating`, `updated`)" +
+			"INSERT INTO `hbmon` (`cluster_id`, `node_id`, `peer_node_id`, `driver`, `name`, `desc`, `stat e`, `beating`, `last_beating`, `updated`)" +
 			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())" +
 			"ON DUPLICATE KEY UPDATE" +
 			" `cluster_id` = VALUES(`cluster_id`),  `driver` = VALUES(`driver`), `desc` = VALUES(`desc`), `state` = VALUES(`state`), `beating`= VALUES(`beating`),  `last_beating`= VALUES(`last_beating`), `updated`= VALUES(`updated`)"
@@ -96,15 +95,9 @@ func (oDb *DB) HBDeleteOutDatedByClusterID(ctx context.Context, clusterID string
 		query = "" +
 			"DELETE FROM `hbmon` WHERE `cluster_id` = ? AND `updated` < ?"
 	)
-	_, err := oDb.DB.ExecContext(ctx, query, clusterID, maxTime)
-	result, err := oDb.DB.ExecContext(ctx, query, clusterID, maxTime)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, query, clusterID, maxTime); err != nil {
 		return fmt.Errorf("hbDeleteOutDatedByClusterID: %w", err)
-	}
-	if affected, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("hbDeleteOutDatedByClusterID count affected: %w", err)
-	} else if affected > 0 {
-		slog.Debug(fmt.Sprintf("hbDeleteOutDatedByClusterID %s %d", clusterID, affected))
+	} else if count > 0 {
 		oDb.SetChange("hbmon")
 	}
 	return nil

@@ -78,12 +78,10 @@ func (oDb *DB) UpdateDiskinfoArrayID(ctx context.Context, diskID, arrayID string
 			" VALUES (?, ?, NOW())" +
 			" ON DUPLICATE KEY UPDATE `disk_arrayid` = VALUES(`disk_arrayid`), `disk_updated` = VALUES(disk_updated)"
 	)
-	if result, err := oDb.DB.ExecContext(ctx, query, diskID, arrayID); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, diskID, arrayID); err != nil {
 		return false, fmt.Errorf("update diskinfo: %w", err)
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return false, fmt.Errorf("count diskinfo updated: %w", err)
 	} else {
-		return affected > 0, nil
+		return count > 0, nil
 	}
 }
 
@@ -93,12 +91,10 @@ func (oDb *DB) UpdateDiskinfoArrayAndDevIDsAndSize(ctx context.Context, diskID, 
 			" VALUES (?, ?, ?, ?, NOW())" +
 			" ON DUPLICATE KEY UPDATE `disk_arrayid` = VALUES(`disk_arrayid`), `disk_devid` = VALUES(`disk_devid`), `disk_size` = VALUES(`disk_size`), `disk_updated` = VALUES(disk_updated)"
 	)
-	if result, err := oDb.DB.ExecContext(ctx, query, diskID, arrayID, devID, size); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, diskID, arrayID, devID, size); err != nil {
 		return false, fmt.Errorf("update diskinfo: %w", err)
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return false, fmt.Errorf("count diskinfo updated: %w", err)
 	} else {
-		return affected > 0, nil
+		return count > 0, nil
 	}
 }
 
@@ -108,12 +104,10 @@ func (oDb *DB) UpdateDiskinfoForDiskSize(ctx context.Context, diskID string, siz
 			" VALUES (?, ?, NOW())" +
 			" ON DUPLICATE KEY UPDATE `disk_size` = VALUES(`disk_size`), `disk_updated` = VALUES(disk_updated)"
 	)
-	if result, err := oDb.DB.ExecContext(ctx, query, diskID, size); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, diskID, size); err != nil {
 		return false, fmt.Errorf("update diskinfo: %w", err)
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return false, fmt.Errorf("count diskinfo updated: %w", err)
 	} else {
-		return affected > 0, nil
+		return count > 0, nil
 	}
 }
 
@@ -122,12 +116,10 @@ func (oDb *DB) UpdateDiskinfoSetMissingArrayID(ctx context.Context, diskID, arra
 		query = "UPDATE `diskinfo` SET `disk_arrayid` = ?" +
 			" WHERE `disk_id` = ? AND (`disk_arrayid` = '' OR `disk_arrayid` is NULL)"
 	)
-	if result, err := oDb.DB.ExecContext(ctx, query, arrayID, diskID); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, arrayID, diskID); err != nil {
 		return false, fmt.Errorf("update diskinfo: %w", err)
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return false, fmt.Errorf("count diskinfo updated: %w", err)
 	} else {
-		return affected > 0, nil
+		return count > 0, nil
 	}
 }
 
@@ -136,11 +128,9 @@ func (oDb *DB) PurgeDiskinfoOutdated(ctx context.Context) error {
 		FROM diskinfo
 		WHERE
 		  disk_updated < DATE_SUB(NOW(), INTERVAL 2 DAY)`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return fmt.Errorf("purge diskinfo: %w", err)
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("count diskinfo deleted: %w", err)
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("diskinfo")
 	}
 	return nil

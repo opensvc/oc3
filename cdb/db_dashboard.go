@@ -49,24 +49,22 @@ func (oDb *DB) DashboardInstanceFrozenUpdate(ctx context.Context, objectID, node
 			  dash_updated = NOW(), dash_env = ?`
 	)
 	var (
-		err    error
-		result sql.Result
+		err   error
+		count int64
 	)
 	switch frozen {
 	case true:
-		result, err = oDb.DB.ExecContext(ctx, queryFrozen, objectID, nodeID, objectEnv, objectEnv)
+		count, err = oDb.execCountContext(ctx, queryFrozen, objectID, nodeID, objectEnv, objectEnv)
 		if err != nil {
 			return fmt.Errorf("update dashboard 'service frozen' for %s@%s: %w", objectID, nodeID, err)
 		}
 	case false:
-		result, err = oDb.DB.ExecContext(ctx, queryThawed, objectID, nodeID)
+		count, err = oDb.execCountContext(ctx, queryThawed, objectID, nodeID)
 		if err != nil {
 			return fmt.Errorf("delete dashboard 'service frozen' for %s@%s: %w", objectID, nodeID, err)
 		}
 	}
-	if count, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("count dashboard 'service frozen' for %s@%s: %w", objectID, nodeID, err)
-	} else if count > 0 {
+	if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	return nil
@@ -78,9 +76,7 @@ func (oDb *DB) DashboardDeleteInstanceNotUpdated(ctx context.Context, objectID, 
 	const (
 		query = `DELETE FROM dashboard WHERE svc_id = ? AND node_id = ? AND dash_type = 'instance status not updated'`
 	)
-	if result, err := oDb.DB.ExecContext(ctx, query, objectID, nodeID); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, objectID, nodeID); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -94,9 +90,7 @@ func (oDb *DB) DashboardDeleteObjectWithType(ctx context.Context, objectID, dash
 	const (
 		query = `DELETE FROM dashboard WHERE svc_id = ? AND dash_type = ?`
 	)
-	if result, err := oDb.DB.ExecContext(ctx, query, objectID, dashType); err != nil {
-		return fmt.Errorf("dashboardDeleteObjectWithType %s: %w", dashType, err)
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, objectID, dashType); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType %s: %w", dashType, err)
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -140,12 +134,10 @@ func (oDb *DB) DashboardUpdateObject(ctx context.Context, d *Dashboard) error {
 				dash_env = ?
 				`
 	)
-	result, err := oDb.DB.ExecContext(ctx, query,
+	count, err := oDb.execCountContext(ctx, query,
 		d.ObjectID, d.Type, d.Fmt, d.Severity, d.Dict, d.Env,
 		d.Fmt, d.Severity, d.Dict, d.Env)
 	if err != nil {
-		return fmt.Errorf("dashboardUpdateObject: %w", err)
-	} else if count, err := result.RowsAffected(); err != nil {
 		return fmt.Errorf("dashboardUpdateObject: %w", err)
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -161,9 +153,7 @@ func (oDb *DB) DashboardDeleteNetworkWrongMaskNotUpdated(ctx context.Context) er
                     dash_type="netmask misconfigured" AND
                     dash_updated < DATE_SUB(NOW(), INTERVAL 1 MINUTE)`
 	)
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
-		return fmt.Errorf("DashboardDeleteNetworkWrongMaskNotUpdated: %w", err)
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return fmt.Errorf("DashboardDeleteNetworkWrongMaskNotUpdated: %w", err)
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -182,9 +172,7 @@ func (oDb *DB) DashboardDeleteActionErrors(ctx context.Context) error {
                       FROM b_action_errors
                     )`
 	)
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
-		return fmt.Errorf("DashboardDeleteActionErrors: %w", err)
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return fmt.Errorf("DashboardDeleteActionErrors: %w", err)
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -201,9 +189,7 @@ func (oDb *DB) PurgeAlertsOnDeletedNodes(ctx context.Context) error {
 			  n.node_id IS NULL AND
 			  d.node_id != ""`
 	)
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -222,9 +208,7 @@ func (oDb *DB) PurgeAlertsOnDeletedInstances(ctx context.Context) error {
 			  d.node_id != "" AND
 			  d.svc_id != ""`
 	)
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -241,9 +225,7 @@ func (oDb *DB) PurgeAlertsOnDeletedServices(ctx context.Context) error {
 			  n.svc_id IS NULL AND
 			  d.svc_id != ""`
 	)
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -271,13 +253,9 @@ func (oDb *DB) DashboardUpdateNodesNotUpdated(ctx context.Context) error {
                WHERE updated < date_sub(NOW(), interval 25 hour)
                ON DUPLICATE KEY UPDATE
                  dash_updated=NOW()`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	return nil
@@ -290,13 +268,9 @@ func (oDb *DB) DashboardUpdateChecksNotUpdated(ctx context.Context) error {
 		  dash_type = "check value not updated" AND
 		  node_id NOT IN (SELECT DISTINCT node_id FROM checks_live)
 	`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 
@@ -320,7 +294,7 @@ func (oDb *DB) DashboardUpdateChecksNotUpdated(ctx context.Context) error {
 
 		    UNION ALL
 
-		    -- Suppression des "check value not updated" non correspondants
+		    -- Suppression des "check value not updated" non correspondents
 		    SELECT d.id FROM dashboard d
 		    LEFT JOIN checks_live c ON
 			d.dash_dict_md5 = MD5(CONCAT('{"i":"', c.chk_instance, '", "t":"', c.chk_type, '"}'))
@@ -330,13 +304,9 @@ func (oDb *DB) DashboardUpdateChecksNotUpdated(ctx context.Context) error {
 			AND c.id IS NULL
 		)
 	`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	request = `
@@ -360,13 +330,9 @@ func (oDb *DB) DashboardUpdateChecksNotUpdated(ctx context.Context) error {
 	WHERE chk_updated < DATE_SUB(NOW(), INTERVAL 1 DAY)
 	ON DUPLICATE KEY UPDATE dash_updated = NOW();
 	`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	return nil
@@ -401,13 +367,9 @@ func (oDb *DB) AlertActionErrors(ctx context.Context, line BActionErrorCount) er
                    dash_fmt="%(err)s action errors",
                    dash_dict=CONCAT('{"err": "', ?, '"}'),
                    dash_updated=NOW()`
-	result, err := oDb.DB.ExecContext(ctx, request, line.SvcID, line.NodeID, severity, line.ErrCount, env, severity, line.ErrCount)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request, line.SvcID, line.NodeID, severity, line.ErrCount, env, severity, line.ErrCount); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	return nil
@@ -420,13 +382,9 @@ func (oDb *DB) DashboardDeleteActionErrorsWithNoError(ctx context.Context) error
                dash_dict='{"err": "0"}' and
                dash_type='action errors'
 	`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	return nil
@@ -454,13 +412,9 @@ func (oDb *DB) DashboardUpdateServiceConfigNotUpdated(ctx context.Context) error
              ON DUPLICATE KEY UPDATE
                dash_updated=NOW()
 	`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	return nil
@@ -488,15 +442,12 @@ func (oDb *DB) DashboardUpdateInstancesNotUpdated(ctx context.Context) error {
 		ON DUPLICATE KEY UPDATE
 		  dash_updated=NOW()
 	`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
+
 	request = `
 		DELETE FROM dashboard
 		WHERE id IN (
@@ -512,13 +463,9 @@ func (oDb *DB) DashboardUpdateInstancesNotUpdated(ctx context.Context) error {
 			(svcmon.id IS NULL OR svcmon.mon_updated >= DATE_SUB(NOW(), INTERVAL 16 MINUTE))
 		)
 	`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	return nil
@@ -526,8 +473,7 @@ func (oDb *DB) DashboardUpdateInstancesNotUpdated(ctx context.Context) error {
 
 func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error {
 	request := `SET @now = NOW()`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -555,15 +501,12 @@ func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error 
 		ON DUPLICATE KEY UPDATE
 		  dash_updated=@now
 	`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
+
 	request = `
 		DELETE FROM dashboard
 		WHERE
@@ -573,13 +516,9 @@ func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error 
 		    dash_updated IS NULL
 		  )
 	`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	return nil
@@ -587,8 +526,7 @@ func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error 
 
 func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) error {
 	request := `SET @now = NOW()`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -617,15 +555,12 @@ func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) err
 		ON DUPLICATE KEY UPDATE
 		  dash_updated=@now
 	`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
+
 	request = `
 		DELETE FROM dashboard
 		WHERE
@@ -635,13 +570,9 @@ func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) err
 		    dash_updated IS NULL
 		  )
 	`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	return nil
@@ -649,8 +580,7 @@ func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) err
 
 func (oDb *DB) DashboardUpdateNodeWithoutMaintenanceEnd(ctx context.Context) error {
 	request := `SET @now = NOW()`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -683,15 +613,12 @@ func (oDb *DB) DashboardUpdateNodeWithoutMaintenanceEnd(ctx context.Context) err
 		ON DUPLICATE KEY UPDATE
 		  dash_updated=@now
 	`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
+
 	request = `
 		DELETE FROM dashboard
 		WHERE
@@ -701,13 +628,9 @@ func (oDb *DB) DashboardUpdateNodeWithoutMaintenanceEnd(ctx context.Context) err
 		    dash_updated IS NULL
 		  )
 	`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	return nil
@@ -728,8 +651,7 @@ func (oDb *DB) DashboardUpdateAppWithoutResponsible(ctx context.Context) error {
 		    dash_dict IS NULL
 		  )
 	`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -743,13 +665,9 @@ func (oDb *DB) DashboardUpdateAppWithoutResponsible(ctx context.Context) error {
                     FROM apps a
                 )
 	`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 
@@ -775,13 +693,9 @@ func (oDb *DB) DashboardUpdateAppWithoutResponsible(ctx context.Context) error {
 		ON DUPLICATE KEY UPDATE
 		  dash_updated=NOW()
 	`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 	return nil
