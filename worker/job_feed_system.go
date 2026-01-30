@@ -56,10 +56,12 @@ func (d *jobFeedSystem) Operations() []operation {
 		{desc: "system/hba", do: d.hba, condition: hasProp("hba"), blocking: true},
 		{desc: "system/targets", do: d.targets, condition: hasProp("targets"), blocking: true},
 		{desc: "system/package", do: d.pkg, condition: hasProp("package"), blocking: true},
+		{desc: "system/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 
 func (d *jobFeedSystem) pkg(ctx context.Context) error {
+	const tableName = "packages"
 	pkgList, ok := d.data["package"].([]any)
 	if !ok {
 		slog.Warn("unsupported json format for packages")
@@ -80,7 +82,7 @@ func (d *jobFeedSystem) pkg(ctx context.Context) error {
 	}
 
 	request := mariadb.InsertOrUpdate{
-		Table: "packages",
+		Table: tableName,
 		Mappings: mariadb.Mappings{
 			mariadb.Mapping{To: "node_id"},
 			mariadb.Mapping{To: "pkg_updated"},
@@ -95,15 +97,18 @@ func (d *jobFeedSystem) pkg(ctx context.Context) error {
 		Data: pkgList,
 	}
 
-	if _, err := request.QueryContext(ctx, d.db); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(request.Table)
 	}
 
-	if rows, err := d.db.QueryContext(ctx, "DELETE FROM packages WHERE node_id = ? AND pkg_updated < ?", nodeID, now); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM packages WHERE node_id = ? AND pkg_updated < ?", nodeID, now); err != nil {
 		return err
-	} else {
-		defer func() { _ = rows.Close() }()
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
+
 	if err := d.oDb.DashboardUpdatePkgDiffForNode(ctx, nodeID); err != nil {
 		return err
 	}
@@ -111,6 +116,7 @@ func (d *jobFeedSystem) pkg(ctx context.Context) error {
 }
 
 func (d *jobFeedSystem) targets(ctx context.Context) error {
+	const tableName = "stor_zone"
 	data, ok := d.data["targets"].([]any)
 	if !ok {
 		slog.Warn("unsupported system targets data format")
@@ -131,7 +137,7 @@ func (d *jobFeedSystem) targets(ctx context.Context) error {
 	}
 
 	request := mariadb.InsertOrUpdate{
-		Table: "stor_zone",
+		Table: tableName,
 		Mappings: mariadb.Mappings{
 			mariadb.Mapping{To: "node_id"},
 			mariadb.Mapping{To: "updated"},
@@ -142,20 +148,23 @@ func (d *jobFeedSystem) targets(ctx context.Context) error {
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(ctx, d.db); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if rows, err := d.db.QueryContext(ctx, "DELETE FROM stor_zone WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM stor_zone WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
-	} else {
-		defer func() { _ = rows.Close() }()
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
 	return nil
 }
 
 func (d *jobFeedSystem) hba(ctx context.Context) error {
+	const tableName = "node_hba"
 	data, ok := d.data["hba"].([]any)
 	if !ok {
 		slog.Warn("unsupported system hba data format")
@@ -176,7 +185,7 @@ func (d *jobFeedSystem) hba(ctx context.Context) error {
 	}
 
 	request := mariadb.InsertOrUpdate{
-		Table: "node_hba",
+		Table: tableName,
 		Mappings: mariadb.Mappings{
 			mariadb.Mapping{To: "node_id"},
 			mariadb.Mapping{To: "updated"},
@@ -187,20 +196,24 @@ func (d *jobFeedSystem) hba(ctx context.Context) error {
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(ctx, d.db); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if rows, err := d.db.QueryContext(ctx, "DELETE FROM node_hba WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM node_hba WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
-	} else {
-		defer func() { _ = rows.Close() }()
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
 	return nil
 }
 
 func (d *jobFeedSystem) lan(ctx context.Context) error {
+	const tableName = "node_ip"
+
 	var l []any
 	data, ok := d.data["lan"].(map[string]any)
 	if !ok {
@@ -230,7 +243,7 @@ func (d *jobFeedSystem) lan(ctx context.Context) error {
 	}
 
 	request := mariadb.InsertOrUpdate{
-		Table: "node_ip",
+		Table: tableName,
 		Mappings: mariadb.Mappings{
 			mariadb.Mapping{To: "node_id"},
 			mariadb.Mapping{To: "updated"},
@@ -245,20 +258,24 @@ func (d *jobFeedSystem) lan(ctx context.Context) error {
 		Data: l,
 	}
 
-	if _, err := request.QueryContext(ctx, d.db); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if rows, err := d.db.QueryContext(ctx, "DELETE FROM node_ip WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM node_ip WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
-	} else {
-		defer func() { _ = rows.Close() }()
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
 	return nil
 }
 
 func (d *jobFeedSystem) groups(ctx context.Context) error {
+	const tableName = "node_groups"
+
 	data, ok := d.data["gids"].([]any)
 	if !ok {
 		slog.Warn("unsupported system groups data format")
@@ -279,7 +296,7 @@ func (d *jobFeedSystem) groups(ctx context.Context) error {
 	}
 
 	request := mariadb.InsertOrUpdate{
-		Table: "node_groups",
+		Table: tableName,
 		Mappings: mariadb.Mappings{
 			mariadb.Mapping{To: "node_id"},
 			mariadb.Mapping{To: "updated"},
@@ -290,20 +307,23 @@ func (d *jobFeedSystem) groups(ctx context.Context) error {
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(ctx, d.db); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if rows, err := d.db.QueryContext(ctx, "DELETE FROM node_groups WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM node_groups WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
-	} else {
-		defer func() { _ = rows.Close() }()
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
 	return nil
 }
 
 func (d *jobFeedSystem) users(ctx context.Context) error {
+	tableName := "node_users"
 	data, ok := d.data["uids"].([]any)
 	if !ok {
 		slog.Warn("unsupported system users data format")
@@ -324,7 +344,7 @@ func (d *jobFeedSystem) users(ctx context.Context) error {
 	}
 
 	request := mariadb.InsertOrUpdate{
-		Table: "node_users",
+		Table: tableName,
 		Mappings: mariadb.Mappings{
 			mariadb.Mapping{To: "node_id"},
 			mariadb.Mapping{To: "updated"},
@@ -335,20 +355,23 @@ func (d *jobFeedSystem) users(ctx context.Context) error {
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(ctx, d.db); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if rows, err := d.db.QueryContext(ctx, "DELETE FROM node_users WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM node_users WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
-	} else {
-		defer func() { _ = rows.Close() }()
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
 	return nil
 }
 
 func (d *jobFeedSystem) hardware(ctx context.Context) error {
+	tableName := "node_hw"
 	data, ok := d.data["hardware"].([]any)
 	if !ok {
 		slog.Warn("unsupported system hardware data format")
@@ -368,7 +391,7 @@ func (d *jobFeedSystem) hardware(ctx context.Context) error {
 	}
 
 	request := mariadb.InsertOrUpdate{
-		Table: "node_hw",
+		Table: tableName,
 		Mappings: mariadb.Mappings{
 			mariadb.Mapping{To: "node_id"},
 			mariadb.Mapping{To: "hw_type", From: "type"},
@@ -382,20 +405,23 @@ func (d *jobFeedSystem) hardware(ctx context.Context) error {
 		Data: data,
 	}
 
-	if _, err := request.QueryContext(ctx, d.db); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if rows, err := d.db.QueryContext(ctx, "DELETE FROM node_hw WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM node_hw WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
-	} else {
-		defer func() { _ = rows.Close() }()
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
 	}
 
 	return nil
 }
 
 func (d *jobFeedSystem) properties(ctx context.Context) error {
+	tableName := "nodes"
 	data, ok := d.data["properties"].(map[string]any)
 	if !ok {
 		slog.Warn("unsupported system properties format")
@@ -420,7 +446,7 @@ func (d *jobFeedSystem) properties(ctx context.Context) error {
 	}
 
 	request := mariadb.InsertOrUpdate{
-		Table: "nodes",
+		Table: tableName,
 		Mappings: mariadb.Mappings{
 			mariadb.Mapping{To: "asset_env", Get: get, Optional: true},
 			mariadb.Mapping{To: "bios_version", Get: get},
@@ -468,9 +494,13 @@ func (d *jobFeedSystem) properties(ctx context.Context) error {
 		Data: data,
 	}
 
-	_, err := request.QueryContext(ctx, d.db)
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
+		return err
+	} else if count > 0 {
+		d.oDb.Session.SetChanges(tableName)
+	}
 
-	return err
+	return nil
 }
 
 func (d *jobFeedSystem) getData(ctx context.Context) error {

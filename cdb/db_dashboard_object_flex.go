@@ -46,16 +46,12 @@ func (oDb *DB) DashboardUpdateObjectFlexStarted(ctx context.Context, obj *DBObje
 		DELETE FROM dashboard
 		WHERE svc_id = ? and dash_type = "flex error" and dash_fmt like "%instances started%"`
 
-	if result, err := oDb.DB.ExecContext(ctx, query, obj.SvcID, sev, obj.Env, obj.SvcID, obj.SvcID); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, obj.SvcID, sev, obj.Env, obj.SvcID, obj.SvcID); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType flex error: %w", err)
-	} else if count, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("dashboardDeleteObjectWithType count updated: %w", err)
 	} else if count > 0 {
 		defer oDb.SetChange("dashboard")
-	} else if result, err := oDb.DB.ExecContext(ctx, queryDelete, obj.SvcID); err != nil {
+	} else if count, err := oDb.execCountContext(ctx, queryDelete, obj.SvcID); err != nil {
 		return fmt.Errorf("dashboardDeleteObjectWithType clean obsolete flex error: %w", err)
-	} else if count, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("dashboardDeleteObjectWithType count deleted: %w", err)
 	} else if count > 0 {
 		defer oDb.SetChange("dashboard")
 	}

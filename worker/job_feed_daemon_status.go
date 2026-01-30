@@ -306,13 +306,24 @@ func (d *jobFeedDaemonStatus) dataToNodeHeartbeat(_ context.Context) error {
 			}
 		}
 		for _, hb := range l {
-			if n := d.byNodename[hb.nodename]; n != nil {
-				hb.DBHeartbeat.NodeID = n.NodeID
-			}
-			if n := d.byNodename[hb.peerNodename]; n != nil {
-				hb.DBHeartbeat.PeerNodeID = n.NodeID
-			}
 			hb.DBHeartbeat.ClusterID = d.clusterID
+			if hb.nodename != "" {
+				if n := d.byNodename[hb.nodename]; n != nil {
+					hb.DBHeartbeat.NodeID = n.NodeID
+				} else {
+					slog.Debug(fmt.Sprintf("dataToNodeHeartbeat: skipped because of unregistered node %s for %s", hb.nodename, hb))
+					continue
+				}
+			}
+
+			if hb.peerNodename != "" {
+				if n := d.byNodename[hb.peerNodename]; n != nil {
+					hb.DBHeartbeat.PeerNodeID = n.NodeID
+				} else {
+					slog.Debug(fmt.Sprintf("dataToNodeHeartbeat: skipped because of unregistered peer node %s for %s", hb.peerNodename, hb))
+					continue
+				}
+			}
 			slog.Debug(fmt.Sprintf("dataToNodeHeartbeat: found %s", hb))
 			d.heartbeats = append(d.heartbeats, hb)
 		}
@@ -325,7 +336,7 @@ func (d *jobFeedDaemonStatus) heartbeatToDB(ctx context.Context) error {
 	for _, hb := range d.heartbeats {
 		slog.Debug(fmt.Sprintf("inserting: %s", hb))
 		if err := d.oDb.HBUpdate(ctx, hb.DBHeartbeat); err != nil {
-			return fmt.Errorf("1 heartbeatToDB hbUpdate %s: %w", hb, err)
+			return fmt.Errorf("heartbeatToDB hbUpdate %s: %w", hb, err)
 		}
 		if err := d.oDb.HBLogUpdate(ctx, hb.DBHeartbeat); err != nil {
 			return fmt.Errorf("heartbeatToDB hbLogUpdate %s: %w", hb, err)

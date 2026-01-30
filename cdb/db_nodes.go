@@ -223,16 +223,14 @@ func (oDb *DB) NodeContainerUpdateFromParentNode(ctx context.Context, cName, cAp
     	`
 	const queryWhere1 = ` WHERE nodename = ? AND app in (?, ?)`
 
-	result, err := oDb.DB.ExecContext(ctx, queryUpdate+queryWhere1,
+	count, err := oDb.execCountContext(ctx, queryUpdate+queryWhere1,
 		pn.LocAddr, pn.LocCountry, pn.locZip, pn.LocCity, pn.LocBuilding,
 		pn.LocFloor, pn.LocRoom, pn.LocRack, pn.Hv, pn.Enclosure, pn.EnclosureSlot,
 		cName, pn.App, cApp)
 	if err != nil {
 		return err
 	}
-	if count, err := result.RowsAffected(); err != nil {
-		return err
-	} else if count > 0 {
+	if count > 0 {
 		oDb.SetChange("nodes")
 		return nil
 	} else {
@@ -255,11 +253,7 @@ func (oDb *DB) NodeContainerUpdateFromParentNode(ctx context.Context, cName, cAp
 			args = append(args, apps[i])
 		}
 		queryWhere2 += `)`
-		result, err := oDb.DB.ExecContext(ctx, queryUpdate+queryWhere2, args...)
-		if err != nil {
-			return err
-		}
-		if count, err := result.RowsAffected(); err != nil {
+		if count, err := oDb.execCountContext(ctx, queryUpdate+queryWhere2, args...); err != nil {
 			return err
 		} else if count > 0 {
 			oDb.SetChange("nodes")
@@ -294,10 +288,8 @@ func (oDb *DB) NodeUpdateClusterIDForNodeID(ctx context.Context, nodeID, cluster
 		// found node with nodeID and clusterID
 		return false, nil
 	case sql.ErrNoRows:
-		if result, err := oDb.DB.ExecContext(ctx, queryUpdate, clusterID, nodeID); err != nil {
+		if count, err := oDb.execCountContext(ctx, queryUpdate, clusterID, nodeID); err != nil {
 			return false, fmt.Errorf("NodeUpdateClusterIDForNodeID update: %w", err)
-		} else if count, err := result.RowsAffected(); err != nil {
-			return false, fmt.Errorf("NodeUpdateClusterIDForNodeID count updated: %w", err)
 		} else if count > 0 {
 			oDb.SetChange("nodes")
 			return true, nil
@@ -311,14 +303,10 @@ func (oDb *DB) NodeUpdateClusterIDForNodeID(ctx context.Context, nodeID, cluster
 
 func (oDb *DB) PurgeNodeHBAsOutdated(ctx context.Context) error {
 	request := fmt.Sprintf("DELETE FROM `node_hba` WHERE `updated` < DATE_SUB(NOW(), INTERVAL 7 DAY)")
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
-		slog.Info(fmt.Sprintf("purged %d entries from table node_hba", rowAffected))
+	} else if count > 0 {
+		slog.Info(fmt.Sprintf("purged %d entries from table node_hba", count))
 		oDb.SetChange("node_hba")
 	}
 	return nil
@@ -377,13 +365,9 @@ func (oDb *DB) AlertMACDup(ctx context.Context) error {
 		  dash_env = VALUES(dash_env),
 		  dash_updated = VALUES(dash_updated)
 		`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 
@@ -391,13 +375,9 @@ func (oDb *DB) AlertMACDup(ctx context.Context) error {
 		   WHERE
 		     dash_type = "mac duplicate" AND
 		     dash_updated < DATE_SUB(NOW(), INTERVAL 1 DAY)`
-	result, err = oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("dashboard")
 	}
 
@@ -428,13 +408,9 @@ func (oDb *DB) UpdateVirtualAssets(ctx context.Context) error {
            m.mon_vmname=n2.nodename AND
            m.mon_vmtype IN ('ldom', 'hpvm', 'kvm', 'xen', 'vbox', 'ovm', 'esx', 'zone', 'lxc', 'jail', 'vz', 'srp') and
            m.mon_containerstatus IN ("up", "stdby up", "warn")`
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("nodes")
 	}
 	return nil
@@ -489,13 +465,9 @@ func (oDb *DB) UpdateVirtualAsset(ctx context.Context, svcID, nodeID string) err
         WHERE
             n.nodename = source.vmname AND
             n.app IN (source.svc_app, source.node_app)`
-	result, err := oDb.DB.ExecContext(ctx, request, svcID, nodeID)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request, svcID, nodeID); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("nodes")
 	}
 	return nil

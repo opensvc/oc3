@@ -132,29 +132,42 @@ func (oDb *DB) DeleteBatched(ctx context.Context, table, dateCol, orderbyCol str
 		ctx, cancel := context.WithTimeout(ctx, time.Minute)
 
 		// Execute the DELETE statement
-		result, err := oDb.DB.ExecContext(ctx, query)
+		count, err := oDb.execCountContext(ctx, query)
 		cancel()
 		if err != nil {
 			return totalDeleted, batchCount, fmt.Errorf("%s: error executing batch %d: %w", table, batchCount, err)
 		}
 
 		// Check the number of affected rows
-		rowsAffected, err := result.RowsAffected()
-		if err != nil {
-			return totalDeleted, batchCount, fmt.Errorf("%s: error checking affected rows for batch %d: %w", table, batchCount, err)
-		}
-
-		totalDeleted += rowsAffected
-		if rowsAffected > 0 {
-			slog.Debug(fmt.Sprintf("DeleteBatched: %s: batch %d: deleted %d rows. total deleted: %d", table, batchCount, rowsAffected, totalDeleted))
+		totalDeleted += count
+		if count > 0 {
+			slog.Debug(fmt.Sprintf("DeleteBatched: %s: batch %d: deleted %d rows. total deleted: %d", table, batchCount, count, totalDeleted))
 		}
 
 		// If less than the batch size was deleted, we've reached the end of the matching rows.
-		if rowsAffected < batchSize {
+		if count < batchSize {
 			return totalDeleted, batchCount, nil
 		}
 
 		// Add a short sleep to yield CPU time, preventing resource monopolization
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+// ExecContextAndCountRowsAffected executes the oDb.DB.ExecContext query with the provided context, returning the number of rows affected and an error.
+func (oDb *DB) ExecContextAndCountRowsAffected(ctx context.Context, query string, args ...any) (int64, error) {
+	return oDb.execCountContext(ctx, query, args...)
+}
+
+// execCountContext executes the oDb.DB.ExecContext query with the provided context and arguments, returning the number of affected rows and an error.
+func (oDb *DB) execCountContext(ctx context.Context, query string, args ...any) (int64, error) {
+	result, err := oDb.DB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, err
+	}
+	if result == nil {
+		// len data may be 0, so no rows affected.
+		return 0, nil
+	}
+	return result.RowsAffected()
 }

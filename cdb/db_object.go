@@ -284,19 +284,12 @@ func (oDb *DB) ObjectPing(ctx context.Context, svcID string) (updates bool, err 
 	const updateSvcLogLastSvc = "" +
 		"UPDATE `services_log_last` SET `svc_end` = ? WHERE `svc_id`= ? "
 	var (
-		now         = time.Now()
-		result      sql.Result
-		rowAffected int64
+		now   = time.Now()
+		count int64
 	)
-	result, err = oDb.DB.ExecContext(ctx, UpdateServicesSvcStatusUpdated, svcID)
-	if err != nil {
+	if count, err = oDb.execCountContext(ctx, UpdateServicesSvcStatusUpdated, svcID); err != nil {
 		return
-	}
-	rowAffected, err = result.RowsAffected()
-	if err != nil {
-		return
-	}
-	if rowAffected == 0 {
+	} else if count == 0 {
 		return
 	}
 
@@ -451,16 +444,11 @@ func (oDb *DB) InsertOrUpdateObjectConfig(ctx context.Context, c *DBObjectConfig
 	if c.Env != nil {
 		env = *c.Env
 	}
-	result, err := oDb.DB.ExecContext(ctx, query, c.Name, c.ClusterID, c.SvcID, nodes, drpNode, drpNodes,
-		app, env, c.Comment, c.FlexMin, c.FlexMax, c.HA, c.Config)
+	count, err := oDb.execCountContext(ctx, query, c.Name, c.ClusterID, c.SvcID, nodes, drpNode, drpNodes, app, env, c.Comment, c.FlexMin, c.FlexMax, c.HA, c.Config)
 	if err != nil {
 		return false, fmt.Errorf("update services config: %w", err)
 	}
-	if affected, err := result.RowsAffected(); err != nil {
-		return false, fmt.Errorf("update services config unable to count row affected: %w", err)
-	} else {
-		return affected > 0, nil
-	}
+	return count > 0, nil
 }
 
 // ObjectIDFindOrCreate ensures a unique svc_id exists for a given svcname and clusterID, creating it if necessary.
@@ -485,6 +473,10 @@ func (oDb *DB) ObjectIDFindOrCreate(ctx context.Context, svcname, clusterID stri
 	}
 	if result, err = tx.ExecContext(ctx, queryInsertID, svcname, clusterID); err != nil {
 		err = fmt.Errorf("INSERT IGNORE INTO `service_ids`: %w", err)
+		_ = tx.Rollback()
+		return
+	} else if result == nil {
+		err = fmt.Errorf("INSERT IGNORE INTO `service_ids` returned nil result")
 		_ = tx.Rollback()
 		return
 	}
@@ -523,14 +515,10 @@ func (oDb *DB) PurgeTablesFromObjectID(ctx context.Context, id string) error {
 	slog.Debug(fmt.Sprintf("purging object %s", id))
 	for _, tableName := range tables {
 		request := fmt.Sprintf("DELETE FROM %s WHERE `svc_id` = ?", tableName)
-		result, err1 := oDb.DB.ExecContext(ctx, request, id)
-		if err1 != nil {
+		if count, err1 := oDb.execCountContext(ctx, request, id); err1 != nil {
 			err = errors.Join(err, fmt.Errorf("delete from %s: %w", tableName, err1))
 			continue
-		}
-		if rowAffected, err1 := result.RowsAffected(); err1 != nil {
-			err = errors.Join(err, fmt.Errorf("count delete from %s: %w", tableName, err1))
-		} else if rowAffected > 0 {
+		} else if count > 0 {
 			slog.Debug(fmt.Sprintf("purged table %s object %s", tableName, id))
 			oDb.SetChange(tableName)
 		}
@@ -563,7 +551,7 @@ func (oDb *DB) ObjectsOutdated(ctx context.Context) (objects []ObjectMeta, err e
 	return
 }
 
-func (oDb *DB) ObjectUpdateStatusSimple(ctx context.Context, objects []ObjectMeta, availStatus, overallStatus string) (n int64, err error) {
+func (oDb *DB) ObjectUpdateStatusSimple(ctx context.Context, objects []ObjectMeta, availStatus, overallStatus string) (int64, error) {
 	idsLen := len(objects)
 	sql := `UPDATE services
                 SET svc_status=?, svc_availstatus=?, svc_status_updated=NOW()
@@ -577,13 +565,12 @@ func (oDb *DB) ObjectUpdateStatusSimple(ctx context.Context, objects []ObjectMet
 		args[i+2] = o.ID
 	}
 
-	result, err := oDb.DB.ExecContext(ctx, sql, args...)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, sql, args...); err != nil {
 		return 0, err
-	}
-	n, err = result.RowsAffected()
-	if err == nil && n > 0 {
+	} else if count > 0 {
 		oDb.Session.SetChanges("services")
+		return count, nil
+	} else {
+		return 0, nil
 	}
-	return n, err
 }

@@ -11,11 +11,9 @@ func (oDb *DB) PurgeCompModulesetsNodes(ctx context.Context) error {
 		  node_id NOT IN (
                     SELECT DISTINCT node_id FROM nodes
                    )`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("comp_node_moduleset")
 	}
 	return nil
@@ -28,11 +26,9 @@ func (oDb *DB) PurgeCompRulesetsNodes(ctx context.Context) error {
 		  node_id NOT IN (
                     SELECT DISTINCT node_id FROM nodes
                    )`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("comp_rulesets_nodes")
 	}
 	return nil
@@ -45,11 +41,9 @@ func (oDb *DB) PurgeCompRulesetsServices(ctx context.Context) error {
 		  svc_id NOT IN (
                     SELECT DISTINCT svc_id FROM svcmon
                    )`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("comp_rulesets_services")
 	}
 	return nil
@@ -62,11 +56,9 @@ func (oDb *DB) PurgeCompModulesetsServices(ctx context.Context) error {
 		  svc_id NOT IN (
                     SELECT DISTINCT svc_id FROM svcmon
                    )`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("comp_modulesets_services")
 	}
 	return nil
@@ -78,11 +70,9 @@ func (oDb *DB) PurgeCompStatusOutdated(ctx context.Context) error {
 		FROM comp_status
 		WHERE
 		  run_date < DATE_SUB(NOW(), INTERVAL 31 DAY)`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("comp_status")
 	}
 	return nil
@@ -96,11 +86,9 @@ func (oDb *DB) PurgeCompStatusSvcOrphans(ctx context.Context) error {
                svc_id NOT IN (
                  SELECT DISTINCT svc_id FROM svcmon
 	       )`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("comp_status")
 	}
 	return nil
@@ -114,11 +102,9 @@ func (oDb *DB) PurgeCompStatusNodeOrphans(ctx context.Context) error {
                node_id NOT IN (
                  SELECT DISTINCT node_id FROM nodes
 	       )`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("comp_status")
 	}
 	return nil
@@ -132,11 +118,9 @@ func (oDb *DB) PurgeCompStatusModulesetOrphans(ctx context.Context) error {
                run_module NOT IN (
                  SELECT modset_mod_name FROM comp_moduleset_modules
 	       )`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("comp_status")
 	}
 	return nil
@@ -156,11 +140,9 @@ func (oDb *DB) PurgeCompStatusNodeUnattached(ctx context.Context) error {
                    FROM comp_node_moduleset
                  )
 	       )`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("comp_status")
 	}
 	return nil
@@ -180,11 +162,9 @@ func (oDb *DB) PurgeCompStatusSvcUnattached(ctx context.Context) error {
                    FROM comp_modulesets_services
                  )
 	       )`
-	if result, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query); err != nil {
 		return err
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("comp_status")
 	}
 	return nil

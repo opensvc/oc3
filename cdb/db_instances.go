@@ -226,8 +226,7 @@ func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates 
 			"   AND (`res_end` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `res_end` is NULL)"
 	)
 	var (
-		count  int64
-		result sql.Result
+		count int64
 	)
 	begin := time.Now()
 	err = oDb.DB.QueryRowContext(ctx, qHasInstance, svcID, nodeID).Scan(&count)
@@ -243,9 +242,7 @@ func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates 
 	}
 
 	begin = time.Now()
-	if result, err = oDb.DB.ExecContext(ctx, qUpdateSvcmon, svcID, nodeID); err != nil {
-		return
-	} else if count, err = result.RowsAffected(); err != nil {
+	if count, err = oDb.execCountContext(ctx, qUpdateSvcmon, svcID, nodeID); err != nil {
 		return
 	} else if count == 0 {
 		return
@@ -261,9 +258,7 @@ func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates 
 	slog.Debug(fmt.Sprintf("instancePing qUpdateSvcmonLogLast %s", time.Since(begin)))
 	begin = time.Now()
 
-	if result, err = oDb.DB.ExecContext(ctx, qUpdateResmon, svcID, nodeID); err != nil {
-		return
-	} else if count, err = result.RowsAffected(); err != nil {
+	if count, err = oDb.execCountContext(ctx, qUpdateResmon, svcID, nodeID); err != nil {
 		return
 	} else if count == 0 {
 		return
@@ -300,13 +295,10 @@ func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updat
 			WHERE node_id = ? AND res_end < DATE_SUB(NOW(), INTERVAL 30 SECOND)`
 	)
 	var (
-		count  int64
-		result sql.Result
+		count int64
 	)
 
-	if result, err = oDb.DB.ExecContext(ctx, qUpdateSvcmon, nodeID); err != nil {
-		return
-	} else if count, err = result.RowsAffected(); err != nil {
+	if count, err = oDb.execCountContext(ctx, qUpdateSvcmon, nodeID); err != nil {
 		return
 	} else if count == 0 {
 		return
@@ -318,9 +310,7 @@ func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updat
 		return
 	}
 
-	if result, err = oDb.DB.ExecContext(ctx, qUpdateResmon, nodeID); err != nil {
-		return
-	} else if count, err = result.RowsAffected(); err != nil {
+	if count, err = oDb.execCountContext(ctx, qUpdateResmon, nodeID); err != nil {
 		return
 	} else if count == 0 {
 		return
@@ -337,13 +327,9 @@ func (oDb *DB) InstanceDeleteStatus(ctx context.Context, svcID, nodeID string) e
 		queryDelete = "" +
 			"DELETE FROM `svcmon` WHERE `svc_id` = ? AND `node_id` = ?"
 	)
-	result, err := oDb.DB.ExecContext(ctx, queryDelete, svcID, nodeID)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, queryDelete, svcID, nodeID); err != nil {
 		return fmt.Errorf("instanceDeleteStatus %s@%s: %w", svcID, nodeID, err)
-	}
-	if changes, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("instanceDeleteStatus %s@%s can't get deleted count: %w", svcID, nodeID, err)
-	} else if changes > 0 {
+	} else if count > 0 {
 		oDb.SetChange("svcmon")
 	}
 	return nil
@@ -537,14 +523,10 @@ func (oDb *DB) InstanceResourcesDeleteObsolete(ctx context.Context, svcID, nodeI
 			"DELETE FROM `resmon`" +
 			"WHERE `svc_id` = ? AND `node_id` = ? AND `updated` < ?"
 	)
-	result, err := oDb.DB.ExecContext(ctx, queryPurge, svcID, nodeID, maxTime)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, queryPurge, svcID, nodeID, maxTime); err != nil {
 		return fmt.Errorf("InstanceResourcesDeleteObsolete: %w", err)
-	}
-	if affected, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("InstanceResourcesDeleteObsolete count affected: %w", err)
 	} else {
-		slog.Debug(fmt.Sprintf("InstanceResourcesDeleteObsolete %s@%s: %d", svcID, nodeID, affected))
+		slog.Debug(fmt.Sprintf("InstanceResourcesDeleteObsolete %s@%s: %d", svcID, nodeID, count))
 	}
 	return nil
 }
@@ -585,10 +567,12 @@ func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID str
 		for _, key := range info.Keys {
 			if result, err := stmt.ExecContext(ctx, svcID, nodeID, info.Rid, key.Key, topology, key.Value); err != nil {
 				return fmt.Errorf("db exec: %w", err)
-			} else if count, err := result.RowsAffected(); err != nil {
-				return fmt.Errorf("db rows affected: %w", err)
-			} else if count > 0 {
-				changed = true
+			} else if result != nil {
+				if count, err := result.RowsAffected(); err != nil {
+					return fmt.Errorf("db rows affected: %w", err)
+				} else if count > 0 {
+					changed = true
+				}
 			}
 		}
 	}
@@ -599,11 +583,9 @@ func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID str
 func (oDb *DB) InstanceResourceInfoDelete(ctx context.Context, svcID, nodeID string, maxTime time.Time) error {
 	defer logDuration("InstanceResourceInfoDelete "+svcID+"@"+nodeID, time.Now())
 	const query = "DELETE FROM `resinfo` WHERE `svc_id` = ? AND `node_id` = ? AND `updated` < ?"
-	if result, err := oDb.DB.ExecContext(ctx, query, svcID, nodeID, maxTime); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, svcID, nodeID, maxTime); err != nil {
 		return fmt.Errorf("query %s: %w", query, err)
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("query %s count row affected: %w", query, err)
-	} else if affected > 0 {
+	} else if count > 0 {
 		oDb.SetChange("resinfo")
 	}
 	return nil
@@ -804,14 +786,10 @@ func (oDb *DB) PurgeInstance(ctx context.Context, id InstanceID) error {
 	slog.Debug(fmt.Sprintf("purging %s", id))
 	for _, tableName := range tables {
 		request := fmt.Sprintf("DELETE FROM %s WHERE `svc_id` = ? and `node_id` = ?", tableName)
-		result, err1 := oDb.DB.ExecContext(ctx, request, id.svcID, id.nodeID)
-		if err1 != nil {
+		if count, err1 := oDb.execCountContext(ctx, request, id.svcID, id.nodeID); err1 != nil {
 			err = errors.Join(err, fmt.Errorf("delete from %s: %w", tableName, err1))
 			continue
-		}
-		if rowAffected, err1 := result.RowsAffected(); err1 != nil {
-			err = errors.Join(err, fmt.Errorf("count delete from %s: %w", tableName, err1))
-		} else if rowAffected > 0 {
+		} else if count > 0 {
 			slog.Debug(fmt.Sprintf("purged %s from table %s", id, tableName))
 			oDb.SetChange(tableName)
 		}
@@ -858,14 +836,10 @@ func (oDb *DB) LogInstancesNotUpdated(ctx context.Context) error {
                       node_id
                from svcmon
                where mon_updated<DATE_SUB(NOW(), INTERVAL %d HOUR)`, age, age)
-	result, err := oDb.DB.ExecContext(ctx, request)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
-	}
-	if rowAffected, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rowAffected > 0 {
-		slog.Debug(fmt.Sprintf("alert: instance outdated: %d", rowAffected))
+	} else if count > 0 {
+		slog.Debug(fmt.Sprintf("alert: instance outdated: %d", count))
 		oDb.SetChange("log")
 	} else {
 		slog.Debug("alert: no instance outdated")
