@@ -284,28 +284,24 @@ func (d *jobFeedNodeDisk) updateDB(ctx context.Context) error {
 		Keys: []string{"disk_id", "svc_id", "node_id", "disk_dg"},
 		Data: data,
 	}
-	if affected, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return fmt.Errorf("updateDB insert: %w", err)
-	} else if affected > 0 {
+	} else if count > 0 {
 		d.oDb.SetChange("svcdisks")
 	}
 
 	query := "DELETE FROM `svcdisks` WHERE `node_id` = ? AND `disk_updated` < ?"
-	if result, err := d.db.ExecContext(ctx, query, nodeID, now); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, query, nodeID, now); err != nil {
 		return fmt.Errorf("query %s: %w", query, err)
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("query %s count row affected: %w", query, err)
-	} else if affected > 0 {
+	} else if count > 0 {
 		d.oDb.SetChange("svcdisks")
 	}
 
 	// TODO: validate delete query
 	query = "DELETE FROM `diskinfo` WHERE `disk_arrayid` = ? AND `disk_updated` < ?"
-	if result, err := d.db.ExecContext(ctx, query, nodeID, now); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, query, nodeID, now); err != nil {
 		return fmt.Errorf("query %s: %w", query, err)
-	} else if affected, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("query %s count row affected: %w", query, err)
-	} else if affected > 0 {
+	} else if count > 0 {
 		d.oDb.SetChange("diskinfo")
 	}
 	return nil

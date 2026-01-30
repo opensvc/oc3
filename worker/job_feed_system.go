@@ -97,17 +97,13 @@ func (d *jobFeedSystem) pkg(ctx context.Context) error {
 		Data: pkgList,
 	}
 
-	if result, err := request.ExecContext(ctx, d.db); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(request.Table)
 	}
 
-	if result, err := d.db.ExecContext(ctx, "DELETE FROM packages WHERE node_id = ? AND pkg_updated < ?", nodeID, now); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM packages WHERE node_id = ? AND pkg_updated < ?", nodeID, now); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
@@ -152,17 +148,13 @@ func (d *jobFeedSystem) targets(ctx context.Context) error {
 		Data: data,
 	}
 
-	if result, err := request.ExecContext(ctx, d.db); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if result, err := d.db.ExecContext(ctx, "DELETE FROM stor_zone WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM stor_zone WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
@@ -204,17 +196,13 @@ func (d *jobFeedSystem) hba(ctx context.Context) error {
 		Data: data,
 	}
 
-	if result, err := request.ExecContext(ctx, d.db); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if result, err := d.db.ExecContext(ctx, "DELETE FROM node_hba WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM node_hba WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
@@ -270,17 +258,13 @@ func (d *jobFeedSystem) lan(ctx context.Context) error {
 		Data: l,
 	}
 
-	if result, err := request.ExecContext(ctx, d.db); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if result, err := d.db.ExecContext(ctx, "DELETE FROM node_ip WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM node_ip WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
@@ -323,17 +307,13 @@ func (d *jobFeedSystem) groups(ctx context.Context) error {
 		Data: data,
 	}
 
-	if result, err := request.ExecContext(ctx, d.db); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if result, err := d.db.ExecContext(ctx, "DELETE FROM node_groups WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM node_groups WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
@@ -375,17 +355,13 @@ func (d *jobFeedSystem) users(ctx context.Context) error {
 		Data: data,
 	}
 
-	if result, err := request.ExecContext(ctx, d.db); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if result, err := d.db.ExecContext(ctx, "DELETE FROM node_users WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM node_users WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
@@ -429,17 +405,13 @@ func (d *jobFeedSystem) hardware(ctx context.Context) error {
 		Data: data,
 	}
 
-	if result, err := request.ExecContext(ctx, d.db); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
 	}
 
-	if result, err := d.db.ExecContext(ctx, "DELETE FROM node_hw WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, "DELETE FROM node_hw WHERE node_id = ? AND updated < ?", nodeID, now); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)
@@ -522,9 +494,7 @@ func (d *jobFeedSystem) properties(ctx context.Context) error {
 		Data: data,
 	}
 
-	if result, err := request.ExecContext(ctx, d.db); err != nil {
-		return err
-	} else if count, err := result.RowsAffected(); err != nil {
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
 		return err
 	} else if count > 0 {
 		d.oDb.Session.SetChanges(tableName)

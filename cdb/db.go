@@ -158,3 +158,16 @@ func (oDb *DB) DeleteBatched(ctx context.Context, table, dateCol, orderbyCol str
 		time.Sleep(10 * time.Millisecond)
 	}
 }
+
+// ExecContextAndCountRowsAffected executes the oDb.DB.ExecContext query with the provided context, returning the number of rows affected and an error.
+func (oDb *DB) ExecContextAndCountRowsAffected(ctx context.Context, query string, args ...any) (int64, error) {
+	result, err := oDb.DB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, err
+	}
+	if result == nil {
+		// len data may be 0, so no rows affected.
+		return 0, nil
+	}
+	return result.RowsAffected()
+}
