@@ -172,13 +172,13 @@ type N500 = Problem
 
 // DaemonPingAccepted defines model for DaemonPingAccepted.
 type DaemonPingAccepted struct {
-	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/api/object/config
+	// ObjectWithoutConfig list of object names that requires POST /api/object/config
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
 }
 
 // DaemonStatusAccepted defines model for DaemonStatusAccepted.
 type DaemonStatusAccepted struct {
-	// ObjectWithoutConfig list of object names that requires POST /oc3/feed/api/object/config
+	// ObjectWithoutConfig list of object names that requires POST /api/object/config
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
 }
 
