@@ -1,11 +1,11 @@
 openapi: 3.0.0
 
 servers:
-  - url: /oc3/feed/api
+  - url: /api
 
 info:
   title: opensvc feeder api
-  version: 2.0.0
+  version: 3.0.0
 
 paths:
   /daemon/ping:
@@ -58,7 +58,7 @@ paths:
       tags:
         - agent
 
-  /docs/openapi:
+  /openapi.json:
     get:
       operationId: GetSwagger
       tags:
@@ -649,7 +649,7 @@ components:
             properties:
               object_without_config:
                 type: array
-                description: list of object names that requires POST /oc3/feed/api/object/config
+                description: list of object names that requires POST /api/object/config
                 items:
                   type: string
                   description: object name
@@ -663,7 +663,7 @@ components:
             properties:
               object_without_config:
                 type: array
-                description: list of object names that requires POST /oc3/feed/api/object/config
+                description: list of object names that requires POST /api/object/config
                 items:
                   type: string
                   description: object name
