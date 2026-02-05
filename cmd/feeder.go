@@ -20,11 +20,11 @@ import (
 
 const (
 	pathApi     = "/api"
-	pathSpec    = "/api/openapi.json"
-	pathPprof   = "/api/pprof"
-	pathMetric  = "/api/metrics"
-	pathVersion = "/api/version"
-	pathDoc     = "/api/docs"
+	pathSpec    = "openapi.json"
+	pathPprof   = "pprof"
+	pathMetric  = "metrics"
+	pathVersion = "version"
+	pathDoc     = "docs"
 )
 
 func startFeeder() error {
@@ -38,21 +38,24 @@ func listenAndServeFeeder(addr string) error {
 		return err
 	}
 
+	fromPath := func(p string) string { return fmt.Sprintf("%s/%s", pathApi, p) }
+	endingSlash := func(s string) string { return strings.TrimSuffix(s, "/") + "/" }
+
 	// get enabled features
 	enableUI := viper.GetBool("feeder.ui.enable")
 	enableMetrics := viper.GetBool("feeder.metrics.enable")
 	enablePprof := viper.GetBool("feeder.pprof.enable")
 
 	// define public paths
-	publics := []string{pathVersion}
+	publics := []string{fromPath(pathVersion)}
 	if enableUI {
-		publics = append(publics, pathDoc, pathSpec)
+		publics = append(publics, fromPath(pathDoc), fromPath(pathSpec))
 	}
 	if enableMetrics {
-		publics = append(publics, pathMetric)
+		publics = append(publics, fromPath(pathMetric))
 	}
 	if enablePprof {
-		publics = append(publics, pathPprof)
+		publics = append(publics, fromPath(pathPprof))
 	}
 	slog.Info(fmt.Sprintf("public paths: %s", strings.Join(publics, ", ")))
 
@@ -78,10 +81,11 @@ func listenAndServeFeeder(addr string) error {
 
 	if enablePprof {
 		// TODO: move to authenticated path
-		slog.Info(fmt.Sprintf("add handler for profiling: %s", pathPprof))
-		pprof.Register(e, pathPprof)
-		e.GET(pathPprof, func(c echo.Context) error {
-			return c.Redirect(http.StatusMovedPermanently, pathPprof+"/")
+		s := fromPath(pathPprof)
+		slog.Info(fmt.Sprintf("add handler for profiling: %s", s))
+		pprof.Register(e, s)
+		e.GET(s, func(c echo.Context) error {
+			return c.Redirect(http.StatusMovedPermanently, endingSlash(pathPprof))
 		})
 	}
 
@@ -89,15 +93,16 @@ func listenAndServeFeeder(addr string) error {
 		// TODO: move to authenticated path
 		slog.Info(fmt.Sprintf("add handler for metrics: %s", pathMetric))
 		e.Use(echoprometheus.NewMiddleware("oc3_feeder"))
-		e.GET(pathMetric, echoprometheus.NewHandler())
+		e.GET(fromPath(pathMetric), echoprometheus.NewHandler())
 	}
 
 	if enableUI {
-		slog.Info(fmt.Sprintf("add handler for documentation ui: %s", pathDoc))
-		g := e.Group(pathDoc)
-		g.Use(feederhandlers.UIMiddleware(context.Background(), pathDoc, pathSpec))
-		e.GET(pathDoc, func(c echo.Context) error {
-			return c.Redirect(http.StatusMovedPermanently, pathDoc+"/")
+		s := fromPath(pathDoc)
+		slog.Info(fmt.Sprintf("add handler for documentation ui: %s", s))
+		g := e.Group(s)
+		g.Use(feederhandlers.UIMiddleware(context.Background(), s, "../"+pathSpec))
+		e.GET(s, func(c echo.Context) error {
+			return c.Redirect(http.StatusMovedPermanently, endingSlash(pathDoc))
 		})
 	}
 
