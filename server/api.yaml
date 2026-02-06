@@ -27,6 +27,315 @@ paths:
         500:
           $ref: '#/components/responses/500'
 
+  /nodes/{node_id}/compliance/candidate_modulesets:
+    get:
+      description: |
+        Get candidate modulesets for a node
+      operationId: GetNodeComplianceCandidateModulesets
+      parameters:
+        - $ref: '#/components/parameters/inPathNodeId'
+      responses:
+        200:
+          description: List of candidate modulesets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        404:
+          description: Node not found
+        500:
+          description: Internal server error
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
+  /nodes/{node_id}/compliance/candidate_rulesets:
+    get:
+      description: |
+        Get candidate rulesets for a node
+      operationId: GetNodeComplianceCandidateRulesets
+      parameters:
+        - $ref: '#/components/parameters/inPathNodeId'
+      responses:
+        200:
+          description: List of candidate rulesets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        404:
+          description: Node not found
+        500:
+          description: Internal server error
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
+  /nodes/{node_id}/compliance/logs:
+    get:
+      description: |
+        Get compliance logs for a node
+      operationId: GetNodeComplianceLogs
+      parameters:
+        - $ref: '#/components/parameters/inPathNodeId'
+      responses:
+        200:
+          description: Compliance logs for the node
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        404:
+          description: Node not found
+        500:
+          description: Internal server error
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
+  /nodes/{node_id}/compliance/modulesets:
+    get:
+      description: |
+        Get modulesets attached to a node
+      operationId: GetNodeComplianceModulesets
+      parameters:
+        - $ref: '#/components/parameters/inPathNodeId'
+      responses:
+        200:
+          description: List of attached modulesets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        404:
+          description: Node not found
+        500:
+          description: Internal server error
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
+  /nodes/{node_id}/compliance/modulesets/{mset_id}:
+    delete:
+      description: |
+        Detach a moduleset from a node
+      operationId: DeleteNodeComplianceModuleset
+      parameters:
+        - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inPathMsetId'
+      responses:
+        204:
+          description: Moduleset successfully detached
+        404:
+          description: Node or moduleset not found
+        500:
+          description: Internal server error
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+    post:
+      description: |
+        Attach a moduleset to a node
+      operationId: PostNodeComplianceModuleset
+      parameters:
+        - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inPathMsetId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        202:
+          description: Moduleset attached
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
+  /nodes/{node_id}/compliance/rulesets:
+    get:
+      description: |
+        Get rulesets attached to a node
+      operationId: GetNodeComplianceRulesets
+      parameters:
+        - $ref: '#/components/parameters/inPathNodeId'
+      responses:
+        200:
+          description: List of attached rulesets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        404:
+          description: Node not found
+        500:
+          description: Internal server error
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
+  /nodes/{node_id}/compliance/rulesets/{rset_id}:
+    delete:
+      description: |
+        Detach a ruleset from a node
+      operationId: DeleteNodeComplianceRuleset
+      parameters:
+        - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inPathRsetId'
+      responses:
+        204:
+          description: Ruleset successfully detached
+        404:
+          description: Node or ruleset not found
+        500:
+          description: Internal server error
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+    post:
+      description: |
+        Attach a ruleset to a node
+      operationId: PostNodeComplianceRuleset
+      parameters:
+        - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inPathRsetId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        202:
+          description: Ruleset attached
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
+  /tags:
+    get:
+      operationId: GetTags
+      description: List existing tags
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /tags/{tag_id}:
+    get:
+      operationId: GetTag
+      description: Display tag property
+      parameters:
+        - in: path
+          name: tag_id
+          required: true
+          description: ID of the tag
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /tags/{tag_id}/nodes:
+    get:
+      operationId: GetTagNodes
+      description: Get nodes where the tag is attached
+      parameters:
+        - in: path
+          name: tag_id
+          required: true
+          description: ID of the tag
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: List of nodes with this tag
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        404:
+          description: Tag not found
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /version:
     get:
       operationId: GetVersion
@@ -137,6 +446,43 @@ components:
         version:
           type: string
           example: "0.0.1"
+
+  parameters:
+    inPathMsetId:
+      in: path
+      name: mset_id
+      required: true
+      description: ID of the moduleset
+      schema:
+        type: string
+
+    inPathNodeId:
+      in: path
+      name: node_id
+      required: true
+      description: ID of the node
+      schema:
+        type: string
+
+    inPathRsetId:
+      in: path
+      name: rset_id
+      required: true
+      description: ID of the ruleset
+      schema:
+        type: string
+
+    inQuerySync:
+      in: query
+      name: sync
+      schema:
+        type: boolean
+
+    ObjectPathHeader:
+      name: OC3-ObjectPath
+      in: header
+      schema:
+        type: string
 
   securitySchemes:
     basicAuth:
