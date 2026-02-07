@@ -1,7 +1,7 @@
 openapi: 3.0.0
 
 servers:
-  - url: /api
+  - url: ./
 
 info:
   title: opensvc feeder api

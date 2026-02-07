@@ -14,17 +14,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/feeder"
-	feederhandlers "github.com/opensvc/oc3/feeder/handlers"
+	"github.com/opensvc/oc3/feeder/handlers"
 	"github.com/opensvc/oc3/xauth"
-)
-
-const (
-	pathApi     = "/api"
-	pathSpec    = "openapi.json"
-	pathPprof   = "pprof"
-	pathMetric  = "metrics"
-	pathVersion = "version"
-	pathDoc     = "docs"
 )
 
 func startFeeder() error {
@@ -33,13 +24,20 @@ func startFeeder() error {
 }
 
 func listenAndServeFeeder(addr string) error {
+	const (
+		pathApi    = "/api"
+		pathSpec   = "openapi.json"
+		pathPprof  = "/pprof"
+		pathMetric = "/metrics"
+	)
+
 	db, err := newDatabase()
 	if err != nil {
 		return err
 	}
 
-	fromPath := func(p string) string { return fmt.Sprintf("%s/%s", pathApi, p) }
 	endingSlash := func(s string) string { return strings.TrimSuffix(s, "/") + "/" }
+	relPath := func(s string) string { return "./" + strings.TrimPrefix(s, "/") }
 
 	// get enabled features
 	enableUI := viper.GetBool("feeder.ui.enable")
@@ -47,21 +45,25 @@ func listenAndServeFeeder(addr string) error {
 	enablePprof := viper.GetBool("feeder.pprof.enable")
 
 	// define public paths
-	publics := []string{fromPath(pathVersion)}
+	publicPath := []string{pathApi + "/version"}
+	publicPrefix := []string{}
 	if enableUI {
-		publics = append(publics, fromPath(pathDoc), fromPath(pathSpec))
+		for _, p := range []string{"", pathSpec, "swagger-ui.css", "swagger-ui-bundle.js", "swagger-ui-standalone-preset.js"} {
+			publicPath = append(publicPath, pathApi+"/"+p)
+		}
 	}
 	if enableMetrics {
-		publics = append(publics, fromPath(pathMetric))
+		publicPath = append(publicPath, pathMetric)
 	}
 	if enablePprof {
-		publics = append(publics, fromPath(pathPprof))
+		publicPrefix = append(publicPrefix, pathPprof)
 	}
-	slog.Info(fmt.Sprintf("public paths: %s", strings.Join(publics, ", ")))
+	slog.Info(fmt.Sprintf("public paths: %s", strings.Join(publicPath, ", ")))
+	slog.Info(fmt.Sprintf("public path prefixes: %s", strings.Join(publicPrefix, ", ")))
 
 	// define auth middleware
 	authMiddleware := feederhandlers.AuthMiddleware(union.New(
-		xauth.NewPublicStrategy(publics...),
+		xauth.NewPublicStrategy(publicPath, publicPrefix),
 		xauth.NewBasicNode(db),
 	))
 
@@ -81,11 +83,10 @@ func listenAndServeFeeder(addr string) error {
 
 	if enablePprof {
 		// TODO: move to authenticated path
-		s := fromPath(pathPprof)
-		slog.Info(fmt.Sprintf("add handler for profiling: %s", s))
-		pprof.Register(e, s)
-		e.GET(s, func(c echo.Context) error {
-			return c.Redirect(http.StatusMovedPermanently, endingSlash(pathPprof))
+		slog.Info(fmt.Sprintf("add handler for profiling: %s", pathPprof))
+		pprof.Register(e, pathPprof)
+		e.GET(pathPprof, func(c echo.Context) error {
+			return c.Redirect(http.StatusMovedPermanently, endingSlash(relPath(pathPprof)))
 		})
 	}
 
@@ -93,16 +94,15 @@ func listenAndServeFeeder(addr string) error {
 		// TODO: move to authenticated path
 		slog.Info(fmt.Sprintf("add handler for metrics: %s", pathMetric))
 		e.Use(echoprometheus.NewMiddleware("oc3_feeder"))
-		e.GET(fromPath(pathMetric), echoprometheus.NewHandler())
+		e.GET(pathMetric, echoprometheus.NewHandler())
 	}
 
 	if enableUI {
-		s := fromPath(pathDoc)
-		slog.Info(fmt.Sprintf("add handler for documentation ui: %s", s))
-		g := e.Group(s)
-		g.Use(feederhandlers.UIMiddleware(context.Background(), s, "../"+pathSpec))
-		e.GET(s, func(c echo.Context) error {
-			return c.Redirect(http.StatusMovedPermanently, endingSlash(pathDoc))
+		slog.Info(fmt.Sprintf("add handler for documentation ui: %s", pathApi))
+		g := e.Group(pathApi)
+		g.Use(feederhandlers.UIMiddleware(context.Background(), pathApi, pathSpec))
+		e.GET(pathApi, func(c echo.Context) error {
+			return c.Redirect(http.StatusMovedPermanently, endingSlash(relPath(pathApi)))
 		})
 	}
 

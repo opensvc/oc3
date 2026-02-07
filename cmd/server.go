@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"net/http"
+	"strings"
 
 	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo-contrib/pprof"
@@ -11,7 +14,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/server"
-	serverhandlers "github.com/opensvc/oc3/server/handlers"
+	"github.com/opensvc/oc3/server/handlers"
 	"github.com/opensvc/oc3/xauth"
 )
 
@@ -21,50 +24,87 @@ func startServer() error {
 }
 
 func listenAndServeServer(addr string) error {
-	enableUI := viper.GetBool("server.ui.enable")
+	const (
+		pathApi    = "/api"
+		pathSpec   = "openapi.json"
+		pathPprof  = "/pprof"
+		pathMetric = "/metrics"
+	)
 
 	db, err := newDatabase()
 	if err != nil {
 		return err
 	}
 
-	redisClient := newRedis()
+	endingSlash := func(s string) string { return strings.TrimSuffix(s, "/") + "/" }
+	relPath := func(s string) string { return "./" + strings.TrimPrefix(s, "/") }
+
+	// get enabled features
+	enableUI := viper.GetBool("server.ui.enable")
+	enableMetrics := viper.GetBool("server.metrics.enable")
+	enablePprof := viper.GetBool("server.pprof.enable")
+	// define public paths
+	publicPath := []string{}
+	publicPrefix := []string{}
+	if enableUI {
+		for _, p := range []string{"", pathSpec, "swagger-ui.css", "swagger-ui-bundle.js", "swagger-ui-standalone-preset.js"} {
+			publicPath = append(publicPath, pathApi+"/"+p)
+		}
+	}
+	if enableMetrics {
+		publicPath = append(publicPath, pathMetric)
+	}
+	if enablePprof {
+		publicPrefix = append(publicPrefix, pathPprof)
+	}
+	slog.Info(fmt.Sprintf("public paths: %s", strings.Join(publicPath, ", ")))
+	slog.Info(fmt.Sprintf("public path prefixes: %s", strings.Join(publicPrefix, ", ")))
+
+	// define auth middleware
+	authMiddleware := serverhandlers.AuthMiddleware(union.New(
+		xauth.NewPublicStrategy(publicPath, publicPrefix),
+		xauth.NewBasicNode(db),
+	))
 
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
 
-	if viper.GetBool("server.pprof.enable") {
-		slog.Info("add handler /oc3/api/public/pprof")
-		pprof.Register(e, "/oc3/api/public/pprof")
-	}
+	e.Use(authMiddleware)
 
-	strategy := union.New(
-		xauth.NewPublicStrategy("/oc3/api/public/", "/oc3/api/docs", "/oc3/api/version", "/oc3/api/openapi"),
-		xauth.NewBasicNode(db),
-	)
-	if viper.GetBool("server.metrics.enable") {
-		slog.Info("add handler /oc3/api/public/metrics")
-		e.Use(echoprometheus.NewMiddleware("oc3_api"))
-		e.GET("/oc3/api/public/metrics", echoprometheus.NewHandler())
-	}
-	e.Use(serverhandlers.AuthMiddleware(strategy))
-	slog.Info("register openapi handlers with base url: /oc3/api")
+	slog.Info(fmt.Sprintf("add handler for openapi: %s", pathApi))
 	server.RegisterHandlersWithBaseURL(e, &serverhandlers.Api{
 		DB:          db,
-		Redis:       redisClient,
+		Redis:       newRedis(),
 		UI:          enableUI,
 		SyncTimeout: viper.GetDuration("server.sync.timeout"),
 	}, "/oc3/api")
-	if enableUI {
-		registerServerUI(e)
+
+	if enablePprof {
+		// TODO: move to authenticated path
+		slog.Info(fmt.Sprintf("add handler for profiling: %s", pathPprof))
+		pprof.Register(e, pathPprof)
+		e.GET(pathPprof, func(c echo.Context) error {
+			return c.Redirect(http.StatusMovedPermanently, endingSlash(relPath(pathPprof)))
+		})
 	}
+
+	if enableMetrics {
+		// TODO: move to authenticated path
+		slog.Info(fmt.Sprintf("add handler for metrics: %s", pathMetric))
+		e.Use(echoprometheus.NewMiddleware("oc3_feeder"))
+		e.GET(pathMetric, echoprometheus.NewHandler())
+	}
+
+	if enableUI {
+		slog.Info(fmt.Sprintf("add handler for documentation ui: %s", pathApi))
+		g := e.Group(pathApi)
+		g.Use(serverhandlers.UIMiddleware(context.Background(), pathApi, pathSpec))
+		e.GET(pathApi, func(c echo.Context) error {
+			return c.Redirect(http.StatusMovedPermanently, endingSlash(relPath(pathApi)))
+		})
+	}
+
 	slog.Info("listen on " + addr)
 	return e.Start(addr)
-}
-
-func registerServerUI(e *echo.Echo) {
-	slog.Info("add handler /oc3/api/docs/")
-	g := e.Group("/oc3/api/docs")
-	g.Use(serverhandlers.UIMiddleware(context.Background()))
 }

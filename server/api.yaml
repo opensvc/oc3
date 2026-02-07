@@ -1,7 +1,7 @@
 openapi: 3.0.0
 
 servers:
-  - url: /oc3/api
+  - url: ./
 
 info:
   title: opensvc collector api
