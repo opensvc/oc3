@@ -44,7 +44,7 @@ func listenAndServeServer(addr string) error {
 	enableMetrics := viper.GetBool("server.metrics.enable")
 	enablePprof := viper.GetBool("server.pprof.enable")
 	// define public paths
-	publicPath := []string{}
+	publicPath := []string{pathApi + "/version"}
 	publicPrefix := []string{}
 	if enableUI {
 		publicPath = append(publicPath, pathApi)
@@ -79,7 +79,7 @@ func listenAndServeServer(addr string) error {
 		Redis:       newRedis(),
 		UI:          enableUI,
 		SyncTimeout: viper.GetDuration("server.sync.timeout"),
-	}, "/oc3/api")
+	}, pathApi)
 
 	if enablePprof {
 		// TODO: move to authenticated path
