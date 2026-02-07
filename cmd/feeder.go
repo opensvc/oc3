@@ -48,6 +48,7 @@ func listenAndServeFeeder(addr string) error {
 	publicPath := []string{pathApi + "/version"}
 	publicPrefix := []string{}
 	if enableUI {
+		publicPath = append(publicPath, pathApi)
 		for _, p := range []string{"", pathSpec, "swagger-ui.css", "swagger-ui-bundle.js", "swagger-ui-standalone-preset.js"} {
 			publicPath = append(publicPath, pathApi+"/"+p)
 		}
