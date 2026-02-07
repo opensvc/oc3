@@ -24,7 +24,7 @@ func startWorker(runners int, queues []string) error {
 		Redis:   newRedis(),
 		DB:      db,
 		Queues:  queues,
-		WithTx:  viper.GetBool("feeder.tx"),
+		WithTx:  viper.GetBool("worker.tx"),
 		Ev:      newEv(),
 		Runners: runners,
 	}
