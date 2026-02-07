@@ -16,7 +16,7 @@ const (
 	XNodename  = "XNodename"
 )
 
-// AuthMiddleware returns auth middleware that authenticate requests from strategies.
+// AuthMiddleware returns auth middleware that authenticates requests from strategies.
 func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -24,6 +24,8 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 			if err != nil {
 				code := http.StatusUnauthorized
 				return JSONProblem(c, code, http.StatusText(code), err.Error())
+			} else if user == nil {
+				return next(c)
 			}
 			ext := user.GetExtensions()
 			if nodeID := ext.Get(xauth.XNodeID); nodeID != "" {

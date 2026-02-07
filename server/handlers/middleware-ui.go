@@ -9,8 +9,8 @@ import (
 )
 
 // UIMiddleware creates a middleware for UI-related handlers that passes context
-func UIMiddleware(_ context.Context) echo.MiddlewareFunc {
-	uiHandler := http.StripPrefix("/oc3/api/docs", swaggerui.Handler("/oc3/api/docs/openapi"))
+func UIMiddleware(_ context.Context, prefix, specUrl string) echo.MiddlewareFunc {
+	uiHandler := http.StripPrefix(prefix, swaggerui.Handler(specUrl))
 	echoUI := echo.WrapHandler(uiHandler)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {

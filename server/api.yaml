@@ -1,14 +1,14 @@
 openapi: 3.0.0
 
 servers:
-  - url: /oc3/api
+  - url: ./
 
 info:
   title: opensvc collector api
   version: 1.0.0
 
 paths:
-  /docs/openapi:
+  /openapi.json:
     get:
       operationId: GetSwagger
       tags:
