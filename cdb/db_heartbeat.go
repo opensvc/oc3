@@ -76,7 +76,7 @@ func (oDb *DB) HBUpdate(ctx context.Context, hb DBHeartbeat) error {
 	defer logDuration("HBUpdate cluster id:"+hb.ClusterID+" "+hb.Driver, time.Now())
 	const (
 		qUpdate = "" +
-			"INSERT INTO `hbmon` (`cluster_id`, `node_id`, `peer_node_id`, `driver`, `name`, `desc`, `stat e`, `beating`, `last_beating`, `updated`)" +
+			"INSERT INTO `hbmon` (`cluster_id`, `node_id`, `peer_node_id`, `driver`, `name`, `desc`, `state`, `beating`, `last_beating`, `updated`)" +
 			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())" +
 			"ON DUPLICATE KEY UPDATE" +
 			" `cluster_id` = VALUES(`cluster_id`),  `driver` = VALUES(`driver`), `desc` = VALUES(`desc`), `state` = VALUES(`state`), `beating`= VALUES(`beating`),  `last_beating`= VALUES(`last_beating`), `updated`= VALUES(`updated`)"
