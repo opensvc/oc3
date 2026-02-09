@@ -22,6 +22,29 @@ func logConfigFileUsed() {
 	slog.Info(fmt.Sprintf("used config file: %s", viper.ConfigFileUsed()))
 }
 
+func workerSection(name string) string {
+	if name != "" {
+		return "worker." + name
+	} else {
+		return "worker"
+	}
+}
+func setDefaultWorkerConfig(name string) {
+	section := workerSection(name)
+	uxSocket := "/var/run/oc3_worker_pprof.sock"
+	if name != "" {
+		uxSocket = "/var/run/oc3_worker_" + name + "_pprof.sock"
+	}
+	viper.SetDefault(section+".addr", "127.0.0.1:8100")
+	viper.SetDefault(section+".pprof.net.enable", false)
+	viper.SetDefault(section+".pprof.ux.enable", false)
+	viper.SetDefault(section+".pprof.ux.socket", uxSocket)
+	viper.SetDefault(section+".metrics.enable", false)
+
+	viper.SetDefault(section+".runners", 1)
+	viper.SetDefault(section+".tx", true)
+}
+
 func initConfig() error {
 	// env
 	viper.SetEnvPrefix("OC3")
@@ -29,44 +52,53 @@ func initConfig() error {
 	viper.AutomaticEnv()
 
 	// defaults
-	viper.SetDefault("feeder.addr", "127.0.0.1:8080")
-	viper.SetDefault("feeder.pprof.enable", false)
-	viper.SetDefault("feeder.metrics.enable", false)
-	viper.SetDefault("feeder.ui.enable", false)
-	viper.SetDefault("feeder.sync.timeout", "2s")
-	viper.SetDefault("server.addr", "127.0.0.1:8081")
-	viper.SetDefault("server.pprof.enable", false)
-	viper.SetDefault("server.metrics.enable", false)
-	viper.SetDefault("server.ui.enable", false)
-	viper.SetDefault("server.sync.timeout", "2s")
 	viper.SetDefault("db.username", "opensvc")
 	viper.SetDefault("db.host", "127.0.0.1")
 	viper.SetDefault("db.port", "3306")
 	viper.SetDefault("db.log.level", "warn")
 	viper.SetDefault("db.log.slow_query_threshold", "1s")
+
 	viper.SetDefault("redis.db", 0)
 	viper.SetDefault("redis.address", "localhost:6379")
 	viper.SetDefault("redis.password", "")
+
+	viper.SetDefault("feeder.addr", "127.0.0.1:8080")
+	viper.SetDefault("feeder.pprof.uxsocket", "/var/run/oc3_feeder_pprof.sock")
+	viper.SetDefault("feeder.pprof.net.enable", false)
+	viper.SetDefault("feeder.pprof.ux.enable", false)
+	viper.SetDefault("feeder.pprof.ux.socket", "/var/run/oc3_feeder_pprof.sock")
+	viper.SetDefault("feeder.pprof.enable", false)
+	viper.SetDefault("feeder.metrics.enable", false)
+	viper.SetDefault("feeder.ui.enable", false)
+	viper.SetDefault("feeder.sync.timeout", "2s")
+
+	viper.SetDefault("server.addr", "127.0.0.1:8081")
+	viper.SetDefault("serverpprof.pprof.net.enable", false)
+	viper.SetDefault("serverpprof.pprof.ux.enable", false)
+	viper.SetDefault("serverpprof.pprof.ux.socket", "/var/run/oc3_server_pprof.sock")
+	viper.SetDefault("server.metrics.enable", false)
+	viper.SetDefault("server.ui.enable", false)
+	viper.SetDefault("server.sync.timeout", "2s")
+
+	viper.SetDefault("scheduler.addr", "127.0.0.1:8082")
+	viper.SetDefault("scheduler.pprof.net.enable", false)
+	viper.SetDefault("scheduler.pprof.ux.enable", false)
+	viper.SetDefault("scheduler.pprof.ux.socket", "/var/run/oc3_scheduler_pprof.sock")
+	viper.SetDefault("scheduler.metrics.enable", false)
+	viper.SetDefault("scheduler.task.trim.retention", 365)
+	viper.SetDefault("scheduler.task.trim.batch_size", 1000)
+	viper.SetDefault("w2p_hmac", "sha512:7755f108-1b83-45dc-8302-54be8f3616a1")
+
+	viper.SetDefault("messenger.addr", "127.0.0.1:8083")
+	viper.SetDefault("messenger.pprof.net.enable", false)
+	viper.SetDefault("messenger.pprof.ux.enable", false)
+	viper.SetDefault("messenger.pprof.ux.socket", "/var/run/oc3_messenger_pprof.sock")
+	viper.SetDefault("messenger.metrics.enable", false)
 	viper.SetDefault("messenger.key", "magix123")
 	viper.SetDefault("messenger.url", "http://127.0.0.1:8889")
 	viper.SetDefault("messenger.require_token", false)
 	viper.SetDefault("messenger.key_file", "")
 	viper.SetDefault("messenger.cert_file", "")
-	viper.SetDefault("worker.runners", 1)
-	viper.SetDefault("worker.pprof.uxsocket", "/var/run/oc3_worker_pprof.sock")
-	//viper.SetDefault("worker.pprof.addr", "127.0.0.1:9999")
-	viper.SetDefault("worker.tx", true)
-	viper.SetDefault("worker.pprof.enable", false)
-	viper.SetDefault("worker.metrics.enable", false)
-	viper.SetDefault("worker.metrics.addr", "127.0.0.1:2112")
-	viper.SetDefault("scheduler.pprof.uxsocket", "/var/run/oc3_scheduler_pprof.sock")
-	//viper.SetDefault("scheduler.pprof.addr", "127.0.0.1:9998")
-	viper.SetDefault("scheduler.pprof.enable", false)
-	viper.SetDefault("scheduler.metrics.enable", false)
-	viper.SetDefault("scheduler.metrics.addr", "127.0.0.1:2111")
-	viper.SetDefault("scheduler.task.trim.retention", 365)
-	viper.SetDefault("scheduler.task.trim.batch_size", 1000)
-	viper.SetDefault("w2p_hmac", "sha512:7755f108-1b83-45dc-8302-54be8f3616a1")
 
 	// config file
 	viper.SetConfigName("config")

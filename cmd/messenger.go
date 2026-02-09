@@ -5,19 +5,51 @@ import (
 	"log/slog"
 	"net/url"
 
-	"github.com/opensvc/oc3/messenger"
+	"github.com/labstack/echo/v4"
+	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 	"github.com/spf13/viper"
+
+	"github.com/opensvc/oc3/messenger"
+	"github.com/opensvc/oc3/xauth"
 )
+
+type (
+	messengerT struct {
+		section string
+	}
+)
+
+func (t *messengerT) Section() string { return t.section }
+
+func (t *messengerT) authMiddleware(publicPath, publicPrefix []string) echo.MiddlewareFunc {
+	return AuthMiddleware(union.New(
+		xauth.NewPublicStrategy(publicPath, publicPrefix),
+	))
+}
 
 func startMessenger() error {
 	if err := setup(); err != nil {
 		return err
 	}
+	t := &messengerT{section: "messenger"}
+	return t.run()
+}
 
-	u, err := url.Parse(viper.GetString("messenger.url"))
+func (t *messengerT) run() error {
+	section := t.Section()
+	u, err := url.Parse(viper.GetString(section + ".url"))
 	if err != nil {
-		slog.Warn(fmt.Sprintf("parsing messenger.url: %v", err))
+		slog.Warn(fmt.Sprintf("parsing %s.url: %v", section, err))
 		return err
+	}
+
+	if ok, errC := start(t); ok {
+		slog.Info(fmt.Sprintf("%s started", section))
+		go func() {
+			if err := <-errC; err != nil {
+				slog.Error(fmt.Sprintf("%s stopped: %s", t.Section(), err))
+			}
+		}()
 	}
 
 	cometCmd := messenger.CmdComet{
