@@ -8,19 +8,57 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
+	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
+	// (GET /nodes/{node_id}/compliance/candidate_modulesets)
+	GetNodeComplianceCandidateModulesets(ctx echo.Context, nodeId InPathNodeId) error
+
+	// (GET /nodes/{node_id}/compliance/candidate_rulesets)
+	GetNodeComplianceCandidateRulesets(ctx echo.Context, nodeId InPathNodeId) error
+
+	// (GET /nodes/{node_id}/compliance/logs)
+	GetNodeComplianceLogs(ctx echo.Context, nodeId InPathNodeId) error
+
+	// (GET /nodes/{node_id}/compliance/modulesets)
+	GetNodeComplianceModulesets(ctx echo.Context, nodeId InPathNodeId) error
+
+	// (DELETE /nodes/{node_id}/compliance/modulesets/{mset_id})
+	DeleteNodeComplianceModuleset(ctx echo.Context, nodeId InPathNodeId, msetId InPathMsetId) error
+
+	// (POST /nodes/{node_id}/compliance/modulesets/{mset_id})
+	PostNodeComplianceModuleset(ctx echo.Context, nodeId InPathNodeId, msetId InPathMsetId) error
+
+	// (GET /nodes/{node_id}/compliance/rulesets)
+	GetNodeComplianceRulesets(ctx echo.Context, nodeId InPathNodeId) error
+
+	// (DELETE /nodes/{node_id}/compliance/rulesets/{rset_id})
+	DeleteNodeComplianceRuleset(ctx echo.Context, nodeId InPathNodeId, rsetId InPathRsetId) error
+
+	// (POST /nodes/{node_id}/compliance/rulesets/{rset_id})
+	PostNodeComplianceRuleset(ctx echo.Context, nodeId InPathNodeId, rsetId InPathRsetId) error
+
 	// (GET /openapi.json)
 	GetSwagger(ctx echo.Context) error
+
+	// (GET /tags)
+	GetTags(ctx echo.Context) error
+
+	// (GET /tags/{tag_id})
+	GetTag(ctx echo.Context, tagId int) error
+
+	// (GET /tags/{tag_id}/nodes)
+	GetTagNodes(ctx echo.Context, tagId int) error
 
 	// (GET /version)
 	GetVersion(ctx echo.Context) error
@@ -31,12 +69,277 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
+// GetNodeComplianceCandidateModulesets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeComplianceCandidateModulesets(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId InPathNodeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeComplianceCandidateModulesets(ctx, nodeId)
+	return err
+}
+
+// GetNodeComplianceCandidateRulesets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeComplianceCandidateRulesets(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId InPathNodeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeComplianceCandidateRulesets(ctx, nodeId)
+	return err
+}
+
+// GetNodeComplianceLogs converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeComplianceLogs(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId InPathNodeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeComplianceLogs(ctx, nodeId)
+	return err
+}
+
+// GetNodeComplianceModulesets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeComplianceModulesets(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId InPathNodeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeComplianceModulesets(ctx, nodeId)
+	return err
+}
+
+// DeleteNodeComplianceModuleset converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteNodeComplianceModuleset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId InPathNodeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	// ------------- Path parameter "mset_id" -------------
+	var msetId InPathMsetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "mset_id", ctx.Param("mset_id"), &msetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter mset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteNodeComplianceModuleset(ctx, nodeId, msetId)
+	return err
+}
+
+// PostNodeComplianceModuleset converts echo context to params.
+func (w *ServerInterfaceWrapper) PostNodeComplianceModuleset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId InPathNodeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	// ------------- Path parameter "mset_id" -------------
+	var msetId InPathMsetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "mset_id", ctx.Param("mset_id"), &msetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter mset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostNodeComplianceModuleset(ctx, nodeId, msetId)
+	return err
+}
+
+// GetNodeComplianceRulesets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeComplianceRulesets(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId InPathNodeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeComplianceRulesets(ctx, nodeId)
+	return err
+}
+
+// DeleteNodeComplianceRuleset converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteNodeComplianceRuleset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId InPathNodeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	// ------------- Path parameter "rset_id" -------------
+	var rsetId InPathRsetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "rset_id", ctx.Param("rset_id"), &rsetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter rset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteNodeComplianceRuleset(ctx, nodeId, rsetId)
+	return err
+}
+
+// PostNodeComplianceRuleset converts echo context to params.
+func (w *ServerInterfaceWrapper) PostNodeComplianceRuleset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId InPathNodeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	// ------------- Path parameter "rset_id" -------------
+	var rsetId InPathRsetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "rset_id", ctx.Param("rset_id"), &rsetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter rset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostNodeComplianceRuleset(ctx, nodeId, rsetId)
+	return err
+}
+
 // GetSwagger converts echo context to params.
 func (w *ServerInterfaceWrapper) GetSwagger(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetSwagger(ctx)
+	return err
+}
+
+// GetTags converts echo context to params.
+func (w *ServerInterfaceWrapper) GetTags(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetTags(ctx)
+	return err
+}
+
+// GetTag converts echo context to params.
+func (w *ServerInterfaceWrapper) GetTag(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "tag_id" -------------
+	var tagId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tag_id", ctx.Param("tag_id"), &tagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tag_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetTag(ctx, tagId)
+	return err
+}
+
+// GetTagNodes converts echo context to params.
+func (w *ServerInterfaceWrapper) GetTagNodes(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "tag_id" -------------
+	var tagId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tag_id", ctx.Param("tag_id"), &tagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tag_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetTagNodes(ctx, tagId)
 	return err
 }
 
@@ -77,7 +380,19 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
+	router.GET(baseURL+"/nodes/:node_id/compliance/candidate_modulesets", wrapper.GetNodeComplianceCandidateModulesets)
+	router.GET(baseURL+"/nodes/:node_id/compliance/candidate_rulesets", wrapper.GetNodeComplianceCandidateRulesets)
+	router.GET(baseURL+"/nodes/:node_id/compliance/logs", wrapper.GetNodeComplianceLogs)
+	router.GET(baseURL+"/nodes/:node_id/compliance/modulesets", wrapper.GetNodeComplianceModulesets)
+	router.DELETE(baseURL+"/nodes/:node_id/compliance/modulesets/:mset_id", wrapper.DeleteNodeComplianceModuleset)
+	router.POST(baseURL+"/nodes/:node_id/compliance/modulesets/:mset_id", wrapper.PostNodeComplianceModuleset)
+	router.GET(baseURL+"/nodes/:node_id/compliance/rulesets", wrapper.GetNodeComplianceRulesets)
+	router.DELETE(baseURL+"/nodes/:node_id/compliance/rulesets/:rset_id", wrapper.DeleteNodeComplianceRuleset)
+	router.POST(baseURL+"/nodes/:node_id/compliance/rulesets/:rset_id", wrapper.PostNodeComplianceRuleset)
 	router.GET(baseURL+"/openapi.json", wrapper.GetSwagger)
+	router.GET(baseURL+"/tags", wrapper.GetTags)
+	router.GET(baseURL+"/tags/:tag_id", wrapper.GetTag)
+	router.GET(baseURL+"/tags/:tag_id/nodes", wrapper.GetTagNodes)
 	router.GET(baseURL+"/version", wrapper.GetVersion)
 
 }
@@ -85,19 +400,29 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/7xUTY/jRBD9K6WCw65knGQzgGROK2DYAcSsSBYOmxza7YrdK7u7qS4PMzvKf0dlJ5nM",
-	"R3YFSHNKp+vjPb+qfrdoQxeDJy8Ji1tkSjH4RMOfs+lMf2zwQl70aGJsnTXigp98SMHrXbINdUZPXzJt",
-	"sMAvJnc9J2M0Td5yKFvqcLvdZlhRsuyitsEC33nTSxPYfaQKtxmeTefPAXseuHRVRV4xv55OnwPzwgux",
-	"Ny0siK+I4UfmwKh5u2Ltva8vbjFyiMTixnlUJMa14+m462to+s74r5hMZcqWgK5ja/zAHVIk6zbOggSQ",
-	"xiUI1vbM5C1B2IA0tPJxRMxXHjOUm0hYYBJ2vlZtkhjp02PYZUPwZrl8C2MC2FARvHj/+/n3376az9YZ",
-	"LMgOFL55CTV5YiNUQXkzYgZ2tfOQRiE2gU+wg6fIOS9UEys7cdLSU5qkJrBkD6VJfdcZvnnQHLRvDnAh",
-	"sHhz+e7XH1b+t8sl2Mb4mmDDoTsmJuE0zQzo2lKUlddPij3HkChpUhusad3HcSovKK/zDPrkfK2lxoq7",
-	"Itjt38p7qoO4Ifc7SETwhKzz/OzlkyPbZsj0V++YKize79fmMMi9ZutDYSg/kBVV84o4uXHZ7+/eUYCu",
-	"TRdVc5zm03z2Wfx96WM8XS6yPTu5Wej+j1ClSc6+7qU5PDmtGW7vsBqRqIRLMky8zx7/nQfujGCBP/+5",
-	"xOyoxRB92ENZOL8JWr9bJgyRfLqyYEPbkpXAYKLDI3lwlk/zqRLQVA0WOB+uMoxGmuFDJrtYvvePmgZr",
-	"UV2H0V5UWOBPJIu/TV0PzO7576t/aUoP1X1kP5e/jP46O2VhB/iJJt158edy50ce+ulcTVJiYuqkyxH7",
-	"snUW13o3OVqynVT3+TNJz15nAfvU7LGafxxC/0vNT1n8Hv2kxv9JC2uiKV3rhje33o7PQ+1Ro7fYc4sF",
-	"5hPcrrf/BAAA//8BbEqyuAcAAA==",
+	"H4sIAAAAAAAC/+xZUW/bNhD+KwS3hxbQbKfJNsB7apNlzdamgZNuD4lR0NRZYiGR6vGUxjX03wdSsqzY",
+	"suPEg9MEe0pMHu+Odx/vO5FTLk2aGQ2aLO9PeSZQpECA/pfSZ4Li9xboJHS/Q7ASVUbKaN7nJ0fMjBnF",
+	"wFIT5glYIB5w5aYyQTEPuBYp8D5PLdAnFfKAI3zJFULI+4Q5BNzKGFLhVNMkc6KWUOmIF0VQGT81Iaw3",
+	"rk0I7XbdzEPtDu7cNK7bMj5gy4UTtpnRFnz0D3o990caTaDJ/SuyLFFSOFe6n63zZ9rQ9yPCmPf5D915",
+	"SrvlrO2eoRklkJZWbu/ojQjZAL7kYIkXAT/o7e3C6kctcooNqm8Qlmb3d2H22OBIhSHo0ubBLmyeGmLH",
+	"Jtd+nz/vJqknmgC1SNg54DUg+x3RoId3tdjpnq135x5NBkiqRF4IJFSyDP7XLM5ToX9CEKEYJcDgJkuE",
+	"9r4zm4FUYyUZGUaxssxImSOCllAdmSudlRY7V5oHi/gPuCVBuV02exEDe3txccZKASZNCOzF5eD48NdX",
+	"+3vDgJ2D9C788pJFoAEFQchGk9KmQRUpzWwZiLHBFd6xNueUJogAnXekKIG2mNjYIAWLobF5mgqcLChn",
+	"Tm+HsRNi528/fHx3dKVPP1wwGQsdARujSZuOkVntZsDgRkJGV9ptKcsxMxasE0qMFIn6VmblBXSiTsBy",
+	"q3TklgpJ6hpYhb8rrSEypLzsb8wCsJaw7ncOXramrGiWt8sZbOpEzmI2rBea0WeQvsxcA1pVgv029hoT",
+	"cCPSzMWc9zq9zt6d9mdLl+05cIHMUdHk3OG/NDUSVsnXOcX1kXNr/OjcVkyUOYdHIBBwJl3+OjaYCuJ9",
+	"/uc/FzxoqPCzizpKchkbX/tLMHGTgbbXkkmTJCDJIBOZ4o3w8L1Or9NzDjhRN9nn+34o8JTjN9J1TGe7",
+	"04rwCl8sEiW0hK4UOlShIPhUs7RfEwEtg/kPIFYvmNO69cdGeKr1OHAJ85hxFOlWOZo+rI0ezlS8n5sM",
+	"bvUWl+2VbS7SvUX/xXCBG1/ds4wqgtQ2SHcOxGpAIIpJWyV9pyy5U9UWlgaJLJb80DUmxMYLdX9Fla6K",
+	"E8yrdIVWH6kGTi+HRTC9hcXLoQsOichFldc44kOnZjNg4P1ggVuCYvD8IIHPARCJie6AQC3LnOw98//O",
+	"qX+qKT9s2Xr98fGUk74hKTSoQBAJGUPoupPNs/+MmKAOwDMhgvk2utPqU70oXUyAWjreI3D7Z2K+/7Jx",
+	"XQmGI69oBR62hEOwoXx1idECn5as1c4xm0sJ1o7zJJmwEMrEr8+2wUZgHjv1Ac+MbTnTr2kph+uO85mx",
+	"9B3lz19WvDHh5F4nf/GboFi8nCmWsPFqHTZmdaCEQ2/V13qtsuuE5jcsd8nuNa5F7pLdb8BrvawT2lFd",
+	"2aitxO1oZfDsSOVZtJJYEwreh1DwwXQy2GkxGtyHTAZbUQk+FSLBB9HII+btMUlk8D+FzOtIdbHVmQW7",
+	"4oqlyn/+VUSRv1bbqla3ZPB2cj789d2EeBayLB8lSlbxKgdXcKrnE7hRlpSOmBdtIdGLcvyROK8M8KNg",
+	"zY13pySiGSe1BvFI2SwRExc+Vt1OT1aEcblyrXovJC/c8lZYerPJU2H9GrF1w7LxITjYBNgH30c+y45k",
+	"bbvpJdjXGBBmSWFq3nyuSPKp1/s0M719a1rFTFFcvpy57a1qWy5E1Nqq7BYVjTekViQgUI6aiUyxmWhL",
+	"4v+up7ZKwLoX3Jn1/6ZI1uEQmRipRPkntWFRRtb1hCVsc0x4n3e6vBgW/wYAAP//Sx99jgAiAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

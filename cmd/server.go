@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/server"
-	"github.com/opensvc/oc3/server/handlers"
+	serverhandlers "github.com/opensvc/oc3/server/handlers"
 	"github.com/opensvc/oc3/xauth"
 )
 
@@ -64,7 +64,7 @@ func listenAndServeServer(addr string) error {
 	// define auth middleware
 	authMiddleware := serverhandlers.AuthMiddleware(union.New(
 		xauth.NewPublicStrategy(publicPath, publicPrefix),
-		xauth.NewBasicNode(db),
+		xauth.NewBasicWeb2py(db, viper.GetString("w2p_hmac")),
 	))
 
 	e := echo.New()
