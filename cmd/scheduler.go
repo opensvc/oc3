@@ -2,24 +2,50 @@ package cmd
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log/slog"
-	"net/http"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/labstack/echo/v4"
+	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 
 	"github.com/opensvc/oc3/scheduler"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/spf13/viper"
+	"github.com/opensvc/oc3/xauth"
 )
 
-func scheduleExec(name string) error {
-	if err := setup(); err != nil {
-		return err
+type (
+	schedulerT struct {
+		db      *sql.DB
+		redis   *redis.Client
+		section string
 	}
-	db, err := newDatabase()
+)
+
+func (t *schedulerT) authMiddleware(publicPath, publicPrefix []string) echo.MiddlewareFunc {
+	return AuthMiddleware(union.New(
+		xauth.NewPublicStrategy(publicPath, publicPrefix),
+	))
+}
+
+func newScheduler() (*schedulerT, error) {
+	if err := setup(); err != nil {
+		return nil, err
+	}
+	if db, err := newDatabase(); err != nil {
+		return nil, err
+	} else {
+		t := &schedulerT{db: db, section: "scheduler"}
+		return t, nil
+	}
+}
+
+func scheduleExec(name string) error {
+	t, err := newScheduler()
 	if err != nil {
 		return err
 	}
-	task := scheduler.NewTask(name, db, newEv())
+	task := scheduler.NewTask(name, t.db, newEv())
 	if task.IsZero() {
 		return fmt.Errorf("task not found")
 	}
@@ -32,36 +58,26 @@ func scheduleList() error {
 }
 
 func startScheduler() error {
-	if err := setup(); err != nil {
-		return err
-	}
-	db, err := newDatabase()
+	t, err := newScheduler()
 	if err != nil {
 		return err
 	}
-	if viper.GetBool("scheduler.pprof.enable") {
-		if p := viper.GetString("scheduler.pprof.uxsocket"); p != "" {
-			if err := pprofUx(p); err != nil {
-				return err
-			}
-		}
-		if addr := viper.GetString("scheduler.pprof.addr"); addr != "" {
-			if err := pprofInet(addr); err != nil {
-				return err
-			}
-		}
-	}
-	if viper.GetBool("scheduler.metrics.enable") {
-		addr := viper.GetString("scheduler.metrics.addr")
-		slog.Info(fmt.Sprintf("metrics listener on http://%s/metrics", addr))
-		http.Handle("/metrics", promhttp.Handler())
+	if ok, errC := start(t); ok {
+		slog.Info(fmt.Sprintf("%s started", t.Section()))
 		go func() {
-			_ = http.ListenAndServe(addr, nil)
+			if err := <-errC; err != nil {
+				slog.Error(fmt.Sprintf("%s stopped: %s", t.Section(), err))
+			}
 		}()
 	}
+
 	sched := &scheduler.Scheduler{
-		DB: db,
+		DB: t.db,
 		Ev: newEv(),
 	}
 	return sched.Run()
+}
+
+func (t *schedulerT) Section() string {
+	return t.section
 }

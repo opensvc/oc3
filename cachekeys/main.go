@@ -1,7 +1,7 @@
 package cachekeys
 
 const (
-	QueuePrefix = "oc3:q:"
+	QueuePrefix = "oc3:q:feed_"
 
 	FeedDaemonPingQ        = "oc3:q:feed_daemon_ping"
 	FeedDaemonPingH        = "oc3:h:feed_daemon_ping"

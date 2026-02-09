@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/util/version"
 )
 
@@ -26,22 +25,27 @@ func NewGroupSubsystems() *cobra.Group {
 
 func cmdWorker() *cobra.Command {
 	var maxRunners int
+	var name string
+	var queues []string
 	cmd := &cobra.Command{
 		GroupID: GroupIDSubsystems,
 		Use:     "worker",
 		Short:   "run queued jobs",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			setDefaultWorkerConfig(name)
 			if err := setup(); err != nil {
 				return err
 			}
-			queues := make([]string, 0, len(args))
-			for _, q := range args {
-				queues = append(queues, cachekeys.QueuePrefix+q)
+			if t, err := newWorker(name, maxRunners, queues); err != nil {
+				return err
+			} else {
+				return t.run()
 			}
-			return startWorker(maxRunners, queues)
 		},
 	}
-	cmd.Flags().IntVar(&maxRunners, "runners", 1, "maximun number of worker job runners")
+	cmd.Flags().StringVar(&name, "name", "", "worker name")
+	cmd.Flags().IntVar(&maxRunners, "runners", 1, "maximum number of worker job runners")
+	cmd.Flags().StringSliceVar(&queues, "queues", []string{}, "worker queue to listen to")
 	return cmd
 }
 
@@ -54,7 +58,11 @@ func cmdFeeder() *cobra.Command {
 			if err := setup(); err != nil {
 				return err
 			}
-			return startFeeder()
+			if t, err := newFeeder(); err != nil {
+				return err
+			} else {
+				return run(t)
+			}
 		},
 	}
 }
@@ -68,7 +76,11 @@ func cmdApiCollector() *cobra.Command {
 			if err := setup(); err != nil {
 				return err
 			}
-			return startServer()
+			if t, err := newServer(); err != nil {
+				return err
+			} else {
+				return run(t)
+			}
 		},
 	}
 }
