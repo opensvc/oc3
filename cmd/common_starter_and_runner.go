@@ -36,7 +36,7 @@ type (
 	}
 
 	authMiddlewarer interface {
-		authMiddleware() echo.MiddlewareFunc
+		authMiddleware(publicPath, publicPrefix []string) echo.MiddlewareFunc
 	}
 )
 
@@ -100,7 +100,7 @@ func start(i sectioner) (bool, <-chan error) {
 	e.HidePort = true
 
 	if a, ok := i.(authMiddlewarer); ok {
-		e.Use(a.authMiddleware())
+		e.Use(a.authMiddleware(publicPath, publicPrefix))
 	}
 
 	if a, ok := i.(apiRegister); ok {
