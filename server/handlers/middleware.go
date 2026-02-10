@@ -11,8 +11,18 @@ import (
 )
 
 const (
+	XClusterID = "XClusterID"
+	XNodeID    = "XNodeID"
+	XNodename  = "XNodename"
+	XApp       = "XApp"
 	XUserID    = "XUserID"
 	XUserEmail = "XUserEmail"
+	XAuthMode  = "XAuthMode" // user or node
+)
+
+const (
+	AuthModeUser = "user"
+	AuthModeNode = "node"
 )
 
 // AuthMiddleware returns auth middleware that authenticate requests from strategies.
@@ -27,8 +37,22 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 			}
 
 			ext := user.GetExtensions()
+			if nodeID := ext.Get(xauth.XNodeID); nodeID != "" {
+				c.Set(XNodeID, nodeID)
+				c.Set(XAuthMode, AuthModeNode)
+			}
+			if nodename := ext.Get(xauth.XNodename); nodename != "" {
+				c.Set(XNodename, nodename)
+			}
+			if clusterID := ext.Get(xauth.XClusterID); clusterID != "" {
+				c.Set(XClusterID, clusterID)
+			}
+			if app := ext.Get(xauth.XApp); app != "" {
+				c.Set(XApp, app)
+			}
 			if userEmail := ext.Get(xauth.XUserEmail); userEmail != "" {
 				c.Set(XUserEmail, userEmail)
+				c.Set(XAuthMode, AuthModeUser)
 			}
 
 			groups := user.GetGroups()
@@ -39,15 +63,6 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 		}
 	}
 }
-
-// // userEmailFromContext returns the userEmail from context
-// func userEmailFromContext(c echo.Context) string {
-// 	user, ok := c.Get(XUserEmail).(string)
-// 	if ok {
-// 		return user
-// 	}
-// 	return ""
-// }
 
 func UserInfoFromContext(c echo.Context) auth.Info {
 	user, ok := c.Get("user").(auth.Info)
@@ -73,4 +88,10 @@ func IsManager(c echo.Context) bool {
 		}
 	}
 	return false
+}
+
+// return true if the request is authenticated as a node
+func IsAuthByNode(c echo.Context) bool {
+	authMode, ok := c.Get(XAuthMode).(string)
+	return ok && authMode == AuthModeNode
 }

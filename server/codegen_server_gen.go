@@ -51,6 +51,9 @@ type ServerInterface interface {
 	// (GET /openapi.json)
 	GetSwagger(ctx echo.Context) error
 
+	// (POST /register)
+	PostRegister(ctx echo.Context, params PostRegisterParams) error
+
 	// (GET /tags)
 	GetTags(ctx echo.Context) error
 
@@ -290,6 +293,28 @@ func (w *ServerInterfaceWrapper) GetSwagger(ctx echo.Context) error {
 	return err
 }
 
+// PostRegister converts echo context to params.
+func (w *ServerInterfaceWrapper) PostRegister(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostRegisterParams
+	// ------------- Optional query parameter "app" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "app", ctx.QueryParams(), &params.App)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter app: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostRegister(ctx, params)
+	return err
+}
+
 // GetTags converts echo context to params.
 func (w *ServerInterfaceWrapper) GetTags(ctx echo.Context) error {
 	var err error
@@ -390,6 +415,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/nodes/:node_id/compliance/rulesets/:rset_id", wrapper.DeleteNodeComplianceRuleset)
 	router.POST(baseURL+"/nodes/:node_id/compliance/rulesets/:rset_id", wrapper.PostNodeComplianceRuleset)
 	router.GET(baseURL+"/openapi.json", wrapper.GetSwagger)
+	router.POST(baseURL+"/register", wrapper.PostRegister)
 	router.GET(baseURL+"/tags", wrapper.GetTags)
 	router.GET(baseURL+"/tags/:tag_id", wrapper.GetTag)
 	router.GET(baseURL+"/tags/:tag_id/nodes", wrapper.GetTagNodes)
@@ -400,29 +426,31 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"H4sIAAAAAAAC/+xZ4VPbuBL/VzR670M745eEwntvJveJwnHlrqVMoHcfINNR5I2tjiO5qzUlZfK/30iy",
+	"HZM4IZAOFOY+QezV7mr3t/tbSzdcmkluNGiyvH/Dc4FiAgTofyl9Kij9YIGOY/c7BitR5aSM5n1+fMjM",
+	"mFEKbGLiIgMLxCOu3KtcUMojrsUEeJ9PLNBnFfOII3wtFELM+4QFRNzKFCbCqaZp7kQtodIJn82i0viJ",
+	"iWG9cW1iaLfr3jzU7uDOTeO6LeMDtjxzwjY32oKP/l6v5/5Iowk0uX9FnmdKCudK94t1/tw09P0bYcz7",
+	"/F/deUq74a3tnqIZZTAJVm7v6K2I2QC+FmCJzyK+19t5DKuftCgoNai+QxzM7j6G2SODIxXHoIPNvcew",
+	"eWKIHZlC+33+93GSeqwJUIuMnQFeAbJfEQ16eJeLne5qvat7NDkgqYC8GEiobBn8+ywtJkL/B0HEYpQB",
+	"g+s8E9r7zmwOUo2VZGQYpcoyI2WBCFpCWTKXOg8WO5eaR4v4j7glQYVdNnueAnt3fn7KggCTJgb26mJw",
+	"dPD/N7s7w4idgfQu/O81S0ADCoKYjabBpkGVKM1sCMTY4ArvWJtzShMkgM47UpRBW0xsapCixdDYYjIR",
+	"OF1QzpzeDmPHxM7effz0/vBSn3w8ZzIVOgE2RjNpOkZmtZsRg2sJOV1qt6W8wNxYsE4oM1Jk6nvIyivo",
+	"JJ2IFVbpxC0VktQVsBJ/l1pDYkh52V+YBWAtYd3t7L1uTdms2d4uKtjUiaxiNqwXmtEXkL7NXAFaFcB+",
+	"G3uNF3AtJrmLOe91ep2dO+1XS5ftOXCBLFDR9MzhP5gaCavkfkFpXXJujX86t5US5c7hEQgErKTDryOD",
+	"E0G8z3//65xHDRX+7aKOQC5j43t/ABM3OWh7JZk0WQaSDDKRK94ID9/p9Do954ATdS/7fNc/ijzl+I10",
+	"HdPZ7k1JeDPfLDIltISuFDpWsSD4XLO0X5MALYP5NyBWL5jTuvVlIzzVehy4hHnMOIp0qxxNH9RGDyoV",
+	"H+Ymo1uzxUV7Z5uLdG/R/2y4wI1v7tlGFcHENkh3DsTygUAU07ZO+l5ZclXVFpYGiSy2/NgNJsTGC31/",
+	"RZcumxPMu3SJVh+pBk4vhrPo5hYWL4YuOCQSF1Ve44gPnZrNgIH3gwVuCYrBy4MEvgRAZCa5AwK1LHOy",
+	"98z/e6f+uab8oGXr9cfHc076hqTQoAJBJGQKsZtONs/+C2KCOgAvhAjm2+jelJ/qs+BiBtQy8R6C2z8T",
+	"8/2HwXUlGA69ohV42BIO0Yby5SFGC3xaslY7x2whJVg7LrJsymIIiV+fbYONwDx16iOeG9tS0/u0lMN1",
+	"5XxqLP1E+fOHFW9NPL1X5S9+E8wWD2dmS9h4sw4bVR8IcOit+lqvVXad0PyE5S7ZncaxyF2yuw14rZd1",
+	"Qo/UVzYaK3E7Whm8OFJ5EaMk1oSC9yEUfDCdDB61GQ3uQyaDragEnwuR4INo5Anz9pQkMviHQuZ9pDzY",
+	"6lTBLrliqfOffRNJ4o/VturVLRm8nZyPf/w0Ia5ClhejTMkyXgiJsgToz05bi3JQSqyvxEpqufj8hdbX",
+	"AnA6v9ESec7X3V5tUVO3D4Cdx8Fm2+3cUvY2qrd9KSEnV2c/ELfh+YrZxvM6XCtLSifMi7YMM+fh+RPN",
+	"HgHoT1Lz7nn3hkRSzQatQTxUNs/E1IWPlSCZrgjjMohX3duSF265sw3ebHJlW98KbT04btyM9jZpMHs/",
+	"Rz7DZLh27PcS7FsKCFVSmJp/BKxI8onX+zwzvf0nQhkzRWm4wXTbWzU+noukdWR8XFQ07vJakYBABWom",
+	"csUq0ZbE/1m/2ioB627SK+s/pknW4RC5GKlMeWYbzkJk3WweYFtgxvu80+Wz4ezvAAAA//8fx4lniCMA",
+	"AA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

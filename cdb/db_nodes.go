@@ -545,7 +545,7 @@ func (oDb *DB) NodeResponsible(ctx context.Context, nodeID string, groups []stri
 		return false, fmt.Errorf("nodeResponsible: %w", err)
 	}
 
-	allowedApps, err := oDb.PublishedAppsForGroups(ctx, groups)
+	allowedApps, err := oDb.AppsForGroups(ctx, groups)
 	if err != nil {
 		return false, fmt.Errorf("nodeResponsible: %w", err)
 	}
@@ -559,4 +559,38 @@ func (oDb *DB) NodeResponsible(ctx context.Context, nodeID string, groups []stri
 		}
 	}
 	return false, nil
+}
+
+// NodeByNodenameAndApp returns the node matching the given nodename and app
+func (oDb *DB) NodeByNodenameAndApp(ctx context.Context, nodename, app string) (*DBNode, error) {
+	defer logDuration("NodeByNodenameAndApp", time.Now())
+	const query = `SELECT node_id, nodename, app FROM nodes WHERE nodename = ? AND app = ? LIMIT 1`
+	var (
+		nodeID, n, a sql.NullString
+	)
+	err := oDb.DB.QueryRowContext(ctx, query, nodename, app).Scan(&nodeID, &n, &a)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("NodeByNodenameAndApp: %w", err)
+	default:
+		return &DBNode{
+			NodeID:   nodeID.String,
+			Nodename: n.String,
+			App:      a.String,
+		}, nil
+	}
+}
+
+// InsertNode inserts a new node row with the given nodename, team_responsible, app, and node_id.
+func (oDb *DB) InsertNode(ctx context.Context, nodename, teamResponsible, app, nodeID string) error {
+	defer logDuration("InsertNode", time.Now())
+	const query = `INSERT INTO nodes (nodename, team_responsible, app, node_id) VALUES (?, ?, ?, ?)`
+	if _, err := oDb.DB.ExecContext(ctx, query, nodename, teamResponsible, app, nodeID); err != nil {
+		return fmt.Errorf("InsertNode: %w", err)
+	}
+	oDb.SetChange("nodes")
+	oDb.Session.NotifyChanges(ctx)
+	return nil
 }

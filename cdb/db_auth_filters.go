@@ -100,20 +100,20 @@ func (oDb *DB) PublishedNodeIDsForGroups(ctx context.Context, groups []string) (
 	return ids, nil
 }
 
-// PublishedAppsForGroups returns app names accessible by the provided groups.
-func (oDb *DB) PublishedAppsForGroups(ctx context.Context, groups []string) ([]string, error) {
-	clean := cleanGroups(groups)
+// AppsForGroups returns app accessible by the provided groups.
+func (oDb *DB) AppsForGroups(ctx context.Context, groups []string) ([]string, error) {
+	grps := cleanGroups(groups)
 
-	if len(clean) == 0 {
+	if len(grps) == 0 {
 		return []string{}, nil
 	}
 
 	query := "SELECT DISTINCT apps.app FROM apps " +
 		"JOIN apps_responsibles ON apps.id = apps_responsibles.app_id " +
 		"JOIN auth_group ON apps_responsibles.group_id = auth_group.id " +
-		"WHERE auth_group.role IN (" + Placeholders(len(clean)) + ")"
+		"WHERE auth_group.role IN (" + Placeholders(len(grps)) + ")"
 	args := []any{}
-	for _, g := range clean {
+	for _, g := range grps {
 		args = append(args, g)
 	}
 
@@ -241,6 +241,7 @@ func QFilter(ctx context.Context, in QFilterInput) (string, []any, error) {
 	return joinBaseQuery(in.BaseQuery, q), append(in.BaseArgs, args...), nil
 }
 
+// cleanGroups removes empty and "Manager" groups from the list
 func cleanGroups(groups []string) []string {
 	clean := make([]string, 0, len(groups))
 	for _, g := range groups {
