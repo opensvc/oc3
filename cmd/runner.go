@@ -2,21 +2,60 @@ package cmd
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
+	"log/slog"
+
+	"github.com/labstack/echo/v4"
+	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 
 	"github.com/opensvc/oc3/runner"
+	"github.com/opensvc/oc3/xauth"
 )
 
-func startRunner() error {
-	if err := setup(); err != nil {
-		return err
+type (
+	runnerT struct {
+		db      *sql.DB
+		section string
 	}
-	db, err := newDatabase()
+)
+
+func (t *runnerT) Section() string { return t.section }
+
+func (t *runnerT) authMiddleware(publicPath, publicPrefix []string) echo.MiddlewareFunc {
+	return AuthMiddleware(union.New(
+		xauth.NewPublicStrategy(publicPath, publicPrefix),
+	))
+}
+
+func newRunner() (*runnerT, error) {
+	if err := setup(); err != nil {
+		return nil, err
+	}
+	if db, err := newDatabase(); err != nil {
+		return nil, err
+	} else {
+		t := &runnerT{db: db, section: "runner"}
+		return t, nil
+	}
+}
+
+func startRunner() error {
+	t, err := newRunner()
 	if err != nil {
 		return err
 	}
+	if ok, errC := start(t); ok {
+		slog.Info(fmt.Sprintf("%s started", t.Section()))
+		go func() {
+			if err := <-errC; err != nil {
+				slog.Error(fmt.Sprintf("%s stopped: %s", t.Section(), err))
+			}
+		}()
+	}
 
 	ad := &runner.ActionDaemon{
-		DB:  db,
+		DB:  t.db,
 		Ev:  newEv(),
 		Ctx: context.Background(),
 	}

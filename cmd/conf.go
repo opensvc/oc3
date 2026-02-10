@@ -100,6 +100,12 @@ func initConfig() error {
 	viper.SetDefault("messenger.key_file", "")
 	viper.SetDefault("messenger.cert_file", "")
 
+	viper.SetDefault("runner.addr", "127.0.0.1:8084")
+	viper.SetDefault("runner.pprof.net.enable", false)
+	viper.SetDefault("runner.pprof.ux.enable", false)
+	viper.SetDefault("runner.pprof.ux.socket", "/var/run/oc3_runner_pprof.sock")
+	viper.SetDefault("runner.metrics.enable", false)
+
 	// config file
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
