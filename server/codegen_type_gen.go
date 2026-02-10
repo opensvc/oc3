@@ -60,8 +60,21 @@ type PostNodeComplianceModulesetJSONBody = map[string]interface{}
 // PostNodeComplianceRulesetJSONBody defines parameters for PostNodeComplianceRuleset.
 type PostNodeComplianceRulesetJSONBody = map[string]interface{}
 
+// PostRegisterJSONBody defines parameters for PostRegister.
+type PostRegisterJSONBody struct {
+	Nodename *string `json:"nodename,omitempty"`
+}
+
+// PostRegisterParams defines parameters for PostRegister.
+type PostRegisterParams struct {
+	App *string `form:"app,omitempty" json:"app,omitempty"`
+}
+
 // PostNodeComplianceModulesetJSONRequestBody defines body for PostNodeComplianceModuleset for application/json ContentType.
 type PostNodeComplianceModulesetJSONRequestBody = PostNodeComplianceModulesetJSONBody
 
 // PostNodeComplianceRulesetJSONRequestBody defines body for PostNodeComplianceRuleset for application/json ContentType.
 type PostNodeComplianceRulesetJSONRequestBody = PostNodeComplianceRulesetJSONBody
+
+// PostRegisterJSONRequestBody defines body for PostRegister for application/json ContentType.
+type PostRegisterJSONRequestBody PostRegisterJSONBody

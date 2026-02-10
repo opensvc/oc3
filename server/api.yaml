@@ -257,6 +257,35 @@ paths:
       tags:
         - collector
 
+  /register:
+    post:
+      description: |
+        Register a node
+      operationId: PostRegister
+      parameters:
+        - name: app
+          in: query
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nodename:
+                  type: string
+      responses:
+        202:
+          description: Accepted
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
   /tags:
     get:
       operationId: GetTags

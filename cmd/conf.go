@@ -80,6 +80,7 @@ func initConfig() error {
 	viper.SetDefault("server.ui.enable", false)
 	viper.SetDefault("server.sync.timeout", "2s")
 
+	viper.SetDefault("server.allow_anon_register", false)
 	viper.SetDefault("scheduler.addr", "127.0.0.1:8082")
 	viper.SetDefault("scheduler.pprof.net.enable", false)
 	viper.SetDefault("scheduler.pprof.ux.enable", false)

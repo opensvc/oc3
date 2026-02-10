@@ -168,14 +168,7 @@ func (oDb *DB) AppIDFromNodeID(ctx context.Context, nodeID string) (int64, bool,
 		return appID.Int64, false, fmt.Errorf("can't find app from empty node id value")
 	}
 	err := oDb.DB.QueryRowContext(ctx, query, nodeID).Scan(&appID)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return appID.Int64, false, nil
-	case err != nil:
-		return appID.Int64, false, err
-	default:
-		return appID.Int64, true, nil
-	}
+	return checkRow(err, appID.Valid, appID.Int64)
 }
 
 // appIDFromNodeID retrieves the application ID associated with a given node ID from the database.
@@ -190,14 +183,7 @@ func (oDb *DB) AppIDFromObjectID(ctx context.Context, objectID string) (int64, b
 		return appID.Int64, false, fmt.Errorf("can't find app from empty object id value")
 	}
 	err := oDb.DB.QueryRowContext(ctx, query, objectID).Scan(&appID)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return appID.Int64, false, nil
-	case err != nil:
-		return appID.Int64, false, err
-	default:
-		return appID.Int64, true, nil
-	}
+	return checkRow(err, appID.Valid, appID.Int64)
 }
 
 // AppIDFromObjectOrNodeIDs retrieves the application ID associated with the given objectID or nodeID in the database.
