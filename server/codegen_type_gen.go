@@ -54,8 +54,8 @@ type N404 = Problem
 // N500 defines model for 500.
 type N500 = Problem
 
-// PostNodesRegisterJSONBody defines parameters for PostNodesRegister.
-type PostNodesRegisterJSONBody struct {
+// PostAuthNodeJSONBody defines parameters for PostAuthNode.
+type PostAuthNodeJSONBody struct {
 	App      *string `json:"app,omitempty"`
 	Nodename string  `json:"nodename"`
 }
@@ -66,8 +66,8 @@ type PostNodeComplianceModulesetJSONBody = map[string]interface{}
 // PostNodeComplianceRulesetJSONBody defines parameters for PostNodeComplianceRuleset.
 type PostNodeComplianceRulesetJSONBody = map[string]interface{}
 
-// PostNodesRegisterJSONRequestBody defines body for PostNodesRegister for application/json ContentType.
-type PostNodesRegisterJSONRequestBody PostNodesRegisterJSONBody
+// PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
+type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
 
 // PostNodeComplianceModulesetJSONRequestBody defines body for PostNodeComplianceModuleset for application/json ContentType.
 type PostNodeComplianceModulesetJSONRequestBody = PostNodeComplianceModulesetJSONBody

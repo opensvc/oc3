@@ -5,9 +5,48 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.1
+  version: 1.0.2
 
 paths:
+  /auth/node:
+    post:
+      description: |
+        Register a node authentication
+      operationId: PostAuthNode
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nodename
+              properties:
+                nodename:
+                  type: string
+                app:
+                  type: string
+      responses:
+        200:
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - uuid
+                  - info
+                properties:
+                  uuid:
+                    type: string
+                  info:
+                    type: string
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - auth
+
   /openapi.json:
     get:
       operationId: GetSwagger
@@ -251,45 +290,6 @@ paths:
           $ref: '#/components/responses/403'
         500:
           $ref: '#/components/responses/500'
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - collector
-
-  /nodes/register:
-    post:
-      description: |
-        Register a node
-      operationId: PostNodesRegister
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - nodename
-              properties:
-                nodename:
-                  type: string
-                app:
-                  type: string
-      responses:
-        200:
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - uuid
-                  - info
-                properties:
-                  uuid:
-                    type: string
-                  info:
-                    type: string
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
