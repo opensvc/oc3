@@ -14,7 +14,7 @@ import (
 	"github.com/opensvc/oc3/xauth"
 )
 
-func (a *Api) PostNodesRegister(c echo.Context) error {
+func (a *Api) PostAuthNode(c echo.Context) error {
 	log := getLog(c)
 	odb := a.cdbSession()
 	ctx := c.Request().Context()
@@ -22,17 +22,17 @@ func (a *Api) PostNodesRegister(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, a.SyncTimeout)
 	defer cancel()
 
-	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log.With("handler", "PostNodesRegister"), nil)
+	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log.With("handler", "PostAuthNode"), nil)
 	if err != nil {
-		log.Error("PostNodesRegister: can't begin transaction", "error", err)
+		log.Error("PostAuthNode: can't begin transaction", "error", err)
 		return JSONProblemf(c, http.StatusInternalServerError, "Internal Server Error", "database error")
 	}
 	defer endTx()
 
-	var body server.PostNodesRegisterJSONBody
+	var body server.PostAuthNodeJSONBody
 
 	if err := c.Bind(&body); err != nil {
-		log.Error("PostNodesRegister : invalid request body", "error", err)
+		log.Error("PostAuthNode : invalid request body", "error", err)
 		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "invalid request body")
 	}
 
@@ -60,7 +60,7 @@ func (a *Api) PostNodesRegister(c echo.Context) error {
 		if app == "" {
 			defaultApp, err := odb.UserDefaultApp(ctx, &userID)
 			if err != nil {
-				log.Error("PostNodesRegister: failed to find default app", "error", err)
+				log.Error("PostAuthNode: failed to find default app", "error", err)
 				return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot find default app")
 			}
 			app = defaultApp
@@ -68,7 +68,7 @@ func (a *Api) PostNodesRegister(c echo.Context) error {
 			groups := UserGroupsFromContext(c)
 			userApps, err := odb.AppsForGroups(ctx, groups)
 			if err != nil {
-				log.Error("PostNodesRegister: failed to find user apps", "error", err)
+				log.Error("PostAuthNode: failed to find user apps", "error", err)
 				return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot find user apps")
 			}
 			if !slices.Contains(userApps, app) {
@@ -91,7 +91,7 @@ func (a *Api) PostNodesRegister(c echo.Context) error {
 
 	node, err := odb.NodeByNodenameAndApp(ctx, nodename, app)
 	if err != nil {
-		log.Error("PostNodesRegister: failed to find node", "error", err)
+		log.Error("PostAuthNode: failed to find node", "error", err)
 		return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "node lookup failed")
 	}
 	if node != nil {
@@ -101,13 +101,13 @@ func (a *Api) PostNodesRegister(c echo.Context) error {
 		// Node does not exist: create it with a new node_id
 		teamResponsible, _, err := odb.UserDefaultGroup(ctx, userID)
 		if err != nil {
-			log.Error("PostNodesRegister: failed to find default group", "error", err)
+			log.Error("PostAuthNode: failed to find default group", "error", err)
 			return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot find default group")
 		}
 
 		nodeID = uuid.New().String()
 		if err := odb.InsertNode(ctx, nodename, teamResponsible, app, nodeID); err != nil {
-			log.Error("PostNodesRegister: failed to insert node", "error", err)
+			log.Error("PostAuthNode: failed to insert node", "error", err)
 			return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot create node")
 		}
 	}
@@ -115,7 +115,7 @@ func (a *Api) PostNodesRegister(c echo.Context) error {
 	// check if this node_id is already registered
 	authNodes, err := odb.AuthNodesByNodeID(ctx, nodeID)
 	if err != nil {
-		log.Error("PostNodesRegister: failed to find auth_node", "error", err)
+		log.Error("PostAuthNode: failed to find auth_node", "error", err)
 		return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "auth_node lookup failed")
 	}
 
@@ -132,10 +132,10 @@ func (a *Api) PostNodesRegister(c echo.Context) error {
 		// New registration: generate uuid, insert auth_node
 		u := uuid.New().String()
 		if err := odb.InsertAuthNode(ctx, nodename, u, nodeID); err != nil {
-			log.Error("PostNodesRegister: failed to insert auth_node", "error", err)
+			log.Error("PostAuthNode: failed to insert auth_node", "error", err)
 			return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot register node")
 		}
-		log.Info("PostNodesRegister: node is already registered", "node_id", nodeID)
+		log.Info("PostAuthNode: node is already registered", "node_id", nodeID)
 		markSuccess()
 		return c.JSON(http.StatusOK, map[string]any{
 			"uuid": u,
