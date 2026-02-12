@@ -77,6 +77,32 @@ func (oDb *DB) CreateTx(ctx context.Context, opts *sql.TxOptions) error {
 	}
 }
 
+// BeginTxWithControl starts a database transaction with additional control for commit or rollback based on execution flow.
+// It returns a function to mark the transaction for commit, a cleanup function to finalize the transaction, and an error.
+func (oDb *DB) BeginTxWithControl(ctx context.Context, log *slog.Logger, opts *sql.TxOptions) (markSuccess func(), endTx func(), err error) {
+	var needCommit bool
+	markSuccess = func() { needCommit = true }
+	if err = oDb.CreateTx(ctx, opts); err != nil {
+		return nil, nil, err
+	}
+	endTx = func() {
+		if needCommit {
+			if err := oDb.Commit(); err != nil {
+				if log != nil {
+					log.Error("Commit failed", "error", err)
+				}
+			}
+		} else {
+			if err := oDb.Rollback(); err != nil {
+				if log != nil {
+					log.Error("Commit failed", "error", err)
+				}
+			}
+		}
+	}
+	return
+}
+
 func (oDb *DB) CreateSession(ev eventPublisher) {
 	oDb.Session = &Session{
 		db:     oDb.DB,

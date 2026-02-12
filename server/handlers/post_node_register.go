@@ -8,41 +8,40 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/spf13/viper"
+
 	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/xauth"
-	"github.com/spf13/viper"
 )
 
-func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) error {
+func (a *Api) PostNodesRegister(c echo.Context) error {
 	log := getLog(c)
 	odb := a.cdbSession()
 	ctx := c.Request().Context()
-	odb.CreateTx(ctx, nil)
+
 	ctx, cancel := context.WithTimeout(ctx, a.SyncTimeout)
 	defer cancel()
 
-	var success bool
+	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log.With("handler", "PostNodesRegister"), nil)
+	if err != nil {
+		log.Error("PostNodesRegister: can't begin transaction", "error", err)
+		return JSONProblemf(c, http.StatusInternalServerError, "Internal Server Error", "database error")
+	}
+	defer endTx()
 
-	defer func() {
-		if success {
-			odb.Commit()
-		} else {
-			odb.Rollback()
-		}
-	}()
-
-	var body server.PostRegisterJSONBody
+	var body server.PostNodesRegisterJSONBody
 
 	if err := c.Bind(&body); err != nil {
-		log.Error("PostRegister : invalid request body", "error", err)
+		log.Error("PostNodesRegister : invalid request body", "error", err)
 		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "invalid request body")
-	}
-	if body.Nodename == nil || *body.Nodename == "" {
-		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "nodename is mandatory")
 	}
 
 	var app string
 	var userID int64
+
+	if body.App != nil {
+		app = *body.App
+	}
 
 	if !IsAuthByNode(c) {
 		// User auth
@@ -57,20 +56,19 @@ func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) err
 			return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "invalid user id")
 		}
 
-		// if app is not provided, get default app for the user
-		if params.App == nil || *params.App == "" || *params.App == "None" {
+		// if the app is not provided, get the default app for the user
+		if app == "" {
 			defaultApp, err := odb.UserDefaultApp(ctx, &userID)
 			if err != nil {
-				log.Error("PostRegister: failed to find default app", "error", err)
+				log.Error("PostNodesRegister: failed to find default app", "error", err)
 				return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot find default app")
 			}
 			app = defaultApp
 		} else {
-			app = *params.App
 			groups := UserGroupsFromContext(c)
 			userApps, err := odb.AppsForGroups(ctx, groups)
 			if err != nil {
-				log.Error("PostRegister: failed to find user apps", "error", err)
+				log.Error("PostNodesRegister: failed to find user apps", "error", err)
 				return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot find user apps")
 			}
 			if !slices.Contains(userApps, app) {
@@ -88,12 +86,12 @@ func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) err
 
 	var (
 		nodeID   string
-		nodename string = *body.Nodename
+		nodename = body.Nodename
 	)
 
 	node, err := odb.NodeByNodenameAndApp(ctx, nodename, app)
 	if err != nil {
-		log.Error("PostRegister: failed to find node", "error", err)
+		log.Error("PostNodesRegister: failed to find node", "error", err)
 		return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "node lookup failed")
 	}
 	if node != nil {
@@ -103,13 +101,13 @@ func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) err
 		// Node does not exist: create it with a new node_id
 		teamResponsible, _, err := odb.UserDefaultGroup(ctx, userID)
 		if err != nil {
-			log.Error("PostRegister: failed to find default group", "error", err)
+			log.Error("PostNodesRegister: failed to find default group", "error", err)
 			return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot find default group")
 		}
 
 		nodeID = uuid.New().String()
 		if err := odb.InsertNode(ctx, nodename, teamResponsible, app, nodeID); err != nil {
-			log.Error("PostRegister: failed to insert node", "error", err)
+			log.Error("PostNodesRegister: failed to insert node", "error", err)
 			return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot create node")
 		}
 	}
@@ -117,35 +115,36 @@ func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) err
 	// check if this node_id is already registered
 	authNodes, err := odb.AuthNodesByNodeID(ctx, nodeID)
 	if err != nil {
-		log.Error("PostRegister: failed to find auth_node", "error", err)
+		log.Error("PostNodesRegister: failed to find auth_node", "error", err)
 		return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "auth_node lookup failed")
 	}
 
 	switch len(authNodes) {
 	case 1:
 		// Already registered: resend uuid
-		log.Info("node registered again, resend uuid", "node_id", nodeID)
-		success = true
+		log.Info("node is already registered", "node_id", nodeID)
+		markSuccess()
 		return c.JSON(http.StatusOK, map[string]any{
-			"data": map[string]string{"uuid": authNodes[0].UUID},
-			"info": "already registered, resend uuid.",
+			"uuid": authNodes[0].UUID,
+			"info": "node is already registered",
 		})
 	case 0:
 		// New registration: generate uuid, insert auth_node
 		u := uuid.New().String()
 		if err := odb.InsertAuthNode(ctx, nodename, u, nodeID); err != nil {
-			log.Error("PostRegister: failed to insert auth_node", "error", err)
+			log.Error("PostNodesRegister: failed to insert auth_node", "error", err)
 			return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot register node")
 		}
-		log.Info("node registered", "node_id", nodeID)
-		success = true
+		log.Info("PostNodesRegister: node is already registered", "node_id", nodeID)
+		markSuccess()
 		return c.JSON(http.StatusOK, map[string]any{
-			"data": map[string]string{"uuid": u},
+			"uuid": u,
+			"info": "node is already registered",
 		})
 	default:
 		// Multiple registrations: bug?
 		log.Warn("node double registration attempt", "node_id", nodeID, "nodename", nodename)
-		success = true
+		markSuccess()
 		return c.JSON(http.StatusOK, map[string]any{
 			"info": "already registered",
 		})
