@@ -8,12 +8,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/spf13/viper"
+
 	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/xauth"
-	"github.com/spf13/viper"
 )
 
-func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) error {
+func (a *Api) PostNodesRegister(c echo.Context) error {
 	log := getLog(c)
 	odb := a.cdbSession()
 	ctx := c.Request().Context()
@@ -31,18 +32,19 @@ func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) err
 		}
 	}()
 
-	var body server.PostRegisterJSONBody
+	var body server.PostNodesRegisterJSONBody
 
 	if err := c.Bind(&body); err != nil {
 		log.Error("PostRegister : invalid request body", "error", err)
 		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "invalid request body")
 	}
-	if body.Nodename == nil || *body.Nodename == "" {
-		return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "nodename is mandatory")
-	}
 
 	var app string
 	var userID int64
+
+	if body.App != nil {
+		app = *body.App
+	}
 
 	if !IsAuthByNode(c) {
 		// User auth
@@ -57,8 +59,8 @@ func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) err
 			return JSONProblemf(c, http.StatusBadRequest, "BadRequest", "invalid user id")
 		}
 
-		// if app is not provided, get default app for the user
-		if params.App == nil || *params.App == "" || *params.App == "None" {
+		// if the app is not provided, get the default app for the user
+		if app == "" {
 			defaultApp, err := odb.UserDefaultApp(ctx, &userID)
 			if err != nil {
 				log.Error("PostRegister: failed to find default app", "error", err)
@@ -66,7 +68,6 @@ func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) err
 			}
 			app = defaultApp
 		} else {
-			app = *params.App
 			groups := UserGroupsFromContext(c)
 			userApps, err := odb.AppsForGroups(ctx, groups)
 			if err != nil {
@@ -88,7 +89,7 @@ func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) err
 
 	var (
 		nodeID   string
-		nodename string = *body.Nodename
+		nodename = body.Nodename
 	)
 
 	node, err := odb.NodeByNodenameAndApp(ctx, nodename, app)
@@ -124,11 +125,11 @@ func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) err
 	switch len(authNodes) {
 	case 1:
 		// Already registered: resend uuid
-		log.Info("node registered again, resend uuid", "node_id", nodeID)
+		log.Info("node is already registered", "node_id", nodeID)
 		success = true
 		return c.JSON(http.StatusOK, map[string]any{
-			"data": map[string]string{"uuid": authNodes[0].UUID},
-			"info": "already registered, resend uuid.",
+			"uuid": authNodes[0].UUID,
+			"info": "node is already registered",
 		})
 	case 0:
 		// New registration: generate uuid, insert auth_node
@@ -137,10 +138,11 @@ func (a *Api) PostRegister(c echo.Context, params server.PostRegisterParams) err
 			log.Error("PostRegister: failed to insert auth_node", "error", err)
 			return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot register node")
 		}
-		log.Info("node registered", "node_id", nodeID)
+		log.Info("node is already registered", "node_id", nodeID)
 		success = true
 		return c.JSON(http.StatusOK, map[string]any{
-			"data": map[string]string{"uuid": u},
+			"uuid": u,
+			"info": "node is already registered",
 		})
 	default:
 		// Multiple registrations: bug?

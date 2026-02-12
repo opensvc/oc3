@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.0
+  version: 1.0.1
 
 paths:
   /openapi.json:
@@ -257,29 +257,39 @@ paths:
       tags:
         - collector
 
-  /register:
+  /nodes/register:
     post:
       description: |
         Register a node
-      operationId: PostRegister
-      parameters:
-        - name: app
-          in: query
-          required: false
-          schema:
-            type: string
+      operationId: PostNodesRegister
       requestBody:
         required: false
         content:
           application/json:
             schema:
               type: object
+              required:
+                - nodename
               properties:
                 nodename:
                   type: string
+                app:
+                  type: string
       responses:
-        202:
+        200:
           description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - uuid
+                  - info
+                properties:
+                  uuid:
+                    type: string
+                  info:
+                    type: string
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
