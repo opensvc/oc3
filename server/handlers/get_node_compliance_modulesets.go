@@ -18,7 +18,7 @@ func (a *Api) GetNodeComplianceModulesets(c echo.Context, nodeId string) error {
 	node, err := odb.NodeByNodeIDOrNodename(ctx, nodeId)
 	if err != nil {
 		log.Error("GetNodeComplianceModulesets: cannot find node", "node", nodeId, "error", err)
-		return JSONProblemf(c, http.StatusNotFound, "NotFound", "node %s not found", nodeId)
+		return JSONProblemf(c, http.StatusNotFound, "node %s not found", nodeId)
 	}
 
 	// get attached modulesets with details
@@ -27,7 +27,7 @@ func (a *Api) GetNodeComplianceModulesets(c echo.Context, nodeId string) error {
 	modulesets, err := odb.CompNodeAttachedModulesets(ctx, node.NodeID, groups, isManager)
 	if err != nil {
 		log.Error("GetNodeComplianceModulesets: cannot get attached modulesets", "node_id", node.NodeID, "error", err)
-		return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot get attached modulesets for node %s", node.NodeID)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot get attached modulesets for node %s", node.NodeID)
 	}
 
 	return c.JSON(http.StatusOK, modulesets)

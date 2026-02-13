@@ -18,14 +18,14 @@ func (a *Api) GetNodeComplianceCandidateModulesets(c echo.Context, nodeId string
 	node, err := odb.NodeByNodeIDOrNodename(ctx, nodeId)
 	if err != nil {
 		log.Error("GetNodeComplianceCandidateModulesets: cannot find node", "node", nodeId, "error", err)
-		return JSONProblemf(c, http.StatusNotFound, "NotFound", "node %s not found", nodeId)
+		return JSONProblemf(c, http.StatusNotFound, "node %s not found", nodeId)
 	}
 
 	// get modulesets already attached to the node
 	attachedModulesets, err := odb.CompNodeModulesets(ctx, node.NodeID)
 	if err != nil {
 		log.Error("GetNodeComplianceCandidateModulesets: cannot get attached modulesets", "node_id", node.NodeID, "error", err)
-		return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot get attached modulesets for node %s", node.NodeID)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot get attached modulesets for node %s", node.NodeID)
 	}
 
 	// get candidate modulesets
@@ -34,7 +34,7 @@ func (a *Api) GetNodeComplianceCandidateModulesets(c echo.Context, nodeId string
 	candidates, err := odb.CompNodeCandidateModulesets(ctx, node.NodeID, attachedModulesets, groups, isManager)
 	if err != nil {
 		log.Error("GetNodeComplianceCandidateModulesets: cannot get candidate modulesets", "node_id", node.NodeID, "error", err)
-		return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot get candidate modulesets for node %s", node.NodeID)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot get candidate modulesets for node %s", node.NodeID)
 	}
 
 	return c.JSON(http.StatusOK, candidates)
