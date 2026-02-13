@@ -15,13 +15,13 @@ func (a *Api) handleGetTags(c echo.Context, tagID *int) error {
 	tags, err := odb.GetTags(ctx, tagID)
 	if err != nil {
 		log.Error("handleGetTags: cannot get tags", "tag_id", tagID, "error", err)
-		return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot get tags")
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot get tags")
 	}
 
 	if tagID != nil {
 		// Single tag requested
 		if len(tags) == 0 {
-			return JSONProblemf(c, http.StatusNotFound, "NotFound", "tag %d not found", *tagID)
+			return JSONProblemf(c, http.StatusNotFound, "tag %d not found", *tagID)
 		}
 		return c.JSON(http.StatusOK, tags[0])
 	}

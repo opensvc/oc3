@@ -18,7 +18,7 @@ func (a *Api) GetNodeComplianceRulesets(c echo.Context, nodeId string) error {
 	node, err := odb.NodeByNodeIDOrNodename(ctx, nodeId)
 	if err != nil {
 		log.Error("GetNodeComplianceRulesets: cannot find node", "node", nodeId, "error", err)
-		return JSONProblemf(c, http.StatusNotFound, "NotFound", "node %s not found", nodeId)
+		return JSONProblemf(c, http.StatusNotFound, "node %s not found", nodeId)
 	}
 
 	// get attached rulesets with details
@@ -27,7 +27,7 @@ func (a *Api) GetNodeComplianceRulesets(c echo.Context, nodeId string) error {
 	rulesets, err := odb.CompNodeAttachedRulesets(ctx, node.NodeID, groups, isManager)
 	if err != nil {
 		log.Error("GetNodeComplianceRulesets: cannot get attached rulesets", "node_id", node.NodeID, "error", err)
-		return JSONProblemf(c, http.StatusInternalServerError, "InternalError", "cannot get attached rulesets for node %s", node.NodeID)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot get attached rulesets for node %s", node.NodeID)
 	}
 
 	return c.JSON(http.StatusOK, rulesets)

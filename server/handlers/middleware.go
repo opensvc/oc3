@@ -33,7 +33,7 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 
 			if err != nil {
 				code := http.StatusUnauthorized
-				return JSONProblem(c, code, http.StatusText(code), err.Error())
+				return JSONProblem(c, code, err.Error())
 			}
 
 			ext := user.GetExtensions()

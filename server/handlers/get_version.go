@@ -8,7 +8,7 @@ import (
 
 func (a *Api) GetVersion(c echo.Context) error {
 	if SCHEMA.Info == nil {
-		return JSONProblem(c, http.StatusInternalServerError, "invalid api schema", "missing schema info")
+		return JSONProblem(c, http.StatusInternalServerError, "invalid api schema")
 	}
 	return c.JSON(http.StatusOK, map[string]string{
 		"version": SCHEMA.Info.Version,
