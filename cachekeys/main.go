@@ -38,4 +38,6 @@ const (
 	FeedInstanceActionH        = "oc3:h:feed_instance_action"
 	FeedInstanceActionQ        = "oc3:q:feed_instance_action"
 	FeedInstanceActionPendingH = "oc3:h:feed_instance_action_pending"
+
+	FeedSysreportQ = "oc3:q:feed_sysreport"
 )

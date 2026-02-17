@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/opensvc/oc3/cdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -27,6 +28,7 @@ type (
 		children TaskList
 
 		db      *sql.DB
+		Redis   *redis.Client
 		ev      eventPublisher
 		session *cdb.Session
 	}
@@ -46,6 +48,7 @@ const (
 
 var (
 	Tasks = TaskList{
+		TaskSysreport,
 		TaskRefreshBActionErrors,
 		TaskAlertUpdateActionErrors,
 		TaskUpdateVirtualAssets,
@@ -120,6 +123,10 @@ func (t *Task) SetEv(ev eventPublisher) {
 
 func (t *Task) SetDB(db *sql.DB) {
 	t.db = db
+}
+
+func (t *Task) SetRedis(r *redis.Client) {
+	t.Redis = r
 }
 
 func (t *Task) Name() string {
