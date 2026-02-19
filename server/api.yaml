@@ -41,6 +41,12 @@ paths:
                     type: string
                   info:
                     type: string
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]

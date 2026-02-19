@@ -125,6 +125,34 @@ paths:
       tags:
         - agent
 
+  /node/sysreport:
+    post:
+      description: |
+        Post node sysreport
+      operationId: PostNodeSysReport
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SysReport'
+      responses:
+        202:
+          description: sysreport accepted
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /instance/action:
     put:
       description: |
@@ -559,6 +587,20 @@ components:
         version:
           type: string
           example: "0.0.1"
+
+    SysReport:
+      type: object
+      required:
+        - deleted
+        - file
+      properties:
+        deleted:
+          type: array
+          items:
+            type: string
+        file:
+          type: string
+          format: binary
 
   parameters:
     ObjectPathHeader:

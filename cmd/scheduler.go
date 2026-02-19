@@ -35,7 +35,11 @@ func newScheduler() (*schedulerT, error) {
 	if db, err := newDatabase(); err != nil {
 		return nil, err
 	} else {
-		t := &schedulerT{db: db, section: "scheduler"}
+		t := &schedulerT{
+			db:      db,
+			redis:   newRedis(),
+			section: "scheduler",
+		}
 		return t, nil
 	}
 }
@@ -45,7 +49,7 @@ func scheduleExec(name string) error {
 	if err != nil {
 		return err
 	}
-	task := scheduler.NewTask(name, t.db, newEv())
+	task := scheduler.NewTask(name, t.db, t.redis, newEv())
 	if task.IsZero() {
 		return fmt.Errorf("task not found")
 	}
@@ -72,8 +76,9 @@ func startScheduler() error {
 	}
 
 	sched := &scheduler.Scheduler{
-		DB: t.db,
-		Ev: newEv(),
+		DB:    t.db,
+		Redis: t.redis,
+		Ev:    newEv(),
 	}
 	return sched.Run()
 }

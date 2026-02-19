@@ -107,6 +107,9 @@ func initConfig() error {
 	viper.SetDefault("runner.pprof.ux.socket", "/var/run/oc3_runner_pprof.sock")
 	viper.SetDefault("runner.metrics.enable", false)
 
+	viper.SetDefault("git.user_email", "nobody@localhost.localdomain")
+	viper.SetDefault("sysreport.dir", "uploads/sysreport")
+
 	// config file
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")

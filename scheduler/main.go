@@ -9,12 +9,15 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 type (
 	Scheduler struct {
-		DB *sql.DB
-		Ev eventPublisher
+		DB    *sql.DB
+		Redis *redis.Client
+		Ev    eventPublisher
 
 		states  map[string]State
 		cancels map[string]func()
@@ -66,6 +69,7 @@ func (t *Scheduler) toggleTasks(ctx context.Context, states map[string]State) {
 			ctx2, cancel := context.WithCancel(ctx)
 			t.cancels[name] = cancel
 			task.SetDB(t.DB)
+			task.SetRedis(t.Redis)
 			task.SetEv(t.Ev)
 			go func() {
 				task.Start(ctx2)
@@ -146,13 +150,14 @@ func (t *Scheduler) Run() error {
 	return nil
 }
 
-func NewTask(name string, db *sql.DB, ev eventPublisher) Task {
+func NewTask(name string, db *sql.DB, r *redis.Client, ev eventPublisher) Task {
 	task := Tasks.Get(name)
 	task.SetEv(ev)
 	task.SetDB(db)
+	task.SetRedis(r)
 	return task
 }
 
 func (t *Scheduler) NewTask(name string) Task {
-	return NewTask(name, t.DB, t.Ev)
+	return NewTask(name, t.DB, t.Redis, t.Ev)
 }

@@ -5,6 +5,8 @@ package feeder
 
 import (
 	"time"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
@@ -135,6 +137,12 @@ type Problem struct {
 	Title string `json:"title"`
 }
 
+// SysReport defines model for SysReport.
+type SysReport struct {
+	Deleted []string           `json:"deleted"`
+	File    openapi_types.File `json:"file"`
+}
+
 // Package defines model for package.
 type Package struct {
 	Arch        string     `json:"arch"`
@@ -207,6 +215,9 @@ type PostInstanceStatusJSONRequestBody = InstanceStatus
 
 // PostNodeDiskJSONRequestBody defines body for PostNodeDisk for application/json ContentType.
 type PostNodeDiskJSONRequestBody = NodeDisks
+
+// PostNodeSysReportMultipartRequestBody defines body for PostNodeSysReport for multipart/form-data ContentType.
+type PostNodeSysReportMultipartRequestBody = SysReport
 
 // PostSystemJSONRequestBody defines body for PostSystem for application/json ContentType.
 type PostSystemJSONRequestBody = System
