@@ -207,7 +207,7 @@ func (d *jobFeedDaemonStatus) dbCheckClusterIDForNodeID(ctx context.Context) err
 	if ok, err := d.oDb.NodeUpdateClusterIDForNodeID(ctx, d.nodeID, d.clusterID); err != nil {
 		return fmt.Errorf("dbCheckClusterIDForNodeID for %s (%s): %w", d.callerNode.Nodename, d.nodeID, err)
 	} else if ok {
-		slog.Info("dbCheckClusterIDForNodeID change cluster id value")
+		slog.Debug("dbCheckClusterIDForNodeID change cluster id value")
 	}
 	return nil
 }
@@ -267,7 +267,7 @@ func (d *jobFeedDaemonStatus) dbFindNodes(ctx context.Context) (err error) {
 		d.nodes[i] = nodename
 		i++
 	}
-	slog.Info(fmt.Sprintf("handleDaemonStatus run details: %s changes: [%s]", d.callerNode, d.rawChanges))
+	slog.Debug(fmt.Sprintf("handleDaemonStatus run details: %s changes: [%s]", d.callerNode, d.rawChanges))
 	return nil
 }
 
@@ -284,7 +284,7 @@ func (d *jobFeedDaemonStatus) dataToNodeFrozen(ctx context.Context) error {
 			}
 		}
 		if frozen != dbNode.Frozen {
-			slog.Info(fmt.Sprintf("dataToNodeFrozen: updating node %s: %s frozen from %s -> %s", nodename, nodeID, dbNode.Frozen, frozen))
+			slog.Debug(fmt.Sprintf("dataToNodeFrozen: updating node %s: %s frozen from %s -> %s", nodename, nodeID, dbNode.Frozen, frozen))
 			if err := d.oDb.NodeUpdateFrozen(ctx, nodeID, frozen); err != nil {
 				return fmt.Errorf("dataToNodeFrozen node %s (%s): %w", nodename, dbNode.NodeID, err)
 			}
@@ -357,7 +357,7 @@ func (d *jobFeedDaemonStatus) dbFindServices(ctx context.Context) error {
 		return fmt.Errorf("dbFindServices %s: %w", d.nodeID, err)
 	}
 	if len(objectNames) == 0 {
-		slog.Info(fmt.Sprintf("dbFindServices: no services for %s", d.nodeID))
+		slog.Debug(fmt.Sprintf("dbFindServices: no services for %s", d.nodeID))
 		return nil
 	}
 	if objects, err = d.oDb.ObjectsFromClusterIDAndObjectNames(ctx, d.clusterID, objectNames); err != nil {
@@ -562,7 +562,8 @@ func (d *jobFeedDaemonStatus) dbPurgeServices(ctx context.Context) error {
 func (d *jobFeedDaemonStatus) cacheObjectsWithoutConfig(ctx context.Context) error {
 	objects, err := d.populateFeedObjectConfigForClusterIDH(ctx, d.clusterID, d.byObjectID)
 	if len(objects) > 0 {
-		slog.Info(fmt.Sprintf("daemonStatus nodeID: %s need object config: %s", d.nodeID, objects))
+		// TODO: add metrics
+		slog.Debug(fmt.Sprintf("daemonStatus nodeID: %s need object config: %s", d.nodeID, objects))
 	}
 	return err
 }

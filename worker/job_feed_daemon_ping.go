@@ -157,7 +157,8 @@ func (d *jobFeedDaemonPing) dbPingObjects(ctx context.Context) (err error) {
 func (d *jobFeedDaemonPing) cacheObjectsWithoutConfig(ctx context.Context) error {
 	objects, err := d.populateFeedObjectConfigForClusterIDH(ctx, d.clusterID, d.byObjectID)
 	if len(objects) > 0 {
-		slog.Info(fmt.Sprintf("daemonPing nodeID: %s need object config: %s", d.nodeID, objects))
+		// TODO: add metrics
+		log.Debug(fmt.Sprintf("daemonPing nodeID: %s need object config: %s", d.nodeID, objects))
 	}
 	return err
 }

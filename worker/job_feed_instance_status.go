@@ -100,7 +100,7 @@ func (d *jobFeedInstanceStatus) getData(ctx context.Context) error {
 	if d.status == nil {
 		return fmt.Errorf("no instance status for object %s node %s", d.objectName, d.nodeID)
 	}
-	slog.Info(fmt.Sprintf("got instance data for objectname %s nodeid %s:%#v", d.objectName, d.nodeID, d.status))
+	log.Debug(fmt.Sprintf("got instance data for objectname %s nodeid %s:%#v", d.objectName, d.nodeID, d.status))
 
 	return nil
 }
@@ -111,7 +111,7 @@ func (d *jobFeedInstanceStatus) findNodeFromDb(ctx context.Context) error {
 	} else {
 		d.node = n
 	}
-	slog.Info(fmt.Sprintf("jobFeedInstanceStatus found node %s for id %s", d.node.Nodename, d.nodeID))
+	log.Debug(fmt.Sprintf("jobFeedInstanceStatus found node %s for id %s", d.node.Nodename, d.nodeID))
 
 	return nil
 
@@ -121,7 +121,8 @@ func (d *jobFeedInstanceStatus) findObjectFromDb(ctx context.Context) error {
 	if isNew, objId, err := d.oDb.ObjectIDFindOrCreate(ctx, d.objectName, d.clusterID); err != nil {
 		return fmt.Errorf("find or create object ID failed for %s: %w", d.objectName, err)
 	} else if isNew {
-		slog.Info(fmt.Sprintf("jobFeedInstanceStatus has created new object id %s@%s %s", d.objectName, d.clusterID, objId))
+		// TODO: add metrics
+		log.Debug(fmt.Sprintf("jobFeedInstanceStatus has created new object id %s@%s %s", d.objectName, d.clusterID, objId))
 	} else {
 		d.objectID = objId
 	}
@@ -133,7 +134,7 @@ func (d *jobFeedInstanceStatus) findObjectFromDb(ctx context.Context) error {
 	} else {
 		d.obj = obj
 	}
-	slog.Info(fmt.Sprintf("jobFeedInstanceStatus found object %s for id %s", d.objectName, d.objectID))
+	log.Debug(fmt.Sprintf("jobFeedInstanceStatus found object %s for id %s", d.objectName, d.objectID))
 
 	return nil
 }
