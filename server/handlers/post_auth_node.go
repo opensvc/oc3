@@ -124,7 +124,8 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 	switch len(authNodes) {
 	case 1:
 		// Already registered: resend uuid
-		log.Info("node is already registered", logkey.NodeID, nodeID)
+		// TODO: add metrics
+		log.Debug("node is already registered", logkey.NodeID, nodeID)
 		markSuccess()
 		return c.JSON(http.StatusOK, map[string]any{
 			"uuid": authNodes[0].UUID,
@@ -137,7 +138,8 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 			log.Error("failed to insert auth_node", logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot register node")
 		}
-		log.Info("node is registered", logkey.NodeID, nodeID)
+		// TODO: add metrics
+		log.Debug("node is registered", logkey.NodeID, nodeID)
 		markSuccess()
 		return c.JSON(http.StatusOK, map[string]any{
 			"uuid": u,
@@ -145,6 +147,7 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 		})
 	default:
 		// Multiple registrations: bug?
+		// TODO: add metrics
 		log.Warn("node double registration attempt", logkey.NodeID, nodeID, "nodename", nodename)
 		markSuccess()
 		return JSONProblem(c, http.StatusConflict, "node double registration attempt")
