@@ -112,7 +112,7 @@ func (d *jobFeedObjectConfig) updateDB(ctx context.Context) (err error) {
 	} else {
 		if created {
 			// TODO: add metrics
-			log.Debug(fmt.Sprintf("jobFeedObjectConfig will create service %s@%s with new svc_id: %s", d.objectName, d.clusterID, objectID))
+			slog.Debug(fmt.Sprintf("jobFeedObjectConfig will create service %s@%s with new svc_id: %s", d.objectName, d.clusterID, objectID))
 		}
 		slog.Debug(fmt.Sprintf("%s updateDB %s@%s will update found svc_id:%s", d.name, d.objectName, d.clusterID, objectID))
 
@@ -159,7 +159,7 @@ func (d *jobFeedObjectConfig) updateDB(ctx context.Context) (err error) {
 	if s := mapToS(d.data, "", "env"); s != "" {
 		cfg.Env = &s
 	}
-	log.Debug(fmt.Sprintf("insertOrUpdateObjectConfig %s@%s@%s", cfg.Name, cfg.SvcID, cfg.ClusterID))
+	slog.Debug(fmt.Sprintf("insertOrUpdateObjectConfig %s@%s@%s", cfg.Name, cfg.SvcID, cfg.ClusterID))
 	if hasRowAffected, err := d.oDb.InsertOrUpdateObjectConfig(ctx, cfg); err != nil {
 		return err
 	} else if hasRowAffected {

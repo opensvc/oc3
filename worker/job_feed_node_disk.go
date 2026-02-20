@@ -228,7 +228,7 @@ func (d *jobFeedNodeDisk) updateDB(ctx context.Context) error {
 			} else {
 				if created {
 					// TODO: add metrics
-					log.Debug(fmt.Sprintf("jobFeedNodeDisk will create service %s@%s with new svc_id: %s", objectPath, d.clusterID, objectID))
+					slog.Debug(fmt.Sprintf("jobFeedNodeDisk will create service %s@%s with new svc_id: %s", objectPath, d.clusterID, objectID))
 				}
 				line["svc_id"] = objectID
 				if objectID != "" {
