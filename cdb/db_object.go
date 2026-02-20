@@ -248,7 +248,8 @@ func (oDb *DB) ObjectCreate(ctx context.Context, objectName, clusterID, candidat
 		return nil, fmt.Errorf("can't find or create object: %w", err)
 	}
 	if created {
-		slog.Info(fmt.Sprintf("objectCreate will create service %s@%s with new svc_id: %s", objectName, clusterID, svcID))
+		// TODO: add metrics
+		slog.Debug(fmt.Sprintf("objectCreate will create service %s@%s with new svc_id: %s", objectName, clusterID, svcID))
 		if err := oDb.insertOrUpdateObjectForNodeAndCandidateApp(ctx, objectName, svcID, candidateApp, node); err != nil {
 			return nil, err
 		}
