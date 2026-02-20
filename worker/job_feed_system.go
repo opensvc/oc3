@@ -527,7 +527,8 @@ func (d *jobFeedSystem) getData(ctx context.Context) error {
 		case "targets":
 		case "package":
 		default:
-			slog.Info(fmt.Sprintf("parse data: ignore key '%s'", k))
+			// TODO: add metrics
+			slog.Debug(fmt.Sprintf("parse data: ignore key '%s'", k))
 		}
 	}
 	return nil

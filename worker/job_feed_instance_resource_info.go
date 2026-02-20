@@ -88,7 +88,8 @@ func (j *jobFeedInstanceResourceInfo) updateDB(ctx context.Context) (err error) 
 		return fmt.Errorf("ObjectIDFindOrCreate: %w", err)
 	}
 	if created {
-		slog.Info(fmt.Sprintf("jobFeedInstanceResourceInfo has created new object id %s@%s %s", j.objectName, j.clusterID, objectID))
+		// TODO: add metrics
+		slog.Debug(fmt.Sprintf("jobFeedInstanceResourceInfo has created new object id %s@%s %s", j.objectName, j.clusterID, objectID))
 	}
 	j.objectID = objectID
 	err = j.oDb.InstanceResourceInfoUpdate(ctx, objectID, j.nodeID, j.data)

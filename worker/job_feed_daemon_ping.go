@@ -9,6 +9,7 @@ import (
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/feeder"
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type (
@@ -122,7 +123,7 @@ func (d *jobFeedDaemonPing) dbFetchObjects(ctx context.Context) (err error) {
 			continue
 		}
 		d.byObjectID[o.SvcID] = o
-		slog.Debug(fmt.Sprintf("dbFetchObjects  %s (%s)", o.Svcname, o.SvcID))
+		slog.Debug("dbFetchObjects", logkey.ObjectID, o.SvcID)
 	}
 	return nil
 }
@@ -144,7 +145,7 @@ func (d *jobFeedDaemonPing) dbPingObjects(ctx context.Context) (err error) {
 	for objectID, obj := range d.byObjectID {
 		objectName := obj.Svcname
 		if obj.AvailStatus != "undef" {
-			slog.Debug(fmt.Sprintf("ping svc %s %s", objectName, objectID))
+			slog.Debug("dbPingObjects ObjectPing", logkey.ObjectID, objectID)
 			if _, err := d.oDb.ObjectPing(ctx, objectID); err != nil {
 				return fmt.Errorf("dbPingObjects can't ping object %s %s: %w", objectName, objectID, err)
 			}
@@ -157,7 +158,8 @@ func (d *jobFeedDaemonPing) dbPingObjects(ctx context.Context) (err error) {
 func (d *jobFeedDaemonPing) cacheObjectsWithoutConfig(ctx context.Context) error {
 	objects, err := d.populateFeedObjectConfigForClusterIDH(ctx, d.clusterID, d.byObjectID)
 	if len(objects) > 0 {
-		slog.Info(fmt.Sprintf("daemonPing nodeID: %s need object config: %s", d.nodeID, objects))
+		// TODO: add metrics
+		slog.Debug("daemonPing need object config", logkey.Objects, objects)
 	}
 	return err
 }
