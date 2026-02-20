@@ -42,7 +42,7 @@ type (
 
 func run(i Sectioner) error {
 	if ok, errC := start(i); ok {
-		slog.Info("started")
+		slog.Info(fmt.Sprintf("%s started", i.Section()))
 		return <-errC
 	}
 	return fmt.Errorf("start failed")

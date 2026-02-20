@@ -59,12 +59,12 @@ func (t *workerT) run() error {
 	}
 
 	if ok, errC := start(t); ok {
-		slog.Info("started")
+		slog.Info(t.Section() + " started")
 		go func() {
 			if err := <-errC; err != nil {
-				slog.Error("stopped", logkey.Error, err)
+				slog.Error(t.Section()+" stopped", logkey.Error, err)
 			} else {
-				slog.Debug("stopped", logkey.Error, err)
+				slog.Debug(t.Section()+" stopped", logkey.Error, err)
 			}
 		}()
 	}
