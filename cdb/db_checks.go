@@ -11,7 +11,8 @@ func (oDb *DB) PurgeChecksOutdated(ctx context.Context) error {
 	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return fmt.Errorf("delete from checks_live: %w", err)
 	} else if count > 0 {
-		slog.Info(fmt.Sprintf("purged %d entries from table checks_live", count))
+		// TODO: add metrics about purged count
+		slog.Debug(fmt.Sprintf("purged %d entries from table checks_live", count))
 		oDb.SetChange("checks_live")
 	}
 	return nil
