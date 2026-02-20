@@ -134,7 +134,7 @@ func (d *jobFeedDaemonStatus) Operations() []operation {
 }
 
 func (d *jobFeedDaemonStatus) LogResult() {
-	slog.Info(fmt.Sprintf("handleDaemonStatus done for %s", d.byNodeID[d.nodeID]))
+	slog.Debug(fmt.Sprintf("handleDaemonStatus done for %s", d.byNodeID[d.nodeID]))
 	for k, v := range d.byNodename {
 		slog.Debug(fmt.Sprintf("found db node %s: %#v", k, v))
 	}
@@ -225,7 +225,7 @@ func (d *jobFeedDaemonStatus) dbFindNodes(ctx context.Context) (err error) {
 		dbNodes []*cdb.DBNode
 	)
 
-	// search caller node from its node_id: we can't trust yet search from
+	// search the caller node from its node_id: we can't trust yet search from
 	// d.data.nodeNames() because initial push daemon status may omit caller node.
 	if callerNode, err := d.oDb.NodeByNodeID(ctx, d.nodeID); err != nil {
 		return fmt.Errorf("dbFindNodes nodeByNodeID %s: %s", d.nodeID, err)
