@@ -53,7 +53,7 @@ func (a *Api) PostDaemonStatus(c echo.Context) error {
 		return JSONProblem(c, http.StatusBadRequest, msg)
 	}
 	ctx := c.Request().Context()
-	log.Info("HSet FeedDaemonStatusH")
+	log.Debug("HSet FeedDaemonStatusH")
 	if err := a.Redis.HSet(ctx, cachekeys.FeedDaemonStatusH, nodeID, string(b)).Err(); err != nil {
 		log.Error("HSet FeedDaemonStatusH", logkey.Error, err)
 		return JSONError(c)
@@ -99,10 +99,11 @@ func (a *Api) PostDaemonStatus(c echo.Context) error {
 			if err := a.removeObjectConfigToFeed(ctx, clusterID); err != nil {
 				log.Warn("removeObjectConfigToFeed", logkey.Error, err)
 			}
-			log.Info("accepted with detected missing object configs", logkey.Objects, objects)
+			// TODO: add metric about PostDaemonStatus accepted with detected missing object configs
+			log.Debug("accepted with detected missing object configs", logkey.Objects, objects)
 			return c.JSON(http.StatusAccepted, feeder.DaemonStatusAccepted{ObjectWithoutConfig: &objects})
 		}
 	}
-	log.Info("accepted")
+	log.Debug("accepted")
 	return c.JSON(http.StatusAccepted, feeder.DaemonStatusAccepted{})
 }

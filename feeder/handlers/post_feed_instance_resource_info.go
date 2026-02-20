@@ -45,7 +45,7 @@ func (a *Api) PostInstanceResourceInfo(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 	idx := data.Path + "@" + nodeID + "@" + clusterID
-	log.Info("HSet keyH")
+	log.Debug("HSet keyH")
 	if err := a.Redis.HSet(ctx, keyH, idx, b).Err(); err != nil {
 		log.Error("HSet keyH", logkey.Error, err)
 		return JSONError(c)

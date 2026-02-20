@@ -24,7 +24,7 @@ func (a *Api) PostSystem(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	log.Info("Hset FeedSystemH")
+	log.Debug("Hset FeedSystemH")
 	if _, err := a.Redis.HSet(ctx, cachekeys.FeedSystemH, nodeID, string(b)).Result(); err != nil {
 		log.Error("Hset FeedSystemH", logkey.Error, err)
 		return JSONError(c)

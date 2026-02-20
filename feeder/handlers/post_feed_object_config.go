@@ -42,7 +42,7 @@ func (a *Api) PostObjectConfig(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 	idx := payload.Path + "@" + nodeID + "@" + clusterID
-	log.Info("Hset keyH")
+	log.Debug("Hset keyH")
 	if err := a.Redis.HSet(ctx, keyH, idx, b).Err(); err != nil {
 		log.Error("Hset keyH", logkey.Error, err)
 		return JSONError(c)

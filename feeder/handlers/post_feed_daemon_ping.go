@@ -57,10 +57,11 @@ func (a *Api) PostDaemonPing(c echo.Context) error {
 			if err := a.removeObjectConfigToFeed(ctx, clusterID); err != nil {
 				log.Warn("removeObjectConfigToFeed", logkey.Error, err)
 			}
-			log.Info("accepted with detected missing object configs", logkey.Objects, objects)
+			// TODO: add metric about PostDaemonPing with detected missing object configs
+			log.Debug("accepted with detected missing object configs", logkey.Objects, objects)
 			return c.JSON(http.StatusAccepted, feeder.DaemonPingAccepted{ObjectWithoutConfig: &objects})
 		}
 	}
-	log.Info("accepted")
+	log.Debug("accepted")
 	return c.JSON(http.StatusAccepted, feeder.DaemonPingAccepted{})
 }

@@ -42,7 +42,7 @@ func (a *Api) PostNodeDisk(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 	idx := nodename + "@" + nodeID + "@" + clusterID
-	log.Info("HSet keyH")
+	log.Debug("HSet keyH")
 	if err := a.Redis.HSet(ctx, keyH, idx, b).Err(); err != nil {
 		log.Error("HSet keyH", logkey.Error, err)
 		return JSONError(c)

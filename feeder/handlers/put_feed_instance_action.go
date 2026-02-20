@@ -40,7 +40,7 @@ func (a *Api) PutInstanceActionEnd(c echo.Context) error {
 	ClusterID := clusterIDFromContext(c)
 	if ClusterID == "" {
 		msg := "refused: authenticated node doesn't define cluster id"
-		log.Info(msg)
+		log.Warn(msg)
 		return JSONProblem(c, http.StatusConflict, msg)
 	}
 
