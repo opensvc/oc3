@@ -68,7 +68,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		group = "default"
 	}
 
-	slog.Info(fmt.Sprintf("MESSAGE to %s:%s", group, message))
+	slog.Debug(fmt.Sprintf("MESSAGE to %s:%s", group, message))
 
 	if hmacKey != "" {
 		signature := r.FormValue("signature")
