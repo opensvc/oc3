@@ -15,7 +15,8 @@ import (
 )
 
 var (
-	debug bool
+	debug     bool
+	logCaller bool
 
 	GroupIDSubsystems = "subsystems"
 )
@@ -176,6 +177,7 @@ func Root(args []string) *cobra.Command {
 	}
 	cmd.AddGroup(NewGroupSubsystems())
 	cmd.PersistentFlags().BoolVar(&debug, "debug", false, "set log level to debug")
+	cmd.PersistentFlags().BoolVar(&logCaller, "caller", false, "log source code location")
 	grpScheduler := cmdScheduler()
 	grpScheduler.AddCommand(
 		cmdSchedulerExec(),
@@ -200,6 +202,9 @@ func setup(section string) error {
 		slog.SetLogLoggerLevel(logLevel)
 	}
 	logHandlerOptions := slog.HandlerOptions{Level: logLevel}
+	if logCaller {
+		logHandlerOptions.AddSource = true
+	}
 	logHandler := slog.NewJSONHandler(os.Stdout, &logHandlerOptions)
 	slog.SetDefault(slog.New(logHandler).With(slog.String(logkey.Section, section)))
 	slog.Debug(fmt.Sprintf("candidate config directories: %s", configCandidateDirs))
