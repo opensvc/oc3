@@ -6,6 +6,7 @@ const (
 	ClusterID = "cluster_id"
 	Error     = "error"
 	Handler   = "handler"
+	JobDetail = "job_detail"
 	MSetID    = "mset_id"
 	NodeID    = "node_id"
 	Nodename  = "nodename"
@@ -15,4 +16,5 @@ const (
 	RSetID    = "rset_id"
 	Section   = "section"
 	TagID     = "tag_id"
+	WorkType  = "work_type"
 )

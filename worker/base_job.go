@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type (
@@ -95,7 +96,8 @@ func runOps(ctx context.Context, ops ...operation) error {
 			if op.blocking {
 				return err
 			}
-			slog.Warn(fmt.Sprintf("%s: non blocking error: %s", op.desc, err))
+			// TODO: add metrics
+			slog.Warn(fmt.Sprintf("%s: non blocking error", op.desc), logkey.Error, err)
 			continue
 		}
 		operationDuration.

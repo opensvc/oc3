@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type (
@@ -187,7 +188,7 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 
 	if a, ok := j.(PrepareDBer); ok {
 		if err := a.PrepareDB(ctx, w.DB, w.Ev, withTx); err != nil {
-			slog.Error(fmt.Sprintf("🔴can't prepare db for %s: %s", workType, err))
+			slog.Error("🔴PrepareDB failed", logkey.Error, err, logkey.WorkType, workType)
 			return fmt.Errorf("can't prepare db for %s: %w", workType, err)
 		}
 	}
@@ -204,7 +205,7 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	duration := time.Since(begin)
 	if err != nil {
 		status = operationStatusFailed
-		slog.Error(fmt.Sprintf("🔴job %s %s: %s", workType, j.Detail(), err))
+		slog.Error("🔴job failure", logkey.WorkType, workType, logkey.Error, err, logkey.JobDetail, j.Detail())
 	}
 	processedOperationCounter.With(prometheus.Labels{"desc": workType, "status": status}).Inc()
 	operationDuration.With(prometheus.Labels{"desc": workType, "status": status}).Observe(duration.Seconds())
