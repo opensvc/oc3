@@ -4,9 +4,10 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/shaj13/go-guardian/v2/auth"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 
+	"github.com/opensvc/oc3/util/echolog"
+	"github.com/opensvc/oc3/util/logkey"
 	"github.com/opensvc/oc3/xauth"
 )
 
@@ -23,7 +24,7 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 			_, user, err := strategies.AuthenticateRequest(c.Request())
 			if err != nil {
 				code := http.StatusUnauthorized
-				return JSONProblem(c, code, http.StatusText(code), err.Error())
+				return JSONProblem(c, code, err.Error())
 			} else if user == nil {
 				return next(c)
 			}
@@ -31,15 +32,21 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 			if nodeID := ext.Get(xauth.XNodeID); nodeID != "" {
 				// request user is a node, sets node ID in echo context
 				c.Set(XNodeID, nodeID)
+				log := echolog.GetLog(c).With(logkey.NodeID, nodeID)
 
 				if nodename := ext.Get(xauth.XNodename); nodename != "" {
 					c.Set(XNodename, nodename)
+					log = log.With(logkey.Nodename, nodename)
 				}
 
 				if clusterID := ext.Get(xauth.XClusterID); clusterID != "" {
 					// request user is a node with a cluster ID, sets cluster ID in echo context
 					c.Set(XClusterID, clusterID)
+					log = log.With(logkey.ClusterID, clusterID)
+				} else {
+					log = log.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID)
 				}
+				echolog.SetLog(c, log)
 			}
 
 			c.Set("user", user)
@@ -51,9 +58,9 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 // nodeIDFromContext returns the nodeID from context or zero string
 // if not found.
 func nodeIDFromContext(c echo.Context) string {
-	user, ok := c.Get(XNodeID).(string)
+	nodeID, ok := c.Get(XNodeID).(string)
 	if ok {
-		return user
+		return nodeID
 	}
 	return ""
 }
@@ -76,12 +83,4 @@ func clusterIDFromContext(c echo.Context) string {
 		return s
 	}
 	return ""
-}
-
-func userInfoFromContext(c echo.Context) auth.Info {
-	user, ok := c.Get("user").(auth.Info)
-	if ok {
-		return user
-	}
-	return nil
 }

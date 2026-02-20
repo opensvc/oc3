@@ -12,8 +12,12 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/feeder"
+	"github.com/opensvc/oc3/util/echolog"
+	"github.com/opensvc/oc3/util/logkey"
+
 	"github.com/spf13/viper"
 )
 
@@ -24,9 +28,10 @@ type sysreportData struct {
 }
 
 func (a *Api) PostNodeSysReport(ctx echo.Context) error {
+	log := echolog.GetLogHandler(ctx, "PostNodeSysReport")
 	file, err := ctx.FormFile("file")
 	if err != nil {
-		return JSONProblem(ctx, http.StatusBadRequest, "Missing file", err.Error())
+		return JSONProblemf(ctx, http.StatusBadRequest, "FormFile: %s", err)
 	}
 
 	var payload feeder.SysReport
@@ -37,16 +42,17 @@ func (a *Api) PostNodeSysReport(ctx echo.Context) error {
 
 	sysreportDir := viper.GetString("sysreport.dir")
 	if err := os.MkdirAll(sysreportDir, 0755); err != nil {
-		return JSONProblem(ctx, http.StatusInternalServerError, "can't create sysreport dir", err.Error())
+		log.Error("can't create sysreport dir", logkey.Error, err)
+		return JSONProblem(ctx, http.StatusInternalServerError, "can't create sysreport dir")
 	}
 
 	nodeID := ctx.Get(XNodeID).(string)
 
 	needCommit := false
-	needCommit = sendSysreportDelete(payload.Deleted, sysreportDir, nodeID) || needCommit
-	needCommit = sendSysreportArchive(payload, file.Filename, sysreportDir, nodeID) || needCommit
+	needCommit = sendSysreportDelete(log, payload.Deleted, sysreportDir, nodeID) || needCommit
+	needCommit = sendSysreportArchive(log, payload, file.Filename, sysreportDir, nodeID) || needCommit
 
-	slog.Info("PostNodeSysReport", "size", payload.File.FileSize(), "node_id", nodeID)
+	// TODO: Add metric PostNodeSysReport File size
 
 	v := sysreportData{
 		NeedCommit: needCommit,
@@ -54,15 +60,17 @@ func (a *Api) PostNodeSysReport(ctx echo.Context) error {
 		NodeID:     nodeID,
 	}
 	if b, err := json.Marshal(v); err != nil {
-		slog.Error("PostNodeSysReport", "marshal", err)
+		log.Error("Marshal", logkey.Error, err)
+		return JSONProblem(ctx, http.StatusInternalServerError, "unexpected marshall error")
 	} else if err := a.Redis.RPush(ctx.Request().Context(), cachekeys.FeedSysreportQ, string(b)).Err(); err != nil {
-		slog.Error("PostNodeSysReport", "rpush", err)
+		log.Error("RPush FeedSysreportQ", logkey.Error, err)
+		return JSONProblem(ctx, http.StatusInternalServerError, "unexpected internal feed queue error")
 	}
 
 	return ctx.JSON(http.StatusAccepted, "sysreport accepted")
 }
 
-func sendSysreportDelete(deleted []string, sysreportDir string, nodeID string) bool {
+func sendSysreportDelete(l *slog.Logger, deleted []string, sysreportDir string, nodeID string) bool {
 	if len(deleted) == 0 {
 		return false
 	}
@@ -77,13 +85,13 @@ func sendSysreportDelete(deleted []string, sysreportDir string, nodeID string) b
 		}
 		pathToDelete := filepath.Join(nodeDir, relpath)
 		if err := os.Remove(pathToDelete); err != nil && !os.IsNotExist(err) {
-			slog.Debug("sendSysreportDelete", "path", pathToDelete, "error", err)
+			l.Warn("sendSysreportDelete", logkey.Error, err)
 		}
 	}
 	return true
 }
 
-func sendSysreportArchive(payload feeder.SysReport, filename string, sysreportDir string, nodeID string) bool {
+func sendSysreportArchive(l *slog.Logger, payload feeder.SysReport, filename string, sysreportDir string, nodeID string) bool {
 	if filename == "" {
 		return false
 	}
@@ -95,7 +103,7 @@ func sendSysreportArchive(payload feeder.SysReport, filename string, sysreportDi
 
 	reader, err := payload.File.Reader()
 	if err != nil {
-		slog.Error("sendSysreportArchive", "error", err)
+		l.Error("sendSysreportArchive", logkey.Error, err)
 		return false
 	}
 	defer reader.Close()
@@ -107,7 +115,7 @@ func sendSysreportArchive(payload feeder.SysReport, filename string, sysreportDi
 			break
 		}
 		if err != nil {
-			slog.Error("sendSysreportArchive", "error", err)
+			l.Error("sendSysreportArchive", logkey.Error, err)
 			return false
 		}
 		idx := strings.Index(header.Name, "/")
@@ -123,21 +131,24 @@ func sendSysreportArchive(payload feeder.SysReport, filename string, sysreportDi
 		}
 
 		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
-			slog.Error("sendSysreportArchive", "error", err)
+			l.Error("sendSysreportArchive", logkey.Error, err)
 			return false
 		}
 
 		outFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, fs.FileMode(header.Mode))
 		if err != nil {
-			slog.Error("sendSysreportArchive", "error", err)
+			l.Error("sendSysreportArchive OpenFile", logkey.Error, err)
 			return false
+		} else {
+			defer func() {
+				_ = outFile.Close()
+			}()
 		}
+
 		if _, err := io.Copy(outFile, tr); err != nil {
-			outFile.Close()
-			slog.Error("sendSysreportArchive", "error", err)
+			l.Error("sendSysreportArchive Copy", logkey.Error, err)
 			return false
 		}
-		outFile.Close()
 
 		if info, err := os.Stat(targetPath); err == nil {
 			// restore read only

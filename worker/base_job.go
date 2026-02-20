@@ -45,7 +45,7 @@ func RunJob(ctx context.Context, j JobRunner) error {
 	name := j.Name()
 	detail := j.Detail()
 	defer logDurationInfo(fmt.Sprintf("%s %s", name, detail), time.Now())
-	slog.Info(fmt.Sprintf("%s starting %s", name, detail))
+	slog.Debug(fmt.Sprintf("%s starting %s", name, detail))
 
 	ops := j.Operations()
 
@@ -67,7 +67,7 @@ func RunJob(ctx context.Context, j JobRunner) error {
 	if r, ok := j.(LogResulter); ok {
 		r.LogResult()
 	}
-	slog.Info(fmt.Sprintf("%s done %s", name, detail))
+	slog.Debug(fmt.Sprintf("%s done %s", name, detail))
 	return nil
 }
 
@@ -107,5 +107,5 @@ func runOps(ctx context.Context, ops ...operation) error {
 }
 
 func logDurationInfo(s string, begin time.Time) {
-	slog.Info(fmt.Sprintf("STAT: %s elapse: %s", s, time.Since(begin)))
+	slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", s, time.Since(begin)))
 }
