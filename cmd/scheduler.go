@@ -29,7 +29,7 @@ func (t *schedulerT) authMiddleware(publicPath, publicPrefix []string) echo.Midd
 }
 
 func newScheduler() (*schedulerT, error) {
-	if err := setup(); err != nil {
+	if err := setup(sectionScheduler); err != nil {
 		return nil, err
 	}
 	if db, err := newDatabase(); err != nil {
@@ -38,7 +38,7 @@ func newScheduler() (*schedulerT, error) {
 		t := &schedulerT{
 			db:      db,
 			redis:   newRedis(),
-			section: "scheduler",
+			section: sectionScheduler,
 		}
 		return t, nil
 	}
