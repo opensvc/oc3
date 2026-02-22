@@ -34,7 +34,7 @@ func setDefaultWorkerConfig(name string) {
 
 	viper.SetDefault(section+".runners", 1)
 	viper.SetDefault(section+".tx", true)
-	viper.SetDefault(section+".log.request", false)
+	viper.SetDefault(section+".log.request.level", "none")
 }
 
 func setDefaultFeederConfig() {
@@ -48,7 +48,7 @@ func setDefaultFeederConfig() {
 	viper.SetDefault(s+".metrics.enable", false)
 	viper.SetDefault(s+".ui.enable", false)
 	viper.SetDefault(s+".sync.timeout", "2s")
-	viper.SetDefault(s+".log.request", false)
+	viper.SetDefault(s+".log.request.level", "none")
 }
 
 func setDefaultServerConfig() {
@@ -61,7 +61,7 @@ func setDefaultServerConfig() {
 	viper.SetDefault(s+".ui.enable", false)
 	viper.SetDefault(s+".sync.timeout", "2s")
 	viper.SetDefault(s+".allow_anon_register", false)
-	viper.SetDefault(s+".log.request", false)
+	viper.SetDefault(s+".log.request.level", "none")
 }
 
 func setDefaultSchedulerConfig() {
@@ -73,7 +73,7 @@ func setDefaultSchedulerConfig() {
 	viper.SetDefault(s+".metrics.enable", false)
 	viper.SetDefault(s+".task.trim.retention", 365)
 	viper.SetDefault(s+".task.trim.batch_size", 1000)
-	viper.SetDefault(s+".log.request", false)
+	viper.SetDefault(s+".log.request.level", "none")
 }
 
 func setDefaultMessengerConfig() {
@@ -88,7 +88,7 @@ func setDefaultMessengerConfig() {
 	viper.SetDefault(s+".require_token", false)
 	viper.SetDefault(s+".key_file", "")
 	viper.SetDefault(s+".cert_file", "")
-	viper.SetDefault(s+".log.request", false)
+	viper.SetDefault(s+".log.request.level", "none")
 
 	setDefaultAuthConfig()
 }
@@ -100,7 +100,7 @@ func setDefaultRunnerConfig() {
 	viper.SetDefault(s+".pprof.ux.enable", false)
 	viper.SetDefault(s+".pprof.ux.socket", "/var/run/oc3_runner_pprof.sock")
 	viper.SetDefault(s+".metrics.enable", false)
-	viper.SetDefault(s+".log.request", false)
+	viper.SetDefault(s+".log.request.level", "none")
 }
 
 func setDefaultDBConfig() {

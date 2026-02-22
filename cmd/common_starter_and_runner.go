@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/util/echolog"
+	"github.com/opensvc/oc3/util/logkey"
 	"github.com/opensvc/oc3/xauth"
 )
 
@@ -60,7 +61,6 @@ func start(i Sectioner) (bool, <-chan error) {
 	enableMetrics := viper.GetBool(section + ".metrics.enable")
 	enablePprofNet := viper.GetBool(section + ".pprof.net.enable")
 	enablePprofUx := viper.GetBool(section + ".pprof.ux.enable")
-	enableLogRequests := viper.GetBool(section + ".log.request")
 
 	// define public paths
 	publicPath := []string{}
@@ -105,9 +105,15 @@ func start(i Sectioner) (bool, <-chan error) {
 		metricsRegister(e)
 	}
 
-	if enableLogRequests {
-		slog.Info("enable log request")
-		e.Use(echolog.LogRequestMiddleware(context.Background()))
+	if s := viper.GetString(section + ".log.request.level"); s != "none" {
+		var level slog.Level
+
+		if err := level.UnmarshalText([]byte(s)); err != nil {
+			slog.Error("invalid log request level", logkey.Error, err)
+		} else {
+			slog.Info("enable log request level: " + level.String())
+			e.Use(echolog.LogRequestMiddleware(context.Background(), level))
+		}
 	}
 
 	if a, ok := i.(authMiddlewarer); ok {
