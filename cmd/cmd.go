@@ -199,6 +199,7 @@ func setup(section string) error {
 	// Prepare default logging
 	logLevel := slog.LevelInfo
 	if debug {
+		logLevel = slog.LevelDebug
 		slog.SetLogLoggerLevel(logLevel)
 	}
 	logHandlerOptions := slog.HandlerOptions{Level: logLevel}
