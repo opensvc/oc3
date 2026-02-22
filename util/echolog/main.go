@@ -29,7 +29,7 @@ func GetLogHandler(c echo.Context, handler string) *slog.Logger {
 	return GetLog(c).With(logkey.Handler, handler)
 }
 
-func LogRequestMiddleware(ctx context.Context) echo.MiddlewareFunc {
+func LogRequestMiddleware(ctx context.Context, level slog.Level) echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:   true,
 		LogURIPath:  true,
@@ -38,7 +38,7 @@ func LogRequestMiddleware(ctx context.Context) echo.MiddlewareFunc {
 		LogMethod:   true,
 		HandleError: true, // forwards error to the global error handler, so it can decide appropriate status code
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			slog.LogAttrs(ctx, slog.LevelInfo, "request",
+			slog.LogAttrs(ctx, level, "request",
 				slog.String(logkey.Method, v.Method),
 				slog.String(logkey.URI, v.URIPath),
 				slog.Int(logkey.StatusCode, v.Status),
