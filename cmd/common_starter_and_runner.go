@@ -98,6 +98,10 @@ func start(i Sectioner) (bool, <-chan error) {
 	e.HideBanner = true
 	e.HidePort = true
 
+	if enableMetrics {
+		metricsRegister(e)
+	}
+
 	if a, ok := i.(authMiddlewarer); ok {
 		e.Use(a.authMiddleware(publicPath, publicPrefix))
 	}
@@ -118,10 +122,6 @@ func start(i Sectioner) (bool, <-chan error) {
 	}
 	if enablePprofNet {
 		pprofRegister(e)
-	}
-
-	if enableMetrics {
-		metricsRegister(e)
 	}
 
 	if enableUI {
