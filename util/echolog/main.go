@@ -32,7 +32,7 @@ func GetLogHandler(c echo.Context, handler string) *slog.Logger {
 func LogRequestMiddleware(ctx context.Context) echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:   true,
-		LogURI:      true,
+		LogURIPath:  true,
 		LogError:    true,
 		LogRemoteIP: true,
 		LogMethod:   true,
@@ -40,7 +40,7 @@ func LogRequestMiddleware(ctx context.Context) echo.MiddlewareFunc {
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			slog.LogAttrs(ctx, slog.LevelInfo, "request",
 				slog.String(logkey.Method, v.Method),
-				slog.String(logkey.URI, v.URI),
+				slog.String(logkey.URI, v.URIPath),
 				slog.Int(logkey.StatusCode, v.Status),
 				slog.String(logkey.RemoteIP, v.RemoteIP),
 			)
