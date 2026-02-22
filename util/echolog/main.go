@@ -1,9 +1,11 @@
 package echolog
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/opensvc/oc3/util/logkey"
 )
@@ -25,4 +27,24 @@ func SetLog(c echo.Context, l *slog.Logger) {
 
 func GetLogHandler(c echo.Context, handler string) *slog.Logger {
 	return GetLog(c).With(logkey.Handler, handler)
+}
+
+func LogRequestMiddleware(ctx context.Context) echo.MiddlewareFunc {
+	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogStatus:   true,
+		LogURI:      true,
+		LogError:    true,
+		LogRemoteIP: true,
+		LogMethod:   true,
+		HandleError: true, // forwards error to the global error handler, so it can decide appropriate status code
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			slog.LogAttrs(ctx, slog.LevelInfo, "request",
+				slog.String(logkey.Method, v.Method),
+				slog.String(logkey.URI, v.URI),
+				slog.Int(logkey.StatusCode, v.Status),
+				slog.String(logkey.RemoteIP, v.RemoteIP),
+			)
+			return nil
+		},
+	})
 }

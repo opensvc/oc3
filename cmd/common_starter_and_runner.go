@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 	"github.com/spf13/viper"
 
+	"github.com/opensvc/oc3/util/echolog"
 	"github.com/opensvc/oc3/xauth"
 )
 
@@ -58,6 +60,7 @@ func start(i Sectioner) (bool, <-chan error) {
 	enableMetrics := viper.GetBool(section + ".metrics.enable")
 	enablePprofNet := viper.GetBool(section + ".pprof.net.enable")
 	enablePprofUx := viper.GetBool(section + ".pprof.ux.enable")
+	enableLogRequests := viper.GetBool(section + ".log.request")
 
 	// define public paths
 	publicPath := []string{}
@@ -98,6 +101,15 @@ func start(i Sectioner) (bool, <-chan error) {
 	e.HideBanner = true
 	e.HidePort = true
 
+	if enableMetrics {
+		metricsRegister(e)
+	}
+
+	if enableLogRequests {
+		slog.Info("enable log request")
+		e.Use(echolog.LogRequestMiddleware(context.Background()))
+	}
+
 	if a, ok := i.(authMiddlewarer); ok {
 		e.Use(a.authMiddleware(publicPath, publicPrefix))
 	}
@@ -118,10 +130,6 @@ func start(i Sectioner) (bool, <-chan error) {
 	}
 	if enablePprofNet {
 		pprofRegister(e)
-	}
-
-	if enableMetrics {
-		metricsRegister(e)
 	}
 
 	if enableUI {
