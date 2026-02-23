@@ -94,16 +94,17 @@ func (d *jobFeedInstanceAction) findNodeFromDb(ctx context.Context) error {
 }
 
 func (d *jobFeedInstanceAction) findObjectFromDb(ctx context.Context) error {
-	if isNew, objId, err := d.oDb.ObjectIDFindOrCreate(ctx, d.objectName, d.clusterID); err != nil {
+	isNew, objId, err := d.oDb.ObjectIDFindOrCreate(ctx, d.objectName, d.clusterID)
+	if err != nil {
 		return fmt.Errorf("find or create object ID failed for %s: %w", d.objectName, err)
-	} else if isNew {
+	}
+	if isNew {
 		// TODO: add metrics
 		slog.Debug(fmt.Sprintf("jobFeedInstanceAction has created new object id %s@%s %s", d.objectName, d.clusterID, objId))
 	} else {
-		d.objectID = objId
 		slog.Debug(fmt.Sprintf("jobFeedInstanceAction found object id %s@%s %s", d.objectName, d.clusterID, objId))
 	}
-
+	d.objectID = objId
 	return nil
 }
 
