@@ -48,6 +48,7 @@ const (
 
 var (
 	Tasks = TaskList{
+		TaskChecks,
 		TaskSysreport,
 		TaskRefreshBActionErrors,
 		TaskAlertUpdateActionErrors,
@@ -154,6 +155,7 @@ func (t *Task) DBX(ctx context.Context) (*cdb.DB, error) {
 		Session: cdb.NewSession(tx, t.ev),
 		DB:      tx,
 		DBLck:   cdb.InitDbLocker(t.db),
+		HasTx:   true,
 	}, nil
 }
 

@@ -8,6 +8,26 @@ info:
   version: 3.0.1
 
 paths:
+  /checks:
+    post:
+      description: |
+        Push checks
+      operationId: PostChecks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostChecks'
+      responses:
+        200:
+          description: OK
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - checks
+
   /daemon/ping:
     post:
       description: |
@@ -587,6 +607,23 @@ components:
         file:
           type: string
           format: binary
+
+    PostChecks:
+      type: object
+      required:
+        - vars
+        - vals
+      properties:
+        vars:
+          type: array
+          items:
+            type: string
+        vals:
+          type: array
+          items:
+            type: array
+            items: {}
+
 
   parameters:
     ObjectPathHeader:
