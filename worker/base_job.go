@@ -16,6 +16,8 @@ type (
 	JobBase struct {
 		name   string
 		detail string
+
+		logger *slog.Logger
 	}
 
 	operation struct {
@@ -44,23 +46,25 @@ type (
 
 func RunJob(ctx context.Context, j JobRunner) error {
 	name := j.Name()
-	detail := j.Detail()
-	defer logDurationInfo(fmt.Sprintf("%s %s", name, detail), time.Now())
-	slog.Debug(fmt.Sprintf("%s starting %s", name, detail))
+	jlog := j.Logger().With(logkey.JobName, name)
+	defer func(begin time.Time) {
+		jlog.Debug(fmt.Sprintf("STAT: %s elapse: %s", name, time.Since(begin)))
+	}(time.Now())
+	jlog.Debug("starting job")
 
 	ops := j.Operations()
 
-	err := runOps(ctx, ops...)
+	err := runOps(ctx, jlog, ops...)
 	if err != nil {
 		if tx, ok := j.(cdb.DBTxer); ok {
-			slog.Debug(fmt.Sprintf("%s rollbacking on error %s", name, detail))
+			jlog.Debug("call rollback on error")
 			if err := tx.Rollback(); err != nil {
-				slog.Error(fmt.Sprintf("%s rollback on error failed %s: %s", name, detail, err))
+				jlog.Error("rollback on error failed", logkey.Error, err)
 			}
 		}
 		return err
 	} else if tx, ok := j.(cdb.DBTxer); ok {
-		slog.Debug(fmt.Sprintf("%s commiting %s", name, detail))
+		jlog.Debug("call commit")
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("commit: %w", err)
 		}
@@ -68,7 +72,7 @@ func RunJob(ctx context.Context, j JobRunner) error {
 	if r, ok := j.(LogResulter); ok {
 		r.LogResult()
 	}
-	slog.Debug(fmt.Sprintf("%s done %s", name, detail))
+	jlog.Debug("job done")
 	return nil
 }
 
@@ -80,7 +84,11 @@ func (j *JobBase) Detail() string {
 	return j.detail
 }
 
-func runOps(ctx context.Context, ops ...operation) error {
+func (j *JobBase) Logger() *slog.Logger {
+	return j.logger
+}
+
+func runOps(ctx context.Context, jlog *slog.Logger, ops ...operation) error {
 	for _, op := range ops {
 		var err error
 		if op.condition != nil && !op.condition() {
@@ -97,17 +105,13 @@ func runOps(ctx context.Context, ops ...operation) error {
 				return err
 			}
 			// TODO: add metrics
-			slog.Warn(fmt.Sprintf("%s: non blocking error", op.desc), logkey.Error, err)
+			jlog.Warn(fmt.Sprintf("%s: non blocking error", op.desc), logkey.JobOpName, op.desc, logkey.Error, err)
 			continue
 		}
 		operationDuration.
 			With(prometheus.Labels{"desc": op.desc, "status": operationStatusOk}).
 			Observe(duration.Seconds())
-		slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", op.desc, duration))
+		jlog.Debug(fmt.Sprintf("STAT: %s elapse: %s", op.desc, duration), logkey.JobOpName, op.desc)
 	}
 	return nil
-}
-
-func logDurationInfo(s string, begin time.Time) {
-	slog.Debug(fmt.Sprintf("STAT: %s elapse: %s", s, time.Since(begin)))
 }

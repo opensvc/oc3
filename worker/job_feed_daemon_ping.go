@@ -38,6 +38,7 @@ func newDaemonPing(nodeID string) *jobFeedDaemonPing {
 		JobBase: JobBase{
 			name:   "daemonPing",
 			detail: "nodeID: " + nodeID,
+			logger: slog.With(logkey.NodeID, nodeID, logkey.JobName, "daemonPing"),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedDaemonPingPendingH,

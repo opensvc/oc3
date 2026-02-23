@@ -11,6 +11,7 @@ import (
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/mariadb"
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type (
@@ -31,6 +32,7 @@ func newNodeDisk(nodename, nodeID, clusterID string) *jobFeedNodeDisk {
 		JobBase: JobBase{
 			name:   "nodeDisk",
 			detail: "nodename: " + nodename + " nodeID: " + nodeID,
+			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Nodename, nodename, logkey.JobName, "nodeDisk"),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedNodeDiskPendingH,

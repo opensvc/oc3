@@ -7,6 +7,8 @@ const (
 	Error      = "error"
 	Handler    = "handler"
 	JobDetail  = "job_detail"
+	JobName    = "job_name"
+	JobOpName  = "job_op_name"
 	Method     = "method"
 	MSetID     = "mset_id"
 	NodeID     = "node_id"
@@ -20,5 +22,4 @@ const (
 	StatusCode = "status_code"
 	TagID      = "tag_id"
 	URI        = "uri"
-	WorkType   = "work_type"
 )

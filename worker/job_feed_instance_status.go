@@ -10,6 +10,7 @@ import (
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type jobFeedInstanceStatus struct {
@@ -49,6 +50,7 @@ func newInstanceStatus(objectName, nodeID, clusterID string) *jobFeedInstanceSta
 		JobBase: JobBase{
 			name:   "instanceStatus",
 			detail: "ID: " + idX,
+			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, "instanceStatus"),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedInstanceStatusPendingH,

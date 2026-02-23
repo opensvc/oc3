@@ -13,6 +13,7 @@ import (
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type (
@@ -43,6 +44,7 @@ func newFeedObjectConfig(objectName, nodeID, clusterID string) *jobFeedObjectCon
 		JobBase: JobBase{
 			name:   "objectConfig",
 			detail: "ID: " + idX,
+			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, "objectConfig"),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedObjectConfigPendingH,

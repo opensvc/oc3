@@ -13,6 +13,7 @@ import (
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/feeder"
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type jobFeedInstanceAction struct {
@@ -43,6 +44,7 @@ func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedInstanceActio
 		JobBase: JobBase{
 			name:   "instanceAction",
 			detail: "ID: " + idX,
+			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, "instanceAction"),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedInstanceActionPendingH,
