@@ -40,7 +40,8 @@ func (a *Api) PostNodeSysReport(ctx echo.Context) error {
 	}
 	payload.File.InitFromMultipart(file)
 
-	sysreportDir := viper.GetString("sysreport.dir")
+	uploadDir := viper.GetString("scheduler.directories.uploads")
+	sysreportDir := filepath.Join(uploadDir, "sysreport")
 	if err := os.MkdirAll(sysreportDir, 0755); err != nil {
 		log.Error("can't create sysreport dir", logkey.Error, err)
 		return JSONProblem(ctx, http.StatusInternalServerError, "can't create sysreport dir")

@@ -140,7 +140,6 @@ func initConfig() error {
 	setDefaultRunnerConfig()
 
 	viper.SetDefault("git.user_email", "nobody@localhost.localdomain")
-	viper.SetDefault("sysreport.dir", "uploads/sysreport")
 
 	// config file
 	viper.SetConfigName("config")
