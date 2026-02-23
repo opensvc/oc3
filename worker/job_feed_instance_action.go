@@ -155,7 +155,7 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 		} else {
 			// begin already processed, update record with end info
 			if err := d.oDb.UpdateSvcAction(ctx, actionID, endTime, d.data.Status, statusLog); err != nil {
-				return fmt.Errorf("end svc action failed: %w", err)
+				return fmt.Errorf("end svc action failed, initial statusLog length %d: %w", len(statusLog), err)
 			}
 		}
 
