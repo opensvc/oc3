@@ -13,6 +13,7 @@ import (
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/feeder"
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type jobFeedInstanceAction struct {
@@ -43,6 +44,7 @@ func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedInstanceActio
 		JobBase: JobBase{
 			name:   "instanceAction",
 			detail: "ID: " + idX,
+			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, "instanceAction"),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedInstanceActionPendingH,
@@ -94,16 +96,17 @@ func (d *jobFeedInstanceAction) findNodeFromDb(ctx context.Context) error {
 }
 
 func (d *jobFeedInstanceAction) findObjectFromDb(ctx context.Context) error {
-	if isNew, objId, err := d.oDb.ObjectIDFindOrCreate(ctx, d.objectName, d.clusterID); err != nil {
+	isNew, objId, err := d.oDb.ObjectIDFindOrCreate(ctx, d.objectName, d.clusterID)
+	if err != nil {
 		return fmt.Errorf("find or create object ID failed for %s: %w", d.objectName, err)
-	} else if isNew {
+	}
+	if isNew {
 		// TODO: add metrics
 		slog.Debug(fmt.Sprintf("jobFeedInstanceAction has created new object id %s@%s %s", d.objectName, d.clusterID, objId))
 	} else {
-		d.objectID = objId
 		slog.Debug(fmt.Sprintf("jobFeedInstanceAction found object id %s@%s %s", d.objectName, d.clusterID, objId))
 	}
-
+	d.objectID = objId
 	return nil
 }
 

@@ -14,6 +14,7 @@ import (
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type (
@@ -88,6 +89,7 @@ func newDaemonStatus(nodeID string) *jobFeedDaemonStatus {
 		JobBase: JobBase{
 			name:   "daemonStatus",
 			detail: "nodeID: " + nodeID,
+			logger: slog.With(logkey.NodeID, nodeID, logkey.JobName, "daemonStatus"),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedDaemonStatusPendingH,

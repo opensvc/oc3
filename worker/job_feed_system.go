@@ -10,6 +10,7 @@ import (
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/mariadb"
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type (
@@ -28,6 +29,7 @@ func newDaemonSystem(nodeID string) *jobFeedSystem {
 		JobBase: JobBase{
 			name:   "daemonSystem",
 			detail: "nodeID: " + nodeID,
+			logger: slog.With(logkey.NodeID, nodeID, logkey.JobName, "daemonSystem"),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedSystemPendingH,

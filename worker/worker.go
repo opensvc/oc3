@@ -50,6 +50,7 @@ type (
 
 		Name() string
 		Detail() string
+		Logger() *slog.Logger
 	}
 )
 
@@ -96,7 +97,7 @@ func (w *Worker) Run() error {
 				go func(j []string) {
 					defer func() { <-runSlots }()
 					if err := w.runJob(j); err != nil {
-						slog.Error(err.Error())
+						slog.Error("job failed", logkey.Error, err)
 					}
 				}(j)
 			case <-ctx.Done():
@@ -180,7 +181,8 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 		slog.Debug(fmt.Sprintf("ignore queue '%s'", unqueuedJob[0]))
 		return nil
 	}
-	workType := j.Name()
+	jName := j.Name()
+	jlog := j.Logger()
 
 	if a, ok := j.(RedisSetter); ok {
 		a.SetRedis(w.Redis)
@@ -188,8 +190,8 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 
 	if a, ok := j.(PrepareDBer); ok {
 		if err := a.PrepareDB(ctx, w.DB, w.Ev, withTx); err != nil {
-			slog.Error("🔴PrepareDB failed", logkey.Error, err, logkey.WorkType, workType)
-			return fmt.Errorf("can't prepare db for %s: %w", workType, err)
+			jlog.Error("🔴PrepareDB failed", logkey.Error, err)
+			return fmt.Errorf("can't prepare db for %s: %w", jName, err)
 		}
 	}
 
@@ -205,11 +207,11 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	duration := time.Since(begin)
 	if err != nil {
 		status = operationStatusFailed
-		slog.Error("🔴job failure", logkey.WorkType, workType, logkey.Error, err, logkey.JobDetail, j.Detail())
+		jlog.Error("🔴job failure", logkey.Error, err, logkey.JobDetail, j.Detail())
 	}
-	processedOperationCounter.With(prometheus.Labels{"desc": workType, "status": status}).Inc()
-	operationDuration.With(prometheus.Labels{"desc": workType, "status": status}).Observe(duration.Seconds())
-	slog.Debug(fmt.Sprintf("BLPOP %s <- %s: %s", unqueuedJob[0], unqueuedJob[1], duration))
+	processedOperationCounter.With(prometheus.Labels{"desc": jName, "status": status}).Inc()
+	operationDuration.With(prometheus.Labels{"desc": jName, "status": status}).Observe(duration.Seconds())
+	jlog.Debug(fmt.Sprintf("BLPOP %s <- %s: %s", unqueuedJob[0], unqueuedJob[1], duration))
 	return nil
 }
 

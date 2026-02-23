@@ -10,6 +10,7 @@ import (
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/feeder"
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type (
@@ -43,6 +44,7 @@ func newjobFeedInstanceResourceInfo(objectName, nodeID, clusterID string) *jobFe
 		JobBase: JobBase{
 			name:   "instanceResourceInfo",
 			detail: "ID: " + idX,
+			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, "instanceResourceInfo"),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedInstanceResourceInfoPendingH,
