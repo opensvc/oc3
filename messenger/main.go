@@ -12,6 +12,8 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type CmdComet struct {
@@ -40,10 +42,44 @@ var (
 type (
 	Client struct {
 		conn  *websocket.Conn
+		mu    sync.Mutex
 		group string
 		token string
 		name  string
 	}
+)
+
+var (
+	connectionTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: "messenger",
+			Name:      "connections_total",
+			Help:      "Total number of connections",
+		},
+		[]string{"group"})
+	disconnectionTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: "messenger",
+			Name:      "disconnections_total",
+			Help:      "Total number of disconnections",
+		},
+		[]string{"group"})
+	sendMessageTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: "messenger",
+			Name:      "send_message_total",
+			Help:      "Total number of sent messages",
+		}, []string{"group"})
+	receiveMessageTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: "messenger",
+			Name:      "receive_message_total",
+			Help:      "Total number of received messages",
+		}, []string{"group"})
 )
 
 func postHandler(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +105,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	slog.Debug(fmt.Sprintf("MESSAGE to %s:%s", group, message))
+	sendMessageTotal.WithLabelValues(group).Inc()
 
 	if hmacKey != "" {
 		signature := r.FormValue("signature")
@@ -87,8 +124,11 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 	mu.RUnlock()
 
 	for _, client := range clients {
-		if err := client.conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+		err := client.WriteMessage(websocket.TextMessage, []byte(message))
+		if err != nil {
 			slog.Warn(fmt.Sprintf("Error writing to client: %v", err))
+		} else {
+			receiveMessageTotal.WithLabelValues(group).Inc()
 		}
 	}
 
@@ -159,6 +199,7 @@ func distributeHandler(w http.ResponseWriter, r *http.Request) {
 		group: group,
 		token: token,
 		name:  name,
+		mu:    sync.Mutex{},
 	}
 
 	if useTokens {
@@ -182,7 +223,7 @@ func distributeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, existingClient := range listeners[group] {
-		if err := existingClient.conn.WriteMessage(websocket.TextMessage, []byte("+"+name)); err != nil {
+		if err := existingClient.WriteMessage(websocket.TextMessage, []byte("+"+name)); err != nil {
 			slog.Warn(fmt.Sprintf("Error notifying client: %v", err))
 		}
 	}
@@ -193,8 +234,8 @@ func distributeHandler(w http.ResponseWriter, r *http.Request) {
 
 	userAgent := r.Header.Get("User-Agent")
 
-	slog.Info(fmt.Sprintf("CONNECT %s to %s", userAgent, group))
 	slog.Debug(fmt.Sprintf("CONNECT %s to %s", userAgent, group))
+	connectionTotal.WithLabelValues(group).Inc()
 
 	defer func() {
 		mu.Lock()
@@ -210,10 +251,10 @@ func distributeHandler(w http.ResponseWriter, r *http.Request) {
 		mu.Unlock()
 
 		conn.Close()
-		slog.Info(fmt.Sprintf("DISCONNECT %s from %s", group, userAgent))
 		slog.Debug(fmt.Sprintf("DISCONNECT %s from %s", group, userAgent))
+		disconnectionTotal.WithLabelValues(group).Inc()
 		for _, existingClient := range listeners[group] {
-			if err := existingClient.conn.WriteMessage(websocket.TextMessage, []byte("-"+name)); err != nil {
+			if err := existingClient.WriteMessage(websocket.TextMessage, []byte("-"+name)); err != nil {
 				slog.Warn(fmt.Sprintf("Error notifying client: %v", err))
 			}
 		}
@@ -226,6 +267,12 @@ func distributeHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+}
+
+func (c *Client) WriteMessage(messageType int, data []byte) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.conn.WriteMessage(messageType, data)
 }
 
 func (c *CmdComet) Run() error {
