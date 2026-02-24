@@ -62,7 +62,7 @@ func (t *Scheduler) toggleTasks(ctx context.Context, states map[string]State) {
 		cancel, hasCancel := t.cancels[name]
 		switch {
 		case storedState.IsDisabled && hasCancel:
-			task.Infof("stop")
+			task.Debugf("stop")
 			cancel()
 			delete(t.cancels, name)
 		case !storedState.IsDisabled && !hasCancel:
