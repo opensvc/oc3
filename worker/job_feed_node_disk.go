@@ -99,29 +99,48 @@ func (d *jobFeedNodeDisk) getData(ctx context.Context) error {
 //	   ]
 //	 }
 //
-//			CREATE TABLE `svcdisks` (
-//			   `id` int(11) NOT NULL AUTO_INCREMENT,
-//			   `disk_id` varchar(120) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-//			   `disk_size` int(11) NOT NULL DEFAULT 0,
-//			   `disk_vendor` varchar(60) DEFAULT NULL,
-//			   `disk_model` varchar(60) DEFAULT NULL,
-//			   `disk_dg` varchar(60) DEFAULT '',
-//			   `disk_devid` varchar(60) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
-//			   `disk_arrayid` varchar(60) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
-//			   `disk_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-//			   `disk_local` varchar(1) DEFAULT 'T',
-//			   `disk_used` int(11) NOT NULL DEFAULT 0,
-//			   `disk_region` varchar(32) DEFAULT '0',
-//			   `node_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
-//			   `app_id` int(11) DEFAULT NULL,
-//			   `svc_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
-//			   PRIMARY KEY (`id`),
-//			   UNIQUE KEY `uk_svcdisks_1` (`disk_id`,`svc_id`,`node_id`,`disk_dg`),
-//			   KEY `idx1` (`disk_id`,`node_id`,`disk_dg`),
-//			   KEY `k_node_id` (`node_id`),
-//			   KEY `k_svc_id` (`svc_id`),
-//			   KEY `k_svcdisks_1` (`svc_id`,`node_id`)
-//			) ENGINE=InnoDB AUTO_INCREMENT=4641237 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
+// CREATE TABLE `svcdisks` (
+//
+//	`id` int(11) NOT NULL AUTO_INCREMENT,
+//	`disk_id` varchar(120) DEFAULT NULL,
+//	`disk_size` int(11) NOT NULL DEFAULT 0,
+//	`disk_vendor` varchar(60) DEFAULT NULL,
+//	`disk_model` varchar(60) DEFAULT NULL,
+//	`disk_dg` varchar(60) DEFAULT NULL,
+//	`disk_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+//	`disk_local` varchar(1) DEFAULT 'T',
+//	`disk_used` int(11) NOT NULL DEFAULT 0,
+//	`disk_region` varchar(32) DEFAULT '0',
+//	`app_id` int(11) DEFAULT NULL,
+//	`node_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
+//	`svc_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
+//	PRIMARY KEY (`id`),
+//	UNIQUE KEY `uk_svcdisks_1` (`disk_id`,`svc_id`,`node_id`,`disk_dg`),
+//	KEY `k_node_id` (`node_id`),
+//	KEY `k_svc_id` (`svc_id`),
+//	KEY `k_svcdisks_1` (`svc_id`,`node_id`)
+//
+// ) ENGINE=InnoDB AUTO_INCREMENT=47411 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='disks used by services' |
+//
+// CREATE TABLE `diskinfo` (
+//
+//	`id` int(11) NOT NULL AUTO_INCREMENT,
+//	`disk_id` varchar(120) DEFAULT NULL,
+//	`disk_devid` varchar(60) DEFAULT '',
+//	`disk_arrayid` varchar(300) DEFAULT NULL,
+//	`disk_updated` datetime DEFAULT NULL,
+//	`disk_raid` varchar(128) DEFAULT NULL,
+//	`disk_size` int(11) DEFAULT NULL,
+//	`disk_group` varchar(60) DEFAULT '',
+//	`disk_level` int(11) NOT NULL DEFAULT 0,
+//	`disk_controller` varchar(32) DEFAULT NULL,
+//	`disk_name` varchar(120) DEFAULT '',
+//	`disk_alloc` int(11) DEFAULT NULL,
+//	`disk_created` timestamp NOT NULL DEFAULT current_timestamp(),
+//	PRIMARY KEY (`id`),
+//	UNIQUE KEY `new_index` (`disk_id`,`disk_group`)
+//
+// ) ENGINE=InnoDB AUTO_INCREMENT=5024190 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci |
 func (d *jobFeedNodeDisk) updateDB(ctx context.Context) error {
 	var (
 		// pathToObjectID is a map of an object path to object ID, to cache db results
@@ -196,7 +215,15 @@ func (d *jobFeedNodeDisk) updateDB(ctx context.Context) error {
 		}
 		if strings.HasPrefix(diskID, d.nodeID+".") && len(diskL) == 0 {
 			line["local"] = "T"
+			// disk_devid length is 60 we must reduce its size
+			// example: diskID value:
+			//          initial  <nodename>.disk!by-id!lvm-pv-uuid-yiIrKF-vEm1-I3fK-hEMj-AnNT-0ztt-JM8rbf
+			//          ->         <nodeID>.disk!by-id!lvm-pv-uuid-yiIrKF-vEm1-I3fK-hEMj-AnNT-0ztt-JM8rbf
+			//          -> final value:          by-id!lvm-pv-uuid-yiIrKF-vEm1-I3fK-hEMj-AnNT-0ztt-JM8rbf
 			devID := strings.TrimPrefix(diskID, d.nodeID+".")
+			if strings.HasPrefix(devID, "disk!by-id!") {
+				devID = strings.TrimPrefix(devID, "disk!")
+			}
 			if changed, err := d.oDb.UpdateDiskinfoArrayAndDevIDsAndSize(ctx, diskID, nodeID, devID, int32(line["size"].(float64))); err != nil {
 				return fmt.Errorf("updateDiskinfoArrayAndDevIDsAndSize: %w", err)
 			} else if changed {

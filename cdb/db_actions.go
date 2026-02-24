@@ -200,10 +200,15 @@ func (oDb *DB) GetUnfinishedActions(ctx context.Context) (lines []SvcAction, err
 
 }
 
-func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, action string, begin time.Time, status_log string, sid string, cron bool, end time.Time, status string) (int64, error) {
+func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, action string, begin time.Time, statusLog string, sid string, cron bool, end time.Time, status string) (int64, error) {
 	query := "INSERT INTO svcactions (svc_id, node_id, action, begin, status_log, sid, cron"
 	placeholders := "?, ?, ?, ?, ?, ?, ?"
-	args := []any{svcID, nodeID, action, begin, status_log, sid, cron}
+	if len(statusLog) > TextMax {
+		// Fix end svc action failed: Error 1406 (22001): Data too long for column 'status_log' at row 1
+		// TODO: add metrics svcactions status_log truncated with len / TextMax
+		statusLog = statusLog[:TextMax]
+	}
+	args := []any{svcID, nodeID, action, begin, statusLog, sid, cron}
 
 	if !end.IsZero() {
 		query += ", end"
@@ -219,7 +224,7 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, act
 
 	result, err := oDb.DB.ExecContext(ctx, query, args...)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("insert svcactions failed, status_log length %d: %w", len(statusLog), err)
 	} else if result == nil {
 		return 0, errors.New("insert svcactions returns unexpected nil result")
 	}
@@ -240,9 +245,14 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, act
 
 func (oDb *DB) UpdateSvcAction(ctx context.Context, svcActionID int64, end time.Time, status, statusLog string) error {
 	const query = `UPDATE svcactions SET end = ?, status = ?, time = TIMESTAMPDIFF(SECOND, begin, ?), status_log = ? WHERE id = ?`
+	if len(statusLog) > TextMax {
+		// Fix end svc action failed: Error 1406 (22001): Data too long for column 'status_log' at row 1
+		// TODO: add metrics svcactions status_log truncated with len / TextMax
+		statusLog = statusLog[:TextMax]
+	}
 	result, err := oDb.DB.ExecContext(ctx, query, end, status, end, statusLog, svcActionID)
 	if err != nil {
-		return err
+		return fmt.Errorf("update svcactions failed status_log length %d: %w", len(statusLog), err)
 	} else if result == nil {
 		return errors.New("update svcactions returns unexpected nil result")
 	}

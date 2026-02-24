@@ -563,9 +563,15 @@ func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID str
 		}
 	}()
 
+	var value string
 	for _, info := range data.Info {
 		for _, key := range info.Keys {
-			if result, err := stmt.ExecContext(ctx, svcID, nodeID, info.Rid, key.Key, topology, key.Value); err != nil {
+			if len(key.Value) > 255 {
+				value = key.Value[:255]
+			} else {
+				value = key.Value
+			}
+			if result, err := stmt.ExecContext(ctx, svcID, nodeID, info.Rid, key.Key, topology, value); err != nil {
 				return fmt.Errorf("db exec: %w", err)
 			} else if result != nil {
 				if count, err := result.RowsAffected(); err != nil {
