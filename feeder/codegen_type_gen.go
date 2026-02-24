@@ -97,6 +97,12 @@ type ObjectConfig struct {
 	Topology               *string   `json:"topology,omitempty"`
 }
 
+// PostChecks defines model for PostChecks.
+type PostChecks struct {
+	Vals [][]interface{} `json:"vals"`
+	Vars []string        `json:"vars"`
+}
+
 // PostDaemonPing defines model for PostDaemonPing.
 type PostDaemonPing struct {
 	// Nodes list of cluster node
@@ -184,6 +190,9 @@ type DaemonStatusAccepted struct {
 type PostInstanceStatusParams struct {
 	Sync *InQuerySync `form:"sync,omitempty" json:"sync,omitempty"`
 }
+
+// PostChecksJSONRequestBody defines body for PostChecks for application/json ContentType.
+type PostChecksJSONRequestBody = PostChecks
 
 // PostDaemonPingJSONRequestBody defines body for PostDaemonPing for application/json ContentType.
 type PostDaemonPingJSONRequestBody = PostDaemonPing

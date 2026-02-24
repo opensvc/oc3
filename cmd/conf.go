@@ -67,6 +67,7 @@ func setDefaultServerConfig() {
 func setDefaultSchedulerConfig() {
 	s := sectionScheduler
 	viper.SetDefault(s+".addr", "127.0.0.1:8082")
+	viper.SetDefault(s+".directories.uploads", "/oc3/uploads")
 	viper.SetDefault(s+".pprof.net.enable", false)
 	viper.SetDefault(s+".pprof.ux.enable", false)
 	viper.SetDefault(s+".pprof.ux.socket", "/var/run/oc3_scheduler_pprof.sock")
@@ -139,7 +140,6 @@ func initConfig() error {
 	setDefaultRunnerConfig()
 
 	viper.SetDefault("git.user_email", "nobody@localhost.localdomain")
-	viper.SetDefault("sysreport.dir", "uploads/sysreport")
 
 	// config file
 	viper.SetConfigName("config")
