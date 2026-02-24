@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/cdb"
@@ -40,15 +42,18 @@ type (
 	}
 
 	cmdSetUnreachable struct {
-		id int
+		id         int
+		actionType string
 	}
 
 	cmdSetNotified struct {
-		id int
+		id         int
+		actionType string
 	}
 
 	cmdSetInvalid struct {
-		id int
+		id         int
+		actionType string
 	}
 
 	cmdSetRunning struct {
@@ -56,10 +61,11 @@ type (
 	}
 
 	cmdSetDone struct {
-		id     int
-		ret    int
-		stdout string
-		stderr string
+		id         int
+		ret        int
+		stdout     string
+		stderr     string
+		actionType string
 	}
 
 	dedupLog struct {
@@ -78,9 +84,54 @@ const (
 	DefaultPurgeTimeout        = 24 * time.Hour
 )
 
+var (
+	queueQueued = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: "runner",
+			Name:      "queue_queued_total",
+			Help:      "Total number of actions queued",
+		})
+	actionInProgress = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: "runner",
+			Name:      "action_in_progress_total",
+			Help:      "Total number of actions in progress by type",
+		}, []string{"action_type"})
+	actionProcessed = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: "runner",
+			Name:      "action_processed_total",
+			Help:      "Total number of actions processed by type and result",
+		}, []string{"action_type", "result"})
+	actionPullReturnCode = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: "runner",
+			Name:      "action_pull_return_code_total",
+			Help:      "Total number of pull action return codes",
+		}, []string{"ret"})
+	dbErrors = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: "runner",
+			Name:      "db_errors_total",
+			Help:      "Total number of database errors by operation",
+		}, []string{"op"})
+	dbRequests = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: "runner",
+			Name:      "db_requests_total",
+			Help:      "Total number of database requests by operation",
+		}, []string{"op"})
+)
+
 func (d *ActionDaemon) Run() error {
-	nbWorkers := getOptionInt("actiond.nb_workers", DefaultNbWorkers)
-	purgeTimeout := getOptionDuration("actiond.purge_timeout", DefaultPurgeTimeout)
+	nbWorkers := getOptionInt("runner.nb_workers", DefaultNbWorkers)
+	purgeTimeout := getOptionDuration("runner.purge_timeout", DefaultPurgeTimeout)
 	odb := cdb.New(d.DB)
 	dispatchC := make(chan cdb.ActionQueueEntry)
 	cmdC := make(chan any)
@@ -107,26 +158,33 @@ func (d *ActionDaemon) Run() error {
 	pollWaitingActions := func() {
 		// define SQL @now as the time we start processing the queue
 		err := odb.ActionQSetNow(d.Ctx)
+		dbRequests.WithLabelValues("set_now").Inc()
 		if err != nil {
 			nowErrorLogger.warnf("set now: %s", err)
+			dbErrors.WithLabelValues("set_now").Inc()
 			return
 		}
 		nowErrorLogger.reset()
 
 		// mark all waiting actions as dequeued at @now
 		err = odb.ActionQSetDequeuedToNow(d.Ctx)
+		dbRequests.WithLabelValues("set_dequeued_to_now").Inc()
 		if err != nil {
 			setDequeuedToNowErrorLogger.warnf("set dequeued to now: %s", err)
+			dbErrors.WithLabelValues("set_dequeued_to_now").Inc()
 			return
 		}
 		setDequeuedToNowErrorLogger.reset()
 
 		// fetch all actions marked as dequeued at @now
 		lines, err := odb.ActionQGetQueued(d.Ctx)
+		dbRequests.WithLabelValues("get_queued").Inc()
 		if err != nil {
 			getQueuedErrorLogger.warnf("get queued: %s", err)
+			dbErrors.WithLabelValues("get_queued").Inc()
 			return
 		}
+		queueQueued.Add(float64(len(lines)))
 		getQueuedErrorLogger.reset()
 
 		// dispatch each action to a worker
@@ -143,24 +201,34 @@ func (d *ActionDaemon) Run() error {
 			case cmdSetUnreachable:
 				c := cmd.(cmdSetUnreachable)
 				d.unreachableIds = append(d.unreachableIds, c.id)
+				actionProcessed.WithLabelValues(c.actionType, "unreachable").Inc()
 			case cmdSetNotified:
 				c := cmd.(cmdSetNotified)
 				d.nIds = append(d.nIds, c.id)
+				actionProcessed.WithLabelValues(c.actionType, "notified").Inc()
 			case cmdSetInvalid:
 				c := cmd.(cmdSetInvalid)
 				d.invalidIds = append(d.invalidIds, c.id)
+				actionProcessed.WithLabelValues(c.actionType, "invalid").Inc()
 			case cmdSetRunning:
 				c := cmd.(cmdSetRunning)
 				d.runningIds = append(d.runningIds, c.id)
 			case cmdSetDone:
 				c := cmd.(cmdSetDone)
 				d.doneEntries = append(d.doneEntries, c)
+				result := "success"
+				if c.ret != 0 {
+					result = "failure"
+				}
+				actionProcessed.WithLabelValues(c.actionType, result).Inc()
 			}
 		case <-updateTicker.C:
 			if len(d.unreachableIds) > 0 {
 				err := odb.ActionQSetUnreachable(d.Ctx, d.unreachableIds)
+				dbRequests.WithLabelValues("set_unreachable").Inc()
 				if err != nil {
 					slog.Warn(fmt.Sprintf("set unreachable: %s", err))
+					dbErrors.WithLabelValues("set_unreachable").Inc()
 				} else {
 					slog.Debug(fmt.Sprintf("set unreachable: %v", d.unreachableIds))
 					d.unreachableIds = []int{}
@@ -168,8 +236,10 @@ func (d *ActionDaemon) Run() error {
 			}
 			if len(d.invalidIds) > 0 {
 				err := odb.ActionQSetInvalid(d.Ctx, d.invalidIds)
+				dbRequests.WithLabelValues("set_invalid").Inc()
 				if err != nil {
 					slog.Warn(fmt.Sprintf("set invalid: %s", err))
+					dbErrors.WithLabelValues("set_invalid").Inc()
 				} else {
 					slog.Debug(fmt.Sprintf("set invalid: %v", d.invalidIds))
 					d.invalidIds = []int{}
@@ -177,8 +247,10 @@ func (d *ActionDaemon) Run() error {
 			}
 			if len(d.nIds) > 0 {
 				err := odb.ActionQSetNotified(d.Ctx, d.nIds)
+				dbRequests.WithLabelValues("set_notified").Inc()
 				if err != nil {
 					slog.Warn(fmt.Sprintf("set notified: %s", err))
+					dbErrors.WithLabelValues("set_notified").Inc()
 				} else {
 					slog.Debug(fmt.Sprintf("set notified: %v", d.nIds))
 					d.nIds = []int{}
@@ -186,17 +258,21 @@ func (d *ActionDaemon) Run() error {
 			}
 			if len(d.ids) > 0 {
 				err := odb.ActionQSetQueued(d.Ctx, d.ids)
+				dbRequests.WithLabelValues("set_queued").Inc()
 				if err != nil {
 					slog.Warn(fmt.Sprintf("set queued: %s", err))
+					dbErrors.WithLabelValues("set_queued").Inc()
 				} else {
-					slog.Info(fmt.Sprintf("set queued: %v", d.ids))
+					slog.Debug(fmt.Sprintf("set queued: %v", d.ids))
 					d.ids = []int{}
 				}
 			}
 			if len(d.runningIds) > 0 {
 				err := odb.ActionQSetRunning(d.Ctx, d.runningIds)
+				dbRequests.WithLabelValues("set_running").Inc()
 				if err != nil {
 					slog.Warn(fmt.Sprintf("set running: %s", err))
+					dbErrors.WithLabelValues("set_running").Inc()
 				} else {
 					slog.Debug(fmt.Sprintf("set running: %v", d.runningIds))
 					d.runningIds = []int{}
@@ -205,8 +281,10 @@ func (d *ActionDaemon) Run() error {
 			if len(d.doneEntries) > 0 {
 				for _, entry := range d.doneEntries {
 					err := odb.ActionQSetDone(d.Ctx, entry.id, entry.ret, entry.stdout, entry.stderr)
+					dbRequests.WithLabelValues("set_done").Inc()
 					if err != nil {
 						slog.Warn(fmt.Sprintf("set done: %s", err))
+						dbErrors.WithLabelValues("set_done").Inc()
 					} else {
 						slog.Debug(fmt.Sprintf("set done: id %d ret %d stdout %d stderr %d", entry.id, entry.ret, len(entry.stdout), len(entry.stderr)))
 					}
@@ -215,8 +293,10 @@ func (d *ActionDaemon) Run() error {
 			}
 			if len(d.ids) > 0 || len(d.nIds) > 0 || len(d.invalidIds) > 0 || len(d.unreachableIds) > 0 || len(d.runningIds) > 0 || len(d.doneEntries) > 0 {
 				data, err := odb.ActionQEventData(d.Ctx)
+				dbRequests.WithLabelValues("action_queue_event_data").Inc()
 				if err != nil {
 					slog.Warn(fmt.Sprintf("get action queue event data: %s", err))
+					dbErrors.WithLabelValues("action_queue_event_data").Inc()
 				}
 				if err := odb.Session.NotifyTableChangeWithData(d.Ctx, "action_queue", data); err != nil {
 					slog.Warn(fmt.Sprintf("notify changes: %s", err))
@@ -225,9 +305,11 @@ func (d *ActionDaemon) Run() error {
 		case <-purgeTicker.C:
 			if err := odb.ActionQPurge(d.Ctx); err != nil {
 				slog.Warn(fmt.Sprintf("purge action queue: %s", err))
+				dbErrors.WithLabelValues("purge").Inc()
 			} else {
 				slog.Debug("purge action queue: done")
 			}
+			dbRequests.WithLabelValues("purge").Inc()
 		case <-d.Ctx.Done():
 			return nil
 		}
@@ -250,7 +332,8 @@ func (w *Worker) Run() {
 func (w *Worker) work(e cdb.ActionQueueEntry) error {
 	if err := w.validateCommand(e.Command); err != nil {
 		w.cmdC <- cmdSetInvalid{
-			id: e.ID,
+			id:         e.ID,
+			actionType: e.ActionType,
 		}
 		return fmt.Errorf("invalid command: %s", err)
 	}
@@ -283,7 +366,9 @@ func notifyNode(nodename string, port int) error {
 
 func (w *Worker) workPull(e cdb.ActionQueueEntry) {
 
-	notifTimeout := getOptionDuration("actiond.notification_timeout", DefaultNotificationTimeout)
+	notifTimeout := getOptionDuration("runner.notification_timeout", DefaultNotificationTimeout)
+
+	actionInProgress.WithLabelValues("pull").Inc()
 
 	ctx, cancel := context.WithTimeout(w.ctx, notifTimeout)
 	defer cancel()
@@ -295,7 +380,8 @@ func (w *Worker) workPull(e cdb.ActionQueueEntry) {
 		select {
 		case <-ctx.Done():
 			w.cmdC <- cmdSetUnreachable{
-				id: e.ID,
+				id:         e.ID,
+				actionType: e.ActionType,
 			}
 			return
 		case <-ticker.C:
@@ -306,7 +392,8 @@ func (w *Worker) workPull(e cdb.ActionQueueEntry) {
 				continue
 			}
 			w.cmdC <- cmdSetNotified{
-				id: e.ID,
+				id:         e.ID,
+				actionType: e.ActionType,
 			}
 			return
 		}
@@ -314,6 +401,7 @@ func (w *Worker) workPull(e cdb.ActionQueueEntry) {
 }
 
 func (w *Worker) workPush(e cdb.ActionQueueEntry) {
+	actionInProgress.WithLabelValues("push").Inc()
 	w.cmdC <- cmdSetRunning{
 		id: e.ID,
 	}
@@ -328,11 +416,14 @@ func (w *Worker) workPush(e cdb.ActionQueueEntry) {
 	)
 
 	w.cmdC <- cmdSetDone{
-		id:     e.ID,
-		ret:    returnCode,
-		stdout: strings.TrimSpace(stdout),
-		stderr: strings.TrimSpace(stderr),
+		id:         e.ID,
+		ret:        returnCode,
+		stdout:     strings.TrimSpace(stdout),
+		stderr:     strings.TrimSpace(stderr),
+		actionType: e.ActionType,
 	}
+
+	actionPullReturnCode.WithLabelValues(fmt.Sprintf("%d", returnCode)).Inc()
 }
 
 func (w *Worker) validateCommand(cmd string) error {
@@ -355,7 +446,7 @@ func (w *Worker) validateCommand(cmd string) error {
 }
 
 func executeCommand(ctx context.Context, cmd string) (string, string, int) {
-	cmdTimeout := getOptionDuration("actiond.command_timeout", DefaultCommandTimeout)
+	cmdTimeout := getOptionDuration("runner.command_timeout", DefaultCommandTimeout)
 
 	ctx, cancel := context.WithTimeout(ctx, cmdTimeout)
 	defer cancel()

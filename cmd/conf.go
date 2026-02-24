@@ -102,6 +102,10 @@ func setDefaultRunnerConfig() {
 	viper.SetDefault(s+".pprof.ux.socket", "/var/run/oc3_runner_pprof.sock")
 	viper.SetDefault(s+".metrics.enable", false)
 	viper.SetDefault(s+".log.request.level", "none")
+	viper.SetDefault(s+".nb_workers", 0)
+	viper.SetDefault(s+".purge_timeout", 0)
+	viper.SetDefault(s+".notification_timeout", 0)
+	viper.SetDefault(s+".command_timeout", 0)
 }
 
 func setDefaultDBConfig() {
