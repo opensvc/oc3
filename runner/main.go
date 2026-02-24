@@ -162,7 +162,7 @@ func (d *ActionDaemon) Run() error {
 				if err != nil {
 					slog.Warn(fmt.Sprintf("set unreachable: %s", err))
 				} else {
-					slog.Info(fmt.Sprintf("set unreachable: %v", d.unreachableIds))
+					slog.Debug(fmt.Sprintf("set unreachable: %v", d.unreachableIds))
 					d.unreachableIds = []int{}
 				}
 			}
@@ -171,7 +171,7 @@ func (d *ActionDaemon) Run() error {
 				if err != nil {
 					slog.Warn(fmt.Sprintf("set invalid: %s", err))
 				} else {
-					slog.Info(fmt.Sprintf("set invalid: %v", d.invalidIds))
+					slog.Debug(fmt.Sprintf("set invalid: %v", d.invalidIds))
 					d.invalidIds = []int{}
 				}
 			}
@@ -180,7 +180,7 @@ func (d *ActionDaemon) Run() error {
 				if err != nil {
 					slog.Warn(fmt.Sprintf("set notified: %s", err))
 				} else {
-					slog.Info(fmt.Sprintf("set notified: %v", d.nIds))
+					slog.Debug(fmt.Sprintf("set notified: %v", d.nIds))
 					d.nIds = []int{}
 				}
 			}
@@ -198,7 +198,7 @@ func (d *ActionDaemon) Run() error {
 				if err != nil {
 					slog.Warn(fmt.Sprintf("set running: %s", err))
 				} else {
-					slog.Info(fmt.Sprintf("set running: %v", d.runningIds))
+					slog.Debug(fmt.Sprintf("set running: %v", d.runningIds))
 					d.runningIds = []int{}
 				}
 			}
@@ -208,7 +208,7 @@ func (d *ActionDaemon) Run() error {
 					if err != nil {
 						slog.Warn(fmt.Sprintf("set done: %s", err))
 					} else {
-						slog.Info(fmt.Sprintf("set done: id %d ret %d stdout %d stderr %d", entry.id, entry.ret, len(entry.stdout), len(entry.stderr)))
+						slog.Debug(fmt.Sprintf("set done: id %d ret %d stdout %d stderr %d", entry.id, entry.ret, len(entry.stdout), len(entry.stderr)))
 					}
 				}
 				d.doneEntries = []cmdSetDone{}
@@ -226,7 +226,7 @@ func (d *ActionDaemon) Run() error {
 			if err := odb.ActionQPurge(d.Ctx); err != nil {
 				slog.Warn(fmt.Sprintf("purge action queue: %s", err))
 			} else {
-				slog.Info("purge action queue: done")
+				slog.Debug("purge action queue: done")
 			}
 		case <-d.Ctx.Done():
 			return nil

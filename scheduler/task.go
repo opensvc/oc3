@@ -236,7 +236,7 @@ func (t *Task) Start(ctx context.Context) {
 }
 
 func (t *Task) Exec(ctx context.Context) (err error) {
-	t.Infof("run")
+	t.Debugf("run")
 	status := taskExecStatusOk
 	begin := time.Now()
 

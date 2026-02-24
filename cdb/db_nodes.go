@@ -309,7 +309,7 @@ func (oDb *DB) PurgeNodeHBAsOutdated(ctx context.Context) error {
 	if count, err := oDb.execCountContext(ctx, request); err != nil {
 		return err
 	} else if count > 0 {
-		slog.Info(fmt.Sprintf("purged %d entries from table node_hba", count))
+		slog.Debug(fmt.Sprintf("purged %d entries from table node_hba", count))
 		oDb.SetChange("node_hba")
 	}
 	return nil

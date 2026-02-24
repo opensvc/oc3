@@ -194,6 +194,7 @@ func distributeHandler(w http.ResponseWriter, r *http.Request) {
 	userAgent := r.Header.Get("User-Agent")
 
 	slog.Info(fmt.Sprintf("CONNECT %s to %s", userAgent, group))
+	slog.Debug(fmt.Sprintf("CONNECT %s to %s", userAgent, group))
 
 	defer func() {
 		mu.Lock()
@@ -210,6 +211,7 @@ func distributeHandler(w http.ResponseWriter, r *http.Request) {
 
 		conn.Close()
 		slog.Info(fmt.Sprintf("DISCONNECT %s from %s", group, userAgent))
+		slog.Debug(fmt.Sprintf("DISCONNECT %s from %s", group, userAgent))
 		for _, existingClient := range listeners[group] {
 			if err := existingClient.conn.WriteMessage(websocket.TextMessage, []byte("-"+name)); err != nil {
 				slog.Warn(fmt.Sprintf("Error notifying client: %v", err))
@@ -237,7 +239,7 @@ func (c *CmdComet) Run() error {
 	addr := fmt.Sprintf("%s:%s", c.Address, c.Port)
 
 	if c.KeyFile != "" && c.CertFile != "" {
-		slog.Info(fmt.Sprintf("Starting HTTPS server on %s", addr))
+		slog.Debug(fmt.Sprintf("Starting HTTPS server on %s", addr))
 
 		cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
 		if err != nil {
@@ -257,7 +259,7 @@ func (c *CmdComet) Run() error {
 			return err
 		}
 	} else {
-		slog.Info(fmt.Sprintf("Starting HTTP server on %s", addr))
+		slog.Debug(fmt.Sprintf("Starting HTTP server on %s", addr))
 		if err := http.ListenAndServe(addr, nil); err != nil {
 			slog.Error(fmt.Sprintf("Error starting HTTP server: %s", err))
 			return err
