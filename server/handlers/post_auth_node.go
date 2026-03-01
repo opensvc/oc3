@@ -19,17 +19,8 @@ import (
 func (a *Api) PostAuthNode(c echo.Context) error {
 	log := echolog.GetLogHandler(c, "PostAuthNode")
 	odb := a.cdbSession()
-	ctx := c.Request().Context()
-
-	ctx, cancel := context.WithTimeout(ctx, a.SyncTimeout)
+	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
-
-	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, nil)
-	if err != nil {
-		log.Error("can't begin transaction", logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "database error")
-	}
-	defer endTx()
 
 	var body server.PostAuthNodeJSONBody
 
@@ -126,7 +117,6 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 		// Already registered: resend uuid
 		// TODO: add metrics
 		log.Debug("node is already registered", logkey.NodeID, nodeID)
-		markSuccess()
 		return c.JSON(http.StatusOK, map[string]any{
 			"uuid": authNodes[0].UUID,
 			"info": "node is already registered",
@@ -140,7 +130,6 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 		}
 		// TODO: add metrics
 		log.Debug("node is registered", logkey.NodeID, nodeID)
-		markSuccess()
 		return c.JSON(http.StatusOK, map[string]any{
 			"uuid": u,
 			"info": "node is registered",
@@ -149,7 +138,6 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 		// Multiple registrations: bug?
 		// TODO: add metrics
 		log.Warn("node double registration attempt", logkey.NodeID, nodeID, "nodename", nodename)
-		markSuccess()
 		return JSONProblem(c, http.StatusConflict, "node double registration attempt")
 	}
 }

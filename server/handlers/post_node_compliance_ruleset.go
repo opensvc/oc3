@@ -16,19 +16,8 @@ func (a *Api) PostNodeComplianceRuleset(c echo.Context, nodeId string, rsetId st
 	log := echolog.GetLogHandler(c, "PostNodeComplianceRuleset")
 	odb := a.cdbSession()
 	ctx := c.Request().Context()
-	odb.CreateTx(ctx, nil)
 	ctx, cancel := context.WithTimeout(ctx, a.SyncTimeout)
 	defer cancel()
-
-	var success bool
-
-	defer func() {
-		if success {
-			odb.Commit()
-		} else {
-			odb.Rollback()
-		}
-	}()
 
 	responsible, err := odb.NodeResponsible(ctx, nodeId, UserGroupsFromContext(c), IsManager(c))
 	if err != nil {
@@ -82,8 +71,6 @@ func (a *Api) PostNodeComplianceRuleset(c echo.Context, nodeId string, rsetId st
 		log.Error("cannot attach ruleset to node", logkey.NodeID, node.NodeID, logkey.RSetID, rsetId, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot attach ruleset %s to node %s", rsetId, node.NodeID)
 	}
-
-	success = true
 
 	response := map[string]string{
 		"info": fmt.Sprintf("ruleset %s(%s) attached", rset, rsetId),

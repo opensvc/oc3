@@ -15,20 +15,8 @@ import (
 func (a *Api) PostNodeComplianceModuleset(c echo.Context, nodeId string, msetId string) error {
 	log := echolog.GetLogHandler(c, "PostNodeComplianceModuleset")
 	odb := a.cdbSession()
-	ctx := c.Request().Context()
-	odb.CreateTx(ctx, nil)
-	ctx, cancel := context.WithTimeout(ctx, a.SyncTimeout)
+	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
-
-	var success bool
-
-	defer func() {
-		if success {
-			odb.Commit()
-		} else {
-			odb.Rollback()
-		}
-	}()
 
 	log.Info("called", logkey.NodeID, nodeId, logkey.MSetID, msetId)
 
@@ -76,8 +64,6 @@ func (a *Api) PostNodeComplianceModuleset(c echo.Context, nodeId string, msetId 
 		log.Error("cannot attach moduleset to node", logkey.NodeID, nodeId, logkey.MSetID, msetId, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot attach moduleset %s to node %s", msetId, nodeId)
 	}
-
-	success = true
 
 	response := map[string]string{
 		"info": fmt.Sprintf("moduleset %s attached to node %s", msetId, nodeId),
