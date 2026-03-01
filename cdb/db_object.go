@@ -311,7 +311,7 @@ func (oDb *DB) ObjectUpdateStatus(ctx context.Context, svcID string, o *DBObjSta
 		" , `svc_provisioned` = ?" +
 		" , `svc_status_updated` = NOW()" +
 		" WHERE `svc_id`= ? "
-	if _, err := oDb.DB.ExecContext(ctx, query, o.AvailStatus, o.OverallStatus, o.Placement, o.Frozen, o.Provisioned, svcID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, o.AvailStatus, o.OverallStatus, o.Placement, o.Frozen, o.Provisioned, svcID); err != nil {
 		return fmt.Errorf("can't update service status %s: %w", svcID, err)
 	}
 	oDb.SetChange("services")
@@ -364,7 +364,7 @@ func (oDb *DB) ObjectUpdateLog(ctx context.Context, svcID string, avail string) 
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.DB.ExecContext(ctx, qSetLogLast, svcID, avail, avail)
+		_, err := oDb.ExecContext(ctx, qSetLogLast, svcID, avail, avail)
 		if err != nil {
 			return fmt.Errorf("objectUpdateLog can't update services_log_last %s: %w", svcID, err)
 		}
@@ -382,13 +382,13 @@ func (oDb *DB) ObjectUpdateLog(ctx context.Context, svcID string, avail string) 
 		defer oDb.SetChange("services_log")
 		if previousAvail == avail {
 			// no change, extend last interval
-			if _, err := oDb.DB.ExecContext(ctx, qExtendIntervalOfCurrentAvail, svcID); err != nil {
+			if _, err := oDb.ExecContext(ctx, qExtendIntervalOfCurrentAvail, svcID); err != nil {
 				return fmt.Errorf("objectUpdateLog can't set services_log_last.svc_end %s: %w", svcID, err)
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of previous avail value before change
-			if _, err := oDb.DB.ExecContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, svcID, previousBegin, previousAvail); err != nil {
+			if _, err := oDb.ExecContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, svcID, previousBegin, previousAvail); err != nil {
 				return fmt.Errorf("objectUpdateLog can't save services_log change %s: %w", svcID, err)
 			}
 			// reset begin and end interval for new avail
@@ -410,7 +410,7 @@ func (oDb *DB) insertOrUpdateObjectForNodeAndCandidateApp(ctx context.Context, o
 	if err != nil {
 		return fmt.Errorf("get application from candidate %s with node_id %s: %w", candidateApp, node.NodeID, err)
 	}
-	_, err = oDb.DB.ExecContext(ctx, query, objectName, node.ClusterID, svcID, app, node.NodeEnv, objectName, node.ClusterID, app, node.NodeEnv)
+	_, err = oDb.ExecContext(ctx, query, objectName, node.ClusterID, svcID, app, node.NodeEnv, objectName, node.ClusterID, app, node.NodeEnv)
 	if err != nil {
 		return fmt.Errorf("createServiceFromObjectAndCandidateApp %s %s: %w", objectName, svcID, err)
 	}

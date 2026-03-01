@@ -68,7 +68,7 @@ func (oDb *DB) ResourceUpdateLog(ctx context.Context, resource ResourceMeta, ava
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.DB.ExecContext(ctx, qSetLogLast, resource.OID, resource.NID, resource.RID, avail, avail)
+		_, err := oDb.ExecContext(ctx, qSetLogLast, resource.OID, resource.NID, resource.RID, avail, avail)
 		if err != nil {
 			return fmt.Errorf("objectUpdateLog can't update resmon_log_last %s: %w", resource, err)
 		}
@@ -86,13 +86,13 @@ func (oDb *DB) ResourceUpdateLog(ctx context.Context, resource ResourceMeta, ava
 		defer oDb.SetChange("resmon_log")
 		if previousAvail == avail {
 			// no change, extend last interval
-			if _, err := oDb.DB.ExecContext(ctx, qExtendIntervalOfCurrentAvail, resource.OID, resource.NID, resource.RID); err != nil {
+			if _, err := oDb.ExecContext(ctx, qExtendIntervalOfCurrentAvail, resource.OID, resource.NID, resource.RID); err != nil {
 				return fmt.Errorf("objectUpdateLog can't set resmon_log_last.res_end %s: %w", resource, err)
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of previous avail value before change
-			if _, err := oDb.DB.ExecContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, resource.OID, resource.NID, resource.RID, previousBegin, previousAvail); err != nil {
+			if _, err := oDb.ExecContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, resource.OID, resource.NID, resource.RID, previousBegin, previousAvail); err != nil {
 				return fmt.Errorf("objectUpdateLog can't save resmon_log change %s: %w", resource, err)
 			}
 			// reset begin and end interval for new avail

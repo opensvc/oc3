@@ -81,7 +81,7 @@ func (oDb *DB) HBUpdate(ctx context.Context, hb DBHeartbeat) error {
 			"ON DUPLICATE KEY UPDATE" +
 			" `cluster_id` = VALUES(`cluster_id`),  `driver` = VALUES(`driver`), `desc` = VALUES(`desc`), `state` = VALUES(`state`), `beating`= VALUES(`beating`),  `last_beating`= VALUES(`last_beating`), `updated`= VALUES(`updated`)"
 	)
-	_, err := oDb.DB.ExecContext(ctx, qUpdate, hb.ClusterID, hb.NodeID, hb.PeerNodeID, hb.Driver, hb.Name, hb.Desc, hb.State, hb.Beating, hb.LastBeating)
+	_, err := oDb.ExecContext(ctx, qUpdate, hb.ClusterID, hb.NodeID, hb.PeerNodeID, hb.Driver, hb.Name, hb.Desc, hb.State, hb.Beating, hb.LastBeating)
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func (oDb *DB) HBLogUpdate(ctx context.Context, hb DBHeartbeat) error {
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.DB.ExecContext(ctx, querySetLogLast, hb.ClusterID, hb.NodeID, hb.PeerNodeID, hb.Name, hb.State, hb.Beating)
+		_, err := oDb.ExecContext(ctx, querySetLogLast, hb.ClusterID, hb.NodeID, hb.PeerNodeID, hb.Name, hb.State, hb.Beating)
 		if err != nil {
 			return fmt.Errorf("update hbmon_log_last: %w", err)
 		}
@@ -183,13 +183,13 @@ func (oDb *DB) HBLogUpdate(ctx context.Context, hb DBHeartbeat) error {
 		defer oDb.SetChange("hbmon_log")
 		if hb.State == prev.State && hb.Beating == prev.Beating {
 			// no change, extend last interval
-			if _, err := oDb.DB.ExecContext(ctx, queryExtendIntervalOfCurrent, hb.NodeID, hb.PeerNodeID, hb.Name); err != nil {
+			if _, err := oDb.ExecContext(ctx, queryExtendIntervalOfCurrent, hb.NodeID, hb.PeerNodeID, hb.Name); err != nil {
 				return fmt.Errorf("extend hbmon_log_last: %w", err)
 			}
 			return nil
 		} else {
 			// the state or beating value will change, save interval of prev, log value before change
-			_, err := oDb.DB.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, hb.ClusterID, hb.NodeID,
+			_, err := oDb.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, hb.ClusterID, hb.NodeID,
 				hb.PeerNodeID, hb.Name, prev.State, prev.Beating, previousBegin)
 			if err != nil {
 				return fmt.Errorf("save hbmon_log transition %s -> %s name: %s state %s beating %d since %s: %w",

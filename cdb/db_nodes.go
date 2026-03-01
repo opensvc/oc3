@@ -268,7 +268,7 @@ func (oDb *DB) NodeContainerUpdateFromParentNode(ctx context.Context, cName, cAp
 
 func (oDb *DB) NodeUpdateFrozen(ctx context.Context, nodeID, frozen string) error {
 	const query = `UPDATE nodes SET node_frozen = ? WHERE node_id = ?`
-	if _, err := oDb.DB.ExecContext(ctx, query, frozen, nodeID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, frozen, nodeID); err != nil {
 		return fmt.Errorf("nodeUpdateFrozen: %w", err)
 	}
 	oDb.SetChange("nodes")
@@ -587,7 +587,7 @@ func (oDb *DB) NodeByNodenameAndApp(ctx context.Context, nodename, app string) (
 func (oDb *DB) InsertNode(ctx context.Context, nodename, teamResponsible, app, nodeID string) error {
 	defer logDuration("InsertNode", time.Now())
 	const query = `INSERT INTO nodes (nodename, team_responsible, app, node_id) VALUES (?, ?, ?, ?)`
-	if _, err := oDb.DB.ExecContext(ctx, query, nodename, teamResponsible, app, nodeID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, nodename, teamResponsible, app, nodeID); err != nil {
 		return fmt.Errorf("InsertNode: %w", err)
 	}
 	oDb.SetChange("nodes")

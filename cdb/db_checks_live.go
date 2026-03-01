@@ -11,7 +11,7 @@ import (
 func (oDb *DB) PurgeChecksLive(ctx context.Context, nodeID string) error {
 	defer logDuration("PurgeChecksLive", time.Now())
 	query := `DELETE FROM checks_live WHERE node_id = ? AND chk_type NOT IN ("netdev_err", "save") AND chk_updated < DATE_SUB(NOW(), INTERVAL 20 SECOND)`
-	if _, err := oDb.DB.ExecContext(ctx, query, nodeID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, nodeID); err != nil {
 		return fmt.Errorf("PurgeChecksLive: %w", err)
 	}
 	return nil
@@ -35,7 +35,7 @@ func (oDb *DB) InsertChecksLive(ctx context.Context, vars []string, vals [][]any
 
 	query := fmt.Sprintf("INSERT INTO checks_live (%s) VALUES %s", strings.Join(vars, ","), strings.Join(placeHolders, ","))
 
-	if _, err := oDb.DB.ExecContext(ctx, query, values...); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, values...); err != nil {
 		return fmt.Errorf("InsertChecksLive: %w", err)
 	}
 	return nil

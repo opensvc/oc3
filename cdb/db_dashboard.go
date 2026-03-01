@@ -473,7 +473,7 @@ func (oDb *DB) DashboardUpdateInstancesNotUpdated(ctx context.Context) error {
 
 func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error {
 	request := `SET @now = NOW()`
-	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
+	if _, err := oDb.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -526,7 +526,7 @@ func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error 
 
 func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) error {
 	request := `SET @now = NOW()`
-	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
+	if _, err := oDb.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -580,7 +580,7 @@ func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) err
 
 func (oDb *DB) DashboardUpdateNodeWithoutMaintenanceEnd(ctx context.Context) error {
 	request := `SET @now = NOW()`
-	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
+	if _, err := oDb.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -651,7 +651,7 @@ func (oDb *DB) DashboardUpdateAppWithoutResponsible(ctx context.Context) error {
 		    dash_dict IS NULL
 		  )
 	`
-	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
+	if _, err := oDb.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -703,7 +703,7 @@ func (oDb *DB) DashboardUpdateAppWithoutResponsible(ctx context.Context) error {
 
 func (oDb *DB) DashboardUpdatePkgDiffForNode(ctx context.Context, nodeID string) error {
 	request := `SET @now = NOW()`
-	_, err := oDb.DB.ExecContext(ctx, request)
+	_, err := oDb.ExecContext(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -847,7 +847,7 @@ func (oDb *DB) DashboardUpdatePkgDiffForNode(ctx context.Context, nodeID string)
 				dash_env = ?
 		`
 
-		_, err = oDb.DB.ExecContext(ctx, query,
+		_, err = oDb.ExecContext(ctx, query,
 			svcID, sev, dashDictJSON, dashDictMD5, monSvctype,
 			sev, dashDictJSON, dashDictMD5, monSvctype,
 		)
@@ -903,7 +903,7 @@ func (oDb *DB) DashboardUpdatePkgDiffForNode(ctx context.Context, nodeID string)
 			AND dash_updated < @now
 		`, Placeholders(len(svcIDs)))
 
-		_, err := oDb.DB.ExecContext(ctx, query, svcIDs...)
+		_, err := oDb.ExecContext(ctx, query, svcIDs...)
 		if err != nil {
 			return fmt.Errorf("failed to delete old dashboard entries: %v", err)
 		}
@@ -926,13 +926,13 @@ func (oDb *DB) DashboardUpdateCompModDiff(ctx context.Context) error {
 }
 
 func (oDb *DB) DashboardUpdateCompModDiffForSvc(ctx context.Context, svcID string) error {
-	_, err := oDb.DB.ExecContext(ctx, "SET @now = NOW()")
+	_, err := oDb.ExecContext(ctx, "SET @now = NOW()")
 	if err != nil {
 		return fmt.Errorf("failed to set @now: %v", err)
 	}
 
 	defer func() {
-		_, err := oDb.DB.ExecContext(ctx, `
+		_, err := oDb.ExecContext(ctx, `
 			DELETE FROM dashboard
 			WHERE
 				dash_type = "compliance moduleset attachment differences in cluster" AND
@@ -1050,7 +1050,7 @@ func (oDb *DB) DashboardUpdateCompModDiffForSvc(ctx context.Context, svcID strin
 		ON DUPLICATE KEY UPDATE
 			dash_updated = @now
 	`
-	_, err = oDb.DB.ExecContext(ctx, query, svcID, sev, dashDictJSON, dashDictMD5, monSvctype.String)
+	_, err = oDb.ExecContext(ctx, query, svcID, sev, dashDictJSON, dashDictMD5, monSvctype.String)
 	if err != nil {
 		return fmt.Errorf("failed to insert/update dashboard: %v", err)
 	}
@@ -1094,13 +1094,13 @@ func (oDb *DB) DashboardUpdateCompRsetDiff(ctx context.Context) error {
 }
 
 func (oDb *DB) DashboardUpdateCompRsetDiffForSvc(ctx context.Context, svcID string) error {
-	_, err := oDb.DB.ExecContext(ctx, "SET @now = NOW()")
+	_, err := oDb.ExecContext(ctx, "SET @now = NOW()")
 	if err != nil {
 		return fmt.Errorf("failed to set @now: %v", err)
 	}
 
 	defer func() {
-		_, err := oDb.DB.ExecContext(ctx, `
+		_, err := oDb.ExecContext(ctx, `
 			DELETE FROM dashboard
 			WHERE
 				dash_type = "compliance ruleset attachment differences in cluster" AND
@@ -1220,7 +1220,7 @@ func (oDb *DB) DashboardUpdateCompRsetDiffForSvc(ctx context.Context, svcID stri
 		ON DUPLICATE KEY UPDATE
 			dash_updated = @now
 	`
-	_, err = oDb.DB.ExecContext(ctx, query, svcID, sev, dashDictJSON, dashDictMD5, monSvctype.String)
+	_, err = oDb.ExecContext(ctx, query, svcID, sev, dashDictJSON, dashDictMD5, monSvctype.String)
 	if err != nil {
 		return fmt.Errorf("failed to insert/update dashboard: %v", err)
 	}

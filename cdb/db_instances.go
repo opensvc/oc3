@@ -252,7 +252,7 @@ func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates 
 	updates = true
 
 	oDb.SetChange("svcmon")
-	if _, err = oDb.DB.ExecContext(ctx, qUpdateSvcmonLogLast, svcID, nodeID); err != nil {
+	if _, err = oDb.ExecContext(ctx, qUpdateSvcmonLogLast, svcID, nodeID); err != nil {
 		return
 	}
 	slog.Debug(fmt.Sprintf("instancePing qUpdateSvcmonLogLast %s", time.Since(begin)))
@@ -267,7 +267,7 @@ func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates 
 	begin = time.Now()
 	oDb.SetChange("resmon")
 
-	if _, err = oDb.DB.ExecContext(ctx, qUpdateResmonLogLast, svcID, nodeID); err != nil {
+	if _, err = oDb.ExecContext(ctx, qUpdateResmonLogLast, svcID, nodeID); err != nil {
 		return
 	}
 
@@ -306,7 +306,7 @@ func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updat
 	updates = true
 	oDb.SetChange("svcmon")
 
-	if _, err = oDb.DB.ExecContext(ctx, qUpdateSvcmonLogLast, nodeID); err != nil {
+	if _, err = oDb.ExecContext(ctx, qUpdateSvcmonLogLast, nodeID); err != nil {
 		return
 	}
 
@@ -317,7 +317,7 @@ func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updat
 	}
 	oDb.SetChange("resmon")
 
-	_, err = oDb.DB.ExecContext(ctx, qUpdateResmonLogLast, nodeID)
+	_, err = oDb.ExecContext(ctx, qUpdateResmonLogLast, nodeID)
 	return
 }
 
@@ -421,7 +421,7 @@ func (oDb *DB) InstanceStatusLogUpdate(ctx context.Context, status *DBInstanceSt
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.DB.ExecContext(ctx, querySetLogLast, status.SvcID, status.NodeID,
+		_, err := oDb.ExecContext(ctx, querySetLogLast, status.SvcID, status.NodeID,
 			status.MonAvailStatus, status.MonOverallStatus, status.MonSyncStatus, status.MonIpStatus, status.MonFsStatus,
 			status.MonDiskStatus, status.MonShareStatus, status.MonContainerStatus, status.MonAppStatus,
 			status.MonAvailStatus, status.MonOverallStatus, status.MonSyncStatus, status.MonIpStatus, status.MonFsStatus,
@@ -453,13 +453,13 @@ func (oDb *DB) InstanceStatusLogUpdate(ctx context.Context, status *DBInstanceSt
 			status.MonContainerStatus == prev.MonContainerStatus &&
 			status.MonAppStatus == prev.MonAppStatus {
 			// no change, extend last interval
-			if _, err := oDb.DB.ExecContext(ctx, queryExtendIntervalOfCurrent, status.SvcID, status.NodeID); err != nil {
+			if _, err := oDb.ExecContext(ctx, queryExtendIntervalOfCurrent, status.SvcID, status.NodeID); err != nil {
 				return fmt.Errorf("extend svcmon_log_last: %w", err)
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of prev status, log value before change
-			_, err := oDb.DB.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, status.SvcID, status.NodeID,
+			_, err := oDb.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, status.SvcID, status.NodeID,
 				prev.MonAvailStatus, prev.MonOverallStatus, prev.MonSyncStatus, prev.MonIpStatus, prev.MonFsStatus,
 				prev.MonDiskStatus, prev.MonShareStatus, prev.MonContainerStatus, prev.MonAppStatus,
 				previousBegin)
@@ -489,7 +489,7 @@ func (oDb *DB) InstanceStatusUpdate(ctx context.Context, s *DBInstanceStatus) er
 			" `mon_frozen` = ?, `mon_frozen_at` = ?, `mon_vmtype` = ?, `mon_updated` = NOW()"
 	)
 	// TODO check vs v2
-	_, err := oDb.DB.ExecContext(ctx, qUpdate, s.SvcID, s.NodeID, s.MonVmName,
+	_, err := oDb.ExecContext(ctx, qUpdate, s.SvcID, s.NodeID, s.MonVmName,
 		s.MonSmonStatus, s.MonSmonGlobalExpect, s.MonAvailStatus,
 		s.MonOverallStatus, s.MonIpStatus, s.MonDiskStatus, s.MonFsStatus,
 		s.MonShareStatus, s.MonContainerStatus, s.MonAppStatus, s.MonSyncStatus,
@@ -510,7 +510,7 @@ func (oDb *DB) InstanceResourcesDelete(ctx context.Context, svcID, nodeID string
 	const (
 		queryPurge = "DELETE FROM `resmon` WHERE `svc_id` = ? AND `node_id` = ?"
 	)
-	if _, err := oDb.DB.ExecContext(ctx, queryPurge, svcID, nodeID); err != nil {
+	if _, err := oDb.ExecContext(ctx, queryPurge, svcID, nodeID); err != nil {
 		return fmt.Errorf("InstanceResourcesDelete: %w", err)
 	}
 	return nil
@@ -655,7 +655,7 @@ func (oDb *DB) InstanceResourceLogUpdate(ctx context.Context, res *DBInstanceRes
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.DB.ExecContext(ctx, querySetLogLast,
+		_, err := oDb.ExecContext(ctx, querySetLogLast,
 			res.SvcID, res.NodeID, res.RID,
 			res.Status, res.Log,
 			res.Status, res.Log)
@@ -676,13 +676,13 @@ func (oDb *DB) InstanceResourceLogUpdate(ctx context.Context, res *DBInstanceRes
 		defer oDb.SetChange("resmon_log")
 		if previousStatus == res.Status && previousLog == res.Log {
 			// no change, extend last interval
-			if _, err := oDb.DB.ExecContext(ctx, queryExtendIntervalOfCurrent, res.SvcID, res.NodeID, res.RID); err != nil {
+			if _, err := oDb.ExecContext(ctx, queryExtendIntervalOfCurrent, res.SvcID, res.NodeID, res.RID); err != nil {
 				return fmt.Errorf("extend services_log_last: %w", err)
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of previous status, log value before change
-			if _, err := oDb.DB.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition,
+			if _, err := oDb.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition,
 				res.SvcID, res.NodeID, res.RID, previousBegin, previousStatus, previousLog); err != nil {
 				return fmt.Errorf("add services_log change: %w", err)
 			}
@@ -708,7 +708,7 @@ func (oDb *DB) InstanceResourceUpdate(ctx context.Context, res *DBInstanceResour
 			" `res_optional` = ?, `res_disable` = ?, `res_monitor` = ?," +
 			" `updated` = NOW()"
 	)
-	_, err := oDb.DB.ExecContext(ctx, query,
+	_, err := oDb.ExecContext(ctx, query,
 		res.SvcID, res.NodeID, res.VmName, res.RID,
 		res.Status, res.ResType, res.Log, res.Desc,
 		res.Optional, res.Disable, res.Monitor,

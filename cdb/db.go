@@ -216,7 +216,7 @@ func (oDb *DB) ExecContextAndCountRowsAffected(ctx context.Context, query string
 
 // execCountContext executes the oDb.DB.ExecContext query with the provided context and arguments, returning the number of affected rows and an error.
 func (oDb *DB) execCountContext(ctx context.Context, query string, args ...any) (int64, error) {
-	result, err := oDb.DB.ExecContext(ctx, query, args...)
+	result, err := oDb.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
 	}
