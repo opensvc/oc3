@@ -435,16 +435,14 @@ func (d *jobFeedDaemonStatus) dbCreateServices(ctx context.Context) error {
 }
 
 func (d *jobFeedDaemonStatus) dbUpdateServices(ctx context.Context) error {
+	objectIDPingM := make(map[string]struct{})
 	for objectID, obj := range d.byObjectID {
 		objectName := obj.Svcname
 		_, isChanged := d.changes[objectName]
 		// freshly created services have availStatus "undef" and needs full update
 		// even if not present in changes
 		if !isChanged && obj.AvailStatus != "undef" {
-			slog.Debug(fmt.Sprintf("ping svc %s %s", objectName, objectID))
-			if _, err := d.oDb.ObjectPing(ctx, objectID); err != nil {
-				return fmt.Errorf("dbUpdateServices can't ping object %s %s: %w", objectName, objectID, err)
-			}
+			objectIDPingM[objectID] = struct{}{}
 		} else {
 			oStatus := d.data.objectStatus(objectName)
 			if oStatus != nil {
@@ -462,6 +460,16 @@ func (d *jobFeedDaemonStatus) dbUpdateServices(ctx context.Context) error {
 				// refresh local cache
 				d.byObjectID[objectID].DBObjStatus = *oStatus
 			}
+		}
+	}
+	if len(objectIDPingM) > 0 {
+		objectIDL := make([]string, 0, len(objectIDPingM))
+		for objectID := range objectIDPingM {
+			objectIDL = append(objectIDL, objectID)
+		}
+		slog.Debug(fmt.Sprintf("ping object ids %v", objectIDL))
+		if _, err := d.oDb.ObjectsPing(ctx, objectIDL); err != nil {
+			return fmt.Errorf("dbUpdateServices can't ping objects [%v]: %w", objectIDL, err)
 		}
 	}
 	return nil

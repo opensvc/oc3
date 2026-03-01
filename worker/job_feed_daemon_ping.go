@@ -143,13 +143,20 @@ func (d *jobFeedDaemonPing) dbPingInstances(ctx context.Context) error {
 
 // dbPingObjects call oDb.objectPing for all db fetched objects
 func (d *jobFeedDaemonPing) dbPingObjects(ctx context.Context) (err error) {
+	objectIDPingM := make(map[string]struct{})
 	for objectID, obj := range d.byObjectID {
-		objectName := obj.Svcname
 		if obj.AvailStatus != "undef" {
-			slog.Debug("dbPingObjects ObjectPing", logkey.ObjectID, objectID)
-			if _, err := d.oDb.ObjectPing(ctx, objectID); err != nil {
-				return fmt.Errorf("dbPingObjects can't ping object %s %s: %w", objectName, objectID, err)
-			}
+			objectIDPingM[objectID] = struct{}{}
+		}
+	}
+	if len(objectIDPingM) > 0 {
+		objectIDL := make([]string, 0, len(objectIDPingM))
+		for objectID := range objectIDPingM {
+			objectIDL = append(objectIDL, objectID)
+		}
+		slog.Debug(fmt.Sprintf("ping object ids %v", objectIDL))
+		if _, err := d.oDb.ObjectsPing(ctx, objectIDL); err != nil {
+			return fmt.Errorf("dbUpdateServices can't ping objects [%v]: %w", objectIDL, err)
 		}
 	}
 	return nil

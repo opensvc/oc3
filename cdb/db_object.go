@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -275,22 +276,24 @@ func (oDb *DB) ObjectCreate(ctx context.Context, objectName, clusterID, candidat
 }
 
 // ObjectPing updates services.svc_status_updated and services_log_last.svc_end
-// when services.svc_status_updated timestamp for svc_id id older than 30s.
-func (oDb *DB) ObjectPing(ctx context.Context, svcID string) (updates bool, err error) {
-	defer logDuration("ObjectPing "+svcID, time.Now())
-	const UpdateServicesSvcStatusUpdated = "" +
-		"UPDATE `services` SET `svc_status_updated` = NOW()" +
-		" WHERE `svc_id`= ? " +
-		"   AND (`svc_status_updated` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `svc_status_updated` is NULL)"
-	const updateSvcLogLastSvc = "" +
-		"UPDATE `services_log_last` SET `svc_end` = ? WHERE `svc_id`= ? "
-	var (
-		now   = time.Now()
-		count int64
-	)
-	if count, err = oDb.execCountContext(ctx, UpdateServicesSvcStatusUpdated, svcID); err != nil {
-		return
-	} else if count == 0 {
+func (oDb *DB) ObjectsPing(ctx context.Context, ids []string) (updates bool, err error) {
+	defer logDuration("ObjectsPing", time.Now())
+	const UpdateServicesSvcStatusUpdated = "UPDATE `services` SET `svc_status_updated` = NOW() WHERE `svc_id` IN (%s)"
+	const updateSvcLogLastSvc = "UPDATE `services_log_last` SET `svc_end` = NOW() WHERE `svc_id` IN (%s)"
+	var count int64
+	now := time.Now()
+
+	if len(ids) > 0 {
+		return false, nil
+	}
+	placeholders := strings.Repeat("?,", len(ids)-1) + "?"
+
+	query := fmt.Sprintf(UpdateServicesSvcStatusUpdated, placeholders)
+	args := make([]any, len(ids))
+	for i, v := range ids {
+		args[i] = v
+	}
+	if count, err = oDb.execCountContext(ctx, query, args...); err != nil {
 		return
 	}
 
