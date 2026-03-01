@@ -3,10 +3,15 @@ package cdb
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/go-sql-driver/mysql"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type (
@@ -26,6 +31,25 @@ type (
 
 		dbPool *sql.DB
 		HasTx  bool
+
+		Counters Counters
+	}
+
+	Counters struct {
+		ExecErr        prometheus.Counter
+		ExecOk         prometheus.Counter
+		BeginTxErr     prometheus.Counter
+		BeginTxOk      prometheus.Counter
+		CommitErr      prometheus.Counter
+		CommitOk       prometheus.Counter
+		RollbackErr    prometheus.Counter
+		RollbackOk     prometheus.Counter
+		ExecTxErr      prometheus.Counter
+		ExecTxOk       prometheus.Counter
+		ExecTxDeadlock prometheus.Counter
+
+		ExecTxRetry  prometheus.Counter
+		ExecTxFailed prometheus.Counter
 	}
 
 	// DBLocker combines a database connection and a sync.Locker
@@ -196,4 +220,66 @@ func (oDb *DB) execCountContext(ctx context.Context, query string, args ...any) 
 		return 0, nil
 	}
 	return result.RowsAffected()
+}
+
+func (oDb *DB) ExecContext(ctx context.Context, query string, args ...any) (res sql.Result, err error) {
+	if oDb.HasTx {
+		res, err := oDb.DB.ExecContext(ctx, query, args...)
+		if err != nil {
+			oDb.Counters.ExecErr.Inc()
+		} else {
+			oDb.Counters.ExecOk.Inc()
+		}
+		return res, err
+	}
+	const maxRetries = 3
+	var tx *sql.Tx
+
+	for i := 0; i < maxRetries; i++ {
+		tx, err = oDb.dbPool.BeginTx(ctx, nil)
+		if err != nil {
+			oDb.Counters.BeginTxErr.Inc()
+			oDb.Counters.ExecTxFailed.Inc()
+			return res, fmt.Errorf("begin transaction: %w", err)
+		}
+		oDb.Counters.BeginTxOk.Inc()
+
+		res, err = tx.ExecContext(ctx, query, args...)
+		if err == nil {
+			oDb.Counters.ExecTxOk.Inc()
+			if err := tx.Commit(); err != nil {
+				oDb.Counters.CommitErr.Inc()
+				oDb.Counters.ExecTxFailed.Inc()
+				return nil, fmt.Errorf("commit: %w", err)
+			}
+			oDb.Counters.CommitOk.Inc()
+			return res, nil
+		}
+		oDb.Counters.ExecTxErr.Inc()
+		if !isDeadlock(err) {
+			oDb.Counters.ExecTxDeadlock.Inc()
+			oDb.Counters.ExecTxFailed.Inc()
+			return nil, err
+		}
+
+		if err1 := tx.Rollback(); err != nil {
+			oDb.Counters.RollbackErr.Inc()
+			oDb.Counters.ExecTxFailed.Inc()
+			return res, fmt.Errorf("exec and rollback failed: %w", errors.Join(err, err1))
+		}
+		oDb.Counters.RollbackOk.Inc()
+		oDb.Counters.ExecTxRetry.Inc()
+		time.Sleep(time.Duration(i+1) * 100 * time.Millisecond)
+		continue
+	}
+	oDb.Counters.ExecTxFailed.Inc()
+	return res, fmt.Errorf("exec failed after %d retries: %w", maxRetries, err)
+}
+
+func isDeadlock(err error) bool {
+	var me *mysql.MySQLError
+	if errors.As(err, &me) {
+		return me.Number == 1213
+	}
+	return false
 }
