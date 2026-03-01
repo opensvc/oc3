@@ -38,6 +38,7 @@ func (t *server) apiRegister(e *echo.Echo) {
 		Redis:       t.redis,
 		UI:          viper.GetBool(t.section + ".ui.enable"),
 		SyncTimeout: viper.GetDuration(t.section + ".sync.timeout"),
+		SubSystem:   t.section,
 	}, pathApi)
 }
 

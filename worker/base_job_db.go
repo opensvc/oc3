@@ -28,20 +28,11 @@ var (
 	_ cdb.DBTxer = &JobDB{}
 )
 
-func (j *JobDB) PrepareDB(ctx context.Context, dbPool *sql.DB, ev EventPublisher, withTx bool) error {
+func (j *JobDB) ODBSetter(odb *cdb.DB) error {
 	if j == nil {
 		return fmt.Errorf("nil JobDB")
 	}
-	odb := cdb.New(dbPool)
-	if withTx {
-		if err := odb.CreateTx(ctx, nil); err != nil {
-			return err
-		}
-	}
-	odb.CreateSession(ev)
-
 	j.oDb = odb
-
 	j.db = odb.DB
 	return nil
 }

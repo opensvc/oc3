@@ -55,9 +55,10 @@ func startRunner() error {
 	}
 
 	ad := &runner.ActionDaemon{
-		DB:  t.db,
-		Ev:  newEv(),
-		Ctx: context.Background(),
+		DB:        t.db,
+		Ev:        newEv(),
+		Ctx:       context.Background(),
+		SubSystem: t.Section(),
 	}
 
 	return ad.Run()

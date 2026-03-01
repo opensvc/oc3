@@ -84,8 +84,13 @@ func InitDbLocker(db *sql.DB) *DBLocker {
 	return dbLocker
 }
 
-func New(dbPool *sql.DB) *DB {
-	return &DB{DB: dbPool, DBLck: InitDbLocker(dbPool), dbPool: dbPool}
+func New(dbPool *sql.DB, subsystem string) *DB {
+	return &DB{
+		DB:       dbPool,
+		DBLck:    InitDbLocker(dbPool),
+		dbPool:   dbPool,
+		Counters: newCounters(subsystem),
+	}
 }
 
 func (oDb *DB) CreateTx(ctx context.Context, opts *sql.TxOptions) error {
@@ -282,4 +287,36 @@ func isDeadlock(err error) bool {
 		return me.Number == 1213
 	}
 	return false
+}
+
+func newCounters(subsystem string) Counters {
+	execCountVec := promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: subsystem,
+			Name:      "db_operation_count",
+			Help:      "Counter of db processed operations",
+		},
+		[]string{"desc"},
+	)
+	return Counters{
+		ExecErr: execCountVec.With(prometheus.Labels{"desc": "ExecErr"}),
+		ExecOk:  execCountVec.With(prometheus.Labels{"desc": "ExecOk"}),
+
+		BeginTxErr: execCountVec.With(prometheus.Labels{"desc": "BeginTxErr"}),
+		BeginTxOk:  execCountVec.With(prometheus.Labels{"desc": "BeginTxOk"}),
+
+		CommitErr: execCountVec.With(prometheus.Labels{"desc": "CommitErr"}),
+		CommitOk:  execCountVec.With(prometheus.Labels{"desc": "CommitOk"}),
+
+		RollbackErr: execCountVec.With(prometheus.Labels{"desc": "RollbackErr"}),
+		RollbackOk:  execCountVec.With(prometheus.Labels{"desc": "RollbackOk"}),
+
+		ExecTxErr: execCountVec.With(prometheus.Labels{"desc": "ExecTxErr"}),
+		ExecTxOk:  execCountVec.With(prometheus.Labels{"desc": "ExecTxOk"}),
+
+		ExecTxDeadlock: execCountVec.With(prometheus.Labels{"desc": "ExecTxDeadlock"}),
+		ExecTxRetry:    execCountVec.With(prometheus.Labels{"desc": "ExecTxRetry"}),
+		ExecTxFailed:   execCountVec.With(prometheus.Labels{"desc": "ExecTxFailed"}),
+	}
 }

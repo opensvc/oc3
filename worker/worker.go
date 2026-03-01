@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/util/logkey"
 )
 
@@ -21,20 +22,24 @@ type (
 		Redis *redis.Client
 		DB    *sql.DB
 
+		ODB *cdb.DB
+
 		Queues []string
 		WithTx bool
 		Ev     EventPublisher
 
 		// Runners is the maximum number of jobs to run in parallel.
 		Runners int
+
+		SubSystem string
 	}
 
 	EventPublisher interface {
 		EventPublish(eventName string, data map[string]any) error
 	}
 
-	PrepareDBer interface {
-		PrepareDB(ctx context.Context, db *sql.DB, ev EventPublisher, withTx bool) error
+	ODBSetter interface {
+		ODBSetter(od *cdb.DB) error
 	}
 
 	RedisSetter interface {
@@ -127,7 +132,6 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	var j JobRunner
 	slog.Debug(fmt.Sprintf("BLPOP %s -> %s", unqueuedJob[0], unqueuedJob[1]))
 	ctx := context.Background()
-	withTx := w.WithTx
 	switch unqueuedJob[0] {
 	case cachekeys.FeedDaemonPingQ:
 		j = newDaemonPing(unqueuedJob[1])
@@ -188,10 +192,10 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 		a.SetRedis(w.Redis)
 	}
 
-	if a, ok := j.(PrepareDBer); ok {
-		if err := a.PrepareDB(ctx, w.DB, w.Ev, withTx); err != nil {
-			jlog.Error("🔴PrepareDB failed", logkey.Error, err)
-			return fmt.Errorf("can't prepare db for %s: %w", jName, err)
+	if a, ok := j.(ODBSetter); ok {
+		if err := a.ODBSetter(w.ODB); err != nil {
+			jlog.Error("🔴ODBSetter failed", logkey.Error, err)
+			return fmt.Errorf("can't setup cdb for %s: %w", jName, err)
 		}
 	}
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-redis/redis/v8"
+
 	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/server"
 )
@@ -22,6 +23,8 @@ type (
 		Ev interface {
 			EventPublish(eventName string, data map[string]any) error
 		}
+
+		SubSystem string
 	}
 )
 
@@ -30,7 +33,7 @@ var (
 )
 
 func (a *Api) cdbSession() *cdb.DB {
-	odb := cdb.New(a.DB)
+	odb := cdb.New(a.DB, a.SubSystem)
 	odb.CreateSession(a.Ev)
 	return odb
 }

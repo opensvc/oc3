@@ -33,6 +33,8 @@ type (
 		runningIds     []int
 
 		doneEntries []cmdSetDone
+
+		SubSystem string
 	}
 
 	Worker struct {
@@ -132,7 +134,7 @@ var (
 func (d *ActionDaemon) Run() error {
 	nbWorkers := getOptionInt("runner.nb_workers", DefaultNbWorkers)
 	purgeTimeout := getOptionDuration("runner.purge_timeout", DefaultPurgeTimeout)
-	odb := cdb.New(d.DB)
+	odb := cdb.New(d.DB, d.SubSystem)
 	dispatchC := make(chan cdb.ActionQueueEntry)
 	cmdC := make(chan any)
 	for i := 0; i < nbWorkers; i++ {
