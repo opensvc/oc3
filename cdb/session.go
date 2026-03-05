@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 )
 
 type (
@@ -12,6 +13,7 @@ type (
 		db     execContexter
 		ev     eventPublisher
 		tables map[string]struct{}
+		mu     sync.RWMutex
 	}
 
 	eventPublisher interface {
@@ -48,6 +50,8 @@ func (t *Session) NotifyTableChangeWithData(ctx context.Context, tableName strin
 }
 
 func (t *Session) SetChanges(s ...string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	for _, table := range s {
 		t.tables[table] = struct{}{}
 	}
@@ -55,6 +59,8 @@ func (t *Session) SetChanges(s ...string) {
 
 func (t *Session) listChanges() []string {
 	var r []string
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	for s := range t.tables {
 		r = append(r, s)
 	}
