@@ -267,7 +267,7 @@ func (oDb *DB) ExecContext(ctx context.Context, query string, args ...any) (res 
 		}
 		oDb.Counters.ExecTxDeadlock.Inc()
 
-		if err1 := tx.Rollback(); err != nil {
+		if err1 := tx.Rollback(); err1 != nil {
 			oDb.Counters.RollbackErr.Inc()
 			oDb.Counters.ExecTxFailed.Inc()
 			return res, fmt.Errorf("exec and rollback failed: %w", errors.Join(err, err1))
