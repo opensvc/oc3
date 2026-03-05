@@ -262,10 +262,10 @@ func (oDb *DB) ExecContext(ctx context.Context, query string, args ...any) (res 
 		}
 		oDb.Counters.ExecTxErr.Inc()
 		if !isDeadlock(err) {
-			oDb.Counters.ExecTxDeadlock.Inc()
 			oDb.Counters.ExecTxFailed.Inc()
 			return nil, err
 		}
+		oDb.Counters.ExecTxDeadlock.Inc()
 
 		if err1 := tx.Rollback(); err != nil {
 			oDb.Counters.RollbackErr.Inc()
