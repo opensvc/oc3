@@ -16,6 +16,7 @@ type (
 		DB    *sql.DB
 		Redis *redis.Client
 		UI    bool
+		ODB   *cdb.DB
 
 		// SyncTimeout is the timeout for synchronous api calls
 		SyncTimeout time.Duration
@@ -33,9 +34,10 @@ var (
 )
 
 func (a *Api) cdbSession() *cdb.DB {
-	odb := cdb.New(a.DB, a.SubSystem)
-	odb.CreateSession(a.Ev)
-	return odb
+	//odb := cdb.New(a.DB, a.SubSystem)
+	//odb.CreateSession(a.Ev)
+	//return odb
+	return a.ODB
 }
 
 func init() {
