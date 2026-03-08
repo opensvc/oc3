@@ -19,6 +19,56 @@ type (
 		Name string
 	}
 
+	/*
+		DBObject is a subset of the db table `services`
+
+		is the db table `services`
+			CREATE TABLE `services` (
+			  `svc_hostid` varchar(30) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+			  `svcname` varchar(60) DEFAULT NULL,
+			  `svc_nodes` varchar(1000) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+			  `svc_drpnode` varchar(30) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+			  `svc_drptype` varchar(7) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+			  `svc_autostart` varchar(60) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT '',
+			  `svc_env` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+			  `svc_drpnodes` varchar(1000) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+			  `svc_comment` varchar(1000) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+			  `svc_app` varchar(64) DEFAULT NULL,
+			  `svc_drnoaction` varchar(1) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT 'F',
+			  `svc_created` timestamp NOT NULL DEFAULT current_timestamp(),
+			  `svc_config_updated` datetime DEFAULT NULL,
+			  `svc_metrocluster` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+			  `id` int(11) NOT NULL AUTO_INCREMENT,
+			  `svc_wave` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT '3',
+			  `svc_config` mediumtext DEFAULT NULL,
+			  `updated` datetime NOT NULL,
+			  `svc_topology` varchar(20) DEFAULT 'failover',
+			  `svc_flex_min_nodes` int(11) DEFAULT 1,
+			  `svc_flex_max_nodes` int(11) DEFAULT 0,
+			  `svc_flex_cpu_low_threshold` int(11) DEFAULT 0,
+			  `svc_flex_cpu_high_threshold` int(11) DEFAULT 100,
+			  `svc_status` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT 'undef',
+			  `svc_availstatus` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT 'undef',
+			  `svc_ha` tinyint(1) DEFAULT 0,
+			  `svc_status_updated` datetime DEFAULT NULL,
+			  `svc_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
+			  `svc_frozen` varchar(9) DEFAULT NULL,
+			  `svc_provisioned` varchar(6) DEFAULT NULL,
+			  `svc_placement` varchar(12) DEFAULT NULL,
+			  `svc_notifications` varchar(1) DEFAULT 'T',
+			  `svc_snooze_till` datetime DEFAULT NULL,
+			  `cluster_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
+			  `svc_flex_target` int(11) DEFAULT NULL,
+			  PRIMARY KEY (`id`),
+			  UNIQUE KEY `k_svc_id` (`svc_id`),
+			  KEY `svc_hostid` (`svc_hostid`),
+			  KEY `svc_drpnode` (`svc_drpnode`),
+			  KEY `idx2` (`svc_topology`),
+			  KEY `services_svc_app` (`svc_app`),
+			  KEY `k_svc_name` (`svcname`),
+			  KEY `k_cluster_id` (`cluster_id`)
+			) ENGINE=InnoDB AUTO_INCREMENT=2491471 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
+	*/
 	DBObject struct {
 		Svcname   string
 		SvcID     string
@@ -31,6 +81,9 @@ type (
 
 		// NullConfig is true when db svc_config is NULL
 		NullConfig bool
+
+		// The `services.updated` column tracks the last time the service configuration
+		Updated time.Time
 	}
 
 	DBObjStatus struct {
@@ -41,53 +94,7 @@ type (
 		Provisioned   string
 	}
 
-	// DBObjectConfig
-	//
-	//CREATE TABLE `services` (
-	//  `svc_hostid` varchar(30) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-	//  `svcname` varchar(60) DEFAULT NULL,
-	//  `svc_nodes` varchar(1000) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-	//  `svc_drpnode` varchar(30) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-	//  `svc_drptype` varchar(7) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-	//  `svc_autostart` varchar(60) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT '',
-	//  `svc_env` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-	//  `svc_drpnodes` varchar(1000) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-	//  `svc_comment` varchar(1000) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-	//  `svc_app` varchar(64) DEFAULT NULL,
-	//  `svc_drnoaction` varchar(1) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT 'F',
-	//  `svc_created` timestamp NOT NULL DEFAULT current_timestamp(),
-	//  `svc_config_updated` datetime DEFAULT NULL,
-	//  `svc_metrocluster` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
-	//  `id` int(11) NOT NULL AUTO_INCREMENT,
-	//  `svc_wave` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL DEFAULT '3',
-	//  `svc_config` mediumtext DEFAULT NULL,
-	//  `updated` datetime NOT NULL,
-	//  `svc_topology` varchar(20) DEFAULT 'failover',
-	//  `svc_flex_min_nodes` int(11) DEFAULT 1,
-	//  `svc_flex_max_nodes` int(11) DEFAULT 0,
-	//  `svc_flex_cpu_low_threshold` int(11) DEFAULT 0,
-	//  `svc_flex_cpu_high_threshold` int(11) DEFAULT 100,
-	//  `svc_status` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT 'undef',
-	//  `svc_availstatus` varchar(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT 'undef',
-	//  `svc_ha` tinyint(1) DEFAULT 0,
-	//  `svc_status_updated` datetime DEFAULT NULL,
-	//  `svc_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
-	//  `svc_frozen` varchar(9) DEFAULT NULL,
-	//  `svc_provisioned` varchar(6) DEFAULT NULL,
-	//  `svc_placement` varchar(12) DEFAULT NULL,
-	//  `svc_notifications` varchar(1) DEFAULT 'T',
-	//  `svc_snooze_till` datetime DEFAULT NULL,
-	//  `cluster_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
-	//  `svc_flex_target` int(11) DEFAULT NULL,
-	//  PRIMARY KEY (`id`),
-	//  UNIQUE KEY `k_svc_id` (`svc_id`),
-	//  KEY `svc_hostid` (`svc_hostid`),
-	//  KEY `svc_drpnode` (`svc_drpnode`),
-	//  KEY `idx2` (`svc_topology`),
-	//  KEY `services_svc_app` (`svc_app`),
-	//  KEY `k_svc_name` (`svcname`),
-	//  KEY `k_cluster_id` (`cluster_id`)
-	//) ENGINE=InnoDB AUTO_INCREMENT=2491471 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
+	// DBObjectConfig is the configuration for a service object (a subset of the db table `services`)
 	DBObjectConfig struct {
 		SvcID     string
 		Name      string
@@ -115,11 +122,11 @@ func (t ObjectMeta) String() string {
 }
 
 func (oDb *DB) ObjectFromID(ctx context.Context, svcID string) (*DBObject, error) {
-	const query = "SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_status, svc_frozen, svc_placement, svc_provisioned FROM services WHERE svc_id = ?"
+	const query = "SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_status, svc_frozen, svc_placement, svc_provisioned, updated FROM `services` WHERE svc_id = ?"
 	var o DBObject
 	var frozen, placement, provisioned sql.NullString
 	err := oDb.DB.QueryRowContext(ctx, query, svcID).Scan(&o.Svcname, &o.SvcID, &o.ClusterID, &o.AvailStatus,
-		&o.OverallStatus, &frozen, &placement, &provisioned)
+		&o.OverallStatus, &frozen, &placement, &provisioned, o.Updated)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -169,7 +176,7 @@ func (oDb *DB) ObjectsFromClusterIDAndObjectNames(ctx context.Context, clusterID
 	defer logDuration("objectsFromClusterIDAndObjectNames", time.Now())
 	var query = `
 		SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env, svc_status,
-       		svc_placement, svc_provisioned, svc_app, svc_config IS NULL
+       		svc_placement, svc_provisioned, svc_app, svc_config IS NULL, updated
 		FROM services
 		WHERE cluster_id = ? AND svcname IN (?`
 	if len(objectNames) == 0 {
@@ -193,7 +200,7 @@ func (oDb *DB) ObjectsFromClusterIDAndObjectNames(ctx context.Context, clusterID
 		var o DBObject
 		var placement, provisioned, env, app sql.NullString
 		var hasConfig sql.NullBool
-		if err = rows.Scan(&o.Svcname, &o.SvcID, &o.ClusterID, &o.AvailStatus, &env, &o.OverallStatus, &placement, &provisioned, &app, &hasConfig); err != nil {
+		if err = rows.Scan(&o.Svcname, &o.SvcID, &o.ClusterID, &o.AvailStatus, &env, &o.OverallStatus, &placement, &provisioned, &app, &hasConfig, &o.Updated); err != nil {
 			return
 		}
 		o.Placement = placement.String
@@ -211,7 +218,7 @@ func (oDb *DB) ObjectsFromClusterID(ctx context.Context, clusterID string) (dbOb
 	defer logDuration("objectsFromClusterID", time.Now())
 	var query = `
 		SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_env, svc_status,
-       		svc_placement, svc_provisioned, svc_app, svc_config IS NULL
+       		svc_placement, svc_provisioned, svc_app, svc_config IS NULL, updated
 		FROM services
 		WHERE cluster_id = ?`
 
@@ -225,7 +232,7 @@ func (oDb *DB) ObjectsFromClusterID(ctx context.Context, clusterID string) (dbOb
 		var o DBObject
 		var placement, provisioned, env, app sql.NullString
 		var hasNullConfig sql.NullBool
-		if err = rows.Scan(&o.Svcname, &o.SvcID, &o.ClusterID, &o.AvailStatus, &env, &o.OverallStatus, &placement, &provisioned, &app, &hasNullConfig); err != nil {
+		if err = rows.Scan(&o.Svcname, &o.SvcID, &o.ClusterID, &o.AvailStatus, &env, &o.OverallStatus, &placement, &provisioned, &app, &hasNullConfig, &o.Updated); err != nil {
 			return
 		}
 		o.Placement = placement.String
