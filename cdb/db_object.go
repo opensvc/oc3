@@ -720,3 +720,17 @@ func (oDb *DB) ObjectUpdateStatusSimple(ctx context.Context, objects []ObjectMet
 		return 0, nil
 	}
 }
+
+func (o *DBObject) SameAsLog(logStatus *DBObjectStatusLog) bool {
+	if logStatus == nil {
+		return false
+	}
+	return o.AvailStatus == logStatus.AvailStatus
+}
+
+func (o *DBObject) AsLog() *DBObjectStatusLog {
+	return &DBObjectStatusLog{
+		SvcID:       o.SvcID,
+		AvailStatus: o.AvailStatus,
+	}
+}

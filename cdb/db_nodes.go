@@ -33,6 +33,14 @@ type (
 		Hv            string
 		Tz            string
 	}
+
+	ContainerNode struct {
+		*DBNode
+		MonVmName string
+		ObjApp    string
+		ObjID     string
+		ObjName   string
+	}
 )
 
 func (n *DBNode) String() string {
