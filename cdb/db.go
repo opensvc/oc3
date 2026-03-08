@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -237,8 +238,9 @@ func (oDb *DB) ExecContext(ctx context.Context, query string, args ...any) (res 
 		}
 		return res, err
 	}
-	const maxRetries = 3
+	const maxRetries = 9
 	var tx *sql.Tx
+	begin := time.Now()
 
 	for i := 0; i < maxRetries; i++ {
 		tx, err = oDb.dbPool.BeginTx(ctx, nil)
@@ -274,11 +276,11 @@ func (oDb *DB) ExecContext(ctx context.Context, query string, args ...any) (res 
 		}
 		oDb.Counters.RollbackOk.Inc()
 		oDb.Counters.ExecTxRetry.Inc()
-		time.Sleep(time.Duration(i+1) * 100 * time.Millisecond)
+		time.Sleep(Backoff(100*time.Millisecond, i, time.Second))
 		continue
 	}
 	oDb.Counters.ExecTxFailed.Inc()
-	return res, fmt.Errorf("exec failed after %d retries: %w", maxRetries, err)
+	return res, fmt.Errorf("exec failed after %d retries (duration %s): %w", maxRetries, time.Since(begin), err)
 }
 
 func isDeadlock(err error) bool {
@@ -319,4 +321,16 @@ func newCounters(subsystem string) Counters {
 		ExecTxRetry:    execCountVec.With(prometheus.Labels{"desc": "ExecTxRetry"}),
 		ExecTxFailed:   execCountVec.With(prometheus.Labels{"desc": "ExecTxFailed"}),
 	}
+}
+
+// Backoff calculates an exponential backoff duration with optional jitter,
+// capped by a maximum duration.
+func Backoff(base time.Duration, attempt int, max time.Duration) time.Duration {
+	d := base * (1 << attempt)
+	if d > max {
+		d = max
+	}
+
+	jitter := time.Duration(rand.Int63n(int64(d / 2)))
+	return d/2 + jitter
 }
