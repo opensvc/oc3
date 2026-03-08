@@ -334,16 +334,59 @@ func (d *jobFeedDaemonStatus) dataToNodeHeartbeat(_ context.Context) error {
 }
 
 func (d *jobFeedDaemonStatus) heartbeatToDB(ctx context.Context) error {
-	//now := time.Now()
-	for _, hb := range d.heartbeats {
-		slog.Debug(fmt.Sprintf("inserting: %s", hb))
-		if err := d.oDb.HBUpdate(ctx, hb.DBHeartbeat); err != nil {
-			return fmt.Errorf("heartbeatToDB hbUpdate %s: %w", hb, err)
-		}
-		if err := d.oDb.HBLogUpdate(ctx, hb.DBHeartbeat); err != nil {
-			return fmt.Errorf("heartbeatToDB hbLogUpdate %s: %w", hb, err)
+	heartbeats := make([]*cdb.DBHeartbeat, len(d.heartbeats))
+	hbLogLastM := make(map[string]*cdb.DBHeartbeatLog)
+	hbLogLastExtentL := make([]*cdb.DBHeartbeatLog, 0)
+	hbLogLastSetL := make([]*cdb.DBHeartbeatLog, 0)
+	hbLogAddL := make([]*cdb.DBHeartbeatLog, 0)
+	for i, v := range d.heartbeats {
+		heartbeats[i] = &v.DBHeartbeat
+	}
+	if hbLogLastL, err := d.oDb.HBLogLastFromClusterID(ctx, d.clusterID); err != nil {
+		return fmt.Errorf("heartbeatToDB hbLogLastByClusterID: %w", err)
+	} else {
+		for _, hbLog := range hbLogLastL {
+			hbLogLastM[hbLog.NodeID+"->"+hbLog.PeerNodeID+":"+hbLog.Name] = hbLog
 		}
 	}
+	for _, hb := range heartbeats {
+		// Prepare the hb log transition
+		id := hb.NodeID + "->" + hb.PeerNodeID + ":" + hb.Name
+		if prev, ok := hbLogLastM[id]; ok {
+			if hb.SameAsLog(prev) {
+				// extend hbmon_log_last
+				hbLogLastExtentL = append(hbLogLastExtentL, prev)
+			} else {
+				// prev hbmon log last will change its value, add prev as a new hb log transition
+				hbLogAddL = append(hbLogAddL, prev)
+				// update the last hb log value
+				hbLogLastSetL = append(hbLogLastSetL, hb.AsLog())
+			}
+		} else {
+			// create the last hb log value
+			hbLogLastSetL = append(hbLogLastSetL, hb.AsLog())
+		}
+	}
+	if err := d.oDb.HBUpdate(ctx, heartbeats...); err != nil {
+		return fmt.Errorf("heartbeatToDB hbUpdate: %w", err)
+	}
+
+	if len(hbLogAddL) > 0 {
+		if err := d.oDb.HBLogUpdate(ctx, hbLogAddL...); err != nil {
+			return fmt.Errorf("heartbeatToDB HBLogUpdate: %w", err)
+		}
+	}
+	if len(hbLogLastExtentL) > 0 {
+		if err := d.oDb.HBLogLastExtend(ctx, hbLogLastExtentL...); err != nil {
+			return fmt.Errorf("heartbeatToDB HBLogUpdate: %w", err)
+		}
+	}
+	if len(hbLogLastSetL) > 0 {
+		if err := d.oDb.HBLogLastUpdate(ctx, hbLogLastSetL...); err != nil {
+			return fmt.Errorf("heartbeatToDB HBLogLastUpdate: %w", err)
+		}
+	}
+
 	if err := d.oDb.HBDeleteOutDatedByClusterID(ctx, d.clusterID, d.now); err != nil {
 		return fmt.Errorf("heartbeatToDB purge outdated %s: %w", d.clusterID, err)
 	}
