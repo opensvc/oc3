@@ -48,12 +48,14 @@ type (
 	//        KEY `idx_node_id_updated` (`node_id`,`updated`)
 	// ) ENGINE=InnoDB AUTO_INCREMENT=15524822 DEFAULT CHARSET=utf8
 	DBInstanceResource struct {
-		SvcID    string
-		NodeID   string
-		VmName   string
-		RID      string
-		Status   string
-		Changed  time.Time
+		SvcID  string
+		NodeID string
+		VmName string
+		RID    string
+		Status string
+		// Changed is refreshed when value is changed (see  DBInstanceResource.SameAsLog()
+		Changed time.Time
+		// Updated is refreshed each time the resource is analysed
 		Updated  time.Time
 		Desc     string
 		Log      string
@@ -391,12 +393,12 @@ func (oDb *DB) ResmonLogUpdate(ctx context.Context, l ...*DBResmonLog) error {
 func (oDb *DB) ResmonUpdate(ctx context.Context, l ...*DBInstanceResource) error {
 	defer logDuration("ResmonUpdate", time.Now())
 	const (
-		insertColList         = "(`svc_id`,`node_id`,`vmname`,`rid`,`res_status`,`res_type`,`res_log`,`res_desc`,`res_optional`,`res_disable`,`res_monitor`,`updated`)"
-		valueList             = "(?,?,?,?,?,?,?,?,?,?,?,?)"
+		insertColList         = "(`svc_id`,`node_id`,`vmname`,`rid`,`res_status`,`res_type`,`res_log`,`res_desc`,`res_optional`,`res_disable`,`res_monitor`, `changed`, `updated`)"
+		valueList             = "(?,?,?,?,?,?,?,?,?,?,?,?,NOW())"
 		onDuplicateAssignment = "" +
 			"`svc_id`=VALUES(`svc_id`), `node_id`=VALUES(`node_id`), `vmname`=VALUES(`vmname`), `rid`=VALUES(`rid`), `res_status`=VALUES(`res_status`)," +
 			"`res_type`=VALUES(`res_type`), `res_log`=VALUES(`res_log`), `res_desc`=VALUES(`res_desc`), `res_optional`=VALUES(`res_optional`)," +
-			"`res_disable`=VALUES(`res_disable`), `res_monitor`=VALUES(`res_monitor`),`updated`=VALUES(`updated`)"
+			"`res_disable`=VALUES(`res_disable`), `res_monitor`=VALUES(`res_monitor`),`changed`=VALUES(`changed`),`updated`=VALUES(`updated`)"
 	)
 	if len(l) == 0 {
 		return nil
@@ -404,9 +406,9 @@ func (oDb *DB) ResmonUpdate(ctx context.Context, l ...*DBInstanceResource) error
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `resmon` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
-	args := make([]any, 0, 11*len(l))
+	args := make([]any, 0, 12*len(l))
 	for _, v := range l {
-		args = append(args, v.SvcID, v.NodeID, v.VmName, v.RID, v.Status, v.ResType, v.Log, v.Desc, v.Optional, v.Disable, v.Monitor, v.Updated)
+		args = append(args, v.SvcID, v.NodeID, v.VmName, v.RID, v.Status, v.ResType, v.Log, v.Desc, v.Optional, v.Disable, v.Monitor, v.Changed)
 	}
 
 	_, err := oDb.ExecContext(ctx, query, args...)
@@ -430,6 +432,10 @@ func (oDb *DB) ResmonPurgeExpired(ctx context.Context, maxTime time.Time, l ...s
 	return err
 }
 
+func (r *DBResmonLog) IDx() string {
+	return r.SvcID + "@" + r.NodeID + ":" + r.RID
+}
+
 func (r *DBInstanceResource) IDx() string {
 	return r.SvcID + "@" + r.NodeID + ":" + r.RID
 }
@@ -443,10 +449,11 @@ func (r *DBInstanceResource) SameAsLog(logStatus *DBResmonLog) bool {
 
 func (r *DBInstanceResource) AsLog() *DBResmonLog {
 	return &DBResmonLog{
-		SvcID:  r.SvcID,
-		NodeID: r.NodeID,
-		RID:    r.RID,
-		Status: r.Status,
-		Log:    r.Log,
+		SvcID:   r.SvcID,
+		NodeID:  r.NodeID,
+		RID:     r.RID,
+		Status:  r.Status,
+		Log:     r.Log,
+		BeginAt: r.Changed,
 	}
 }

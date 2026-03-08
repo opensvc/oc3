@@ -115,6 +115,7 @@ func newDaemonStatus(nodeID string) *jobFeedDaemonStatus {
 
 		objmonLogByObjectID:   make(map[string]*cdb.DBObjectStatusLog),
 		svcmonLogByInstanceID: make(map[string]*cdb.DBInstanceStatusLog),
+		resmonLogByResID:      make(map[string]*cdb.DBResmonLog),
 	}
 }
 
@@ -490,6 +491,13 @@ func (d *jobFeedDaemonStatus) dbFindInstances(ctx context.Context) error {
 		}
 	}
 
+	if resmonLogLastL, err := d.oDb.ResmonLogLastFromObjectIDs(ctx, objectIDs...); err != nil {
+		return fmt.Errorf("dbFindInstances ResmonLogLastFromObjectIDs: %w", err)
+	} else {
+		for _, r := range resmonLogLastL {
+			d.resmonLogByResID[r.IDx()] = r
+		}
+	}
 	return nil
 }
 
@@ -676,25 +684,27 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
 
 			}
 			if len(result.resmonL) > 0 {
-				resmonL = append(resmonL, result.resmonL...)
-
 				// Prepare resmon log transition
 				for _, r := range result.resmonL {
 					idx := r.IDx()
 					if prev, ok := d.resmonLogByResID[idx]; ok {
 						if r.SameAsLog(prev) {
 							// extend resmon_log_last
+							r.Changed = prev.BeginAt
 							resmonLogLastExtentL = append(resmonLogLastExtentL, r)
 						} else {
 							// prev resmon log last will change its value, add prev as a new resmon log transition
 							resmonLogL = append(resmonLogL, prev)
 							// update the last resmon log value
+							r.Changed = time.Now()
 							resmonLogLastL = append(resmonLogLastL, r.AsLog())
 						}
 					} else {
 						// create the last resmon log value
+						r.Changed = time.Now()
 						resmonLogLastL = append(resmonLogLastL, r.AsLog())
 					}
+					resmonL = append(resmonL, r)
 				}
 			}
 
