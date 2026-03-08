@@ -133,7 +133,7 @@ func (oDb *DB) ObjectFromID(ctx context.Context, svcID string) (*DBObject, error
 	var o DBObject
 	var frozen, placement, provisioned sql.NullString
 	err := oDb.DB.QueryRowContext(ctx, query, svcID).Scan(&o.Svcname, &o.SvcID, &o.ClusterID, &o.AvailStatus,
-		&o.OverallStatus, &frozen, &placement, &provisioned, o.Updated)
+		&o.OverallStatus, &frozen, &placement, &provisioned, &o.Updated)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
