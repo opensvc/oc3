@@ -111,6 +111,13 @@ type (
 		Config    string
 		Updated   time.Time
 	}
+
+	DBObjectStatusLog struct {
+		SvcID       string
+		AvailStatus string
+		BeginAt     time.Time
+		EndAt       time.Time
+	}
 )
 
 func (t ObjectMeta) String() string {
@@ -405,6 +412,108 @@ func (oDb *DB) ObjectUpdateLog(ctx context.Context, svcID string, avail string) 
 			return setLogLast()
 		}
 	}
+}
+
+func (oDb *DB) ObjectStatusLogLastFromObjectIDs(ctx context.Context, objectIDs ...string) ([]*DBObjectStatusLog, error) {
+	if len(objectIDs) == 0 {
+		return nil, nil
+	}
+	var (
+		querySelect = "SELECT `svc_id`, `svc_availstatus`, `svc_begin`, `svc_end` FROM `services_log_last` WHERE `svc_id` IN (%s)"
+		args        = make([]any, len(objectIDs))
+
+		l = make([]*DBObjectStatusLog, 0)
+	)
+
+	if len(objectIDs) == 0 {
+		return nil, nil
+	}
+	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
+	query := fmt.Sprintf(querySelect, placeholders)
+
+	for i, v := range objectIDs {
+		args[i] = v
+	}
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	if rows == nil {
+		return nil, fmt.Errorf("got nil rows result")
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var r DBObjectStatusLog
+		if err := rows.Scan(&r.SvcID, &r.AvailStatus, &r.BeginAt, &r.EndAt); err != nil {
+			return nil, fmt.Errorf("scan: %w", err)
+		}
+		l = append(l, &r)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows err: %w", err)
+	}
+	return l, nil
+}
+
+func (oDb *DB) ObjectStatusLogLastUpdate(ctx context.Context, l ...*DBObjectStatusLog) error {
+	defer logDuration("ObjectStatusLogLastUpdate", time.Now())
+	const (
+		insertColList         = "(`svc_id`, `svc_availstatus`, `svc_begin`, `svc_end`)"
+		valueList             = "(?, ?, NOW(), NOW())"
+		onDuplicateAssignment = "`svc_availstatus` = VALUES(`svc_availstatus`), `svc_begin` = VALUES(`svc_begin`), `svc_end` = VALUES(`svc_end`)"
+	)
+	if len(l) == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
+
+	query := fmt.Sprintf("INSERT INTO `services_log_last` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
+	args := make([]any, 0, 2*len(l))
+	for _, v := range l {
+		args = append(args, v.SvcID, v.AvailStatus)
+	}
+
+	_, err := oDb.ExecContext(ctx, query, args...)
+	return err
+}
+
+func (oDb *DB) ObjectStatusLogLastExtend(ctx context.Context, objectIDs ...string) error {
+	defer logDuration("ObjectStatusLogLastExtend", time.Now())
+	if len(objectIDs) == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
+
+	query := fmt.Sprintf("UPDATE `services_log_last` SET `svc_end` = NOW() WHERE `svc_id` in (%s)", placeholders)
+	args := make([]any, len(objectIDs))
+	for i, v := range objectIDs {
+		args[i] = v
+	}
+
+	_, err := oDb.ExecContext(ctx, query, args...)
+	return err
+}
+
+func (oDb *DB) ObjectStatusLogUpdate(ctx context.Context, l ...*DBObjectStatusLog) error {
+	defer logDuration("ObjectStatusLogUpdate", time.Now())
+	const (
+		insertColList = "(`svc_id`, `svc_availstatus`, `svc_begin`, `svc_end`)"
+		valueList     = "(?, ?, ?, NOW())"
+	)
+	if len(l) == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
+
+	query := fmt.Sprintf("INSERT INTO `services_log` %s VALUES %s", insertColList, placeholders)
+	args := make([]any, 0, 3*len(l))
+	for _, v := range l {
+		args = append(args, v.SvcID, v.AvailStatus, v.BeginAt)
+	}
+
+	_, err := oDb.ExecContext(ctx, query, args...)
+	return err
 }
 
 // insertOrUpdateObjectForNodeAndCandidateApp will insert or update object with svcID.

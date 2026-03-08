@@ -80,6 +80,8 @@ type (
 		byInstanceName map[string]*cdb.DBInstance
 		byInstanceID   map[string]*cdb.DBInstance
 
+		objmonLogByObjectID map[string]*cdb.DBObjectStatusLog
+
 		heartbeats []heartbeatData
 	}
 )
@@ -108,6 +110,8 @@ func newDaemonStatus(nodeID string) *jobFeedDaemonStatus {
 
 		byInstanceID:   make(map[string]*cdb.DBInstance),
 		byInstanceName: make(map[string]*cdb.DBInstance),
+
+		objmonLogByObjectID: make(map[string]*cdb.DBObjectStatusLog),
 	}
 }
 
@@ -125,6 +129,7 @@ func (d *jobFeedDaemonStatus) Operations() []operation {
 		{desc: "daemonStatus/heartbeatToDB", do: d.heartbeatToDB, blocking: true},
 		{desc: "daemonStatus/dbFindServices", do: d.dbFindServices, blocking: true},
 		{desc: "daemonStatus/dbCreateServices", do: d.dbCreateServices, blocking: true},
+		{desc: "daemonStatus/dbFindServicesLog", do: d.dbFindServicesLog, blocking: true},
 		{desc: "daemonStatus/dbFindInstances", do: d.dbFindInstances, blocking: true},
 		{desc: "daemonStatus/dbUpdateServices", do: d.dbUpdateServices, blocking: true},
 		{desc: "daemonStatus/dbUpdateInstances", do: d.dbUpdateInstances, blocking: true},
@@ -413,6 +418,29 @@ func (d *jobFeedDaemonStatus) dbFindServices(ctx context.Context) error {
 		d.byObjectID[o.SvcID] = o
 		slog.Debug(fmt.Sprintf("dbFindServices %s (%s)", o.Svcname, o.SvcID))
 	}
+	return nil
+}
+
+func (d *jobFeedDaemonStatus) dbFindServicesLog(ctx context.Context) error {
+	var (
+		objectIDs = make([]string, 0, len(d.byObjectID))
+	)
+	if len(d.byObjectID) == 0 {
+		return nil
+	}
+	for objectID := range d.byObjectID {
+		objectIDs = append(objectIDs, objectID)
+	}
+
+	l, err := d.oDb.ObjectStatusLogLastFromObjectIDs(ctx, objectIDs...)
+	if err != nil {
+		return fmt.Errorf("dbFindServicesLog ObjectStatusLogLastFromObjectIDs: %w", err)
+	}
+
+	for _, e := range l {
+		d.objmonLogByObjectID[e.SvcID] = e
+	}
+
 	return nil
 }
 
