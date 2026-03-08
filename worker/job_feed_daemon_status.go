@@ -628,8 +628,6 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
 
 	containerNodeL := make([]*cdb.ContainerNode, 0)
 
-	updateBeginTime := time.Now()
-
 	inAckPeriodM := make(map[string]struct{})
 
 	objectIDL := make([]string, 0, len(d.byInstanceID))
@@ -792,13 +790,6 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
 			return fmt.Errorf("dbUpdateInstances ResmonUpdate: %w", err)
 		}
 	}
-	nodeIDs := make([]string, 0, len(d.byNodeID))
-	for nodeID := range d.byNodeID {
-		nodeIDs = append(nodeIDs, nodeID)
-	}
-	if err := d.oDb.ResmonPurgeExpired(ctx, updateBeginTime, nodeIDs...); err != nil {
-		return fmt.Errorf("dbUpdateInstances ResmonPurgeExpired: %w", err)
-	}
 
 	for _, a := range containerNodeL {
 		if err := d.oDb.NodeContainerUpdateFromParentNode(ctx, a.MonVmName, a.ObjApp, a.DBNode); err != nil {
@@ -840,6 +831,14 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
 		if err := d.oDb.DeleteNodeIDResmonInstances(ctx, nodeID, objectIDs...); err != nil {
 			return fmt.Errorf("dbUpdateInstances can't delete node id: %s instances resmon [%v]: %w", nodeID, objectIDs, err)
 		}
+	}
+
+	nodeIDs := make([]string, 0, len(d.byNodeID))
+	for nodeID := range d.byNodeID {
+		nodeIDs = append(nodeIDs, nodeID)
+	}
+	if err := d.oDb.ResmonPurgeExpired(ctx, d.now.Add(-time.Second), nodeIDs...); err != nil {
+		return fmt.Errorf("dbUpdateInstances ResmonPurgeExpired: %w", err)
 	}
 
 	if err := d.oDb.DashboardObjectWithTypeDelete(ctx, dotDeleteL...); err != nil {
