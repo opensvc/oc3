@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"strings"
 	"sync"
 )
 
@@ -27,9 +26,6 @@ func NewSession(db execContexter, ev eventPublisher) *Session {
 
 func (t *Session) NotifyChanges(ctx context.Context) error {
 	slog.Debug("NotifyChanges")
-	if err := t.saveChanges(ctx); err != nil {
-		return fmt.Errorf("NotifyChanges: %w", err)
-	}
 	if t.ev == nil {
 		return fmt.Errorf("NotifyChanges: eventPublisher is not configured")
 	}
@@ -65,21 +61,4 @@ func (t *Session) listChanges() []string {
 		r = append(r, s)
 	}
 	return r
-}
-
-func (t *Session) saveChanges(ctx context.Context) error {
-	if len(t.tables) == 0 {
-		return nil
-	}
-	var tables = make([]string, 0, len(t.tables))
-	for table := range t.tables {
-		tables = append(tables, fmt.Sprintf("('%s', NOW())", table))
-	}
-	query := fmt.Sprintf("INSERT INTO `table_modified` (`table_name`, `table_modified`) VALUES %s ON DUPLICATE KEY UPDATE `table_modified` = NOW()",
-		strings.Join(tables, ","))
-	_, err := t.db.ExecContext(ctx, query)
-	if err != nil {
-		return fmt.Errorf("saveChanges %s: %w", strings.Join(tables, ","), err)
-	}
-	return nil
 }
