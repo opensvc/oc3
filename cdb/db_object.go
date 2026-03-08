@@ -319,20 +319,37 @@ func (oDb *DB) ObjectsPing(ctx context.Context, ids []string) (updates bool, err
 	return
 }
 
-func (oDb *DB) ObjectUpdateStatus(ctx context.Context, svcID string, o *DBObjStatus) error {
-	const query = "" +
-		"UPDATE `services` SET `svc_availstatus` = ?" +
-		" , `svc_status` = ?" +
-		" , `svc_placement` = ?" +
-		" , `svc_frozen` = ?" +
-		" , `svc_provisioned` = ?" +
-		" , `svc_status_updated` = NOW()" +
-		" WHERE `svc_id`= ? "
-	if _, err := oDb.ExecContext(ctx, query, o.AvailStatus, o.OverallStatus, o.Placement, o.Frozen, o.Provisioned, svcID); err != nil {
-		return fmt.Errorf("can't update service status %s: %w", svcID, err)
+func (oDb *DB) ObjectStatusUpdate(ctx context.Context, l ...*DBObject) error {
+	defer logDuration("ObjectStatusUpdate", time.Now())
+	const (
+		insertColList = "(`svc_id`,`svc_availstatus`,`svc_status`,`svc_placement`,`svc_frozen`,`svc_provisioned`,`svc_status_updated`, `updated`)"
+
+		valueList = "(?, ?, ?, ?, ?, ?, NOW(), ?)"
+
+		onDuplicateAssignment = "" +
+			"`svc_availstatus`=VALUES(`svc_availstatus`)," +
+			"`svc_status`=VALUES(`svc_status`)," +
+			"`svc_placement`=VALUES(`svc_placement`)," +
+			"`svc_frozen`=VALUES(`svc_frozen`)," +
+			"`svc_provisioned`=VALUES(`svc_provisioned`)," +
+			"`svc_status_updated`=VALUES(`svc_status_updated`)," +
+			"`updated`=VALUES(`updated`)"
+	)
+	if len(l) == 0 {
+		return nil
 	}
-	oDb.SetChange("services")
-	return nil
+	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
+	query := fmt.Sprintf("INSERT INTO `services` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
+
+	args := make([]any, 0, 7*len(l))
+	for _, o := range l {
+		args = append(args, o.SvcID, o.AvailStatus, o.OverallStatus, o.Placement, o.Frozen, o.Provisioned, o.Updated)
+	}
+	_, err := oDb.ExecContext(ctx, query, args...)
+	if err != nil {
+		oDb.SetChange("services")
+	}
+	return err
 }
 
 // ObjectUpdateLog handle services_log_last and services_log avail value changes.
