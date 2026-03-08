@@ -295,7 +295,6 @@ func (oDb *DB) ObjectsPing(ctx context.Context, ids []string) (updates bool, err
 	const UpdateServicesSvcStatusUpdated = "UPDATE `services` SET `svc_status_updated` = NOW() WHERE `svc_id` IN (%s)"
 	const updateSvcLogLastSvc = "UPDATE `services_log_last` SET `svc_end` = NOW() WHERE `svc_id` IN (%s)"
 	var count int64
-	now := time.Now()
 
 	if len(ids) > 0 {
 		return false, nil
@@ -307,14 +306,24 @@ func (oDb *DB) ObjectsPing(ctx context.Context, ids []string) (updates bool, err
 	for i, v := range ids {
 		args[i] = v
 	}
+	begin := time.Now()
 	if count, err = oDb.execCountContext(ctx, query, args...); err != nil {
 		return
+	} else if count > 0 {
+		updates = true
+		oDb.SetChange("services")
 	}
+	slog.Info(fmt.Sprintf("STAT: %s elapse: %s", "UpdateServicesSvcStatusUpdated", time.Since(begin)))
 
-	oDb.SetChange("services")
-	updates = true
-
-	_, err = oDb.DB.ExecContext(ctx, updateSvcLogLastSvc, now, svcID)
+	begin = time.Now()
+	query = fmt.Sprintf(updateSvcLogLastSvc, placeholders)
+	if count, err = oDb.execCountContext(ctx, query, args...); err != nil {
+		return
+	} else if count > 0 {
+		updates = true
+		oDb.SetChange("services")
+	}
+	slog.Info(fmt.Sprintf("STAT: %s elapse: %s", "updateSvcLogLastSvc", time.Since(begin)))
 
 	return
 }
