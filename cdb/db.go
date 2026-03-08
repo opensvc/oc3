@@ -94,6 +94,15 @@ func New(dbPool *sql.DB, subsystem string) *DB {
 	}
 }
 
+func NewWithCounters(dbPool *sql.DB, counters Counters) *DB {
+	return &DB{
+		DB:       dbPool,
+		DBLck:    InitDbLocker(dbPool),
+		dbPool:   dbPool,
+		Counters: counters,
+	}
+}
+
 func (oDb *DB) CreateTx(ctx context.Context, opts *sql.TxOptions) error {
 	if oDb.HasTx {
 		return fmt.Errorf("already in a transaction")
@@ -289,6 +298,10 @@ func isDeadlock(err error) bool {
 		return me.Number == 1213
 	}
 	return false
+}
+
+func NewCounters(subsystem string) Counters {
+	return newCounters(subsystem)
 }
 
 func newCounters(subsystem string) Counters {

@@ -11,9 +11,10 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/opensvc/oc3/cdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/opensvc/oc3/cdb"
 )
 
 type (
@@ -47,6 +48,8 @@ const (
 )
 
 var (
+	counters = cdb.NewCounters("scheduler")
+
 	Tasks = TaskList{
 		TaskChecks,
 		TaskSysreport,
@@ -147,24 +150,30 @@ func (t *Task) DBXRO(ctx context.Context) (*cdb.DB, error) {
 }
 
 func (t *Task) DBX(ctx context.Context) (*cdb.DB, error) {
-	tx, err := t.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	return &cdb.DB{
-		Session: cdb.NewSession(tx, t.ev),
-		DB:      tx,
-		DBLck:   cdb.InitDbLocker(t.db),
-		HasTx:   true,
-	}, nil
+	return t.DB(), nil
+	// TODO: cleanup
+	//	tx, err := t.db.BeginTx(ctx, nil)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	return &cdb.DB{
+	//		Session: cdb.NewSession(tx, t.ev),
+	//		DB:      tx,
+	//		DBLck:   cdb.InitDbLocker(t.db),
+	//		HasTx:   true,
+	//	}, nil
 }
 
 func (t *Task) DB() *cdb.DB {
-	return &cdb.DB{
-		Session: cdb.NewSession(t.db, t.ev),
-		DB:      t.db,
-		DBLck:   cdb.InitDbLocker(t.db),
-	}
+	d := cdb.NewWithCounters(t.db, counters)
+	d.CreateSession(t.ev)
+	return d
+	// TODO: cleanup
+	//return &cdb.DB{
+	//	Session: cdb.NewSession(t.db, t.ev),
+	//	DB:      t.db,
+	//	DBLck:   cdb.InitDbLocker(t.db),
+	//}
 }
 
 func (t *Task) Session() *cdb.Session {

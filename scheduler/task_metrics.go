@@ -32,7 +32,8 @@ func MakeWSPFilename(format string, args ...any) (string, error) {
 }
 
 func taskMetrics(ctx context.Context, task *Task) error {
-	metrics, err := task.DB().GetMetricsWithHistorize(ctx)
+	odb := task.DB()
+	metrics, err := odb.GetMetricsWithHistorize(ctx)
 	if err != nil {
 		return err
 	}
@@ -41,7 +42,7 @@ func taskMetrics(ctx context.Context, task *Task) error {
 		return err
 	}
 	defer rodb.Rollback()
-	cache, err := task.DB().ResolveFiltersets(ctx)
+	cache, err := odb.ResolveFiltersets(ctx)
 	if err != nil {
 		return err
 	}
