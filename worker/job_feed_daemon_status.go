@@ -802,6 +802,10 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
 		if err := d.oDb.ResmonLogUpdate(ctx, resmonLogL...); err != nil {
 			return fmt.Errorf("dbUpdateInstances ResmonLogUpdate: %w", err)
 		}
+		if len(resmonLogLastL) > 0 {
+			// detect changes => notify change
+			d.oDb.SetChange("resmon", "svcmon", "services")
+		}
 	}
 	if len(resmonLogLastExtentL) > 0 {
 		if err := d.oDb.ResmonLogLastExtend(ctx, resmonLogLastExtentL...); err != nil {
