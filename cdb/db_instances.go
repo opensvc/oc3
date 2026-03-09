@@ -503,36 +503,18 @@ func (oDb *DB) InstanceResourcesDeleteObsolete(ctx context.Context, svcID, nodeI
 func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID string, data feeder.InstanceResourceInfo) error {
 	defer logDuration("InstanceResourceInfoUpdate "+svcID+"@"+nodeID, time.Now())
 	const (
-		query = "" +
-			"INSERT INTO `resinfo` (`svc_id`, `node_id`, `rid`, `res_key`, `topology`, `res_value`, `updated`) " +
-			"VALUES (?, ?, ?, ?, ?, ?, NOW())" +
-			"ON DUPLICATE KEY UPDATE `topology` = VALUES(`topology`), `res_value` = VALUES(`res_value`), `updated` = NOW()"
+		insertColList         = "(`svc_id`, `node_id`, `rid`, `res_key`, `topology`, `res_value`, `updated`)"
+		valueList             = "(?, ?, ?, ?, ?, ?, NOW())"
+		onDuplicateAssignment = "`topology`=VALUES(`topology`),`res_value`=VALUES(`res_value`),`updated`=NOW()"
 	)
 	if len(data.Info) == 0 {
 		return nil
 	}
 	var (
-		changed  bool
-		topology = data.Topology
+		args     []any
+		value    string
+		resCount int
 	)
-
-	defer func() {
-		if changed {
-			oDb.SetChange("resinfo")
-		}
-	}()
-
-	stmt, err := oDb.DB.PrepareContext(ctx, query)
-	if err != nil {
-		return fmt.Errorf("db prepare: %w", err)
-	}
-	defer func() {
-		if err := stmt.Close(); err != nil {
-			slog.Error(fmt.Sprintf("InstanceResourceInfoUpdate close prepared context: %s", err))
-		}
-	}()
-
-	var value string
 	for _, info := range data.Info {
 		for _, key := range info.Keys {
 			if len(key.Value) > 255 {
@@ -540,18 +522,21 @@ func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID str
 			} else {
 				value = key.Value
 			}
-			if result, err := stmt.ExecContext(ctx, svcID, nodeID, info.Rid, key.Key, topology, value); err != nil {
-				return fmt.Errorf("db exec: %w", err)
-			} else if result != nil {
-				if count, err := result.RowsAffected(); err != nil {
-					return fmt.Errorf("db rows affected: %w", err)
-				} else if count > 0 {
-					changed = true
-				}
-			}
+			resCount++
+			args = append(args, svcID, nodeID, info.Rid, key.Key, data.Topology, value)
 		}
 	}
+	if resCount == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat(valueList+",", resCount-1) + valueList
+	query := fmt.Sprintf("INSERT INTO `resinfo` %s VALUES %s ON DUPLICATE KEY UPDATE %s",
+		insertColList, placeholders, onDuplicateAssignment)
 
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return err
+	}
+	oDb.SetChange("resinfo")
 	return nil
 }
 
