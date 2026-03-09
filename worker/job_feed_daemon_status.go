@@ -819,7 +819,7 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
 	}
 
 	for nodeID, objectIDs := range objectIDsToPingByNodeID {
-		slog.Debug("ping instances for node id %", nodeID)
+		slog.Debug("ping instance: objectIDsToPingByNodeID")
 		if _, err := d.oDb.SvcmonRefreshTimestamp(ctx, nodeID, objectIDs...); err != nil {
 			return fmt.Errorf("dbUpdateInstances can't refresh node id: %s instances svcmon timestamp[%v]: %w", nodeID, objectIDs, err)
 		}
@@ -828,7 +828,7 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
 		}
 	}
 	for nodeID, objectIDs := range objectIDsToDropByNodeID {
-		slog.Debug("drop instances for node id %", nodeID)
+		slog.Debug("drop instances: objectIDsToDropByNodeID")
 		if err := d.oDb.DeleteNodeIDSvcmonInstances(ctx, nodeID, objectIDs...); err != nil {
 			return fmt.Errorf("dbUpdateInstances can't delete node id: %s instances svcmon [%v]: %w", nodeID, objectIDs, err)
 		}
