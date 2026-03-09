@@ -630,6 +630,8 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
 
 	inAckPeriodM := make(map[string]struct{})
 
+	dashboardUpdateObjectFlexStartedL := make([]*cdb.DashboardUpdateObjectFlexStartedParams, 0)
+
 	objectIDL := make([]string, 0, len(d.byInstanceID))
 	for i := range d.byInstanceID {
 		objectIDL = append(objectIDL, i)
@@ -745,15 +747,11 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
 				dashboardObjectUpdateL = append(dashboardObjectUpdateL, newDashboardObjectUpdate(obj, dashObj))
 			}
 
-			// TODO: change to batch
-			/*
-				beginObjDash := time.Now()
-				sev := severityFromEnv(dashObjObjectFlexError, obj.Env)
-				if err := d.oDb.DashboardUpdateObjectFlexStarted(ctx, obj, sev); err != nil {
-					return fmt.Errorf("dbUpdateInstances %s (%s): %w", objID, objectName, err)
-				}
-				slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances DashboardUpdateObjectFlexStarted %s %s", objectName, time.Since(beginObjDash)))
-			*/
+			dashboardUpdateObjectFlexStartedL = append(dashboardUpdateObjectFlexStartedL, &cdb.DashboardUpdateObjectFlexStartedParams{
+				SvcID: objID,
+				Sev:   severityFromEnv(dashObjObjectFlexError, obj.Env),
+				Env:   obj.Env,
+			})
 
 			// Dropped feature: update_dash_flex_cpu
 		}
@@ -850,6 +848,10 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
 	}
 	if err := d.oDb.DashboardUpdateObject(ctx, dashboardObjectUpdateL...); err != nil {
 		return fmt.Errorf("dbUpdateInstances DashboardUpdateObject: %w", err)
+	}
+
+	if err := d.oDb.DashboardUpdateObjectFlexStartedBatch(ctx, dashboardUpdateObjectFlexStartedL...); err != nil {
+		return fmt.Errorf("dbUpdateInstances DashboardUpdateObjectFlexStartedBatch: %w", err)
 	}
 
 	// TODO:
