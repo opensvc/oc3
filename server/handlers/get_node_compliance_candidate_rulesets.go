@@ -12,13 +12,13 @@ import (
 // GetNodeComplianceCandidateRulesets handles GET /nodes/{node_id}/compliance/candidate_rulesets
 func (a *Api) GetNodeComplianceCandidateRulesets(c echo.Context, nodeId string) error {
 	log := echolog.GetLogHandler(c, "GetNodeComplianceCandidateRulesets")
-	odb := a.cdbSession()
+	odb := a.getODB()
 	ctx := c.Request().Context()
 
 	log.Info("called", logkey.NodeID, nodeId)
 
 	// get node ID
-	node, err := a.cdbSession().NodeByNodeIDOrNodename(c.Request().Context(), nodeId)
+	node, err := a.getODB().NodeByNodeIDOrNodename(c.Request().Context(), nodeId)
 	if err != nil {
 		log.Error("cannot find node", "node", nodeId, logkey.Error, err)
 		return JSONProblemf(c, http.StatusNotFound, "node %s not found", nodeId)

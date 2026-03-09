@@ -33,10 +33,7 @@ var (
 	SCHEMA openapi3.T
 )
 
-func (a *Api) cdbSession() *cdb.DB {
-	//odb := cdb.New(a.DB, a.SubSystem)
-	//odb.CreateSession(a.Ev)
-	//return odb
+func (a *Api) getODB() *cdb.DB {
 	return a.ODB
 }
 
