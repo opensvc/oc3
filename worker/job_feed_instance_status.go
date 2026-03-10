@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
-	"time"
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
@@ -142,23 +141,22 @@ func (d *jobFeedInstanceStatus) findObjectFromDb(ctx context.Context) error {
 }
 
 func (d *jobFeedInstanceStatus) updateDB(ctx context.Context) error {
-	imonStates := make(map[string]bool)
 	changes := make(map[string]struct{})
-	err := d.dbUpdateInstance(
+	details, err := d.extractInstanceDetails(
 		ctx,
 		d.status,
-		d.objectID,
-		d.nodeID,
-		d.objectName,
-		d.node.Nodename,
 		d.obj,
-		imonStates,
 		d.node,
-		time.Now(),
 		changes)
 	if err != nil {
 		return err
 	}
+	if len(details.svcmonL) > 0 {
+		if err := d.oDb.SvcmonUpdate(ctx, details.svcmonL...); err != nil {
+			return err
+		}
+	}
+	// TODO: details...
 
 	return nil
 }

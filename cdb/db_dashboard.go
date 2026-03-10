@@ -25,6 +25,11 @@ type (
 		Created  time.Time
 		Updated  time.Time
 	}
+
+	DashboardObjectType struct {
+		ObjectID string
+		DashType string
+	}
 )
 
 // DashboardInstanceFrozenUpdate update or remove the "service frozen" alerts for instance
@@ -84,7 +89,24 @@ func (oDb *DB) DashboardDeleteInstanceNotUpdated(ctx context.Context, objectID, 
 	return nil
 }
 
-// dashboardDeleteObjectWithType delete from dashboard where svc_id and dash_type match
+func (oDb *DB) DashboardObjectWithTypeDelete(ctx context.Context, l ...*DashboardObjectType) error {
+	defer logDuration("dashboardDeleteObject", time.Now())
+	if len(l) == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat("(?,?),", len(l)-1) + "(?,?)"
+
+	query := fmt.Sprintf("DELETE FROM `dashboard` WHERE (`svc_id`, `dash_type`) IN (%s)", placeholders)
+	args := make([]any, 0, 2*len(l))
+	for _, v := range l {
+		args = append(args, v.ObjectID, v.DashType)
+	}
+
+	_, err := oDb.ExecContext(ctx, query, args...)
+	return err
+}
+
+// DashboardDeleteObjectWithType delete from dashboard where svc_id and dash_type match
 func (oDb *DB) DashboardDeleteObjectWithType(ctx context.Context, objectID, dashType string) error {
 	defer logDuration("dashboardDeleteObjectWithType: "+dashType, time.Now())
 	const (
@@ -98,50 +120,63 @@ func (oDb *DB) DashboardDeleteObjectWithType(ctx context.Context, objectID, dash
 	return nil
 }
 
-// ObjectInAckUnavailabilityPeriod returns true if objectID is in acknowledge unavailability period.
-func (oDb *DB) ObjectInAckUnavailabilityPeriod(ctx context.Context, objectID string) (ok bool, err error) {
+// ObjectInAckUnavailabilityPeriod returns list of objectIDs is in acknowledge unavailability period.
+func (oDb *DB) ObjectInAckUnavailabilityPeriod(ctx context.Context, l ...string) (ids []string, err error) {
 	defer logDuration("ObjectInAckUnavailabilityPeriod", time.Now())
-	const (
-		query = `SELECT COUNT(*) FROM svcmon_log_ack WHERE svc_id = ? AND mon_begin <= NOW() AND mon_end >= NOW()`
-	)
-	var count uint64
-	err = oDb.DB.QueryRowContext(ctx, query, objectID).Scan(&count)
-	if err != nil {
-		err = fmt.Errorf("ObjectInAckUnavailabilityPeriod: %w", err)
+	if len(l) == 0 {
+		return nil, nil
 	}
-	return count > 0, err
+	placeholders := strings.Repeat("?,", len(l)-1) + "?"
+	query := fmt.Sprintf("SELECT `svc_id` FROM svcmon_log_ack WHERE `svc_id` IN (%s) AND `mon_begin` <= NOW() AND `mon_end` >= NOW()", placeholders)
+	args := make([]any, len(l))
+	for i, s := range l {
+		args[i] = s
+	}
+	var (
+		rows *sql.Rows
+	)
+
+	rows, err = oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	ids = make([]string, 0, len(l))
+	for rows.Next() {
+		var s string
+		if err = rows.Scan(&s); err != nil {
+			return
+		}
+		ids = append(ids, s)
+	}
+	return ids, rows.Err()
 }
 
 // dashboardUpdateObject delete "service unavailable" alerts.
-func (oDb *DB) DashboardUpdateObject(ctx context.Context, d *Dashboard) error {
-	defer logDuration("dashboardUpdateObject", time.Now())
+func (oDb *DB) DashboardUpdateObject(ctx context.Context, l ...*Dashboard) error {
+	defer logDuration("DashboardUpdateObject", time.Now())
 	const (
-		query = `INSERT INTO dashboard
-        	SET
-				svc_id = ?,
-				dash_type = ?,
-				dash_fmt = ?,
-				dash_severity = ?,
-				dash_dict = ?,
-				dash_created = NOW(),
-				dash_updated = NOW(),
-				dash_env = ?
-			ON DUPLICATE KEY UPDATE
-				dash_fmt = ?,
-				dash_severity = ?,
-				dash_dict = ?,
-				dash_updated = NOW(),
-				dash_env = ?
-				`
+		insertColList         = "(`svc_id`, `dash_type`, `dash_fmt`, `dash_severity`, `dash_dict`, `dash_created`, `dash_updated`, `dash_env`)"
+		valueList             = "(?, ?, ?, ?, ?, NOW(), NOW(), ?)"
+		onDuplicateAssignment = "" +
+			"`dash_fmt`=VALUES(`dash_fmt`), `dash_severity`=VALUES(`dash_severity`), `dash_dict`=VALUES(`dash_dict`), " + "" +
+			"`dash_updated`=VALUES(`dash_updated`), `dash_env`=VALUES(`dash_env`)"
 	)
-	count, err := oDb.execCountContext(ctx, query,
-		d.ObjectID, d.Type, d.Fmt, d.Severity, d.Dict, d.Env,
-		d.Fmt, d.Severity, d.Dict, d.Env)
-	if err != nil {
-		return fmt.Errorf("dashboardUpdateObject: %w", err)
-	} else if count > 0 {
-		oDb.SetChange("dashboard")
+	if len(l) == 0 {
+		return nil
 	}
+	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
+
+	query := fmt.Sprintf("INSERT INTO `dashboard` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
+	args := make([]any, 0, 6*len(l))
+	for _, v := range l {
+		args = append(args, v.ObjectID, v.Type, v.Fmt, v.Severity, v.Dict, v.Env)
+	}
+
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return err
+	}
+	oDb.SetChange("dashboard")
 	return nil
 }
 
@@ -473,7 +508,7 @@ func (oDb *DB) DashboardUpdateInstancesNotUpdated(ctx context.Context) error {
 
 func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error {
 	request := `SET @now = NOW()`
-	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
+	if _, err := oDb.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -526,7 +561,7 @@ func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error 
 
 func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) error {
 	request := `SET @now = NOW()`
-	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
+	if _, err := oDb.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -580,7 +615,7 @@ func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) err
 
 func (oDb *DB) DashboardUpdateNodeWithoutMaintenanceEnd(ctx context.Context) error {
 	request := `SET @now = NOW()`
-	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
+	if _, err := oDb.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -651,7 +686,7 @@ func (oDb *DB) DashboardUpdateAppWithoutResponsible(ctx context.Context) error {
 		    dash_dict IS NULL
 		  )
 	`
-	if _, err := oDb.DB.ExecContext(ctx, request); err != nil {
+	if _, err := oDb.ExecContext(ctx, request); err != nil {
 		return err
 	}
 
@@ -703,7 +738,7 @@ func (oDb *DB) DashboardUpdateAppWithoutResponsible(ctx context.Context) error {
 
 func (oDb *DB) DashboardUpdatePkgDiffForNode(ctx context.Context, nodeID string) error {
 	request := `SET @now = NOW()`
-	_, err := oDb.DB.ExecContext(ctx, request)
+	_, err := oDb.ExecContext(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -847,7 +882,7 @@ func (oDb *DB) DashboardUpdatePkgDiffForNode(ctx context.Context, nodeID string)
 				dash_env = ?
 		`
 
-		_, err = oDb.DB.ExecContext(ctx, query,
+		_, err = oDb.ExecContext(ctx, query,
 			svcID, sev, dashDictJSON, dashDictMD5, monSvctype,
 			sev, dashDictJSON, dashDictMD5, monSvctype,
 		)
@@ -903,7 +938,7 @@ func (oDb *DB) DashboardUpdatePkgDiffForNode(ctx context.Context, nodeID string)
 			AND dash_updated < @now
 		`, Placeholders(len(svcIDs)))
 
-		_, err := oDb.DB.ExecContext(ctx, query, svcIDs...)
+		_, err := oDb.ExecContext(ctx, query, svcIDs...)
 		if err != nil {
 			return fmt.Errorf("failed to delete old dashboard entries: %v", err)
 		}
@@ -926,13 +961,13 @@ func (oDb *DB) DashboardUpdateCompModDiff(ctx context.Context) error {
 }
 
 func (oDb *DB) DashboardUpdateCompModDiffForSvc(ctx context.Context, svcID string) error {
-	_, err := oDb.DB.ExecContext(ctx, "SET @now = NOW()")
+	_, err := oDb.ExecContext(ctx, "SET @now = NOW()")
 	if err != nil {
 		return fmt.Errorf("failed to set @now: %v", err)
 	}
 
 	defer func() {
-		_, err := oDb.DB.ExecContext(ctx, `
+		_, err := oDb.ExecContext(ctx, `
 			DELETE FROM dashboard
 			WHERE
 				dash_type = "compliance moduleset attachment differences in cluster" AND
@@ -1050,7 +1085,7 @@ func (oDb *DB) DashboardUpdateCompModDiffForSvc(ctx context.Context, svcID strin
 		ON DUPLICATE KEY UPDATE
 			dash_updated = @now
 	`
-	_, err = oDb.DB.ExecContext(ctx, query, svcID, sev, dashDictJSON, dashDictMD5, monSvctype.String)
+	_, err = oDb.ExecContext(ctx, query, svcID, sev, dashDictJSON, dashDictMD5, monSvctype.String)
 	if err != nil {
 		return fmt.Errorf("failed to insert/update dashboard: %v", err)
 	}
@@ -1094,13 +1129,13 @@ func (oDb *DB) DashboardUpdateCompRsetDiff(ctx context.Context) error {
 }
 
 func (oDb *DB) DashboardUpdateCompRsetDiffForSvc(ctx context.Context, svcID string) error {
-	_, err := oDb.DB.ExecContext(ctx, "SET @now = NOW()")
+	_, err := oDb.ExecContext(ctx, "SET @now = NOW()")
 	if err != nil {
 		return fmt.Errorf("failed to set @now: %v", err)
 	}
 
 	defer func() {
-		_, err := oDb.DB.ExecContext(ctx, `
+		_, err := oDb.ExecContext(ctx, `
 			DELETE FROM dashboard
 			WHERE
 				dash_type = "compliance ruleset attachment differences in cluster" AND
@@ -1220,7 +1255,7 @@ func (oDb *DB) DashboardUpdateCompRsetDiffForSvc(ctx context.Context, svcID stri
 		ON DUPLICATE KEY UPDATE
 			dash_updated = @now
 	`
-	_, err = oDb.DB.ExecContext(ctx, query, svcID, sev, dashDictJSON, dashDictMD5, monSvctype.String)
+	_, err = oDb.ExecContext(ctx, query, svcID, sev, dashDictJSON, dashDictMD5, monSvctype.String)
 	if err != nil {
 		return fmt.Errorf("failed to insert/update dashboard: %v", err)
 	}

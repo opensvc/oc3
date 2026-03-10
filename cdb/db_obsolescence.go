@@ -19,7 +19,7 @@ func (oDb *DB) StatObsolescenceHW(ctx context.Context) error {
 		     WHERE model != ''
 		     GROUP BY model
             `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
 	query = `
@@ -39,7 +39,7 @@ func (oDb *DB) StatObsolescenceHW(ctx context.Context) error {
 		    )
 		) AND dash_type = "hardware obsolescence warning"
            `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
 	query = `
@@ -80,7 +80,7 @@ func (oDb *DB) StatObsolescenceHW(ctx context.Context) error {
 		ON DUPLICATE KEY UPDATE
 		  dash_updated=NOW()
             `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
 	query = `
@@ -99,7 +99,7 @@ func (oDb *DB) StatObsolescenceHW(ctx context.Context) error {
 		    )
 		) AND dash_type = "hardware obsolescence alert"
            `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
 	query = `
@@ -139,7 +139,7 @@ func (oDb *DB) StatObsolescenceHW(ctx context.Context) error {
 		ON DUPLICATE KEY UPDATE
 		  dash_updated=NOW()
             `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
 	return nil
@@ -159,7 +159,7 @@ func (oDb *DB) StatObsolescenceOS(ctx context.Context) error {
 		     WHERE os_concat != ''
 		     GROUP BY os_concat
                     `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
 	query = `
@@ -176,7 +176,7 @@ func (oDb *DB) StatObsolescenceOS(ctx context.Context) error {
 		    )
 		) AND dash_type = "os obsolescence warning"
            `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
 	query = `
@@ -214,7 +214,7 @@ func (oDb *DB) StatObsolescenceOS(ctx context.Context) error {
 		ON DUPLICATE KEY UPDATE
 		  dash_updated=NOW()
             `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
 	query = `
@@ -230,7 +230,7 @@ func (oDb *DB) StatObsolescenceOS(ctx context.Context) error {
 		    )
 		) AND dash_type = "os obsolescence alert"
            `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
 	query = `
@@ -267,7 +267,7 @@ func (oDb *DB) StatObsolescenceOS(ctx context.Context) error {
 		ON DUPLICATE KEY UPDATE
 		  dash_updated=NOW()
             `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence failed: %w", err)
 	}
 	return nil
@@ -282,7 +282,7 @@ func (oDb *DB) PurgeAlertsObsWithout(ctx context.Context) error {
 		    d.dash_type IN ("hardware obsolescence alert date not set", "hardware obsolescence warning date not set") AND
 		    d.dash_dict != JSON_OBJECT('o', n.model)
 	         `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence alerts failed: %w", err)
 	}
 	query = `DELETE d FROM dashboard d
@@ -291,7 +291,7 @@ func (oDb *DB) PurgeAlertsObsWithout(ctx context.Context) error {
 		   d.dash_type IN ("os obsolescence alert date not set", "os obsolescence warning date not set") AND
                    d.dash_dict != JSON_OBJECT('o', CONCAT(n.os_name, " ", n.os_vendor, " ", n.os_release))
 	        `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence alerts failed: %w", err)
 	}
 	query = `DELETE FROM dashboard
@@ -305,7 +305,7 @@ func (oDb *DB) PurgeAlertsObsWithout(ctx context.Context) error {
                        obs_type = "hw"
                      )
 	        `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence alerts failed: %w", err)
 	}
 	query = `DELETE from dashboard
@@ -319,7 +319,7 @@ func (oDb *DB) PurgeAlertsObsWithout(ctx context.Context) error {
                        obs_type = "os"
                      )
 	       `
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update obsolescence alerts failed: %w", err)
 	}
 	return nil
@@ -349,7 +349,7 @@ func (oDb *DB) UpdateNodesObsolescence(ctx context.Context) error {
 					     ELSE n.os_obs_alert_date
 					  END
 		WHERE o.id > 0`
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update node obsolescence data failed: %w", err)
 	}
 	return nil

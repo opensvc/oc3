@@ -43,7 +43,7 @@ func (oDb *DB) DiskIDFromDiskinfoWithDevIDAndTargetID(ctx context.Context, devID
 
 func (oDb *DB) UpdateDiskinfoDiskID(ctx context.Context, previousDiskID, newDiskID string) error {
 	var queryUpdate = "UPDATE `diskinfo` SET `disk_id` = ? WHERE `disk_id` = ?"
-	if _, err := oDb.DB.ExecContext(ctx, queryUpdate, newDiskID, previousDiskID); err != nil {
+	if _, err := oDb.ExecContext(ctx, queryUpdate, newDiskID, previousDiskID); err != nil {
 		return fmt.Errorf("update diskinfo disk_id failed: %w", err)
 	}
 	return nil

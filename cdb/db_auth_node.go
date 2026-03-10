@@ -46,7 +46,7 @@ func (oDb *DB) AuthNodesByNodeID(ctx context.Context, nodeID string) ([]DBAuthNo
 func (oDb *DB) InsertAuthNode(ctx context.Context, nodename, nodeUUID, nodeID string) error {
 	defer logDuration("InsertAuthNode", time.Now())
 	const query = `INSERT INTO auth_node (nodename, uuid, node_id) VALUES (?, ?, ?)`
-	if _, err := oDb.DB.ExecContext(ctx, query, nodename, nodeUUID, nodeID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, nodename, nodeUUID, nodeID); err != nil {
 		return fmt.Errorf("InsertAuthNode: %w", err)
 	}
 	oDb.SetChange("auth_node")

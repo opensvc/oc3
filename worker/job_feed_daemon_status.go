@@ -80,6 +80,10 @@ type (
 		byInstanceName map[string]*cdb.DBInstance
 		byInstanceID   map[string]*cdb.DBInstance
 
+		objmonLogByObjectID   map[string]*cdb.DBObjectStatusLog
+		svcmonLogByInstanceID map[string]*cdb.DBInstanceStatusLog
+		resmonLogByResID      map[string]*cdb.DBResmonLog
+
 		heartbeats []heartbeatData
 	}
 )
@@ -108,28 +112,33 @@ func newDaemonStatus(nodeID string) *jobFeedDaemonStatus {
 
 		byInstanceID:   make(map[string]*cdb.DBInstance),
 		byInstanceName: make(map[string]*cdb.DBInstance),
+
+		objmonLogByObjectID:   make(map[string]*cdb.DBObjectStatusLog),
+		svcmonLogByInstanceID: make(map[string]*cdb.DBInstanceStatusLog),
+		resmonLogByResID:      make(map[string]*cdb.DBResmonLog),
 	}
 }
 
 func (d *jobFeedDaemonStatus) Operations() []operation {
 	return []operation{
 		{desc: "daemonStatus/dropPending", do: d.dropPending},
-		{desc: "daemonStatus/dbNow", do: d.dbNow},
+		{desc: "daemonStatus/dbNow", do: d.dbNow, blocking: true},
 		{desc: "daemonStatus/getChanges", do: d.getChanges},
-		{desc: "daemonStatus/getData", do: d.getData},
-		{desc: "daemonStatus/dbCheckClusterIDForNodeID", do: d.dbCheckClusterIDForNodeID},
-		{desc: "daemonStatus/dbCheckClusters", do: d.dbCheckClusters},
-		{desc: "daemonStatus/dbFindNodes", do: d.dbFindNodes},
-		{desc: "daemonStatus/dataToNodeFrozen", do: d.dataToNodeFrozen},
-		{desc: "daemonStatus/dataToNodeHeartbeat", do: d.dataToNodeHeartbeat},
-		{desc: "daemonStatus/heartbeatToDB", do: d.heartbeatToDB},
-		{desc: "daemonStatus/dbFindServices", do: d.dbFindServices},
-		{desc: "daemonStatus/dbCreateServices", do: d.dbCreateServices},
-		{desc: "daemonStatus/dbFindInstances", do: d.dbFindInstances},
-		{desc: "daemonStatus/dbUpdateServices", do: d.dbUpdateServices},
-		{desc: "daemonStatus/dbUpdateInstances", do: d.dbUpdateInstances},
-		{desc: "daemonStatus/dbPurgeInstances", do: d.dbPurgeInstances},
-		{desc: "daemonStatus/dbPurgeServices", do: d.dbPurgeServices},
+		{desc: "daemonStatus/getData", do: d.getData, blocking: true},
+		{desc: "daemonStatus/dbCheckClusterIDForNodeID", do: d.dbCheckClusterIDForNodeID, blocking: true},
+		{desc: "daemonStatus/dbCheckClusters", do: d.dbCheckClusters, blocking: true},
+		{desc: "daemonStatus/dbFindNodes", do: d.dbFindNodes, blocking: true},
+		{desc: "daemonStatus/dataToNodeFrozen", do: d.dataToNodeFrozen, blocking: true},
+		{desc: "daemonStatus/dataToNodeHeartbeat", do: d.dataToNodeHeartbeat, blocking: true},
+		{desc: "daemonStatus/heartbeatToDB", do: d.heartbeatToDB, blocking: true},
+		{desc: "daemonStatus/dbFindServices", do: d.dbFindServices, blocking: true},
+		{desc: "daemonStatus/dbCreateServices", do: d.dbCreateServices, blocking: true},
+		{desc: "daemonStatus/dbFindServicesLog", do: d.dbFindServicesLog, blocking: true},
+		{desc: "daemonStatus/dbFindInstances", do: d.dbFindInstances, blocking: true},
+		{desc: "daemonStatus/dbUpdateServices", do: d.dbUpdateServices, blocking: true},
+		{desc: "daemonStatus/dbUpdateInstances", do: d.dbUpdateInstances, blocking: true},
+		{desc: "daemonStatus/dbPurgeInstances", do: d.dbPurgeInstances, blocking: true},
+		{desc: "daemonStatus/dbPurgeServices", do: d.dbPurgeServices, blocking: true},
 		{desc: "daemonStatus/cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
 		{desc: "daemonStatus/pushFromTableChanges", do: d.pushFromTableChanges},
 	}
@@ -334,16 +343,59 @@ func (d *jobFeedDaemonStatus) dataToNodeHeartbeat(_ context.Context) error {
 }
 
 func (d *jobFeedDaemonStatus) heartbeatToDB(ctx context.Context) error {
-	//now := time.Now()
-	for _, hb := range d.heartbeats {
-		slog.Debug(fmt.Sprintf("inserting: %s", hb))
-		if err := d.oDb.HBUpdate(ctx, hb.DBHeartbeat); err != nil {
-			return fmt.Errorf("heartbeatToDB hbUpdate %s: %w", hb, err)
-		}
-		if err := d.oDb.HBLogUpdate(ctx, hb.DBHeartbeat); err != nil {
-			return fmt.Errorf("heartbeatToDB hbLogUpdate %s: %w", hb, err)
+	heartbeats := make([]*cdb.DBHeartbeat, len(d.heartbeats))
+	hbLogLastM := make(map[string]*cdb.DBHeartbeatLog)
+	hbLogLastExtentL := make([]*cdb.DBHeartbeatLog, 0)
+	hbLogLastSetL := make([]*cdb.DBHeartbeatLog, 0)
+	hbLogAddL := make([]*cdb.DBHeartbeatLog, 0)
+	for i, v := range d.heartbeats {
+		heartbeats[i] = &v.DBHeartbeat
+	}
+	if hbLogLastL, err := d.oDb.HBLogLastFromClusterID(ctx, d.clusterID); err != nil {
+		return fmt.Errorf("heartbeatToDB hbLogLastByClusterID: %w", err)
+	} else {
+		for _, hbLog := range hbLogLastL {
+			hbLogLastM[hbLog.NodeID+"->"+hbLog.PeerNodeID+":"+hbLog.Name] = hbLog
 		}
 	}
+	for _, hb := range heartbeats {
+		// Prepare the hb log transition
+		id := hb.NodeID + "->" + hb.PeerNodeID + ":" + hb.Name
+		if prev, ok := hbLogLastM[id]; ok {
+			if hb.SameAsLog(prev) {
+				// extend hbmon_log_last
+				hbLogLastExtentL = append(hbLogLastExtentL, prev)
+			} else {
+				// prev hbmon log last will change its value, add prev as a new hb log transition
+				hbLogAddL = append(hbLogAddL, prev)
+				// update the last hb log value
+				hbLogLastSetL = append(hbLogLastSetL, hb.AsLog())
+			}
+		} else {
+			// create the last hb log value
+			hbLogLastSetL = append(hbLogLastSetL, hb.AsLog())
+		}
+	}
+	if err := d.oDb.HBUpdate(ctx, heartbeats...); err != nil {
+		return fmt.Errorf("heartbeatToDB hbUpdate: %w", err)
+	}
+
+	if len(hbLogAddL) > 0 {
+		if err := d.oDb.HBLogUpdate(ctx, hbLogAddL...); err != nil {
+			return fmt.Errorf("heartbeatToDB HBLogUpdate: %w", err)
+		}
+	}
+	if len(hbLogLastExtentL) > 0 {
+		if err := d.oDb.HBLogLastExtend(ctx, hbLogLastExtentL...); err != nil {
+			return fmt.Errorf("heartbeatToDB HBLogUpdate: %w", err)
+		}
+	}
+	if len(hbLogLastSetL) > 0 {
+		if err := d.oDb.HBLogLastUpdate(ctx, hbLogLastSetL...); err != nil {
+			return fmt.Errorf("heartbeatToDB HBLogLastUpdate: %w", err)
+		}
+	}
+
 	if err := d.oDb.HBDeleteOutDatedByClusterID(ctx, d.clusterID, d.now); err != nil {
 		return fmt.Errorf("heartbeatToDB purge outdated %s: %w", d.clusterID, err)
 	}
@@ -373,6 +425,29 @@ func (d *jobFeedDaemonStatus) dbFindServices(ctx context.Context) error {
 	return nil
 }
 
+func (d *jobFeedDaemonStatus) dbFindServicesLog(ctx context.Context) error {
+	var (
+		objectIDs = make([]string, 0, len(d.byObjectID))
+	)
+	if len(d.byObjectID) == 0 {
+		return nil
+	}
+	for objectID := range d.byObjectID {
+		objectIDs = append(objectIDs, objectID)
+	}
+
+	l, err := d.oDb.ObjectStatusLogLastFromObjectIDs(ctx, objectIDs...)
+	if err != nil {
+		return fmt.Errorf("dbFindServicesLog ObjectStatusLogLastFromObjectIDs: %w", err)
+	}
+
+	for _, e := range l {
+		d.objmonLogByObjectID[e.SvcID] = e
+	}
+
+	return nil
+}
+
 func (d *jobFeedDaemonStatus) dbFindInstances(ctx context.Context) error {
 	var (
 		objectIDs = make([]string, 0)
@@ -398,6 +473,29 @@ func (d *jobFeedDaemonStatus) dbFindInstances(ctx context.Context) error {
 				slog.Debug(fmt.Sprintf("dbFindInstances found %s@%s (%s@%s)",
 					s.Svcname, n.Nodename, s.SvcID, n.NodeID))
 			}
+		}
+	}
+
+	iStatusLogL, err := d.oDb.SvcmonLogLastFromObjectIDs(ctx, objectIDs...)
+	if err != nil {
+		return fmt.Errorf("dbFindInstances SvcmonLogLastFromObjectIDs: %w", err)
+	}
+
+	for _, e := range iStatusLogL {
+		if n, ok := d.byNodeID[e.NodeID]; ok {
+			// Only pickup from known nodes
+			if s, ok := d.byObjectID[e.SvcID]; ok {
+				// Only pickup from known objects
+				d.svcmonLogByInstanceID[s.SvcID+"@"+n.NodeID] = e
+			}
+		}
+	}
+
+	if resmonLogLastL, err := d.oDb.ResmonLogLastFromObjectIDs(ctx, objectIDs...); err != nil {
+		return fmt.Errorf("dbFindInstances ResmonLogLastFromObjectIDs: %w", err)
+	} else {
+		for _, r := range resmonLogLastL {
+			d.resmonLogByResID[r.IDx()] = r
 		}
 	}
 	return nil
@@ -435,45 +533,122 @@ func (d *jobFeedDaemonStatus) dbCreateServices(ctx context.Context) error {
 }
 
 func (d *jobFeedDaemonStatus) dbUpdateServices(ctx context.Context) error {
+	objectIDPingM := make(map[string]struct{})
+	objectL := make([]*cdb.DBObject, 0, len(d.byObjectID))
+	statusLogAddL := make([]*cdb.DBObjectStatusLog, 0, len(d.byObjectID))
+	statusLogLastSetL := make([]*cdb.DBObjectStatusLog, 0, len(d.byObjectID))
+	statusLogLastExtentL := make([]string, 0, len(d.byObjectID))
+
 	for objectID, obj := range d.byObjectID {
 		objectName := obj.Svcname
 		_, isChanged := d.changes[objectName]
 		// freshly created services have availStatus "undef" and needs full update
 		// even if not present in changes
 		if !isChanged && obj.AvailStatus != "undef" {
-			slog.Debug(fmt.Sprintf("ping svc %s %s", objectName, objectID))
-			if _, err := d.oDb.ObjectPing(ctx, objectID); err != nil {
-				return fmt.Errorf("dbUpdateServices can't ping object %s %s: %w", objectName, objectID, err)
-			}
+			objectIDPingM[objectID] = struct{}{}
 		} else {
 			oStatus := d.data.objectStatus(objectName)
 			if oStatus != nil {
-				slog.Debug(fmt.Sprintf("update svc log %s %s %#v", objectName, objectID, oStatus))
-				if err := d.oDb.ObjectUpdateLog(ctx, objectID, oStatus.AvailStatus); err != nil {
-					return fmt.Errorf("dbUpdateServices can't update object log %s %s: %w", objectName, objectID, err)
-				}
-				slog.Debug(fmt.Sprintf("update svc %s %s %#v", objectName, objectID, *oStatus))
-				if err := d.oDb.ObjectUpdateStatus(ctx, objectID, oStatus); err != nil {
-					return fmt.Errorf("dbUpdateServices can't update object %s %s: %w", objectName, objectID, err)
-				}
-				if d.byObjectID[objectID].AvailStatus != oStatus.AvailStatus {
-					slog.Debug(fmt.Sprintf("dbUpdateServices %s avail status %s -> %s", objectName, d.byObjectID[objectID].AvailStatus, oStatus.AvailStatus))
-				}
 				// refresh local cache
+				obj.DBObjStatus = *oStatus
+				objectL = append(objectL, obj)
 				d.byObjectID[objectID].DBObjStatus = *oStatus
 			}
 		}
+
+		// Prepare the svcmon log transition
+		if prev, ok := d.objmonLogByObjectID[objectID]; ok {
+			if obj.SameAsLog(prev) {
+				// extend services_log_last
+				statusLogLastExtentL = append(statusLogLastExtentL, objectID)
+			} else {
+				// prev services log last will change its value, add prev as a new services log transition
+				statusLogAddL = append(statusLogAddL, prev)
+				// update the last services log value
+				statusLogLastSetL = append(statusLogLastSetL, obj.AsLog())
+			}
+		} else {
+			// create the last svcmon log value
+			statusLogLastSetL = append(statusLogLastSetL, obj.AsLog())
+		}
 	}
+	if len(objectIDPingM) > 0 {
+		objectIDL := make([]string, 0, len(objectIDPingM))
+		for objectID := range objectIDPingM {
+			objectIDL = append(objectIDL, objectID)
+		}
+		slog.Debug(fmt.Sprintf("ping object ids %v", objectIDL))
+		if _, err := d.oDb.ObjectsPing(ctx, objectIDL); err != nil {
+			return fmt.Errorf("dbUpdateServices can't ping objects [%v]: %w", objectIDL, err)
+		}
+	}
+	if len(objectL) > 0 {
+		if err := d.oDb.ObjectStatusUpdate(ctx, objectL...); err != nil {
+			return fmt.Errorf("dbUpdateServices ObjectStatusUpdate: %w", err)
+		}
+	}
+
+	// call batch services log updates
+	if len(statusLogAddL) > 0 {
+		if err := d.oDb.ObjectStatusLogUpdate(ctx, statusLogAddL...); err != nil {
+			return fmt.Errorf("dbUpdateInstances ObjectStatusLogUpdate: %w", err)
+		}
+	}
+	if len(statusLogLastExtentL) > 0 {
+		if err := d.oDb.ObjectStatusLogLastExtend(ctx, statusLogLastExtentL...); err != nil {
+			return fmt.Errorf("dbUpdateInstances ObjectStatusLogLastExtend: %w", err)
+		}
+	}
+	if len(statusLogLastSetL) > 0 {
+		if err := d.oDb.ObjectStatusLogLastUpdate(ctx, statusLogLastSetL...); err != nil {
+			return fmt.Errorf("dbUpdateInstances ObjectStatusLogLastUpdate: %w", err)
+		}
+	}
+
 	return nil
 }
 
 func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
+	count := 0
+	objectIDsToPingByNodeID := make(map[string][]string)
+	objectIDsToDropByNodeID := make(map[string][]string)
+
+	svcmonL := make([]*cdb.DBInstanceStatus, 0)
+	svcmonLogL := make([]*cdb.DBInstanceStatusLog, 0, len(d.byObjectName)*len(d.byNodeID))
+	svcmonLogLastL := make([]*cdb.DBInstanceStatusLog, 0, len(d.byObjectName)*len(d.byNodeID))
+	svcmonLogLastExtentM := make(map[string][]string)
+
+	resmonL := make([]*cdb.DBInstanceResource, 0)
+	resmonLogL := make([]*cdb.DBResmonLog, 0)
+	resmonLogLastL := make([]*cdb.DBResmonLog, 0)
+	resmonLogLastExtentL := make([]*cdb.DBInstanceResource, 0)
+
+	dotDeleteL := make([]*cdb.DashboardObjectType, 0)
+	dashboardObjectUpdateL := make([]*cdb.Dashboard, 0)
+
+	containerNodeL := make([]*cdb.ContainerNode, 0)
+
+	inAckPeriodM := make(map[string]struct{})
+
+	dashboardUpdateObjectFlexStartedL := make([]*cdb.DashboardUpdateObjectFlexStartedParams, 0)
+
+	objectIDL := make([]string, 0, len(d.byInstanceID))
+	for i := range d.byInstanceID {
+		objectIDL = append(objectIDL, i)
+	}
+	if inAckPeriodL, err := d.oDb.ObjectInAckUnavailabilityPeriod(ctx, d.nodeID); err != nil {
+		return fmt.Errorf("dbUpdateInstances ObjectInAckUnavailabilityPeriod: %w", err)
+	} else {
+		for _, i := range inAckPeriodL {
+			inAckPeriodM[i] = struct{}{}
+		}
+	}
+
 	for objectName, obj := range d.byObjectName {
-		beginObj := time.Now()
+		count++
 		objID := obj.SvcID
 		instanceMonitorStates := make(map[string]bool)
 		for nodeID, node := range d.byNodeID {
-			beginInstance := time.Now()
 			if node == nil {
 				return fmt.Errorf("dbUpdateInstances unexpected nil value for byNodeID(%s)", nodeID)
 			}
@@ -482,40 +657,209 @@ func (d *jobFeedDaemonStatus) dbUpdateInstances(ctx context.Context) error {
 			if iStatus == nil {
 				continue
 			}
-			// set iStatus svcID and nodeID for db update
-			err := d.dbUpdateInstance(ctx, iStatus, objID, nodeID, objectName, nodename, obj, instanceMonitorStates, node, beginInstance, d.changes)
+			result, err := d.extractInstanceDetails(ctx, iStatus, obj, node, d.changes)
 			if err != nil {
 				return err
 			}
+			if len(result.svcmonL) > 0 {
+				svcmonL = append(svcmonL, result.svcmonL...)
+
+				// Prepare the svcmon log transition
+				for _, instanceStatus := range result.svcmonL {
+					if prev, ok := d.svcmonLogByInstanceID[objID+"@"+nodeID]; ok {
+						if instanceStatus.SameAsLog(prev) {
+							// extend svcmon_log_last
+							svcmonLogLastExtentM[nodeID] = append(svcmonLogLastExtentM[nodeID], objID)
+						} else {
+							// prev svcmon log last will change its value, add prev as a new svcmon log transition
+							svcmonLogL = append(svcmonLogL, prev)
+							// update the last svcmon log value
+							svcmonLogLastL = append(svcmonLogLastL, instanceStatus.AsLog())
+						}
+					} else {
+						// create the last svcmon log value
+						svcmonLogLastL = append(svcmonLogLastL, instanceStatus.AsLog())
+					}
+				}
+
+			}
+			if len(result.resmonL) > 0 {
+				// Prepare resmon log transition
+				for _, r := range result.resmonL {
+					idx := r.IDx()
+					if prev, ok := d.resmonLogByResID[idx]; ok {
+						if r.SameAsLog(prev) {
+							// extend resmon_log_last
+							r.Changed = prev.BeginAt
+							resmonLogLastExtentL = append(resmonLogLastExtentL, r)
+						} else {
+							// prev resmon log last will change its value, add prev as a new resmon log transition
+							resmonLogL = append(resmonLogL, prev)
+							// update the last resmon log value
+							r.Changed = time.Now()
+							resmonLogLastL = append(resmonLogLastL, r.AsLog())
+						}
+					} else {
+						// create the last resmon log value
+						r.Changed = time.Now()
+						resmonLogLastL = append(resmonLogLastL, r.AsLog())
+					}
+					resmonL = append(resmonL, r)
+				}
+			}
+
+			if result.pingInstance {
+				objectIDsToPingByNodeID[nodeID] = append(objectIDsToPingByNodeID[nodeID], objID)
+			}
+			if result.dropInstance {
+				objectIDsToDropByNodeID[nodeID] = append(objectIDsToDropByNodeID[nodeID], objID)
+			}
+
+			if result.MonSmonStatus != "" {
+				instanceMonitorStates[result.MonSmonStatus] = true
+			}
+
+			containerNodeL = append(containerNodeL, result.cVmNameL...)
 		}
-		beginObjDash := time.Now()
+
+		var dashObj dashboarder
 		if len(instanceMonitorStates) == 1 && instanceMonitorStates["idle"] {
-			var remove bool
+			_, inAckPeriod := inAckPeriodM[objID]
 
-			remove = slices.Contains([]string{"up", "n/a"}, obj.AvailStatus)
-			if err := d.updateDashboardObject(ctx, obj, remove, &DashboardObjectUnavailable{obj: obj}); err != nil {
-				return fmt.Errorf("dbUpdateInstances on %s (%s): %w", objID, objectName, err)
+			dashObj = &DashboardObjectUnavailable{obj: obj}
+			if inAckPeriod || slices.Contains([]string{"up", "n/a"}, obj.AvailStatus) {
+				dotDeleteL = append(dotDeleteL, &cdb.DashboardObjectType{ObjectID: objID, DashType: dashObj.Type()})
+			} else {
+				dashboardObjectUpdateL = append(dashboardObjectUpdateL, newDashboardObjectUpdate(obj, dashObj))
 			}
 
-			remove = slices.Contains([]string{"optimal", "n/a"}, obj.Placement)
-			if err := d.updateDashboardObject(ctx, obj, remove, &DashboardObjectPlacement{obj: obj}); err != nil {
-				return fmt.Errorf("dbUpdateInstances on %s (%s): %w", objID, objectName, err)
+			dashObj = &DashboardObjectPlacement{obj: obj}
+			if inAckPeriod || slices.Contains([]string{"optimal", "n/a"}, obj.Placement) {
+				dotDeleteL = append(dotDeleteL, &cdb.DashboardObjectType{ObjectID: objID, DashType: dashObj.Type()})
+			} else {
+				dashboardObjectUpdateL = append(dashboardObjectUpdateL, newDashboardObjectUpdate(obj, dashObj))
 			}
 
-			remove = slices.Contains([]string{"up", "n/a"}, obj.AvailStatus) && slices.Contains([]string{"up", "n/a"}, obj.OverallStatus)
-			if err := d.updateDashboardObject(ctx, obj, remove, &DashboardObjectDegraded{obj: obj}); err != nil {
-				return fmt.Errorf("dbUpdateInstances on %s (%s): %w", objID, objectName, err)
+			dashObj = &DashboardObjectDegraded{obj: obj}
+			if inAckPeriod || (slices.Contains([]string{"up", "n/a"}, obj.AvailStatus) && slices.Contains([]string{"up", "n/a"}, obj.OverallStatus)) {
+				dotDeleteL = append(dotDeleteL, &cdb.DashboardObjectType{ObjectID: objID, DashType: dashObj.Type()})
+			} else {
+				dashboardObjectUpdateL = append(dashboardObjectUpdateL, newDashboardObjectUpdate(obj, dashObj))
 			}
 
-			sev := severityFromEnv(dashObjObjectFlexError, obj.Env)
-			if err := d.oDb.DashboardUpdateObjectFlexStarted(ctx, obj, sev); err != nil {
-				return fmt.Errorf("dbUpdateInstances %s (%s): %w", objID, objectName, err)
-			}
+			dashboardUpdateObjectFlexStartedL = append(dashboardUpdateObjectFlexStartedL, &cdb.DashboardUpdateObjectFlexStartedParams{
+				SvcID: objID,
+				Sev:   severityFromEnv(dashObjObjectFlexError, obj.Env),
+				Env:   obj.Env,
+			})
+
 			// Dropped feature: update_dash_flex_cpu
 		}
-		slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances object dashboard duration %s %s", objectName, time.Since(beginObjDash)))
-		slog.Debug(fmt.Sprintf("STAT: dbUpdateInstances object duration %s %s", objectName, time.Since(beginObj)))
 	}
+
+	if len(svcmonL) > 0 {
+		if err := d.oDb.SvcmonUpdate(ctx, svcmonL...); err != nil {
+			return fmt.Errorf("dbUpdateInstances SvcmonUpdate: %w", err)
+		}
+	}
+
+	// call batch svcmon log updates
+	if len(svcmonLogL) > 0 {
+		if err := d.oDb.SvcmonLogUpdate(ctx, svcmonLogL...); err != nil {
+			return fmt.Errorf("dbUpdateInstances SvcmonLogUpdate: %w", err)
+		}
+	}
+	if len(svcmonLogLastExtentM) > 0 {
+		for nodeID, objectIDs := range svcmonLogLastExtentM {
+			if err := d.oDb.SvcmonLogLastExtend(ctx, nodeID, objectIDs...); err != nil {
+				return fmt.Errorf("dbUpdateInstances SvcmonLogLastExtend: %w", err)
+			}
+		}
+	}
+	if len(svcmonLogLastL) > 0 {
+		if err := d.oDb.SvcmonLogLastUpdate(ctx, svcmonLogLastL...); err != nil {
+			return fmt.Errorf("dbUpdateInstances SvcmonLogLastUpdate: %w", err)
+		}
+	}
+
+	// resmon
+	if len(resmonL) > 0 {
+		if err := d.oDb.ResmonUpdate(ctx, resmonL...); err != nil {
+			return fmt.Errorf("dbUpdateInstances ResmonUpdate: %w", err)
+		}
+	}
+
+	for _, a := range containerNodeL {
+		if err := d.oDb.NodeContainerUpdateFromParentNode(ctx, a.MonVmName, a.ObjApp, a.DBNode); err != nil {
+			return fmt.Errorf("dbUpdateInstances NodeContainerUpdateFromParentNode %s %s@%s encap hostname %s: %w",
+				a.ObjName, a.ObjID, a.NodeID, a.MonVmName, err)
+		}
+	}
+	// call batch resmon log updates
+	if len(resmonLogL) > 0 {
+		if err := d.oDb.ResmonLogUpdate(ctx, resmonLogL...); err != nil {
+			return fmt.Errorf("dbUpdateInstances ResmonLogUpdate: %w", err)
+		}
+		if len(resmonLogLastL) > 0 {
+			// detect changes => notify change
+			d.oDb.SetChange("resmon", "svcmon", "services")
+		}
+	}
+	if len(resmonLogLastExtentL) > 0 {
+		if err := d.oDb.ResmonLogLastExtend(ctx, resmonLogLastExtentL...); err != nil {
+			return fmt.Errorf("dbUpdateInstances ResmonLogLastExtend: %w", err)
+		}
+	}
+	if len(resmonLogLastL) > 0 {
+		if err := d.oDb.ResmonLogLastUpdate(ctx, resmonLogLastL...); err != nil {
+			return fmt.Errorf("dbUpdateInstances ResmonLogLastUpdate: %w", err)
+		}
+	}
+
+	for nodeID, objectIDs := range objectIDsToPingByNodeID {
+		slog.Debug("ping instance: objectIDsToPingByNodeID")
+		if _, err := d.oDb.SvcmonRefreshTimestamp(ctx, nodeID, objectIDs...); err != nil {
+			return fmt.Errorf("dbUpdateInstances can't refresh node id: %s instances svcmon timestamp[%v]: %w", nodeID, objectIDs, err)
+		}
+		if _, err := d.oDb.ResmonRefreshTimestamp(ctx, nodeID, objectIDs...); err != nil {
+			return fmt.Errorf("dbUpdateInstances can't refresh node id: %s instances resmon timestamp[%v]: %w", nodeID, objectIDs, err)
+		}
+	}
+	for nodeID, objectIDs := range objectIDsToDropByNodeID {
+		slog.Debug("drop instances: objectIDsToDropByNodeID")
+		if err := d.oDb.DeleteNodeIDSvcmonInstances(ctx, nodeID, objectIDs...); err != nil {
+			return fmt.Errorf("dbUpdateInstances can't delete node id: %s instances svcmon [%v]: %w", nodeID, objectIDs, err)
+		}
+		if err := d.oDb.DeleteNodeIDResmonInstances(ctx, nodeID, objectIDs...); err != nil {
+			return fmt.Errorf("dbUpdateInstances can't delete node id: %s instances resmon [%v]: %w", nodeID, objectIDs, err)
+		}
+	}
+
+	nodeIDs := make([]string, 0, len(d.byNodeID))
+	for nodeID := range d.byNodeID {
+		nodeIDs = append(nodeIDs, nodeID)
+	}
+	if err := d.oDb.ResmonPurgeExpired(ctx, d.now.Add(-time.Second), nodeIDs...); err != nil {
+		return fmt.Errorf("dbUpdateInstances ResmonPurgeExpired: %w", err)
+	}
+
+	if err := d.oDb.DashboardObjectWithTypeDelete(ctx, dotDeleteL...); err != nil {
+		return fmt.Errorf("dbUpdateInstances DashboardObjectWithTypeDelete: %w", err)
+	}
+	if err := d.oDb.DashboardUpdateObject(ctx, dashboardObjectUpdateL...); err != nil {
+		return fmt.Errorf("dbUpdateInstances DashboardUpdateObject: %w", err)
+	}
+
+	if err := d.oDb.DashboardUpdateObjectFlexStartedBatch(ctx, dashboardUpdateObjectFlexStartedL...); err != nil {
+		return fmt.Errorf("dbUpdateInstances DashboardUpdateObjectFlexStartedBatch: %w", err)
+	}
+
+	// TODO:
+	// 	d.oDb.DashboardInstanceFrozenUpdate(ctx, objID, nodeID, obj.Env, iStatus.MonFrozen > 0)
+	//	d.oDb.DashboardDeleteInstanceNotUpdated(ctx, objID, nodeID)
+
+	// TODO add metrics
+	d.Logger().Debug(fmt.Sprintf("dbUpdateInstances objects count %d", count))
 
 	return nil
 }

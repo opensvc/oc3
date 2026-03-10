@@ -50,6 +50,6 @@ func (oDb *DB) Log(ctx context.Context, entries ...LogEntry) error {
 	sql := fmt.Sprintf("INSERT INTO log %s VALUES %s", cols, strings.Join(lines, ","))
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	_, err := oDb.DB.ExecContext(ctx, sql, args...)
+	_, err := oDb.ExecContext(ctx, sql, args...)
 	return err
 }

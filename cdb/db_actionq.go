@@ -31,13 +31,13 @@ type (
 
 func (oDb *DB) ActionQSetNow(ctx context.Context) error {
 	const query = `SET @now := NOW();`
-	_, err := oDb.DB.ExecContext(ctx, query)
+	_, err := oDb.ExecContext(ctx, query)
 	return err
 }
 
 func (oDb *DB) ActionQSetDequeuedToNow(ctx context.Context) error {
 	const query = `UPDATE action_queue SET date_dequeued = @now WHERE status = 'W' AND date_dequeued=0;`
-	_, err := oDb.DB.ExecContext(ctx, query)
+	_, err := oDb.ExecContext(ctx, query)
 	return err
 }
 
@@ -84,7 +84,7 @@ func (oDb *DB) ActionQSetUnreachable(ctx context.Context, unreachableIds []int) 
                        stderr="unreachable"
                      where id in (%s)`, strings.Join(placeholders, ","))
 
-	_, err := oDb.DB.ExecContext(ctx, request, args...)
+	_, err := oDb.ExecContext(ctx, request, args...)
 	return err
 }
 
@@ -98,27 +98,27 @@ func (oDb *DB) ActionQSetInvalid(ctx context.Context, invalidIds []int) error {
                        stderr="invalid"
                      where id in (%s)`, strings.Join(placeholders, ","))
 
-	_, err := oDb.DB.ExecContext(ctx, request, args...)
+	_, err := oDb.ExecContext(ctx, request, args...)
 	return err
 }
 
 func (oDb *DB) ActionQSetNotified(ctx context.Context, notifiedIds []int) error {
 	placeholders, args := getPlaceholdersAndArgs(notifiedIds)
 	request := fmt.Sprintf(`update action_queue set status='N' where id in (%s) and status='W'`, strings.Join(placeholders, ","))
-	_, err := oDb.DB.ExecContext(ctx, request, args...)
+	_, err := oDb.ExecContext(ctx, request, args...)
 	return err
 }
 
 func (oDb *DB) ActionQSetQueued(ctx context.Context, queuedIds []int) error {
 	placeholders, args := getPlaceholdersAndArgs(queuedIds)
 	request := fmt.Sprintf(`update action_queue set status='Q' where id in (%s) and status='W'`, strings.Join(placeholders, ","))
-	_, err := oDb.DB.ExecContext(ctx, request, args...)
+	_, err := oDb.ExecContext(ctx, request, args...)
 	return err
 }
 
 func (oDb *DB) ActionQPurge(ctx context.Context) error {
 	request := `delete from action_queue where date_dequeued<date_sub(now(), interval 1 day) and status in ('T', 'C')`
-	_, err := oDb.DB.ExecContext(ctx, request)
+	_, err := oDb.ExecContext(ctx, request)
 	return err
 }
 
@@ -142,7 +142,7 @@ func (oDb *DB) ActionQEventData(ctx context.Context) (map[string]any, error) {
 func (oDb *DB) ActionQSetRunning(ctx context.Context, runningIds []int) error {
 	placeholders, args := getPlaceholdersAndArgs(runningIds)
 	request := fmt.Sprintf(`update action_queue set status='R' where id in (%s)`, strings.Join(placeholders, ","))
-	_, err := oDb.DB.ExecContext(ctx, request, args...)
+	_, err := oDb.ExecContext(ctx, request, args...)
 	return err
 }
 
@@ -154,7 +154,7 @@ func (oDb *DB) ActionQSetDone(ctx context.Context, id int, ret int, stdout, stde
 					   stdout=?,
 					   stderr=?
 					 where id=?`
-	_, err := oDb.DB.ExecContext(ctx, request, ret, stdout, stderr, id)
+	_, err := oDb.ExecContext(ctx, request, ret, stdout, stderr, id)
 	return err
 }
 
@@ -170,12 +170,12 @@ func (oDb *DB) ActionQGetActionQueueId(ctx context.Context, formId int) (int, er
 
 func (oDb *DB) ActionQCloseWorkflow(ctx context.Context, formId int) error {
 	request := `update workflows set status="closed" where last_form_id=?`
-	_, err := oDb.DB.ExecContext(ctx, request, formId)
+	_, err := oDb.ExecContext(ctx, request, formId)
 	return err
 }
 
 func (oDb *DB) ActionQSetFormNextId(ctx context.Context, id int) error {
 	request := `update forms_store set form_next_id=0 where id=?`
-	_, err := oDb.DB.ExecContext(ctx, request, id)
+	_, err := oDb.ExecContext(ctx, request, id)
 	return err
 }

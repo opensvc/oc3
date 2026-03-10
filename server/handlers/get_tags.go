@@ -12,7 +12,7 @@ import (
 // handleGetTags is the common logic for getting tags
 func (a *Api) handleGetTags(c echo.Context, tagID *int) error {
 	log := echolog.GetLogHandler(c, "handleGetTags")
-	odb := a.cdbSession()
+	odb := a.getODB()
 	ctx := c.Request().Context()
 
 	tags, err := odb.GetTags(ctx, tagID)

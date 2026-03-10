@@ -26,7 +26,7 @@ type (
 )
 
 func (oDb *DB) BActionErrorsRefresh(ctx context.Context) error {
-	_, err := oDb.DB.ExecContext(ctx, "TRUNCATE b_action_errors")
+	_, err := oDb.ExecContext(ctx, "TRUNCATE b_action_errors")
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (oDb *DB) BActionErrorsRefresh(ctx context.Context) error {
              GROUP BY a.svc_id, a.node_id
         )`
 
-	_, err = oDb.DB.ExecContext(ctx, sql)
+	_, err = oDb.ExecContext(ctx, sql)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, act
 	}
 	query += fmt.Sprintf(") VALUES (%s)", placeholders)
 
-	result, err := oDb.DB.ExecContext(ctx, query, args...)
+	result, err := oDb.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("insert svcactions failed, status_log length %d: %w", len(statusLog), err)
 	} else if result == nil {
@@ -250,7 +250,7 @@ func (oDb *DB) UpdateSvcAction(ctx context.Context, svcActionID int64, end time.
 		// TODO: add metrics svcactions status_log truncated with len / TextMax
 		statusLog = statusLog[:TextMax]
 	}
-	result, err := oDb.DB.ExecContext(ctx, query, end, status, end, statusLog, svcActionID)
+	result, err := oDb.ExecContext(ctx, query, end, status, end, statusLog, svcActionID)
 	if err != nil {
 		return fmt.Errorf("update svcactions failed status_log length %d: %w", len(statusLog), err)
 	} else if result == nil {
@@ -298,7 +298,7 @@ func (oDb *DB) UpdateActionErrors(ctx context.Context, svcID string, nodeID stri
                   WHERE
                     svc_id = ? AND
                     node_id = ?`
-		if _, err := oDb.DB.ExecContext(ctx, queryDelete, svcID, nodeID); err != nil {
+		if _, err := oDb.ExecContext(ctx, queryDelete, svcID, nodeID); err != nil {
 			return fmt.Errorf("UpdateActionErrors: delete failed: %w", err)
 		}
 	} else {
@@ -309,7 +309,7 @@ func (oDb *DB) UpdateActionErrors(ctx context.Context, svcID string, nodeID stri
                    err= ?
                  ON DUPLICATE KEY UPDATE
                    err= ?`
-		if _, err := oDb.DB.ExecContext(ctx, queryInsert, svcID, nodeID, errCount, errCount); err != nil {
+		if _, err := oDb.ExecContext(ctx, queryInsert, svcID, nodeID, errCount, errCount); err != nil {
 			return fmt.Errorf("UpdateActionErrors: insert/update failed: %w", err)
 		}
 	}
@@ -358,7 +358,7 @@ func (oDb *DB) UpdateDashActionErrors(ctx context.Context, svcID string, nodeID 
 
 		dashDict := fmt.Sprintf(`{"err": "%d"}`, errCount)
 
-		if _, err := oDb.DB.ExecContext(ctx, queryInsert, svcID, nodeID, sev, dashDict, svcEnv, sev, dashDict, svcEnv); err != nil {
+		if _, err := oDb.ExecContext(ctx, queryInsert, svcID, nodeID, sev, dashDict, svcEnv, sev, dashDict, svcEnv); err != nil {
 			return fmt.Errorf("UpdateDashActionErrors: insert/update failed: %w", err)
 		}
 		// TODO: WebSocket notification
@@ -369,7 +369,7 @@ func (oDb *DB) UpdateDashActionErrors(ctx context.Context, svcID string, nodeID 
                    dash_type="action errors" AND
                    svc_id = ? AND
                    node_id = ?`
-		if _, err := oDb.DB.ExecContext(ctx, queryDelete, svcID, nodeID); err != nil {
+		if _, err := oDb.ExecContext(ctx, queryDelete, svcID, nodeID); err != nil {
 			return fmt.Errorf("UpdateDashActionErrors: delete failed: %w", err)
 		}
 	}

@@ -14,21 +14,9 @@ import (
 // DeleteNodeComplianceRuleset handles DELETE /nodes/{node_id}/compliance/rulesets/{rset_id}
 func (a *Api) DeleteNodeComplianceRuleset(c echo.Context, nodeId string, rsetId string) error {
 	log := echolog.GetLogHandler(c, "DeleteNodeComplianceRuleset")
-	odb := a.cdbSession()
-	ctx := c.Request().Context()
-	odb.CreateTx(ctx, nil)
-	ctx, cancel := context.WithTimeout(ctx, a.SyncTimeout)
+	odb := a.getODB()
+	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
-
-	var success bool
-
-	defer func() {
-		if success {
-			odb.Commit()
-		} else {
-			odb.Rollback()
-		}
-	}()
 
 	log.Info("called", logkey.NodeID, nodeId, logkey.RSetID, rsetId)
 
@@ -70,8 +58,6 @@ func (a *Api) DeleteNodeComplianceRuleset(c echo.Context, nodeId string, rsetId 
 		log.Error("cannot detach ruleset from node", logkey.NodeID, nodeId, logkey.RSetID, rsetId, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot detach ruleset %s from node %s", rsetId, nodeId)
 	}
-
-	success = true
 
 	response := map[string]string{
 		"info": fmt.Sprintf("ruleset %s detached from node %s", rsetId, nodeId),

@@ -15,7 +15,7 @@ func (oDb *DB) StatDayDiskApp(ctx context.Context) error {
                SUM(quota) AS quota
              FROM v_disk_quota
              GROUP by app`
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update stat_day_disk_app failed: %w", err)
 	}
 	return nil
@@ -36,7 +36,7 @@ func (oDb *DB) StatDayDiskAppDG(ctx context.Context) error {
              JOIN stor_array ar ON ar.array_name=di.disk_arrayid
              JOIN stor_array_dg dg ON ar.id=dg.array_id AND dg.dg_name=di.disk_group
              LEFT JOIN stor_array_dg_quota dgq ON ap.id=dgq.app_id AND dg.id=dgq.dg_id`
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update stat_day_disk_app_dg failed: %w", err)
 	}
 	return nil
@@ -66,7 +66,7 @@ func (oDb *DB) StatDayDiskArray(ctx context.Context) error {
              ) t
              GROUP BY
                t.array_name`
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update stat_day_disk_array failed: %w", err)
 	}
 	return nil
@@ -87,7 +87,7 @@ func (oDb *DB) StatDayDiskArrayDG(ctx context.Context) error {
                v_disk_quota
              GROUP BY
                array_name, dg_name`
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update stat_day_disk_array_dg failed: %w", err)
 	}
 	return nil
@@ -109,7 +109,7 @@ func (oDb *DB) StatDaySvcActionsByLevel(ctx context.Context, lvl string) error {
                a.svc_id
              ON DUPLICATE KEY UPDATE
                nb_action_%s = VALUES(nb_action_%s)`, lvl, lvl, lvl, lvl)
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update stat_day_svc failed: %w", err)
 	}
 	return nil
@@ -130,7 +130,7 @@ func (oDb *DB) StatDaySvcActions(ctx context.Context) error {
                a.svc_id
              ON DUPLICATE KEY UPDATE
                nb_action = VALUES(nb_action)`
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update stat_day_svc failed: %w", err)
 	}
 	return nil
@@ -150,7 +150,7 @@ func (oDb *DB) StatDaySvcDiskSize(ctx context.Context) error {
 	       d.svc_id
              ON DUPLICATE KEY UPDATE
 	       disk_size=VALUES(disk_size)`
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update stat_day_svc failed: %w", err)
 	}
 	return nil
@@ -170,7 +170,7 @@ func (oDb *DB) StatDaySvcLocalDiskSize(ctx context.Context) error {
 	       d.svc_id
              ON DUPLICATE KEY UPDATE
 	       local_disk_size=VALUES(local_disk_size)`
-	if _, err := oDb.DB.ExecContext(ctx, query); err != nil {
+	if _, err := oDb.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("update stat_day_svc failed: %w", err)
 	}
 	return nil

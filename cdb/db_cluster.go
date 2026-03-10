@@ -19,6 +19,6 @@ func (oDb *DB) UpdateClustersData(ctx context.Context, clusterName, clusterID, d
 			VALUES (?, ?, ?)
 			ON DUPLICATE KEY UPDATE cluster_name = ?, cluster_data = ?`
 	)
-	_, err := oDb.DB.ExecContext(ctx, query, clusterName, clusterID, data, clusterName, data)
+	_, err := oDb.ExecContext(ctx, query, clusterName, clusterID, data, clusterName, data)
 	return err
 }

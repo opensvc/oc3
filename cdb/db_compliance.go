@@ -228,7 +228,7 @@ func (oDb *DB) CompModulesetDetachNode(ctx context.Context, nodeID string, modul
 	}
 	query += ")"
 
-	result, err := oDb.DB.ExecContext(ctx, query, args...)
+	result, err := oDb.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("compModulesetDetachNode: %w", err)
 	}
@@ -288,7 +288,7 @@ func (oDb *DB) CompRulesetDetachNode(ctx context.Context, nodeID string, ruleset
 	}
 	query += ")"
 
-	result, err := oDb.DB.ExecContext(ctx, query, args...)
+	result, err := oDb.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("compRulesetDetachNode: %w", err)
 	}
@@ -666,7 +666,7 @@ func (oDb *DB) CompRulesetAttachable(ctx context.Context, nodeID, rulesetID stri
 func (oDb *DB) CompModulesetAttachNode(ctx context.Context, nodeID, modulesetID string) (int64, error) {
 	const query = "INSERT INTO comp_node_moduleset (node_id, modset_id) VALUES (?, ?)"
 
-	result, err := oDb.DB.ExecContext(ctx, query, nodeID, modulesetID)
+	result, err := oDb.ExecContext(ctx, query, nodeID, modulesetID)
 	if err != nil {
 		return 0, fmt.Errorf("compModulesetAttachNode: %w", err)
 	}
@@ -702,7 +702,7 @@ func (oDb *DB) RulesetHasEverybodyPublication(ctx context.Context, rulesetID str
 func (oDb *DB) CompRulesetAttachNode(ctx context.Context, nodeID, rulesetID string) (int64, error) {
 	const query = "INSERT INTO comp_rulesets_nodes (node_id, ruleset_id) VALUES (?, ?)"
 
-	result, err := oDb.DB.ExecContext(ctx, query, nodeID, rulesetID)
+	result, err := oDb.ExecContext(ctx, query, nodeID, rulesetID)
 	if err != nil {
 		return 0, fmt.Errorf("compRulesetAttachNode: %w", err)
 	}

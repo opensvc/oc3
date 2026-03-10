@@ -1,8 +1,6 @@
 package worker
 
 import (
-	"context"
-	"fmt"
 	"time"
 
 	"github.com/opensvc/oc3/cdb"
@@ -45,38 +43,16 @@ func severityFromEnv(dashType int, objEnv string) int {
 	}
 }
 
-func (d *jobFeedDaemonStatus) updateDashboardObject(ctx context.Context, obj *cdb.DBObject, doDelete bool, dash dashboarder) error {
-	objID := obj.SvcID
-	fmtErr := func(err error) error {
-		if err != nil {
-			return fmt.Errorf("updateDashboardObject '%s': %w", dash.Type(), err)
-		}
-		return nil
-	}
-
-	if doDelete {
-		return fmtErr(d.oDb.DashboardDeleteObjectWithType(ctx, objID, dash.Type()))
-	}
-
-	inAckPeriod, err := d.oDb.ObjectInAckUnavailabilityPeriod(ctx, objID)
-	if err != nil {
-		return err
-	}
-	dashType := dash.Type()
-	if inAckPeriod {
-		return fmtErr(d.oDb.DashboardDeleteObjectWithType(ctx, objID, dashType))
-	} else {
-		now := time.Now()
-		dash := cdb.Dashboard{
-			ObjectID: objID,
-			Type:     dashType,
-			Fmt:      dash.Fmt(),
-			Dict:     dash.Dict(),
-			Env:      obj.Env,
-			Severity: dash.Severity(),
-			Created:  now,
-			Updated:  now,
-		}
-		return fmtErr(d.oDb.DashboardUpdateObject(ctx, &dash))
+func newDashboardObjectUpdate(o *cdb.DBObject, d dashboarder) *cdb.Dashboard {
+	now := time.Now()
+	return &cdb.Dashboard{
+		ObjectID: o.SvcID,
+		Type:     d.Type(),
+		Fmt:      d.Fmt(),
+		Dict:     d.Dict(),
+		Env:      o.Env,
+		Severity: d.Severity(),
+		Created:  now,
+		Updated:  now,
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/opensvc/oc3/feeder"
@@ -79,77 +80,75 @@ type (
 		MonUpdated          string
 	}
 
-	// DBInstanceResource is the database table resmon
-	//
-	// CREATE TABLE `resmon` (
-	//        `id` int(11) NOT NULL AUTO_INCREMENT,
-	//        `rid` varchar(255) DEFAULT NULL,
-	//        `res_status` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-	//        `changed` timestamp NOT NULL DEFAULT current_timestamp(),
-	//        `updated` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-	//        `res_desc` text DEFAULT NULL,
-	//        `res_log` text DEFAULT NULL,
-	//        `vmname` varchar(60) DEFAULT '',
-	//        `res_monitor` varchar(1) DEFAULT NULL,
-	//        `res_disable` varchar(1) DEFAULT NULL,
-	//        `res_optional` varchar(1) DEFAULT NULL,
-	//        `res_type` varchar(16) DEFAULT NULL,
-	//        `node_id` char(36) CHARACTER SET ascii DEFAULT '',
-	//        `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
-	//
-	//        PRIMARY KEY (`id`),
-	//
-	//        UNIQUE KEY `uk_resmon_1` (`svc_id`,`node_id`,`vmname`,`rid`),
-	//
-	//        KEY `resmon_updated` (`updated`),
-	//        KEY `k_node_id` (`node_id`),
-	//        KEY `k_svc_id` (`svc_id`),
-	//        KEY `idx_node_id_updated` (`node_id`,`updated`)
-	// ) ENGINE=InnoDB AUTO_INCREMENT=15524822 DEFAULT CHARSET=utf8
-	DBInstanceResource struct {
-		SvcID    string
-		NodeID   string
-		VmName   string
-		RID      string
-		Status   string
-		Changed  time.Time
-		Updated  time.Time
-		Desc     string
-		Log      string
-		Monitor  string
-		Disable  string
-		Optional string
-		ResType  string
-	}
+	/*
+		    CREATE TABLE `svcmon_log` (
+		      `id` int(11) NOT NULL AUTO_INCREMENT,
+		      `mon_overallstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		      `mon_ipstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		      `mon_fsstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		      `mon_diskstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		      `mon_containerstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		      `mon_syncstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		      `mon_appstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		      `mon_begin` datetime NOT NULL,
+		      `mon_end` datetime NOT NULL,
+		      `mon_hbstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		      `mon_availstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+		      `mon_sharestatus` varchar(10) DEFAULT 'undef',
+		      `node_id` char(36) CHARACTER SET ascii DEFAULT '',
+		      `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
+		      PRIMARY KEY (`id`),
+		      KEY `mon_overallstatus` (`mon_overallstatus`),
+		      KEY `mon_begin` (`mon_begin`,`mon_end`),
+		      KEY `k_node_id` (`node_id`),
+		      KEY `k_svc_id` (`svc_id`)
+		    ) ENGINE=InnoDB AUTO_INCREMENT=6749866 DEFAULT CHARSET=utf8
 
-	// DBInstanceResinfo is the database table resinfo
-	//
-	// CREATE TABLE `resinfo` (
-	//  `id` int(11) NOT NULL AUTO_INCREMENT,
-	//  `rid` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
-	//  `res_key` varchar(40) DEFAULT '',
-	//  `res_value` varchar(255) DEFAULT NULL,
-	//  `updated` timestamp NOT NULL DEFAULT current_timestamp(),
-	//  `topology` varchar(20) DEFAULT 'failover',
-	//  `node_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
-	//  `svc_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
-	//  PRIMARY KEY (`id`),
-	//  UNIQUE KEY `uk` (`node_id`,`svc_id`,`rid`,`res_key`),
-	//  KEY `k_node_id` (`node_id`),
-	//  KEY `k_svc_id` (`svc_id`)
-	//) ENGINE=InnoDB AUTO_INCREMENT=175883380 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
-	DBInstanceResinfo struct {
-		SvcID    string
-		NodeID   string
-		Topology string
-		Updated  time.Time
-		RID      string
-		Key      string
-		Value    string
+		    CREATE TABLE `svcmon_log_last` (
+			  `id` int(11) NOT NULL AUTO_INCREMENT,
+			  `mon_overallstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+			  `mon_ipstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+			  `mon_fsstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+			  `mon_diskstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+			  `mon_containerstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+			  `mon_syncstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+			  `mon_appstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+			  `mon_begin` datetime NOT NULL,
+			  `mon_end` datetime NOT NULL,
+			  `mon_hbstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+			  `mon_availstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
+			  `mon_sharestatus` varchar(10) DEFAULT 'undef',
+			  `node_id` char(36) CHARACTER SET ascii DEFAULT '',
+			  `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
+			  PRIMARY KEY (`id`),
+			  UNIQUE KEY `uk` (`node_id`,`svc_id`),
+			  KEY `mon_overallstatus` (`mon_overallstatus`),
+			  KEY `mon_begin` (`mon_begin`,`mon_end`),
+			  KEY `k_node_id` (`node_id`),
+			  KEY `k_svc_id` (`svc_id`)
+			) ENGINE=InnoDB AUTO_INCREMENT=15639 DEFAULT CHARSET=utf8
+	*/
+	DBInstanceStatusLog struct {
+		ID     int64
+		NodeID string
+		SvcID  string
+
+		MonAvailStatus     string
+		MonOverallStatus   string
+		MonIpStatus        string
+		MonDiskStatus      string
+		MonFsStatus        string
+		MonShareStatus     string
+		MonContainerStatus string
+		MonAppStatus       string
+		MonSyncStatus      string
+
+		MonBeginAt time.Time
+		MonEndAt   time.Time
 	}
 )
 
-func (i InstanceID) String() string {
+func (i *InstanceID) String() string {
 	return fmt.Sprintf("instance{obj_id:%s, node_id:%s}", i.svcID, i.nodeID)
 }
 
@@ -194,85 +193,42 @@ func (oDb *DB) InstancesFromObjectIDs(ctx context.Context, objectIDs ...string) 
 	return instances, nil
 }
 
-// InstancePing updates svcmon.mon_updated, svcmon_log_last.mon_end,
-// resmon.updated and resmon_log_last.res_end
-// when svcmon.mon_updated timestamp for svc_id id older than 30s.
-func (oDb *DB) InstancePing(ctx context.Context, svcID, nodeID string) (updates bool, err error) {
-	defer logDuration("instancePing "+svcID+"@"+nodeID, time.Now())
+// SvcmonRefreshTimestamp updates svcmon.mon_updated, svcmon_log_last.mon_end for object ids with node id.
+func (oDb *DB) SvcmonRefreshTimestamp(ctx context.Context, nodeID string, objectIDs ...string) (updates bool, err error) {
+	defer logDuration("SvcmonRefreshTimestamp", time.Now())
 	const (
-		qHasInstance  = "SELECT count(*) FROM `svcmon` WHERE `svc_id` = ? AND `node_id` = ?"
-		qUpdateSvcmon = "" +
-			"UPDATE `svcmon` SET `mon_updated` = NOW()" +
-			" WHERE `svc_id` = ?" +
-			"   AND `node_id` = ?" +
-			"   AND (`mon_updated` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `mon_updated` is NULL)"
-
-		qUpdateSvcmonLogLast = "" +
-			"UPDATE `svcmon_log_last` SET `mon_end` = NOW()" +
-			" WHERE `svc_id` = ?" +
-			"   AND `node_id` = ?" +
-			"   AND (`mon_end` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `mon_end` is NULL)"
-
-		qUpdateResmon = "" +
-			"UPDATE `resmon` SET `updated` = NOW()" +
-			" WHERE `svc_id` = ?" +
-			"   AND `node_id` = ?" +
-			"   AND (`updated` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `updated` is NULL)"
-
-		qUpdateResmonLogLast = "" +
-			"UPDATE `resmon_log_last` SET `res_end` = NOW()" +
-			" WHERE `svc_id` = ?" +
-			"   AND `node_id` = ?" +
-			"   AND (`res_end` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `res_end` is NULL)"
+		qUpdateSvcmon        = "UPDATE `svcmon` SET `mon_updated` = NOW() WHERE `node_id` = ? AND `svc_id` IN (%s)"
+		qUpdateSvcmonLogLast = "UPDATE `svcmon_log_last` SET `mon_end` = NOW() WHERE `node_id` = ? AND `svc_id` IN (%s)"
 	)
 	var (
 		count int64
+		query string
 	)
 	begin := time.Now()
-	err = oDb.DB.QueryRowContext(ctx, qHasInstance, svcID, nodeID).Scan(&count)
-	slog.Debug(fmt.Sprintf("instancePing qHasInstance %s", time.Since(begin)))
-	begin = time.Now()
-
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		err = nil
+	if len(objectIDs) == 0 {
 		return
-	case err != nil:
+	}
+	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
+	args := make([]any, len(objectIDs)+1)
+	args[0] = nodeID
+	for i, v := range objectIDs {
+		args[i+1] = v
+	}
+
+	query = fmt.Sprintf(qUpdateSvcmon, placeholders)
+	if count, err = oDb.execCountContext(ctx, query, args...); err != nil {
+		return
+	} else if count > 0 {
+		updates = true
+		oDb.SetChange("svcmon")
+	}
+
+	query = fmt.Sprintf(qUpdateSvcmonLogLast, placeholders)
+	if _, err = oDb.ExecContext(ctx, query, args...); err != nil {
 		return
 	}
 
-	begin = time.Now()
-	if count, err = oDb.execCountContext(ctx, qUpdateSvcmon, svcID, nodeID); err != nil {
-		return
-	} else if count == 0 {
-		return
-	}
-	slog.Debug(fmt.Sprintf("instancePing qUpdateSvcmon %s", time.Since(begin)))
-	begin = time.Now()
-	updates = true
-
-	oDb.SetChange("svcmon")
-	if _, err = oDb.DB.ExecContext(ctx, qUpdateSvcmonLogLast, svcID, nodeID); err != nil {
-		return
-	}
-	slog.Debug(fmt.Sprintf("instancePing qUpdateSvcmonLogLast %s", time.Since(begin)))
-	begin = time.Now()
-
-	if count, err = oDb.execCountContext(ctx, qUpdateResmon, svcID, nodeID); err != nil {
-		return
-	} else if count == 0 {
-		return
-	}
-	slog.Debug(fmt.Sprintf("instancePing qUpdateResmon %s", time.Since(begin)))
-	begin = time.Now()
-	oDb.SetChange("resmon")
-
-	if _, err = oDb.DB.ExecContext(ctx, qUpdateResmonLogLast, svcID, nodeID); err != nil {
-		return
-	}
-
-	slog.Debug(fmt.Sprintf("instancePing qUpdateResmonLogLast %s", time.Since(begin)))
-	begin = time.Now()
+	slog.Info(fmt.Sprintf("SvcmonRefreshTimestamp %s", time.Since(begin)))
 	return
 }
 
@@ -306,7 +262,7 @@ func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updat
 	updates = true
 	oDb.SetChange("svcmon")
 
-	if _, err = oDb.DB.ExecContext(ctx, qUpdateSvcmonLogLast, nodeID); err != nil {
+	if _, err = oDb.ExecContext(ctx, qUpdateSvcmonLogLast, nodeID); err != nil {
 		return
 	}
 
@@ -317,201 +273,214 @@ func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updat
 	}
 	oDb.SetChange("resmon")
 
-	_, err = oDb.DB.ExecContext(ctx, qUpdateResmonLogLast, nodeID)
+	_, err = oDb.ExecContext(ctx, qUpdateResmonLogLast, nodeID)
 	return
 }
 
-func (oDb *DB) InstanceDeleteStatus(ctx context.Context, svcID, nodeID string) error {
-	defer logDuration("instanceDeleteStatus "+svcID+"@"+nodeID, time.Now())
-	const (
-		queryDelete = "" +
-			"DELETE FROM `svcmon` WHERE `svc_id` = ? AND `node_id` = ?"
-	)
-	if count, err := oDb.execCountContext(ctx, queryDelete, svcID, nodeID); err != nil {
-		return fmt.Errorf("instanceDeleteStatus %s@%s: %w", svcID, nodeID, err)
+func (oDb *DB) DeleteNodeIDSvcmonInstances(ctx context.Context, nodeID string, objectIDs ...string) error {
+	defer logDuration("DeleteNodeIDSvcmonInstances", time.Now())
+	if len(objectIDs) == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
+	query := fmt.Sprintf("DELETE FROM `svcmon` WHERE `node_id` = ? AND `svc_id` IN (%s)", placeholders)
+
+	args := make([]any, len(objectIDs)+1)
+	args[0] = nodeID
+	for i, v := range objectIDs {
+		args[i+1] = v
+	}
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("DeleteNodeIDSvcmonInstances %s [%v]: %w", nodeID, objectIDs, err)
 	} else if count > 0 {
 		oDb.SetChange("svcmon")
 	}
 	return nil
 }
 
-func (oDb *DB) InstanceStatusLogUpdate(ctx context.Context, status *DBInstanceStatus) error {
-	defer logDuration("instanceStatusLogUpdate "+status.SvcID+"@"+status.NodeID, time.Now())
-	/*
-		CREATE TABLE `svcmon_log_last` (
-		  `id` int(11) NOT NULL AUTO_INCREMENT,
-		  `mon_overallstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_ipstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_fsstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_diskstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_containerstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_syncstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_appstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_begin` datetime NOT NULL,
-		  `mon_end` datetime NOT NULL,
-		  `mon_hbstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_availstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_sharestatus` varchar(10) DEFAULT 'undef',
-		  `node_id` char(36) CHARACTER SET ascii DEFAULT '',
-		  `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
-		  PRIMARY KEY (`id`),
-		  UNIQUE KEY `uk` (`node_id`,`svc_id`),
-		  KEY `mon_overallstatus` (`mon_overallstatus`),
-		  KEY `mon_begin` (`mon_begin`,`mon_end`),
-		  KEY `k_node_id` (`node_id`),
-		  KEY `k_svc_id` (`svc_id`)
-		) ENGINE=InnoDB AUTO_INCREMENT=15639 DEFAULT CHARSET=utf8
-
-		CREATE TABLE `svcmon_log` (
-		  `id` int(11) NOT NULL AUTO_INCREMENT,
-		  `mon_overallstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_ipstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_fsstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_diskstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_containerstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_syncstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_appstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_begin` datetime NOT NULL,
-		  `mon_end` datetime NOT NULL,
-		  `mon_hbstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_availstatus` enum('up','down','warn','n/a','undef','stdby up','stdby down') DEFAULT 'undef',
-		  `mon_sharestatus` varchar(10) DEFAULT 'undef',
-		  `node_id` char(36) CHARACTER SET ascii DEFAULT '',
-		  `svc_id` char(36) CHARACTER SET ascii DEFAULT '',
-		  PRIMARY KEY (`id`),
-		  KEY `mon_overallstatus` (`mon_overallstatus`),
-		  KEY `mon_begin` (`mon_begin`,`mon_end`),
-		  KEY `k_node_id` (`node_id`),
-		  KEY `k_svc_id` (`svc_id`)
-		) ENGINE=InnoDB AUTO_INCREMENT=6749866 DEFAULT CHARSET=utf8
-	*/
-	const (
-		queryGetLogLast = "" +
-			"SELECT `mon_begin`, `id`, " +
-			" `mon_availstatus`, `mon_overallstatus`, `mon_syncstatus`, `mon_ipstatus`, `mon_fsstatus`," +
-			" `mon_diskstatus`, `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`" +
-			"FROM `svcmon_log_last`" +
-			"WHERE `svc_id` = ? AND `node_id` = ?"
-
-		querySetLogLast = "" +
-			"INSERT INTO `svcmon_log_last` (`svc_id`, `node_id`," +
-			" `mon_availstatus`, `mon_overallstatus`, `mon_syncstatus`, `mon_ipstatus`, `mon_fsstatus`," +
-			" `mon_diskstatus`, `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`," +
-			" `mon_begin`, `mon_end`) " +
-			" VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())" +
-			" ON DUPLICATE KEY UPDATE " +
-			"   `mon_availstatus` = ?, `mon_overallstatus` = ? , `mon_syncstatus` = ?, `mon_ipstatus` = ?, `mon_fsstatus` = ?," +
-			" `mon_diskstatus` = ?, `mon_sharestatus` = ?, `mon_containerstatus` = ?, `mon_appstatus`= ?," +
-			" `mon_begin` = NOW(), `mon_end` = NOW()"
-
-		queryExtendIntervalOfCurrent = "" +
-			"UPDATE `svcmon_log_last` SET `mon_end` = NOW() " +
-			" WHERE `svc_id` = ? AND `node_id` = ?"
-
-		querySaveIntervalOfPreviousBeforeTransition = "" +
-			"INSERT INTO `svcmon_log` (`svc_id`, `node_id`," +
-			" `mon_availstatus`, `mon_overallstatus`, `mon_syncstatus`, `mon_ipstatus`, `mon_fsstatus`," +
-			" `mon_diskstatus`, `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`," +
-			" `mon_begin`, `mon_end`)" +
-			" VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
-	)
+func (oDb *DB) SvcmonLogLastFromObjectIDs(ctx context.Context, objectIDs ...string) ([]*DBInstanceStatusLog, error) {
+	if len(objectIDs) == 0 {
+		return nil, nil
+	}
 	var (
-		prev DBInstanceStatus
+		querySelect = "SELECT `svc_id`, `node_id`, `mon_begin`, `id`, `mon_availstatus`, `mon_overallstatus`, `mon_syncstatus`, `mon_ipstatus`, `mon_fsstatus`," +
+			" `mon_diskstatus`, `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`" +
+			"FROM `svcmon_log_last` WHERE `svc_id` IN (%s)"
+		args = make([]any, len(objectIDs))
 
-		previousBegin time.Time
+		l = make([]*DBInstanceStatusLog, 0)
 	)
-	setLogLast := func() error {
-		_, err := oDb.DB.ExecContext(ctx, querySetLogLast, status.SvcID, status.NodeID,
-			status.MonAvailStatus, status.MonOverallStatus, status.MonSyncStatus, status.MonIpStatus, status.MonFsStatus,
-			status.MonDiskStatus, status.MonShareStatus, status.MonContainerStatus, status.MonAppStatus,
-			status.MonAvailStatus, status.MonOverallStatus, status.MonSyncStatus, status.MonIpStatus, status.MonFsStatus,
-			status.MonDiskStatus, status.MonShareStatus, status.MonContainerStatus, status.MonAppStatus)
-		if err != nil {
-			return fmt.Errorf("update svcmon_log_last: %w", err)
-		}
-		return nil
+
+	if len(objectIDs) == 0 {
+		return nil, nil
 	}
-	err := oDb.DB.QueryRowContext(ctx, queryGetLogLast, status.SvcID, status.NodeID).Scan(&previousBegin, &prev.ID,
-		&prev.MonAvailStatus, &prev.MonOverallStatus, &prev.MonSyncStatus, &prev.MonIpStatus, &prev.MonFsStatus,
-		&prev.MonDiskStatus, &prev.MonShareStatus, &prev.MonContainerStatus, &prev.MonAppStatus)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		// set initial status, log value
-		defer oDb.SetChange("svcmon_log")
-		return setLogLast()
-	case err != nil:
-		return fmt.Errorf("get svcmon_log_last: %w", err)
-	default:
-		defer oDb.SetChange("svcmon_log")
-		if status.MonAvailStatus == prev.MonAvailStatus &&
-			status.MonOverallStatus == prev.MonOverallStatus &&
-			status.MonSyncStatus == prev.MonSyncStatus &&
-			status.MonIpStatus == prev.MonIpStatus &&
-			status.MonFsStatus == prev.MonFsStatus &&
-			status.MonDiskStatus == prev.MonDiskStatus &&
-			status.MonShareStatus == prev.MonShareStatus &&
-			status.MonContainerStatus == prev.MonContainerStatus &&
-			status.MonAppStatus == prev.MonAppStatus {
-			// no change, extend last interval
-			if _, err := oDb.DB.ExecContext(ctx, queryExtendIntervalOfCurrent, status.SvcID, status.NodeID); err != nil {
-				return fmt.Errorf("extend svcmon_log_last: %w", err)
-			}
-			return nil
-		} else {
-			// the avail value will change, save interval of prev status, log value before change
-			_, err := oDb.DB.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition, status.SvcID, status.NodeID,
-				prev.MonAvailStatus, prev.MonOverallStatus, prev.MonSyncStatus, prev.MonIpStatus, prev.MonFsStatus,
-				prev.MonDiskStatus, prev.MonShareStatus, prev.MonContainerStatus, prev.MonAppStatus,
-				previousBegin)
-			if err != nil {
-				return fmt.Errorf("save svcmon_log transition: %w", err)
-			}
-			// reset previousBegin and end interval for new status, log
-			return setLogLast()
-		}
+	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
+	query := fmt.Sprintf(querySelect, placeholders)
+
+	for i, v := range objectIDs {
+		args[i] = v
 	}
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("InstancesStatusLogFromObjectIDs query: %w", err)
+	}
+	if rows == nil {
+		return nil, fmt.Errorf("InstancesStatusLogFromObjectIDs query: got nil rows result")
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var r DBInstanceStatusLog
+		if err := rows.Scan(&r.SvcID, &r.NodeID, &r.MonBeginAt, &r.ID,
+			&r.MonAvailStatus, &r.MonOverallStatus, &r.MonSyncStatus, &r.MonIpStatus, &r.MonFsStatus,
+			&r.MonDiskStatus, &r.MonShareStatus, &r.MonContainerStatus, &r.MonAppStatus); err != nil {
+			return nil, fmt.Errorf("InstancesStatusLogFromObjectIDs scan: %w", err)
+		}
+		l = append(l, &r)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("InstancesStatusLogFromObjectIDs query rows: %w", err)
+	}
+	return l, nil
 }
 
-func (oDb *DB) InstanceStatusUpdate(ctx context.Context, s *DBInstanceStatus) error {
-	defer logDuration("instanceStatusUpdate "+s.SvcID+"@"+s.NodeID, time.Now())
+func (oDb *DB) SvcmonLogLastUpdate(ctx context.Context, l ...*DBInstanceStatusLog) error {
+	defer logDuration("SvcmonLogLastUpdate", time.Now())
 	const (
-		qUpdate = "" +
-			"INSERT INTO `svcmon` (`svc_id`, `node_id`, `mon_vmname`, " +
-			" `mon_smon_status`, `mon_smon_global_expect`, `mon_availstatus`, " +
-			" `mon_overallstatus`, `mon_ipstatus`, `mon_diskstatus`, `mon_fsstatus`," +
-			" `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`, `mon_syncstatus`," +
-			" `mon_frozen`, `mon_frozen_at`, `mon_vmtype`, `mon_updated`)" +
-			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())" +
-			"ON DUPLICATE KEY UPDATE" +
-			" `mon_smon_status` = ?, `mon_smon_global_expect` = ?, `mon_availstatus` = ?, " +
-			" `mon_overallstatus` = ?, `mon_ipstatus` = ?, `mon_diskstatus` = ?, `mon_fsstatus` = ?," +
-			" `mon_sharestatus` = ?, `mon_containerstatus` = ?, `mon_appstatus` = ?, `mon_syncstatus` = ?," +
-			" `mon_frozen` = ?, `mon_frozen_at` = ?, `mon_vmtype` = ?, `mon_updated` = NOW()"
+		insertColList = "" +
+			"(`svc_id`, `node_id`, `mon_availstatus`, `mon_overallstatus`, `mon_syncstatus`, `mon_ipstatus`, `mon_fsstatus`," +
+			" `mon_diskstatus`, `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`, `mon_begin`, `mon_end`)"
+		valueList             = "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
+		onDuplicateAssignment = "mon_availstatus=VALUES(mon_availstatus), mon_overallstatus=VALUES(mon_overallstatus), " +
+			"mon_syncstatus=VALUES(mon_syncstatus), mon_ipstatus=VALUES(mon_ipstatus), mon_fsstatus=VALUES(mon_fsstatus), " +
+			"mon_diskstatus=VALUES(mon_diskstatus), mon_sharestatus=VALUES(mon_sharestatus), " +
+			"mon_containerstatus=VALUES(mon_containerstatus), mon_appstatus=VALUES(mon_appstatus), mon_begin=VALUES(mon_begin), " +
+			"mon_end=VALUES(mon_end)"
 	)
+	if len(l) == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
+
+	query := fmt.Sprintf("INSERT INTO `svcmon_log_last` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
+	args := make([]any, 0, 12*len(l))
+	for _, v := range l {
+		args = append(args, v.SvcID, v.NodeID, v.MonAvailStatus, v.MonOverallStatus, v.MonSyncStatus, v.MonIpStatus,
+			v.MonFsStatus, v.MonDiskStatus, v.MonShareStatus, v.MonContainerStatus, v.MonAppStatus)
+	}
+
+	_, err := oDb.ExecContext(ctx, query, args...)
+	return err
+}
+
+func (oDb *DB) SvcmonLogLastExtend(ctx context.Context, nodeID string, objectIDs ...string) error {
+	defer logDuration("SvcmonLogLastExtend", time.Now())
+	if len(objectIDs) == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
+
+	query := fmt.Sprintf("UPDATE `svcmon_log_last` SET `mon_end` = NOW() WHERE `node_id` = ? AND `svc_id` in (%s)", placeholders)
+	args := make([]any, len(objectIDs)+1)
+	args[0] = nodeID
+	for i, v := range objectIDs {
+		args[i+1] = v
+	}
+
+	_, err := oDb.ExecContext(ctx, query, args...)
+	return err
+}
+
+func (oDb *DB) SvcmonLogUpdate(ctx context.Context, l ...*DBInstanceStatusLog) error {
+	defer logDuration("instanceStatusLogUpdate", time.Now())
+	const (
+		insertColList = "(`svc_id`, `node_id`, `mon_availstatus`, `mon_overallstatus`, `mon_syncstatus`, `mon_ipstatus`, `mon_fsstatus`," +
+			" `mon_diskstatus`, `mon_sharestatus`, `mon_containerstatus`, `mon_appstatus`, `mon_begin`, `mon_end`)"
+		valueList = "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+	)
+	if len(l) == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
+
+	query := fmt.Sprintf("INSERT INTO `svcmon_log` %s VALUES %s", insertColList, placeholders)
+	args := make([]any, 0, 12*len(l))
+	for _, v := range l {
+		args = append(args, v.SvcID, v.NodeID, v.MonAvailStatus, v.MonOverallStatus, v.MonSyncStatus, v.MonIpStatus,
+			v.MonFsStatus, v.MonDiskStatus, v.MonShareStatus, v.MonContainerStatus, v.MonAppStatus, v.MonBeginAt)
+	}
+
+	_, err := oDb.ExecContext(ctx, query, args...)
+	return err
+}
+
+func (oDb *DB) SvcmonUpdate(ctx context.Context, l ...*DBInstanceStatus) error {
+	defer logDuration("SvcmonUpdate", time.Now())
+	const (
+		insertColList = `(svc_id, node_id, mon_vmname,
+		    mon_smon_status, mon_smon_global_expect, mon_availstatus, 
+		    mon_overallstatus, mon_ipstatus, mon_diskstatus, mon_fsstatus,
+		    mon_sharestatus, mon_containerstatus, mon_appstatus, mon_syncstatus,
+		    mon_frozen, mon_frozen_at, mon_vmtype, mon_updated)`
+		valueList             = "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+		onDuplicateAssignment = `mon_smon_status=VALUES(mon_smon_status),
+		    mon_smon_global_expect=VALUES(mon_smon_global_expect),
+		    mon_availstatus=VALUES(mon_availstatus),
+		    mon_overallstatus=VALUES(mon_overallstatus),
+		    mon_ipstatus=VALUES(mon_ipstatus),
+		    mon_diskstatus=VALUES(mon_diskstatus),
+		    mon_fsstatus=VALUES(mon_fsstatus),
+		    mon_sharestatus=VALUES(mon_sharestatus),
+		    mon_containerstatus=VALUES(mon_containerstatus),
+		    mon_appstatus=VALUES(mon_appstatus),
+		    mon_syncstatus=VALUES(mon_syncstatus),
+		    mon_frozen=VALUES(mon_frozen),
+		    mon_frozen_at=VALUES(mon_frozen_at),
+		    mon_vmtype=VALUES(mon_vmtype),
+		    mon_updated=NOW()`
+	)
+	if len(l) == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
+	args := make([]any, 0, 17*len(l))
+	for _, v := range l {
+		args = append(args, v.SvcID, v.NodeID, v.MonVmName,
+			v.MonSmonStatus, v.MonSmonGlobalExpect, v.MonAvailStatus,
+			v.MonOverallStatus, v.MonIpStatus, v.MonDiskStatus, v.MonFsStatus,
+			v.MonShareStatus, v.MonContainerStatus, v.MonAppStatus, v.MonSyncStatus,
+			v.MonFrozen, v.MonFrozenAt, v.MonVmType)
+	}
+
+	query := fmt.Sprintf("INSERT INTO svcmon %s VALUES %s ON DUPLICATE KEY UPDATE %s",
+		insertColList, placeholders, onDuplicateAssignment)
+
 	// TODO check vs v2
-	_, err := oDb.DB.ExecContext(ctx, qUpdate, s.SvcID, s.NodeID, s.MonVmName,
-		s.MonSmonStatus, s.MonSmonGlobalExpect, s.MonAvailStatus,
-		s.MonOverallStatus, s.MonIpStatus, s.MonDiskStatus, s.MonFsStatus,
-		s.MonShareStatus, s.MonContainerStatus, s.MonAppStatus, s.MonSyncStatus,
-		s.MonFrozen, s.MonFrozenAt, s.MonVmType,
-		s.MonSmonStatus, s.MonSmonGlobalExpect, s.MonAvailStatus,
-		s.MonOverallStatus, s.MonIpStatus, s.MonDiskStatus, s.MonFsStatus,
-		s.MonShareStatus, s.MonContainerStatus, s.MonAppStatus, s.MonSyncStatus,
-		s.MonFrozen, s.MonFrozenAt, s.MonVmType)
+	_, err := oDb.ExecContext(ctx, query, args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed with instance status count %d query len %d: %s: %w", len(l), len(query), query, err)
 	}
 	oDb.SetChange("svcmon")
 	return nil
 }
 
-func (oDb *DB) InstanceResourcesDelete(ctx context.Context, svcID, nodeID string) error {
-	defer logDuration("InstanceResourcesDelete "+svcID+"@"+nodeID+":", time.Now())
-	const (
-		queryPurge = "DELETE FROM `resmon` WHERE `svc_id` = ? AND `node_id` = ?"
-	)
-	if _, err := oDb.DB.ExecContext(ctx, queryPurge, svcID, nodeID); err != nil {
-		return fmt.Errorf("InstanceResourcesDelete: %w", err)
+func (oDb *DB) DeleteNodeIDResmonInstances(ctx context.Context, nodeID string, objectIDs ...string) error {
+	defer logDuration("DeleteNodeIDResmonInstances", time.Now())
+	if len(objectIDs) == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
+	query := fmt.Sprintf("DELETE FROM `resmon` WHERE `node_id` = ? AND `svc_id` IN (%s)", placeholders)
+
+	args := make([]any, len(objectIDs)+1)
+	args[0] = nodeID
+	for i, v := range objectIDs {
+		args[i+1] = v
+	}
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("DeleteNodeIDResmonInstances %s [%v]: %w", nodeID, objectIDs, err)
+	} else if count > 0 {
+		oDb.SetChange("resmon")
 	}
 	return nil
 }
@@ -534,36 +503,18 @@ func (oDb *DB) InstanceResourcesDeleteObsolete(ctx context.Context, svcID, nodeI
 func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID string, data feeder.InstanceResourceInfo) error {
 	defer logDuration("InstanceResourceInfoUpdate "+svcID+"@"+nodeID, time.Now())
 	const (
-		query = "" +
-			"INSERT INTO `resinfo` (`svc_id`, `node_id`, `rid`, `res_key`, `topology`, `res_value`, `updated`) " +
-			"VALUES (?, ?, ?, ?, ?, ?, NOW())" +
-			"ON DUPLICATE KEY UPDATE `topology` = VALUES(`topology`), `res_value` = VALUES(`res_value`), `updated` = NOW()"
+		insertColList         = "(`svc_id`, `node_id`, `rid`, `res_key`, `topology`, `res_value`, `updated`)"
+		valueList             = "(?, ?, ?, ?, ?, ?, NOW())"
+		onDuplicateAssignment = "`topology`=VALUES(`topology`),`res_value`=VALUES(`res_value`),`updated`=NOW()"
 	)
 	if len(data.Info) == 0 {
 		return nil
 	}
 	var (
-		changed  bool
-		topology = data.Topology
+		args     []any
+		value    string
+		resCount int
 	)
-
-	defer func() {
-		if changed {
-			oDb.SetChange("resinfo")
-		}
-	}()
-
-	stmt, err := oDb.DB.PrepareContext(ctx, query)
-	if err != nil {
-		return fmt.Errorf("db prepare: %w", err)
-	}
-	defer func() {
-		if err := stmt.Close(); err != nil {
-			slog.Error(fmt.Sprintf("InstanceResourceInfoUpdate close prepared context: %s", err))
-		}
-	}()
-
-	var value string
 	for _, info := range data.Info {
 		for _, key := range info.Keys {
 			if len(key.Value) > 255 {
@@ -571,18 +522,21 @@ func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID str
 			} else {
 				value = key.Value
 			}
-			if result, err := stmt.ExecContext(ctx, svcID, nodeID, info.Rid, key.Key, topology, value); err != nil {
-				return fmt.Errorf("db exec: %w", err)
-			} else if result != nil {
-				if count, err := result.RowsAffected(); err != nil {
-					return fmt.Errorf("db rows affected: %w", err)
-				} else if count > 0 {
-					changed = true
-				}
-			}
+			resCount++
+			args = append(args, svcID, nodeID, info.Rid, key.Key, data.Topology, value)
 		}
 	}
+	if resCount == 0 {
+		return nil
+	}
+	placeholders := strings.Repeat(valueList+",", resCount-1) + valueList
+	query := fmt.Sprintf("INSERT INTO `resinfo` %s VALUES %s ON DUPLICATE KEY UPDATE %s",
+		insertColList, placeholders, onDuplicateAssignment)
 
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return err
+	}
+	oDb.SetChange("resinfo")
 	return nil
 }
 
@@ -655,7 +609,7 @@ func (oDb *DB) InstanceResourceLogUpdate(ctx context.Context, res *DBInstanceRes
 		previousBegin time.Time
 	)
 	setLogLast := func() error {
-		_, err := oDb.DB.ExecContext(ctx, querySetLogLast,
+		_, err := oDb.ExecContext(ctx, querySetLogLast,
 			res.SvcID, res.NodeID, res.RID,
 			res.Status, res.Log,
 			res.Status, res.Log)
@@ -676,13 +630,13 @@ func (oDb *DB) InstanceResourceLogUpdate(ctx context.Context, res *DBInstanceRes
 		defer oDb.SetChange("resmon_log")
 		if previousStatus == res.Status && previousLog == res.Log {
 			// no change, extend last interval
-			if _, err := oDb.DB.ExecContext(ctx, queryExtendIntervalOfCurrent, res.SvcID, res.NodeID, res.RID); err != nil {
+			if _, err := oDb.ExecContext(ctx, queryExtendIntervalOfCurrent, res.SvcID, res.NodeID, res.RID); err != nil {
 				return fmt.Errorf("extend services_log_last: %w", err)
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of previous status, log value before change
-			if _, err := oDb.DB.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition,
+			if _, err := oDb.ExecContext(ctx, querySaveIntervalOfPreviousBeforeTransition,
 				res.SvcID, res.NodeID, res.RID, previousBegin, previousStatus, previousLog); err != nil {
 				return fmt.Errorf("add services_log change: %w", err)
 			}
@@ -690,37 +644,6 @@ func (oDb *DB) InstanceResourceLogUpdate(ctx context.Context, res *DBInstanceRes
 			return setLogLast()
 		}
 	}
-}
-
-func (oDb *DB) InstanceResourceUpdate(ctx context.Context, res *DBInstanceResource) error {
-	defer logDuration("InstanceResourceUpdate "+res.SvcID+"@"+res.NodeID+":"+res.RID, time.Now())
-	const (
-		query = "" +
-			"INSERT INTO `resmon` (`svc_id`, `node_id`, `vmname`, `rid`," +
-			" `res_status`, `res_type`, `res_log`, `res_desc`," +
-			" `res_optional`, `res_disable`, `res_monitor`," +
-			" `updated`)" +
-			"VALUES (?, ?, ?, ?," +
-			" ?, ?, ?, ?," +
-			" ?, ?, ?, NOW())" +
-			"ON DUPLICATE KEY UPDATE" +
-			" `res_status` = ?, `res_type` = ?, `res_log` = ?,  `res_desc` = ?," +
-			" `res_optional` = ?, `res_disable` = ?, `res_monitor` = ?," +
-			" `updated` = NOW()"
-	)
-	_, err := oDb.DB.ExecContext(ctx, query,
-		res.SvcID, res.NodeID, res.VmName, res.RID,
-		res.Status, res.ResType, res.Log, res.Desc,
-		res.Optional, res.Disable, res.Monitor,
-		res.Status, res.ResType, res.Log, res.Desc,
-		res.Disable, res.Disable, res.Monitor,
-	)
-
-	if err != nil {
-		return fmt.Errorf("instanceResourceUpdate %s: %w", res.RID, err)
-	}
-	oDb.SetChange("resmon")
-	return nil
 }
 
 // GetOrphanInstances returns list of InstanceID defined on svcmon for nodeIDs but where
@@ -851,4 +774,35 @@ func (oDb *DB) LogInstancesNotUpdated(ctx context.Context) error {
 		slog.Debug("alert: no instance outdated")
 	}
 	return nil
+}
+
+func (iStatus *DBInstanceStatus) SameAsLog(logStatus *DBInstanceStatusLog) bool {
+	if logStatus == nil {
+		return false
+	}
+	return iStatus.MonAvailStatus == logStatus.MonAvailStatus &&
+		iStatus.MonOverallStatus == logStatus.MonOverallStatus &&
+		iStatus.MonSyncStatus == logStatus.MonSyncStatus &&
+		iStatus.MonIpStatus == logStatus.MonIpStatus &&
+		iStatus.MonFsStatus == logStatus.MonFsStatus &&
+		iStatus.MonDiskStatus == logStatus.MonDiskStatus &&
+		iStatus.MonShareStatus == logStatus.MonShareStatus &&
+		iStatus.MonContainerStatus == logStatus.MonContainerStatus &&
+		iStatus.MonAppStatus == logStatus.MonAppStatus
+}
+
+func (iStatus *DBInstanceStatus) AsLog() *DBInstanceStatusLog {
+	return &DBInstanceStatusLog{
+		NodeID:             iStatus.NodeID,
+		SvcID:              iStatus.SvcID,
+		MonAvailStatus:     iStatus.MonAvailStatus,
+		MonOverallStatus:   iStatus.MonOverallStatus,
+		MonIpStatus:        iStatus.MonIpStatus,
+		MonDiskStatus:      iStatus.MonDiskStatus,
+		MonFsStatus:        iStatus.MonFsStatus,
+		MonShareStatus:     iStatus.MonShareStatus,
+		MonContainerStatus: iStatus.MonContainerStatus,
+		MonAppStatus:       iStatus.MonAppStatus,
+		MonSyncStatus:      iStatus.MonSyncStatus,
+	}
 }

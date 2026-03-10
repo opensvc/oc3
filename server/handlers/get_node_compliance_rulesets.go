@@ -12,7 +12,7 @@ import (
 // GetNodeComplianceRulesets handles GET /nodes/{node_id}/compliance/rulesets
 func (a *Api) GetNodeComplianceRulesets(c echo.Context, nodeId string) error {
 	log := echolog.GetLogHandler(c, "GetNodeComplianceRulesets")
-	odb := a.cdbSession()
+	odb := a.getODB()
 	ctx := c.Request().Context()
 
 	log.Info("called", logkey.NodeID, nodeId)

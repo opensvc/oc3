@@ -9,6 +9,7 @@ import (
 	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 	"github.com/spf13/viper"
 
+	"github.com/opensvc/oc3/cdb"
 	api "github.com/opensvc/oc3/server"
 	handlers "github.com/opensvc/oc3/server/handlers"
 	"github.com/opensvc/oc3/xauth"
@@ -33,11 +34,15 @@ func newServer() (*server, error) {
 func (t *server) Section() string { return t.section }
 
 func (t *server) apiRegister(e *echo.Echo) {
+	odb := cdb.New(t.db, t.Section())
+	odb.CreateSession(nil)
 	api.RegisterHandlersWithBaseURL(e, &handlers.Api{
 		DB:          t.db,
+		ODB:         odb,
 		Redis:       t.redis,
 		UI:          viper.GetBool(t.section + ".ui.enable"),
 		SyncTimeout: viper.GetDuration(t.section + ".sync.timeout"),
+		SubSystem:   t.section,
 	}, pathApi)
 }
 

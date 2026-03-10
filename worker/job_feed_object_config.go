@@ -125,15 +125,18 @@ func (d *jobFeedObjectConfig) updateDB(ctx context.Context) (err error) {
 			mapToInt(d.data, 0, "monitored_resource_count") > 0 {
 			ha = true
 		}
+		flex_min := mapToInt(d.data, 1, "flex_min")
 		cfg = &cdb.DBObjectConfig{
-			Name:      d.objectName,
-			SvcID:     objectID,
-			ClusterID: d.clusterID,
-			Updated:   d.now,
-			Comment:   mapToS(d.data, "", "comment"),
-			FlexMin:   mapToInt(d.data, 1, "flex_min"),
-			FlexMax:   mapToInt(d.data, 0, "flex_max"),
-			HA:        ha,
+			Name:       d.objectName,
+			SvcID:      objectID,
+			ClusterID:  d.clusterID,
+			Updated:    d.now,
+			Comment:    mapToS(d.data, "", "comment"),
+			FlexMin:    flex_min,
+			FlexMax:    mapToInt(d.data, 0, "flex_max"),
+			FlexTarget: mapToInt(d.data, flex_min, "flex_target"),
+			Topology:   mapToS(d.data, "failover", "topology"),
+			HA:         ha,
 		}
 	}
 
