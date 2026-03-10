@@ -96,20 +96,22 @@ type (
 
 	// DBObjectConfig is the configuration for a service object (a subset of the db table `services`)
 	DBObjectConfig struct {
-		SvcID     string
-		Name      string
-		Nodes     *string
-		ClusterID string
-		DrpNode   *string
-		DrpNodes  *string
-		App       *string
-		Env       *string
-		Comment   string
-		FlexMin   int
-		FlexMax   int
-		HA        bool
-		Config    string
-		Updated   time.Time
+		SvcID      string
+		Name       string
+		Nodes      *string
+		ClusterID  string
+		DrpNode    *string
+		DrpNodes   *string
+		App        *string
+		Env        *string
+		Comment    string
+		FlexMin    int
+		FlexMax    int
+		FlexTarget int
+		HA         bool
+		Config     string
+		Topology   string
+		Updated    time.Time
 	}
 
 	DBObjectStatusLog struct {
@@ -566,14 +568,14 @@ func (oDb *DB) insertOrUpdateObjectForNodeAndCandidateApp(ctx context.Context, o
 func (oDb *DB) InsertOrUpdateObjectConfig(ctx context.Context, c *DBObjectConfig) (bool, error) {
 	const query = "" +
 		"INSERT INTO `services` (`svcname`, `cluster_id`, `svc_id`, `svc_nodes`, `svc_drpnode`, `svc_drpnodes`" +
-		" ,  `svc_app`, `svc_env`, `svc_comment`, `svc_flex_min_nodes`, `svc_flex_max_nodes`" +
-		" , `svc_ha`, `svc_config`, `updated`)" +
-		" VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())" +
+		" , `svc_app`, `svc_env`, `svc_comment`, `svc_flex_min_nodes`, `svc_flex_max_nodes`, `svc_flex_target`" +
+		" , `svc_ha`, `svc_topology`, `svc_config`, `updated`)" +
+		" VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())" +
 		" ON DUPLICATE KEY UPDATE  `svcname`=VALUES(`svcname`), `cluster_id`=VALUES(`cluster_id`)" + "" +
 		"   , `svc_nodes`=VALUES(`svc_nodes`), `svc_drpnode`=VALUES(`svc_drpnode`), `svc_drpnodes`=VALUES(`svc_drpnodes`)" +
 		"   , `svc_app`=VALUES(`svc_app`), `svc_env`=VALUES(`svc_env`), `svc_comment`=VALUES(`svc_comment`)" + "" +
 		"   , `svc_flex_min_nodes`=VALUES(`svc_flex_min_nodes`), `svc_flex_max_nodes`=VALUES(`svc_flex_max_nodes`)" +
-		"   , `svc_ha`=VALUES(`svc_ha`), `svc_config`=VALUES(`svc_config`), `updated`=VALUES(`updated`)"
+		"   , `svc_flex_target`=VALUES(`svc_flex_target`), `svc_ha`=VALUES(`svc_ha`), `svc_topology`=VALUES(`svc_topology`), `svc_config`=VALUES(`svc_config`), `updated`=VALUES(`updated`)"
 	var nodes, drpNode, drpNodes, app, env any
 	if c.Nodes != nil {
 		nodes = *c.Nodes
@@ -590,7 +592,7 @@ func (oDb *DB) InsertOrUpdateObjectConfig(ctx context.Context, c *DBObjectConfig
 	if c.Env != nil {
 		env = *c.Env
 	}
-	count, err := oDb.execCountContext(ctx, query, c.Name, c.ClusterID, c.SvcID, nodes, drpNode, drpNodes, app, env, c.Comment, c.FlexMin, c.FlexMax, c.HA, c.Config)
+	count, err := oDb.execCountContext(ctx, query, c.Name, c.ClusterID, c.SvcID, nodes, drpNode, drpNodes, app, env, c.Comment, c.FlexMin, c.FlexMax, c.FlexTarget, c.HA, c.Topology, c.Config)
 	if err != nil {
 		return false, fmt.Errorf("update services config: %w", err)
 	}
