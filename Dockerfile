@@ -19,7 +19,7 @@ RUN echo "Cache busted at $(date): oc3 version: $(./dist/oc3 version)"
 
 FROM alpine:3.20.1
 
-RUN apk add --no-cache bash
+RUN apk add --no-cache bash git
 
 COPY --from=builder /opt/oc3/dist/oc3 /usr/bin/oc3
 

@@ -65,7 +65,7 @@ func taskSysreport(ctx context.Context, task *Task) error {
 			sysreportDir := viper.GetString("scheduler.directories.uploads")
 			nodeDir := filepath.Join(sysreportDir, "sysreport", data.NodeID)
 			if err := git.Commit(nodeDir); err != nil {
-				task.Errorf("git commit: %s", err)
+				return fmt.Errorf("git commit: %w", err)
 			}
 
 			if err := odb.Commit(); err != nil {
