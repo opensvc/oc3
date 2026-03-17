@@ -45,5 +45,5 @@ func (a *Api) GetNodeComplianceModulesets(c echo.Context, nodeId string, params 
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot filter modulesets fields for node %s", node.NodeID)
 	}
 
-	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["moduleset"], props, page, queryWithMeta(params.Meta)))
+	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["moduleset"], props, page, queryWithMeta(params.Meta), queryWithStats(params.Stats)))
 }

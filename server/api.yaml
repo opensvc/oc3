@@ -83,6 +83,7 @@ paths:
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
       responses:
         200:
           description: List of candidate modulesets
@@ -111,6 +112,7 @@ paths:
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
       responses:
         200:
           description: List of candidate rulesets
@@ -166,6 +168,7 @@ paths:
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
       responses:
         200:
           description: List of attached modulesets
@@ -244,6 +247,7 @@ paths:
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
       responses:
         200:
           description: List of attached rulesets
@@ -320,6 +324,7 @@ paths:
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
       tags:
         - collector
       responses:
@@ -497,11 +502,6 @@ components:
     ListMeta:
       type: object
       required:
-        - count
-        - available_props
-        - included_props
-        - limit
-        - offset
       properties:
         count:
           type: integer
@@ -517,6 +517,12 @@ components:
           type: integer
         offset:
           type: integer
+        distinct:
+          type: object
+          additionalProperties:
+            type: integer
+        total:
+          type: integer
 
     ListResponse:
       type: object
@@ -524,9 +530,15 @@ components:
         - data
       properties:
         data:
-          type: array
-          items:
-            type: object
+          oneOf:
+            - type: array
+              items:
+                type: object
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
 
@@ -588,6 +600,14 @@ components:
       name: meta
       required: false
       description: Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+      schema:
+        type: string
+
+    inQueryStats:
+      in: query
+      name: stats
+      required: false
+      description: Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
       schema:
         type: string
 

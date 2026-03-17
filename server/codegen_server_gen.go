@@ -130,6 +130,13 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceCandidateModulesets(ctx echo.C
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
 	}
 
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetNodeComplianceCandidateModulesets(ctx, nodeId, params)
 	return err
@@ -178,6 +185,13 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceCandidateRulesets(ctx echo.Con
 	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -257,6 +271,13 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceModulesets(ctx echo.Context) e
 	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -365,6 +386,13 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceRulesets(ctx echo.Context) err
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
 	}
 
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetNodeComplianceRulesets(ctx, nodeId, params)
 	return err
@@ -471,6 +499,13 @@ func (w *ServerInterfaceWrapper) GetTags(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -608,34 +643,36 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"2+Ozm9n/AwAA//94ygbJ8y4AAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

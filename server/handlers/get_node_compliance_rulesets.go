@@ -45,5 +45,5 @@ func (a *Api) GetNodeComplianceRulesets(c echo.Context, nodeId string, params se
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot filter rulesets fields for node %s", node.NodeID)
 	}
 
-	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["ruleset"], props, page, queryWithMeta(params.Meta)))
+	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["ruleset"], props, page, queryWithMeta(params.Meta), queryWithStats(params.Stats)))
 }

@@ -11,7 +11,7 @@ import (
 )
 
 // handleGetTags is the common logic for getting tags
-func (a *Api) handleGetTags(c echo.Context, tagID *int, page PageParams, props []string, withMeta bool) error {
+func (a *Api) handleGetTags(c echo.Context, tagID *int, page PageParams, props []string, withMeta, withStats bool) error {
 	log := echolog.GetLogHandler(c, "handleGetTags")
 	odb := a.getODB()
 	ctx := c.Request().Context()
@@ -41,7 +41,7 @@ func (a *Api) handleGetTags(c echo.Context, tagID *int, page PageParams, props [
 		log.Error("cannot project tag props", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot project tag props")
 	}
-	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["tag"], props, page, withMeta))
+	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["tag"], props, page, withMeta, withStats))
 }
 
 // GetTags handles GET /tags
@@ -53,5 +53,5 @@ func (a *Api) GetTags(c echo.Context, params server.GetTagsParams) error {
 	}
 	log := echolog.GetLogHandler(c, "GetTags")
 	log.Info("called", "limit", page.Limit, "offset", page.Offset, "props", props)
-	return a.handleGetTags(c, nil, page, props, queryWithMeta(params.Meta))
+	return a.handleGetTags(c, nil, page, props, queryWithMeta(params.Meta), queryWithStats(params.Stats))
 }
