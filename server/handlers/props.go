@@ -8,15 +8,22 @@ import (
 	"github.com/opensvc/oc3/server"
 )
 
+func allowedProps(mapping propMapping) []string {
+	props := make([]string, 0, len(mapping.Available))
+	for _, prop := range mapping.Available {
+		if _, blocked := mapping.Blacklist[prop]; !blocked {
+			props = append(props, prop)
+		}
+	}
+	return props
+}
+
 func buildProps(props *server.InQueryProps, mapping propMapping) ([]string, error) {
 	allowedSet := make(map[string]struct{}, len(mapping.Available))
-	defaultProps := make([]string, 0, len(mapping.Available))
+	defaultProps := allowedProps(mapping)
 
 	for _, prop := range mapping.Available {
 		allowedSet[prop] = struct{}{}
-		if _, blocked := mapping.Blacklist[prop]; !blocked {
-			defaultProps = append(defaultProps, prop)
-		}
 	}
 
 	if props == nil || strings.TrimSpace(string(*props)) == "" {

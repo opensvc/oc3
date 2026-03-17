@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.2
+  version: 1.0.3
 
 paths:
   /auth/node:
@@ -64,7 +64,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/ListResponse'
         401:
           $ref: '#/components/responses/401'
         403:
@@ -82,15 +82,14 @@ paths:
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
       responses:
         200:
           description: List of candidate modulesets
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
+                $ref: '#/components/schemas/ListResponse'
         404:
           description: Node not found
         500:
@@ -111,15 +110,14 @@ paths:
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
       responses:
         200:
           description: List of candidate rulesets
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
+                $ref: '#/components/schemas/ListResponse'
         404:
           description: Node not found
         500:
@@ -167,15 +165,14 @@ paths:
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
       responses:
         200:
           description: List of attached modulesets
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
+                $ref: '#/components/schemas/ListResponse'
         404:
           description: Node not found
         500:
@@ -246,15 +243,14 @@ paths:
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
       responses:
         200:
           description: List of attached rulesets
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
+                $ref: '#/components/schemas/ListResponse'
         404:
           description: Node not found
         500:
@@ -323,6 +319,7 @@ paths:
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
       tags:
         - collector
       responses:
@@ -331,9 +328,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
+                $ref: '#/components/schemas/ListResponse'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -499,6 +494,42 @@ components:
           type: string
           example: "0.0.1"
 
+    ListMeta:
+      type: object
+      required:
+        - count
+        - available_props
+        - included_props
+        - limit
+        - offset
+      properties:
+        count:
+          type: integer
+        available_props:
+          type: array
+          items:
+            type: string
+        included_props:
+          type: array
+          items:
+            type: string
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    ListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
   parameters:
     inPathMsetId:
       in: path
@@ -549,6 +580,14 @@ components:
       name: props
       required: false
       description: A list of properties to include in each data dictionnary.
+      schema:
+        type: string
+
+    inQueryMeta:
+      in: query
+      name: meta
+      required: false
+      description: Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
       schema:
         type: string
 

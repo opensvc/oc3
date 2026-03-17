@@ -8,6 +8,21 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// ListMeta defines model for ListMeta.
+type ListMeta struct {
+	AvailableProps []string `json:"available_props"`
+	Count          int      `json:"count"`
+	IncludedProps  []string `json:"included_props"`
+	Limit          int      `json:"limit"`
+	Offset         int      `json:"offset"`
+}
+
+// ListResponse defines model for ListResponse.
+type ListResponse struct {
+	Data []map[string]interface{} `json:"data"`
+	Meta *ListMeta                `json:"meta,omitempty"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	// Text A human-readable explanation specific to this occurrence of the
@@ -31,6 +46,9 @@ type InPathRsetId = string
 
 // InQueryLimit defines model for inQueryLimit.
 type InQueryLimit = int
+
+// InQueryMeta defines model for inQueryMeta.
+type InQueryMeta = string
 
 // InQueryOffset defines model for inQueryOffset.
 type InQueryOffset = int
@@ -72,6 +90,9 @@ type GetNodeComplianceCandidateModulesetsParams struct {
 
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 }
 
 // GetNodeComplianceCandidateRulesetsParams defines parameters for GetNodeComplianceCandidateRulesets.
@@ -84,6 +105,9 @@ type GetNodeComplianceCandidateRulesetsParams struct {
 
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 }
 
 // GetNodeComplianceLogsParams defines parameters for GetNodeComplianceLogs.
@@ -102,6 +126,9 @@ type GetNodeComplianceModulesetsParams struct {
 
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 }
 
 // PostNodeComplianceModulesetJSONBody defines parameters for PostNodeComplianceModuleset.
@@ -117,6 +144,9 @@ type GetNodeComplianceRulesetsParams struct {
 
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 }
 
 // PostNodeComplianceRulesetJSONBody defines parameters for PostNodeComplianceRuleset.
@@ -132,6 +162,9 @@ type GetTagsParams struct {
 
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 }
 
 // GetTagParams defines parameters for GetTag.

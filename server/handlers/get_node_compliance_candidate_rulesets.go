@@ -52,6 +52,6 @@ func (a *Api) GetNodeComplianceCandidateRulesets(c echo.Context, nodeId string, 
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot filter rulesets fields for node %s", node.NodeID)
 	}
 
-	return c.JSON(http.StatusOK, filteredItems)
+	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["ruleset"], props, page, queryWithMeta(params.Meta)))
 
 }

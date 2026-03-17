@@ -16,5 +16,5 @@ func (a *Api) GetTag(c echo.Context, tagIdParam int, params server.GetTagParams)
 	}
 	log := echolog.GetLogHandler(c, "GetTag")
 	log.Info("called", logkey.TagID, tagIdParam, "props", props)
-	return a.handleGetTags(c, &tagIdParam, PageParams{}, props)
+	return a.handleGetTags(c, &tagIdParam, PageParams{}, props, false)
 }
