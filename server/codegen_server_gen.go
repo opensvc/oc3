@@ -25,16 +25,16 @@ type ServerInterface interface {
 	PostAuthNode(ctx echo.Context) error
 
 	// (GET /nodes/{node_id}/compliance/candidate_modulesets)
-	GetNodeComplianceCandidateModulesets(ctx echo.Context, nodeId InPathNodeId) error
+	GetNodeComplianceCandidateModulesets(ctx echo.Context, nodeId InPathNodeId, params GetNodeComplianceCandidateModulesetsParams) error
 
 	// (GET /nodes/{node_id}/compliance/candidate_rulesets)
-	GetNodeComplianceCandidateRulesets(ctx echo.Context, nodeId InPathNodeId) error
+	GetNodeComplianceCandidateRulesets(ctx echo.Context, nodeId InPathNodeId, params GetNodeComplianceCandidateRulesetsParams) error
 
 	// (GET /nodes/{node_id}/compliance/logs)
 	GetNodeComplianceLogs(ctx echo.Context, nodeId InPathNodeId) error
 
 	// (GET /nodes/{node_id}/compliance/modulesets)
-	GetNodeComplianceModulesets(ctx echo.Context, nodeId InPathNodeId) error
+	GetNodeComplianceModulesets(ctx echo.Context, nodeId InPathNodeId, params GetNodeComplianceModulesetsParams) error
 
 	// (DELETE /nodes/{node_id}/compliance/modulesets/{mset_id})
 	DeleteNodeComplianceModuleset(ctx echo.Context, nodeId InPathNodeId, msetId InPathMsetId) error
@@ -43,7 +43,7 @@ type ServerInterface interface {
 	PostNodeComplianceModuleset(ctx echo.Context, nodeId InPathNodeId, msetId InPathMsetId) error
 
 	// (GET /nodes/{node_id}/compliance/rulesets)
-	GetNodeComplianceRulesets(ctx echo.Context, nodeId InPathNodeId) error
+	GetNodeComplianceRulesets(ctx echo.Context, nodeId InPathNodeId, params GetNodeComplianceRulesetsParams) error
 
 	// (DELETE /nodes/{node_id}/compliance/rulesets/{rset_id})
 	DeleteNodeComplianceRuleset(ctx echo.Context, nodeId InPathNodeId, rsetId InPathRsetId) error
@@ -55,13 +55,13 @@ type ServerInterface interface {
 	GetSwagger(ctx echo.Context) error
 
 	// (GET /tags)
-	GetTags(ctx echo.Context) error
+	GetTags(ctx echo.Context, params GetTagsParams) error
 
 	// (GET /tags/{tag_id})
 	GetTag(ctx echo.Context, tagId int) error
 
 	// (GET /tags/{tag_id}/nodes)
-	GetTagNodes(ctx echo.Context, tagId int) error
+	GetTagNodes(ctx echo.Context, tagId int, params GetTagNodesParams) error
 
 	// (GET /version)
 	GetVersion(ctx echo.Context) error
@@ -100,8 +100,24 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceCandidateModulesets(ctx echo.C
 
 	ctx.Set(BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeComplianceCandidateModulesetsParams
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetNodeComplianceCandidateModulesets(ctx, nodeId)
+	err = w.Handler.GetNodeComplianceCandidateModulesets(ctx, nodeId, params)
 	return err
 }
 
@@ -120,8 +136,24 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceCandidateRulesets(ctx echo.Con
 
 	ctx.Set(BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeComplianceCandidateRulesetsParams
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetNodeComplianceCandidateRulesets(ctx, nodeId)
+	err = w.Handler.GetNodeComplianceCandidateRulesets(ctx, nodeId, params)
 	return err
 }
 
@@ -160,8 +192,24 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceModulesets(ctx echo.Context) e
 
 	ctx.Set(BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeComplianceModulesetsParams
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetNodeComplianceModulesets(ctx, nodeId)
+	err = w.Handler.GetNodeComplianceModulesets(ctx, nodeId, params)
 	return err
 }
 
@@ -236,8 +284,24 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceRulesets(ctx echo.Context) err
 
 	ctx.Set(BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeComplianceRulesetsParams
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetNodeComplianceRulesets(ctx, nodeId)
+	err = w.Handler.GetNodeComplianceRulesets(ctx, nodeId, params)
 	return err
 }
 
@@ -314,8 +378,24 @@ func (w *ServerInterfaceWrapper) GetTags(ctx echo.Context) error {
 
 	ctx.Set(BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetTagsParams
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetTags(ctx)
+	err = w.Handler.GetTags(ctx, params)
 	return err
 }
 
@@ -354,8 +434,24 @@ func (w *ServerInterfaceWrapper) GetTagNodes(ctx echo.Context) error {
 
 	ctx.Set(BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetTagNodesParams
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetTagNodes(ctx, tagId)
+	err = w.Handler.GetTagNodes(ctx, tagId, params)
 	return err
 }
 
@@ -417,28 +513,30 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"H4sIAAAAAAAC/+xaTXPbNhP+Kxi875GV6MQ5RDfHbjJpEyeV3fbgeDIQuZSQkgCzWCZWNfrvHQD8kkV9",
+	"d+Qk9Ukjcold7PNgnwXIGY90lmsFigwfzHguUGRAgO6fVO8FTd4aoNex/R+DiVDmJLXiA/76gumE0QRY",
+	"puMiBQPEAy7trVzQhAdciQz4gGcG6KOMecARPhcSIeYDwgICbqIJZMIOTdPcmhpCqcZ8Pg9K55c6hvXO",
+	"lY6h26+9s6/f4cZJ47op455T/q0AnL6RmaRl19c20+JOZkXGVJGNAG0ooAglGEaaIVCBqsdCloFQhinN",
+	"UjtUr4rxsx29CdLd5O2QYkhEkRIfPAsDnkllffFBGFSxSkUwBmwH+y5JbBaWor36S+YuT4lEQ3WYZfJi",
+	"QYJFBRqNq6LTfuDO8DZFN7d5N7lWBhyRT8PQ/kRaESgXrMjzVEbCBtv/ZGzEs5aj/yMkfMD/129WR9/f",
+	"Nf33qEcpZN7L4pxfiJgN4XMBhvg84KfhyTG8/q5EQRON8m+Ivdunx3D7UuNIxjEo7/P0GD4vNbGXulDl",
+	"PJ8fw+e5VkkqI4fos+Pw6LUiQCVSdgX4BZD9jKj9oisftmNXz9uqjToHJOnJTnDXsR7P2KTIhPoJQcRi",
+	"lAKDuzwVykXOTA6RTGRkqwhNpGE6igpEUBGUK/aDyr2/3gfFg47a1dS5Gx/BbW2lR5/A5+8LoJE+SYsx",
+	"t27Ancjy1D4X9sLeyUZn1aPL/my+ICpQ0vTK5s27Ggkjo7OCJjVU9hl3tfE1IcptwCMQCFhZ+38vNWaC",
+	"+ID/8ud1VZ7cEO7u/TF8qUy0Q0aSm5jOQZkvEYt0mkJEGpnIJW+lh5/0wt4TG4A1tTcH/Gkv7IU8cELj",
+	"JtK3y77v5M/mU5sO1IcwloYAmXA6yewjoKhkrIPSwuD+Wbnj77UhO91Lr6roq9kLHU93Iv4iuiLPOwQv",
+	"cALtq/1sA8i1ZQfKS9X+yY6rdDHYGqz70RaFjDdH6qxKyLuCvb/Wz6IIclqo3F1Vo55g3xo11W+T7fNW",
+	"2Vpva43aS4YPbhYWy83tPJgtLIib27mdoRgbO3FLLX5rR3CcNP1Z2X/Nnb9UChVBPxIqlrEg+Fg3jS7r",
+	"464e4hUQqx9oukzDEl0xuoPCr4Ase89rp+fVEG8bl8FCq3vTnZzGpL/QjdpEbLRvtXLb25fdlM3rQZSW",
+	"BJlpkbUpweUFgSimXXx8Iw3Zmt+V95bS39fl2DbixJJKnEvKrdA143UNGl3bk3R1Bd2Febgb7/BA1g0f",
+	"Obcz5/BHYFyqxxs4Vtsya7sjwd7Y4Q/j1MNBft4x9Xo3/z2DvqWstcRMEIloArFtvrdH/1HLtq8rdYZ/",
+	"EClrptGflYdrcx9iCgTLwV6AnT8TzfxZgjpbzbYLN9AKwh2Bb61jxw76dKBWB8dMEUVgTFKk6ZTF4IFf",
+	"j7bGVmIeGvpgxU7ujJYwXFcv7D7uG8Jvv11kx+Zp8Th1eef3ZB03qjrg6RBus38KWwd5m2xPdt3DHWVf",
+	"tkNd2aoxxsN067Eb3lm1fohmGGvFwl0UC/fWq+FRq91wF7UaHqRV+L0oFe6lUw+I20Oq1PBRo5o6Up56",
+	"96pkl2K0JC1XX8V47M7cD6rVGw9p3/36zaS4SllejFIZlfnyF1eIttMTuJOGpBozZ9qh0tdir9OE71Rj",
+	"PaAPwm17vT8jMa40sBO0C2nyVEwtXKx8PzFdAdsyaqs+WSBn3PG5go9mm68Vmnfst8dadKfbLKTTbwNP",
+	"3wGt7Z+dBfs6AYQKFCabbnoFyJdu3IdB+j/Qa5egSJr49982f6v6sGsx7uy9jku71hvzTqr5j4GYyCWr",
+	"TDuY9Ud96yAA1n3nUHn/d6pwnQ6Ri5FMpXtrezv3mbVNrl8XBaZ8wHt9Pr+d/xMAAP//7lku+OQmAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

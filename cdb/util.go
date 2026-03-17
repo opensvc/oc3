@@ -30,3 +30,11 @@ func checkRow[T any](err error, valid bool, value T) (T, bool, error) {
 		return value, true, nil
 	}
 }
+
+func appendLimitOffset(query string, args []any, limit, offset int) (string, []any) {
+	if limit > 0 {
+		query += " LIMIT ? OFFSET ?"
+		args = append(args, limit, offset)
+	}
+	return query, args
+}

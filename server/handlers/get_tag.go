@@ -11,5 +11,5 @@ import (
 func (a *Api) GetTag(c echo.Context, tagIdParam int) error {
 	log := echolog.GetLogHandler(c, "GetTag")
 	log.Info("called", logkey.TagID, tagIdParam)
-	return a.handleGetTags(c, &tagIdParam)
+	return a.handleGetTags(c, &tagIdParam, PageParams{})
 }

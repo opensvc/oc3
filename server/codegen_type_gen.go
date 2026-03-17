@@ -29,6 +29,12 @@ type InPathNodeId = string
 // InPathRsetId defines model for inPathRsetId.
 type InPathRsetId = string
 
+// InQueryLimit defines model for inQueryLimit.
+type InQueryLimit = int
+
+// InQueryOffset defines model for inQueryOffset.
+type InQueryOffset = int
+
 // N400 defines model for 400.
 type N400 = Problem
 
@@ -53,11 +59,65 @@ type PostAuthNodeJSONBody struct {
 	Nodename string  `json:"nodename"`
 }
 
+// GetNodeComplianceCandidateModulesetsParams defines parameters for GetNodeComplianceCandidateModulesets.
+type GetNodeComplianceCandidateModulesetsParams struct {
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// GetNodeComplianceCandidateRulesetsParams defines parameters for GetNodeComplianceCandidateRulesets.
+type GetNodeComplianceCandidateRulesetsParams struct {
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// GetNodeComplianceModulesetsParams defines parameters for GetNodeComplianceModulesets.
+type GetNodeComplianceModulesetsParams struct {
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
 // PostNodeComplianceModulesetJSONBody defines parameters for PostNodeComplianceModuleset.
 type PostNodeComplianceModulesetJSONBody = map[string]interface{}
 
+// GetNodeComplianceRulesetsParams defines parameters for GetNodeComplianceRulesets.
+type GetNodeComplianceRulesetsParams struct {
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
 // PostNodeComplianceRulesetJSONBody defines parameters for PostNodeComplianceRuleset.
 type PostNodeComplianceRulesetJSONBody = map[string]interface{}
+
+// GetTagsParams defines parameters for GetTags.
+type GetTagsParams struct {
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// GetTagNodesParams defines parameters for GetTagNodes.
+type GetTagNodesParams struct {
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+}
 
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody

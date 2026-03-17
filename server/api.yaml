@@ -79,6 +79,8 @@ paths:
       operationId: GetNodeComplianceCandidateModulesets
       parameters:
         - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
       responses:
         200:
           description: List of candidate modulesets
@@ -105,6 +107,8 @@ paths:
       operationId: GetNodeComplianceCandidateRulesets
       parameters:
         - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
       responses:
         200:
           description: List of candidate rulesets
@@ -157,6 +161,8 @@ paths:
       operationId: GetNodeComplianceModulesets
       parameters:
         - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
       responses:
         200:
           description: List of attached modulesets
@@ -233,6 +239,8 @@ paths:
       operationId: GetNodeComplianceRulesets
       parameters:
         - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
       responses:
         200:
           description: List of attached rulesets
@@ -306,6 +314,9 @@ paths:
     get:
       operationId: GetTags
       description: List existing tags
+      parameters:
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
       tags:
         - collector
       responses:
@@ -362,6 +373,8 @@ paths:
           description: ID of the tag
           schema:
             type: integer
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
       tags:
         - collector
       responses:
@@ -502,6 +515,26 @@ components:
       description: ID of the ruleset
       schema:
         type: string
+
+    inQueryLimit:
+      in: query
+      name: limit
+      required: false
+      description: The maximum number of entries to return. 0 means no limit.
+      schema:
+        type: integer
+        minimum: 0
+        default: 50
+
+    inQueryOffset:
+      in: query
+      name: offset
+      required: false
+      description: Skip the first entries of the data cursor.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
 
     inQuerySync:
       in: query

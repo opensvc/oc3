@@ -5,17 +5,19 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/util/echolog"
 	"github.com/opensvc/oc3/util/logkey"
 )
 
 // GetNodeComplianceCandidateRulesets handles GET /nodes/{node_id}/compliance/candidate_rulesets
-func (a *Api) GetNodeComplianceCandidateRulesets(c echo.Context, nodeId string) error {
+func (a *Api) GetNodeComplianceCandidateRulesets(c echo.Context, nodeId string, params server.GetNodeComplianceCandidateRulesetsParams) error {
+	page := buildPageParams(params.Limit, params.Offset)
 	log := echolog.GetLogHandler(c, "GetNodeComplianceCandidateRulesets")
 	odb := a.getODB()
 	ctx := c.Request().Context()
 
-	log.Info("called", logkey.NodeID, nodeId)
+	log.Info("called", logkey.NodeID, nodeId, "limit", page.Limit, "offset", page.Offset)
 
 	// get node ID
 	node, err := a.getODB().NodeByNodeIDOrNodename(c.Request().Context(), nodeId)
@@ -34,7 +36,7 @@ func (a *Api) GetNodeComplianceCandidateRulesets(c echo.Context, nodeId string) 
 	// get candidate rulesets
 	groups := UserGroupsFromContext(c)
 	isManager := IsManager(c)
-	candidates, err := odb.CompNodeCandidateRulesets(ctx, node.NodeID, attachedRulesets, groups, isManager)
+	candidates, err := odb.CompNodeCandidateRulesets(ctx, node.NodeID, attachedRulesets, groups, isManager, page.Limit, page.Offset)
 	if err != nil {
 		log.Error("cannot get candidate rulesets", logkey.NodeID, node.NodeID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get candidate rulesets for node %s", node.NodeID)

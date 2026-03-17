@@ -5,17 +5,19 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/util/echolog"
 	"github.com/opensvc/oc3/util/logkey"
 )
 
 // GetNodeComplianceRulesets handles GET /nodes/{node_id}/compliance/rulesets
-func (a *Api) GetNodeComplianceRulesets(c echo.Context, nodeId string) error {
+func (a *Api) GetNodeComplianceRulesets(c echo.Context, nodeId string, params server.GetNodeComplianceRulesetsParams) error {
+	page := buildPageParams(params.Limit, params.Offset)
 	log := echolog.GetLogHandler(c, "GetNodeComplianceRulesets")
 	odb := a.getODB()
 	ctx := c.Request().Context()
 
-	log.Info("called", logkey.NodeID, nodeId)
+	log.Info("called", logkey.NodeID, nodeId, "limit", page.Limit, "offset", page.Offset)
 
 	// get node ID
 	node, err := odb.NodeByNodeIDOrNodename(ctx, nodeId)
@@ -27,7 +29,7 @@ func (a *Api) GetNodeComplianceRulesets(c echo.Context, nodeId string) error {
 	// get attached rulesets with details
 	groups := UserGroupsFromContext(c)
 	isManager := IsManager(c)
-	rulesets, err := odb.CompNodeAttachedRulesets(ctx, node.NodeID, groups, isManager)
+	rulesets, err := odb.CompNodeAttachedRulesets(ctx, node.NodeID, groups, isManager, page.Limit, page.Offset)
 	if err != nil {
 		log.Error("cannot get attached rulesets", logkey.NodeID, node.NodeID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get attached rulesets for node %s", node.NodeID)
