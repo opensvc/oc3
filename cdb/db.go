@@ -51,6 +51,26 @@ type (
 
 		ExecTxRetry  prometheus.Counter
 		ExecTxFailed prometheus.Counter
+
+		HbUpdate        prometheus.Counter
+		HbLogUpdate     prometheus.Counter
+		HbLogLastExtend prometheus.Counter
+		HbLogLastUpdate prometheus.Counter
+
+		ObjectUpdate        prometheus.Counter
+		ObjectLogUpdate     prometheus.Counter
+		ObjectLogLastExtend prometheus.Counter
+		ObjectLogLastUpdate prometheus.Counter
+
+		ResmonUpdate        prometheus.Counter
+		ResmonLogUpdate     prometheus.Counter
+		ResmonLogLastExtend prometheus.Counter
+		ResmonLogLastUpdate prometheus.Counter
+
+		SvcmonUpdate        prometheus.Counter
+		SvcmonLogUpdate     prometheus.Counter
+		SvcmonLogLastExtend prometheus.Counter
+		SvcmonLogLastUpdate prometheus.Counter
 	}
 
 	// DBLocker combines a database connection and a sync.Locker
@@ -314,6 +334,17 @@ func newCounters(subsystem string) Counters {
 		},
 		[]string{"desc"},
 	)
+
+	opensvcCountVec := promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "oc3",
+			Subsystem: subsystem,
+			Name:      "opensvc_db_operation_count",
+			Help:      "Counter of opensvc db processed operations",
+		},
+		[]string{"desc", "type"},
+	)
+
 	return Counters{
 		ExecErr: execCountVec.With(prometheus.Labels{"desc": "ExecErr"}),
 		ExecOk:  execCountVec.With(prometheus.Labels{"desc": "ExecOk"}),
@@ -333,6 +364,26 @@ func newCounters(subsystem string) Counters {
 		ExecTxDeadlock: execCountVec.With(prometheus.Labels{"desc": "ExecTxDeadlock"}),
 		ExecTxRetry:    execCountVec.With(prometheus.Labels{"desc": "ExecTxRetry"}),
 		ExecTxFailed:   execCountVec.With(prometheus.Labels{"desc": "ExecTxFailed"}),
+
+		HbUpdate:        opensvcCountVec.With(prometheus.Labels{"desc": "hearbeat", "type": "update"}),
+		HbLogUpdate:     opensvcCountVec.With(prometheus.Labels{"desc": "hearbeat", "type": "log_update"}),
+		HbLogLastExtend: opensvcCountVec.With(prometheus.Labels{"desc": "hearbeat", "type": "log_last_extend"}),
+		HbLogLastUpdate: opensvcCountVec.With(prometheus.Labels{"desc": "hearbeat", "type": "log_last_update"}),
+
+		ObjectUpdate:        opensvcCountVec.With(prometheus.Labels{"desc": "object", "type": "update"}),
+		ObjectLogUpdate:     opensvcCountVec.With(prometheus.Labels{"desc": "object", "type": "log_update"}),
+		ObjectLogLastExtend: opensvcCountVec.With(prometheus.Labels{"desc": "object", "type": "log_last_extend"}),
+		ObjectLogLastUpdate: opensvcCountVec.With(prometheus.Labels{"desc": "object", "type": "log_last_update"}),
+
+		ResmonUpdate:        opensvcCountVec.With(prometheus.Labels{"desc": "Resmon", "type": "update"}),
+		ResmonLogUpdate:     opensvcCountVec.With(prometheus.Labels{"desc": "Resmon", "type": "log_update"}),
+		ResmonLogLastExtend: opensvcCountVec.With(prometheus.Labels{"desc": "Resmon", "type": "log_last_extend"}),
+		ResmonLogLastUpdate: opensvcCountVec.With(prometheus.Labels{"desc": "Resmon", "type": "log_last_update"}),
+
+		SvcmonUpdate:        opensvcCountVec.With(prometheus.Labels{"desc": "instance", "type": "update"}),
+		SvcmonLogUpdate:     opensvcCountVec.With(prometheus.Labels{"desc": "instance", "type": "log_update"}),
+		SvcmonLogLastExtend: opensvcCountVec.With(prometheus.Labels{"desc": "instance", "type": "log_last_extend"}),
+		SvcmonLogLastUpdate: opensvcCountVec.With(prometheus.Labels{"desc": "instance", "type": "log_last_update"}),
 	}
 }
 
