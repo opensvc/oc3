@@ -33,7 +33,6 @@ func setDefaultWorkerConfig(name string) {
 	viper.SetDefault(section+".metrics.enable", false)
 
 	viper.SetDefault(section+".runners", 1)
-	viper.SetDefault(section+".tx", true)
 	viper.SetDefault(section+".log.request.level", "none")
 }
 

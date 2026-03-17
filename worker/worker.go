@@ -25,7 +25,6 @@ type (
 		ODB *cdb.DB
 
 		Queues []string
-		WithTx bool
 		Ev     EventPublisher
 
 		// Runners is the maximum number of jobs to run in parallel.
@@ -89,7 +88,6 @@ var (
 
 func (w *Worker) Run() error {
 	slog.Info(fmt.Sprintf("starting %d runners for queues: %s", w.Runners, strings.Join(w.Queues, ", ")))
-	slog.Info(fmt.Sprintf("tx enabled: %v", w.WithTx))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	jobC := make(chan []string, w.Runners)

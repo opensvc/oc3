@@ -78,7 +78,6 @@ func (t *workerT) run() error {
 		DB:        t.db,
 		Redis:     t.redis,
 		Queues:    t.queues,
-		WithTx:    viper.GetBool(t.section + ".tx"),
 		Ev:        ev,
 		Runners:   t.runners,
 		SubSystem: t.Section(),
