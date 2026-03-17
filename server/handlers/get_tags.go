@@ -11,7 +11,7 @@ import (
 )
 
 // handleGetTags is the common logic for getting tags
-func (a *Api) handleGetTags(c echo.Context, tagID *int, page PageParams) error {
+func (a *Api) handleGetTags(c echo.Context, tagID *int, page PageParams, props []string) error {
 	log := echolog.GetLogHandler(c, "handleGetTags")
 	odb := a.getODB()
 	ctx := c.Request().Context()
@@ -27,17 +27,31 @@ func (a *Api) handleGetTags(c echo.Context, tagID *int, page PageParams) error {
 		if len(tags) == 0 {
 			return JSONProblemf(c, http.StatusNotFound, "tag %d not found", *tagID)
 		}
-		return c.JSON(http.StatusOK, tags[0])
+		filteredItem, err := filterItemFields(tags[0], props)
+		if err != nil {
+			log.Error("cannot project tag props", logkey.TagID, *tagID, logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot project tag props")
+		}
+		return c.JSON(http.StatusOK, filteredItem)
 	}
 
 	// All tags requested
-	return c.JSON(http.StatusOK, tags)
+	filteredItems, err := filterItemsFields(tags, props)
+	if err != nil {
+		log.Error("cannot project tag props", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot project tag props")
+	}
+	return c.JSON(http.StatusOK, filteredItems)
 }
 
 // GetTags handles GET /tags
 func (a *Api) GetTags(c echo.Context, params server.GetTagsParams) error {
 	page := buildPageParams(params.Limit, params.Offset)
+	props, err := buildProps(params.Props, propsMapping["tag"])
+	if err != nil {
+		return JSONProblem(c, http.StatusBadRequest, err.Error())
+	}
 	log := echolog.GetLogHandler(c, "GetTags")
-	log.Info("called", "limit", page.Limit, "offset", page.Offset)
-	return a.handleGetTags(c, nil, page)
+	log.Info("called", "limit", page.Limit, "offset", page.Offset, "props", props)
+	return a.handleGetTags(c, nil, page, props)
 }

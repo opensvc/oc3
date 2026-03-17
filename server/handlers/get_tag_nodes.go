@@ -12,7 +12,7 @@ import (
 func (a *Api) GetTagNodes(c echo.Context, tagIdParam int, params server.GetTagNodesParams) error {
 	log := echolog.GetLogHandler(c, "GetTagNodes")
 
-	log.Info("called", logkey.TagID, tagIdParam, "limit", params.Limit, "offset", params.Offset)
+	log.Info("called", logkey.TagID, tagIdParam, "props", params.Props, "limit", params.Limit, "offset", params.Offset)
 
 	// TODO
 

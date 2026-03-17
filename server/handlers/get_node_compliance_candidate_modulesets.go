@@ -13,11 +13,15 @@ import (
 // GetNodeComplianceCandidateModulesets handles GET /nodes/{node_id}/compliance/candidate_modulesets
 func (a *Api) GetNodeComplianceCandidateModulesets(c echo.Context, nodeId string, params server.GetNodeComplianceCandidateModulesetsParams) error {
 	page := buildPageParams(params.Limit, params.Offset)
+	props, err := buildProps(params.Props, propsMapping["moduleset"])
+	if err != nil {
+		return JSONProblem(c, http.StatusBadRequest, err.Error())
+	}
 	log := echolog.GetLogHandler(c, "GetNodeComplianceCandidateModulesets")
 	odb := a.getODB()
 	ctx := c.Request().Context()
 
-	log.Info("called", logkey.NodeID, nodeId, "limit", page.Limit, "offset", page.Offset)
+	log.Info("called", logkey.NodeID, nodeId, "limit", page.Limit, "offset", page.Offset, "props", props)
 
 	// get node ID
 	node, err := odb.NodeByNodeIDOrNodename(ctx, nodeId)
@@ -42,5 +46,11 @@ func (a *Api) GetNodeComplianceCandidateModulesets(c echo.Context, nodeId string
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get candidate modulesets for node %s", node.NodeID)
 	}
 
-	return c.JSON(http.StatusOK, candidates)
+	filteredItems, err := filterItemsFields(candidates, props)
+	if err != nil {
+		log.Error("cannot filter moduleset props", logkey.NodeID, node.NodeID, logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot filter modulesets fields for node %s", node.NodeID)
+	}
+
+	return c.JSON(http.StatusOK, filteredItems)
 }

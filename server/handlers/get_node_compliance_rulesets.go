@@ -13,11 +13,15 @@ import (
 // GetNodeComplianceRulesets handles GET /nodes/{node_id}/compliance/rulesets
 func (a *Api) GetNodeComplianceRulesets(c echo.Context, nodeId string, params server.GetNodeComplianceRulesetsParams) error {
 	page := buildPageParams(params.Limit, params.Offset)
+	props, err := buildProps(params.Props, propsMapping["ruleset"])
+	if err != nil {
+		return JSONProblem(c, http.StatusBadRequest, err.Error())
+	}
 	log := echolog.GetLogHandler(c, "GetNodeComplianceRulesets")
 	odb := a.getODB()
 	ctx := c.Request().Context()
 
-	log.Info("called", logkey.NodeID, nodeId, "limit", page.Limit, "offset", page.Offset)
+	log.Info("called", logkey.NodeID, nodeId, "limit", page.Limit, "offset", page.Offset, "props", props)
 
 	// get node ID
 	node, err := odb.NodeByNodeIDOrNodename(ctx, nodeId)
@@ -35,5 +39,11 @@ func (a *Api) GetNodeComplianceRulesets(c echo.Context, nodeId string, params se
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get attached rulesets for node %s", node.NodeID)
 	}
 
-	return c.JSON(http.StatusOK, rulesets)
+	filteredItems, err := filterItemsFields(rulesets, props)
+	if err != nil {
+		log.Error("cannot filter ruleset props", logkey.NodeID, node.NodeID, logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot filter rulesets fields for node %s", node.NodeID)
+	}
+
+	return c.JSON(http.StatusOK, filteredItems)
 }

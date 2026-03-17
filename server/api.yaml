@@ -79,6 +79,7 @@ paths:
       operationId: GetNodeComplianceCandidateModulesets
       parameters:
         - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
       responses:
@@ -107,6 +108,7 @@ paths:
       operationId: GetNodeComplianceCandidateRulesets
       parameters:
         - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
       responses:
@@ -135,6 +137,7 @@ paths:
       operationId: GetNodeComplianceLogs
       parameters:
         - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inQueryProps'
       responses:
         200:
           description: Compliance logs for the node
@@ -161,6 +164,7 @@ paths:
       operationId: GetNodeComplianceModulesets
       parameters:
         - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
       responses:
@@ -239,6 +243,7 @@ paths:
       operationId: GetNodeComplianceRulesets
       parameters:
         - $ref: '#/components/parameters/inPathNodeId'
+        - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
       responses:
@@ -315,6 +320,7 @@ paths:
       operationId: GetTags
       description: List existing tags
       parameters:
+        - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
       tags:
@@ -345,6 +351,7 @@ paths:
           description: ID of the tag
           schema:
             type: integer
+        - $ref: '#/components/parameters/inQueryProps'
       tags:
         - collector
       responses:
@@ -373,6 +380,7 @@ paths:
           description: ID of the tag
           schema:
             type: integer
+        - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
       tags:
@@ -535,6 +543,14 @@ components:
         type: integer
         minimum: 0
         default: 0
+
+    inQueryProps:
+      in: query
+      name: props
+      required: false
+      description: A list of properties to include in each data dictionnary.
+      schema:
+        type: string
 
     inQuerySync:
       in: query

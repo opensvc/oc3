@@ -35,6 +35,9 @@ type InQueryLimit = int
 // InQueryOffset defines model for inQueryOffset.
 type InQueryOffset = int
 
+// InQueryProps defines model for inQueryProps.
+type InQueryProps = string
+
 // N400 defines model for 400.
 type N400 = Problem
 
@@ -61,6 +64,9 @@ type PostAuthNodeJSONBody struct {
 
 // GetNodeComplianceCandidateModulesetsParams defines parameters for GetNodeComplianceCandidateModulesets.
 type GetNodeComplianceCandidateModulesetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
 	// Limit The maximum number of entries to return. 0 means no limit.
 	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
 
@@ -70,6 +76,9 @@ type GetNodeComplianceCandidateModulesetsParams struct {
 
 // GetNodeComplianceCandidateRulesetsParams defines parameters for GetNodeComplianceCandidateRulesets.
 type GetNodeComplianceCandidateRulesetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
 	// Limit The maximum number of entries to return. 0 means no limit.
 	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
 
@@ -77,8 +86,17 @@ type GetNodeComplianceCandidateRulesetsParams struct {
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
+// GetNodeComplianceLogsParams defines parameters for GetNodeComplianceLogs.
+type GetNodeComplianceLogsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetNodeComplianceModulesetsParams defines parameters for GetNodeComplianceModulesets.
 type GetNodeComplianceModulesetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
 	// Limit The maximum number of entries to return. 0 means no limit.
 	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
 
@@ -91,6 +109,9 @@ type PostNodeComplianceModulesetJSONBody = map[string]interface{}
 
 // GetNodeComplianceRulesetsParams defines parameters for GetNodeComplianceRulesets.
 type GetNodeComplianceRulesetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
 	// Limit The maximum number of entries to return. 0 means no limit.
 	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
 
@@ -103,6 +124,9 @@ type PostNodeComplianceRulesetJSONBody = map[string]interface{}
 
 // GetTagsParams defines parameters for GetTags.
 type GetTagsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
 	// Limit The maximum number of entries to return. 0 means no limit.
 	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
 
@@ -110,8 +134,17 @@ type GetTagsParams struct {
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
+// GetTagParams defines parameters for GetTag.
+type GetTagParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetTagNodesParams defines parameters for GetTagNodes.
 type GetTagNodesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
 	// Limit The maximum number of entries to return. 0 means no limit.
 	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
 
