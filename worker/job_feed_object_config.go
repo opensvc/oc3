@@ -42,9 +42,9 @@ func newFeedObjectConfig(objectName, nodeID, clusterID string) *jobFeedObjectCon
 	idX := fmt.Sprintf("%s@%s@%s", objectName, nodeID, clusterID)
 	return &jobFeedObjectConfig{
 		JobBase: JobBase{
-			name:   "objectConfig",
+			name:   jtObjectConfig,
 			detail: "ID: " + idX,
-			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, "objectConfig"),
+			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, jtObjectConfig),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedObjectConfigPendingH,
@@ -59,11 +59,11 @@ func newFeedObjectConfig(objectName, nodeID, clusterID string) *jobFeedObjectCon
 
 func (d *jobFeedObjectConfig) Operations() []operation {
 	return []operation{
-		{desc: "objectConfig/dropPending", do: d.dropPending},
-		{desc: "objectConfig/getData", do: d.getData},
-		{desc: "objectConfig/dbNow", do: d.dbNow},
-		{desc: "objectConfig/updateDB", do: d.updateDB},
-		{desc: "objectConfig/pushFromTableChanges", do: d.pushFromTableChanges},
+		{name: "dropPending", do: d.dropPending},
+		{name: "getData", do: d.getData},
+		{name: "dbNow", do: d.dbNow},
+		{name: "updateDB", do: d.updateDB},
+		{name: "pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 

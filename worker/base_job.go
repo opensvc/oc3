@@ -21,7 +21,7 @@ type (
 	}
 
 	operation struct {
-		desc string
+		name string
 		do   func(context.Context) error
 
 		// blocking stops the operation chain on operation error
@@ -54,7 +54,7 @@ func RunJob(ctx context.Context, j JobRunner) error {
 
 	ops := j.Operations()
 
-	err := runOps(ctx, jlog, ops...)
+	err := j.runOps(ctx, jlog, ops...)
 	if err != nil {
 		if tx, ok := j.(cdb.DBTxer); ok {
 			jlog.Debug("call rollback on error")
@@ -88,7 +88,7 @@ func (j *JobBase) Logger() *slog.Logger {
 	return j.logger
 }
 
-func runOps(ctx context.Context, jlog *slog.Logger, ops ...operation) error {
+func (j *JobBase) runOps(ctx context.Context, jlog *slog.Logger, ops ...operation) error {
 	for _, op := range ops {
 		var err error
 		if op.condition != nil && !op.condition() {
@@ -98,20 +98,20 @@ func runOps(ctx context.Context, jlog *slog.Logger, ops ...operation) error {
 		err = op.do(ctx)
 		duration := time.Since(begin)
 		if err != nil {
-			operationDuration.
-				With(prometheus.Labels{"desc": op.desc, "status": operationStatusFailed}).
+			feedJobStepDuration.
+				With(prometheus.Labels{"job_type": j.name, "job_step": op.name, "status": jobStatusFailed}).
 				Observe(duration.Seconds())
 			if op.blocking {
 				return err
 			}
 			// TODO: add metrics
-			jlog.Warn(fmt.Sprintf("%s: non blocking error", op.desc), logkey.JobOpName, op.desc, logkey.Error, err)
+			jlog.Warn(fmt.Sprintf("%s/%s: non blocking error", j.name, op.name), logkey.JobName, j.name, logkey.JobOpName, op.name, logkey.Error, err)
 			continue
 		}
-		operationDuration.
-			With(prometheus.Labels{"desc": op.desc, "status": operationStatusOk}).
+		feedJobStepDuration.
+			With(prometheus.Labels{"job_type": j.name, "job_step": op.name, "status": jobStatusOk}).
 			Observe(duration.Seconds())
-		jlog.Debug(fmt.Sprintf("STAT: %s elapse: %s", op.desc, duration), logkey.JobOpName, op.desc)
+		jlog.Debug(fmt.Sprintf("STAT: %s/%s elapse: %s", j.name, op.name, duration), logkey.JobName, j.name, logkey.JobOpName, op.name)
 	}
 	return nil
 }

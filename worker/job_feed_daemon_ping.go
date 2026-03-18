@@ -36,9 +36,9 @@ type (
 func newDaemonPing(nodeID string) *jobFeedDaemonPing {
 	return &jobFeedDaemonPing{
 		JobBase: JobBase{
-			name:   "daemonPing",
+			name:   jtDaemonPing,
 			detail: "nodeID: " + nodeID,
-			logger: slog.With(logkey.NodeID, nodeID, logkey.JobName, "daemonPing"),
+			logger: slog.With(logkey.NodeID, nodeID, logkey.JobName, jtDaemonPing),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedDaemonPingPendingH,
@@ -56,14 +56,14 @@ func newDaemonPing(nodeID string) *jobFeedDaemonPing {
 
 func (d *jobFeedDaemonPing) Operations() []operation {
 	return []operation{
-		{desc: "daemonPing/dropPending", do: d.dropPending},
-		{desc: "daemonPing/getData", do: d.getData},
-		{desc: "daemonPing/dbFetchNodes", do: d.dbFetchNodes},
-		{desc: "daemonPing/dbFetchObjects", do: d.dbFetchObjects},
-		{desc: "daemonPing/dbPingInstances", do: d.dbPingInstances},
-		{desc: "daemonPing/dbPingObjects", do: d.dbPingObjects},
-		{desc: "daemonPing/cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
-		{desc: "daemonPing/pushFromTableChanges", do: d.pushFromTableChanges},
+		{name: "dropPending", do: d.dropPending},
+		{name: "getData", do: d.getData},
+		{name: "dbFetchNodes", do: d.dbFetchNodes},
+		{name: "dbFetchObjects", do: d.dbFetchObjects},
+		{name: "dbPingInstances", do: d.dbPingInstances},
+		{name: "dbPingObjects", do: d.dbPingObjects},
+		{name: "cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
+		{name: "pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 
