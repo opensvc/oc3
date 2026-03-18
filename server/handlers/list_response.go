@@ -95,9 +95,9 @@ func buildStatsData(items []map[string]any, props []string) (map[string]map[stri
 	return statsData, distinct
 }
 
-func newListResponse(items []map[string]any, mapping propMapping, includedProps []string, page PageParams, withMeta, withStats bool) listResponse {
-	if withStats {
-		statsData, distinct := buildStatsData(items, includedProps)
+func newListResponse(items []map[string]any, mapping propMapping, query ListQueryParameters) listResponse {
+	if query.WithStats {
+		statsData, distinct := buildStatsData(items, query.Props)
 		return listResponse{
 			Data: statsData,
 			Meta: &listMeta{
@@ -111,16 +111,16 @@ func newListResponse(items []map[string]any, mapping propMapping, includedProps 
 		Data: items,
 	}
 
-	if !withMeta {
+	if !query.WithMeta {
 		return response
 	}
 
 	response.Meta = &listMeta{
 		Count:          len(items),
 		AvailableProps: allowedProps(mapping),
-		IncludedProps:  includedProps,
-		Limit:          page.Limit,
-		Offset:         page.Offset,
+		IncludedProps:  query.Props,
+		Limit:          query.Page.Limit,
+		Offset:         query.Page.Offset,
 	}
 
 	return response

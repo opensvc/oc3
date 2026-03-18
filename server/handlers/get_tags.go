@@ -11,12 +11,12 @@ import (
 )
 
 // handleGetTags is the common logic for getting tags
-func (a *Api) handleGetTags(c echo.Context, tagID *int, page PageParams, props []string, withMeta, withStats bool) error {
+func (a *Api) handleGetTags(c echo.Context, tagID *int, query ListQueryParameters) error {
 	log := echolog.GetLogHandler(c, "handleGetTags")
 	odb := a.getODB()
 	ctx := c.Request().Context()
 
-	tags, err := odb.GetTags(ctx, tagID, page.Limit, page.Offset)
+	tags, err := odb.GetTags(ctx, tagID, query.Page.Limit, query.Page.Offset)
 	if err != nil {
 		log.Error("cannot get tags", logkey.TagID, tagID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get tags")
@@ -27,7 +27,7 @@ func (a *Api) handleGetTags(c echo.Context, tagID *int, page PageParams, props [
 		if len(tags) == 0 {
 			return JSONProblemf(c, http.StatusNotFound, "tag %d not found", *tagID)
 		}
-		filteredItem, err := filterItemFields(tags[0], props)
+		filteredItem, err := filterItemFields(tags[0], query.Props)
 		if err != nil {
 			log.Error("cannot project tag props", logkey.TagID, *tagID, logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot project tag props")
@@ -36,22 +36,21 @@ func (a *Api) handleGetTags(c echo.Context, tagID *int, page PageParams, props [
 	}
 
 	// All tags requested
-	filteredItems, err := filterItemsFields(tags, props)
+	filteredItems, err := filterItemsFields(tags, query.Props)
 	if err != nil {
 		log.Error("cannot project tag props", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot project tag props")
 	}
-	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["tag"], props, page, withMeta, withStats))
+	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["tag"], query))
 }
 
 // GetTags handles GET /tags
 func (a *Api) GetTags(c echo.Context, params server.GetTagsParams) error {
-	page := buildPageParams(params.Limit, params.Offset)
-	props, err := buildProps(params.Props, propsMapping["tag"])
+	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, propsMapping["tag"])
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
 	log := echolog.GetLogHandler(c, "GetTags")
-	log.Info("called", "limit", page.Limit, "offset", page.Offset, "props", props)
-	return a.handleGetTags(c, nil, page, props, queryWithMeta(params.Meta), queryWithStats(params.Stats))
+	log.Info("called", "limit", query.Page.Limit, "offset", query.Page.Offset, "props", query.Props)
+	return a.handleGetTags(c, nil, query)
 }

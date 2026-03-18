@@ -12,8 +12,7 @@ import (
 
 // GetNodeComplianceModulesets handles GET /nodes/{node_id}/compliance/modulesets
 func (a *Api) GetNodeComplianceModulesets(c echo.Context, nodeId string, params server.GetNodeComplianceModulesetsParams) error {
-	page := buildPageParams(params.Limit, params.Offset)
-	props, err := buildProps(params.Props, propsMapping["moduleset"])
+	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, propsMapping["moduleset"])
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
@@ -21,7 +20,7 @@ func (a *Api) GetNodeComplianceModulesets(c echo.Context, nodeId string, params 
 	odb := a.getODB()
 	ctx := c.Request().Context()
 
-	log.Info("called", logkey.NodeID, nodeId, "limit", page.Limit, "offset", page.Offset, "props", props)
+	log.Info("called", logkey.NodeID, nodeId, "limit", query.Page.Limit, "offset", query.Page.Offset, "props", query.Props)
 
 	// get node ID
 	node, err := odb.NodeByNodeIDOrNodename(ctx, nodeId)
@@ -33,17 +32,17 @@ func (a *Api) GetNodeComplianceModulesets(c echo.Context, nodeId string, params 
 	// get attached modulesets with details
 	groups := UserGroupsFromContext(c)
 	isManager := IsManager(c)
-	modulesets, err := odb.CompNodeAttachedModulesets(ctx, node.NodeID, groups, isManager, page.Limit, page.Offset)
+	modulesets, err := odb.CompNodeAttachedModulesets(ctx, node.NodeID, groups, isManager, query.Page.Limit, query.Page.Offset)
 	if err != nil {
 		log.Error("cannot get attached modulesets", logkey.NodeID, node.NodeID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get attached modulesets for node %s", node.NodeID)
 	}
 
-	filteredItems, err := filterItemsFields(modulesets, props)
+	filteredItems, err := filterItemsFields(modulesets, query.Props)
 	if err != nil {
 		log.Error("cannot filter moduleset props", logkey.NodeID, node.NodeID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot filter modulesets fields for node %s", node.NodeID)
 	}
 
-	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["moduleset"], props, page, queryWithMeta(params.Meta), queryWithStats(params.Stats)))
+	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["moduleset"], query))
 }
