@@ -42,9 +42,9 @@ func newjobFeedInstanceResourceInfo(objectName, nodeID, clusterID string) *jobFe
 	idX := fmt.Sprintf("%s@%s@%s", objectName, nodeID, clusterID)
 	return &jobFeedInstanceResourceInfo{
 		JobBase: JobBase{
-			name:   "instanceResourceInfo",
+			name:   jtInstanceResourceInfo,
 			detail: "ID: " + idX,
-			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, "instanceResourceInfo"),
+			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, jtInstanceResourceInfo),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedInstanceResourceInfoPendingH,
@@ -59,12 +59,12 @@ func newjobFeedInstanceResourceInfo(objectName, nodeID, clusterID string) *jobFe
 
 func (j *jobFeedInstanceResourceInfo) Operations() []operation {
 	return []operation{
-		{desc: "instanceResourceInfo/dropPending", do: j.dropPending},
-		{desc: "instanceResourceInfo/getData", do: j.getData},
-		{desc: "instanceResourceInfo/dbNow", do: j.dbNow},
-		{desc: "instanceResourceInfo/updateDB", do: j.updateDB},
-		{desc: "instanceResourceInfo/purgeDB", do: j.purgeDB},
-		{desc: "instanceResourceInfo/pushFromTableChanges", do: j.pushFromTableChanges},
+		{name: "dropPending", do: j.dropPending},
+		{name: "getData", do: j.getData},
+		{name: "dbNow", do: j.dbNow},
+		{name: "updateDB", do: j.updateDB},
+		{name: "purgeDB", do: j.purgeDB},
+		{name: "pushFromTableChanges", do: j.pushFromTableChanges},
 	}
 }
 

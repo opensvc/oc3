@@ -48,7 +48,7 @@ const (
 )
 
 var (
-	counters = cdb.NewCounters("scheduler")
+	counters = cdb.NewMetrics()
 
 	Tasks = TaskList{
 		TaskChecks,
@@ -168,12 +168,6 @@ func (t *Task) DB() *cdb.DB {
 	d := cdb.NewWithCounters(t.db, counters)
 	d.CreateSession(t.ev)
 	return d
-	// TODO: cleanup
-	//return &cdb.DB{
-	//	Session: cdb.NewSession(t.db, t.ev),
-	//	DB:      t.db,
-	//	DBLck:   cdb.InitDbLocker(t.db),
-	//}
 }
 
 func (t *Task) Session() *cdb.Session {

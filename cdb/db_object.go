@@ -349,6 +349,7 @@ func (oDb *DB) ObjectStatusUpdate(ctx context.Context, l ...*DBObject) error {
 	if len(l) == 0 {
 		return nil
 	}
+	oDb.Metrics.ObjectStatusUpdate.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 	query := fmt.Sprintf("INSERT INTO `services` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
 
@@ -494,6 +495,7 @@ func (oDb *DB) ObjectStatusLogLastUpdate(ctx context.Context, l ...*DBObjectStat
 	if len(l) == 0 {
 		return nil
 	}
+	oDb.Metrics.ObjectStatusLogInsert.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `services_log_last` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
@@ -511,6 +513,7 @@ func (oDb *DB) ObjectStatusLogLastExtend(ctx context.Context, objectIDs ...strin
 	if len(objectIDs) == 0 {
 		return nil
 	}
+	oDb.Metrics.ObjectStatusLogExtend.Add(float64(len(objectIDs)))
 	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
 
 	query := fmt.Sprintf("UPDATE `services_log_last` SET `svc_end` = NOW() WHERE `svc_id` in (%s)", placeholders)
@@ -532,6 +535,7 @@ func (oDb *DB) ObjectStatusLogUpdate(ctx context.Context, l ...*DBObjectStatusLo
 	if len(l) == 0 {
 		return nil
 	}
+	oDb.Metrics.ObjectStatusLogChange.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `services_log` %s VALUES %s", insertColList, placeholders)

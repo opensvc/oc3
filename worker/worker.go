@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
@@ -55,35 +54,25 @@ type (
 		Name() string
 		Detail() string
 		Logger() *slog.Logger
+
+		runOps(ctx context.Context, jlog *slog.Logger, ops ...operation) error
 	}
 )
 
 const (
-	operationStatusOk     = "ok"
-	operationStatusFailed = "failed"
-)
+	// job types
+	jtDaemonPing           = "daemonPing"
+	jtDaemonStatus         = "daemonStatus"
+	jtInstanceAction       = "instanceAction"
+	jtInstanceResourceInfo = "instanceResourceInfo"
+	jtInstanceStatus       = "instanceStatus"
+	jtNodeDisk             = "nodeDisk"
+	jtNodeSystem           = "nodeSystem"
+	jtObjectConfig         = "objectConfig"
 
-var (
-	processedOperationCounter = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "oc3",
-			Subsystem: "worker",
-			Name:      "operation_count",
-			Help:      "Counter of worker processed feed operations",
-		},
-		[]string{"desc", "status"},
-	)
-
-	operationDuration = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace: "oc3",
-			Subsystem: "worker",
-			Name:      "operation_duration_seconds",
-			Help:      "feed operation latencies in seconds.",
-			Buckets:   prometheus.DefBuckets,
-		},
-		[]string{"desc", "status"},
-	)
+	// job or job step statuses
+	jobStatusOk     = "ok"
+	jobStatusFailed = "failed"
 )
 
 func (w *Worker) Run() error {
@@ -204,15 +193,15 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	if a, ok := j.(EvSetter); ok {
 		a.SetEv(w.Ev)
 	}
-	status := operationStatusOk
+	status := jobStatusOk
 	err := RunJob(ctx, j)
 	duration := time.Since(begin)
 	if err != nil {
-		status = operationStatusFailed
+		status = jobStatusFailed
 		jlog.Error("🔴job failure", logkey.Error, err, logkey.JobDetail, j.Detail())
 	}
-	processedOperationCounter.With(prometheus.Labels{"desc": jName, "status": status}).Inc()
-	operationDuration.With(prometheus.Labels{"desc": jName, "status": status}).Observe(duration.Seconds())
+	feedJobCounter.With(prometheus.Labels{"job_type": jName, "status": status}).Inc()
+	feedJobDuration.With(prometheus.Labels{"job_type": jName, "status": status}).Observe(duration.Seconds())
 	jlog.Debug(fmt.Sprintf("BLPOP %s <- %s: %s", unqueuedJob[0], unqueuedJob[1], duration))
 	return nil
 }

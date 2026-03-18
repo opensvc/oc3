@@ -30,9 +30,9 @@ type (
 func newNodeDisk(nodename, nodeID, clusterID string) *jobFeedNodeDisk {
 	return &jobFeedNodeDisk{
 		JobBase: JobBase{
-			name:   "nodeDisk",
+			name:   jtNodeDisk,
 			detail: "nodename: " + nodename + " nodeID: " + nodeID,
-			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Nodename, nodename, logkey.JobName, "nodeDisk"),
+			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Nodename, nodename, logkey.JobName, jtNodeDisk),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedNodeDiskPendingH,
@@ -46,11 +46,11 @@ func newNodeDisk(nodename, nodeID, clusterID string) *jobFeedNodeDisk {
 
 func (d *jobFeedNodeDisk) Operations() []operation {
 	return []operation{
-		{desc: "nodeDisk/dropPending", do: d.dropPending},
-		{desc: "nodeDisk/getData", do: d.getData},
-		{desc: "nodeDisk/dbNow", do: d.dbNow},
-		{desc: "nodeDisk/updateDB", do: d.updateDB},
-		{desc: "nodeDisk/pushFromTableChanges", do: d.pushFromTableChanges},
+		{name: "dropPending", do: d.dropPending},
+		{name: "getData", do: d.getData},
+		{name: "dbNow", do: d.dbNow},
+		{name: "updateDB", do: d.updateDB},
+		{name: "pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 

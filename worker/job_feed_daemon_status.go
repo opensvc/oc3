@@ -91,9 +91,9 @@ type (
 func newDaemonStatus(nodeID string) *jobFeedDaemonStatus {
 	return &jobFeedDaemonStatus{
 		JobBase: JobBase{
-			name:   "daemonStatus",
+			name:   jtDaemonStatus,
 			detail: "nodeID: " + nodeID,
-			logger: slog.With(logkey.NodeID, nodeID, logkey.JobName, "daemonStatus"),
+			logger: slog.With(logkey.NodeID, nodeID, logkey.JobName, jtDaemonStatus),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedDaemonStatusPendingH,
@@ -121,26 +121,26 @@ func newDaemonStatus(nodeID string) *jobFeedDaemonStatus {
 
 func (d *jobFeedDaemonStatus) Operations() []operation {
 	return []operation{
-		{desc: "daemonStatus/dropPending", do: d.dropPending},
-		{desc: "daemonStatus/dbNow", do: d.dbNow, blocking: true},
-		{desc: "daemonStatus/getChanges", do: d.getChanges},
-		{desc: "daemonStatus/getData", do: d.getData, blocking: true},
-		{desc: "daemonStatus/dbCheckClusterIDForNodeID", do: d.dbCheckClusterIDForNodeID, blocking: true},
-		{desc: "daemonStatus/dbCheckClusters", do: d.dbCheckClusters, blocking: true},
-		{desc: "daemonStatus/dbFindNodes", do: d.dbFindNodes, blocking: true},
-		{desc: "daemonStatus/dataToNodeFrozen", do: d.dataToNodeFrozen, blocking: true},
-		{desc: "daemonStatus/dataToNodeHeartbeat", do: d.dataToNodeHeartbeat, blocking: true},
-		{desc: "daemonStatus/heartbeatToDB", do: d.heartbeatToDB, blocking: true},
-		{desc: "daemonStatus/dbFindServices", do: d.dbFindServices, blocking: true},
-		{desc: "daemonStatus/dbCreateServices", do: d.dbCreateServices, blocking: true},
-		{desc: "daemonStatus/dbFindServicesLog", do: d.dbFindServicesLog, blocking: true},
-		{desc: "daemonStatus/dbFindInstances", do: d.dbFindInstances, blocking: true},
-		{desc: "daemonStatus/dbUpdateServices", do: d.dbUpdateServices, blocking: true},
-		{desc: "daemonStatus/dbUpdateInstances", do: d.dbUpdateInstances, blocking: true},
-		{desc: "daemonStatus/dbPurgeInstances", do: d.dbPurgeInstances, blocking: true},
-		{desc: "daemonStatus/dbPurgeServices", do: d.dbPurgeServices, blocking: true},
-		{desc: "daemonStatus/cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
-		{desc: "daemonStatus/pushFromTableChanges", do: d.pushFromTableChanges},
+		{name: "dropPending", do: d.dropPending},
+		{name: "dbNow", do: d.dbNow, blocking: true},
+		{name: "getChanges", do: d.getChanges},
+		{name: "getData", do: d.getData, blocking: true},
+		{name: "dbCheckClusterIDForNodeID", do: d.dbCheckClusterIDForNodeID, blocking: true},
+		{name: "dbCheckClusters", do: d.dbCheckClusters, blocking: true},
+		{name: "dbFindNodes", do: d.dbFindNodes, blocking: true},
+		{name: "dataToNodeFrozen", do: d.dataToNodeFrozen, blocking: true},
+		{name: "dataToNodeHeartbeat", do: d.dataToNodeHeartbeat, blocking: true},
+		{name: "heartbeatToDB", do: d.heartbeatToDB, blocking: true},
+		{name: "dbFindServices", do: d.dbFindServices, blocking: true},
+		{name: "dbCreateServices", do: d.dbCreateServices, blocking: true},
+		{name: "dbFindServicesLog", do: d.dbFindServicesLog, blocking: true},
+		{name: "dbFindInstances", do: d.dbFindInstances, blocking: true},
+		{name: "dbUpdateServices", do: d.dbUpdateServices, blocking: true},
+		{name: "dbUpdateInstances", do: d.dbUpdateInstances, blocking: true},
+		{name: "dbPurgeInstances", do: d.dbPurgeInstances, blocking: true},
+		{name: "dbPurgeServices", do: d.dbPurgeServices, blocking: true},
+		{name: "cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
+		{name: "pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 

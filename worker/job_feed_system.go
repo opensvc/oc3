@@ -27,9 +27,9 @@ type (
 func newDaemonSystem(nodeID string) *jobFeedSystem {
 	return &jobFeedSystem{
 		JobBase: JobBase{
-			name:   "daemonSystem",
+			name:   jtNodeSystem,
 			detail: "nodeID: " + nodeID,
-			logger: slog.With(logkey.NodeID, nodeID, logkey.JobName, "daemonSystem"),
+			logger: slog.With(logkey.NodeID, nodeID, logkey.JobName, jtNodeSystem),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedSystemPendingH,
@@ -47,18 +47,18 @@ func (d *jobFeedSystem) Operations() []operation {
 		}
 	}
 	return []operation{
-		{desc: "system/dropPending", do: d.dropPending},
-		{desc: "system/getData", do: d.getData},
-		{desc: "system/dbNow", do: d.dbNow},
-		{desc: "system/hardware", do: d.hardware, condition: hasProp("hardware"), blocking: true},
-		{desc: "system/properties", do: d.properties, condition: hasProp("properties"), blocking: true},
-		{desc: "system/groups", do: d.groups, condition: hasProp("gids"), blocking: true},
-		{desc: "system/users", do: d.users, condition: hasProp("uids"), blocking: true},
-		{desc: "system/lan", do: d.lan, condition: hasProp("lan"), blocking: true},
-		{desc: "system/hba", do: d.hba, condition: hasProp("hba"), blocking: true},
-		{desc: "system/targets", do: d.targets, condition: hasProp("targets"), blocking: true},
-		{desc: "system/package", do: d.pkg, condition: hasProp("package"), blocking: true},
-		{desc: "system/pushFromTableChanges", do: d.pushFromTableChanges},
+		{name: "dropPending", do: d.dropPending},
+		{name: "getData", do: d.getData},
+		{name: "dbNow", do: d.dbNow},
+		{name: "hardware", do: d.hardware, condition: hasProp("hardware"), blocking: true},
+		{name: "properties", do: d.properties, condition: hasProp("properties"), blocking: true},
+		{name: "groups", do: d.groups, condition: hasProp("gids"), blocking: true},
+		{name: "users", do: d.users, condition: hasProp("uids"), blocking: true},
+		{name: "lan", do: d.lan, condition: hasProp("lan"), blocking: true},
+		{name: "hba", do: d.hba, condition: hasProp("hba"), blocking: true},
+		{name: "targets", do: d.targets, condition: hasProp("targets"), blocking: true},
+		{name: "package", do: d.pkg, condition: hasProp("package"), blocking: true},
+		{name: "pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 

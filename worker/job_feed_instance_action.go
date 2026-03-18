@@ -42,9 +42,9 @@ func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedInstanceActio
 
 	return &jobFeedInstanceAction{
 		JobBase: JobBase{
-			name:   "instanceAction",
+			name:   jtInstanceAction,
 			detail: "ID: " + idX,
-			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, "instanceAction"),
+			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, jtInstanceAction),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedInstanceActionPendingH,
@@ -59,12 +59,12 @@ func newAction(objectName, nodeID, clusterID, uuid string) *jobFeedInstanceActio
 
 func (d *jobFeedInstanceAction) Operations() []operation {
 	return []operation{
-		{desc: "instanceAction/dropPending", do: d.dropPending},
-		{desc: "instanceAction/getData", do: d.getData},
-		{desc: "instanceAction/findNodeFromDb", do: d.findNodeFromDb},
-		{desc: "instanceAction/findObjectFromDb", do: d.findObjectFromDb},
-		{desc: "instanceAction/processAction", do: d.updateDB},
-		{desc: "instanceAction/pushFromTableChanges", do: d.pushFromTableChanges},
+		{name: "dropPending", do: d.dropPending},
+		{name: "getData", do: d.getData},
+		{name: "findNodeFromDb", do: d.findNodeFromDb},
+		{name: "findObjectFromDb", do: d.findObjectFromDb},
+		{name: "processAction", do: d.updateDB},
+		{name: "pushFromTableChanges", do: d.pushFromTableChanges},
 	}
 }
 

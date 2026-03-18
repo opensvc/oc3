@@ -47,9 +47,9 @@ func newInstanceStatus(objectName, nodeID, clusterID string) *jobFeedInstanceSta
 	idX := fmt.Sprintf("%s@%s@%s", objectName, nodeID, clusterID)
 	return &jobFeedInstanceStatus{
 		JobBase: JobBase{
-			name:   "instanceStatus",
+			name:   jtInstanceStatus,
 			detail: "ID: " + idX,
-			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, "instanceStatus"),
+			logger: slog.With(logkey.NodeID, nodeID, logkey.ClusterID, clusterID, logkey.Object, objectName, logkey.JobName, jtInstanceStatus),
 		},
 		JobRedis: JobRedis{
 			cachePendingH:   cachekeys.FeedInstanceStatusPendingH,
@@ -64,14 +64,14 @@ func newInstanceStatus(objectName, nodeID, clusterID string) *jobFeedInstanceSta
 
 func (d *jobFeedInstanceStatus) Operations() []operation {
 	return []operation{
-		{desc: "instanceStatus/dropPending", do: d.dropPending},
-		{desc: "instanceStatus/findNodeFromDb", do: d.findNodeFromDb},
-		{desc: "instanceStatus/getData", do: d.getData},
-		{desc: "instanceStatus/dbNow", do: d.dbNow},
-		{desc: "instanceStatus/findObjectFromDb", do: d.findObjectFromDb},
-		{desc: "instanceStatus/updateDB", do: d.updateDB},
-		{desc: "instanceStatus/pushFromTableChanges", do: d.pushFromTableChanges},
-		{desc: "instanceStatus/processed", do: d.processed},
+		{name: "dropPending", do: d.dropPending},
+		{name: "findNodeFromDb", do: d.findNodeFromDb},
+		{name: "getData", do: d.getData},
+		{name: "dbNow", do: d.dbNow},
+		{name: "findObjectFromDb", do: d.findObjectFromDb},
+		{name: "updateDB", do: d.updateDB},
+		{name: "pushFromTableChanges", do: d.pushFromTableChanges},
+		{name: "processed", do: d.processed},
 	}
 }
 
