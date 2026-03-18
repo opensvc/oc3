@@ -9,10 +9,14 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
+
+	"github.com/opensvc/oc3/cdb"
 )
 
 // initDatabase setup database handler.
 func newDatabase() (*sql.DB, error) {
+	cdb.InitMetrics()
+
 	cfg := mysql.Config{
 		User:                 viper.GetString("db.username"),
 		Passwd:               viper.GetString("db.password"),

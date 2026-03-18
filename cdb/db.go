@@ -32,7 +32,7 @@ type (
 		dbPool *sql.DB
 		HasTx  bool
 
-		Metrics Metrics
+		Metrics *Metrics
 	}
 
 	Metrics struct {
@@ -109,16 +109,7 @@ func New(dbPool *sql.DB) *DB {
 		DB:      dbPool,
 		DBLck:   InitDbLocker(dbPool),
 		dbPool:  dbPool,
-		Metrics: newMetrics(),
-	}
-}
-
-func NewWithCounters(dbPool *sql.DB, counters Metrics) *DB {
-	return &DB{
-		DB:      dbPool,
-		DBLck:   InitDbLocker(dbPool),
-		dbPool:  dbPool,
-		Metrics: counters,
+		Metrics: metrics,
 	}
 }
 

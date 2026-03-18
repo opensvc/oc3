@@ -8,11 +8,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-func NewMetrics() Metrics {
-	return newMetrics()
+var (
+	metrics *Metrics
+)
+
+func InitMetrics() {
+	metrics = newMetrics()
 }
 
-func newMetrics() Metrics {
+func newMetrics() *Metrics {
 	const (
 		// db operation statuses
 		dbOpDeadlock = "deadlock"
@@ -79,7 +83,7 @@ func newMetrics() Metrics {
 		[]string{"datatype", "operation"},
 	)
 
-	return Metrics{
+	return &Metrics{
 		ExecErr:        dbOpCount.With(prometheus.Labels{"operation": dbExec, "status": dbOpError}),
 		ExecOk:         dbOpCount.With(prometheus.Labels{"operation": dbExec, "status": dbOpSuccess}),
 		BeginTxErr:     dbOpCount.With(prometheus.Labels{"operation": dbBeginTx, "status": dbOpError}),

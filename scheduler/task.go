@@ -48,8 +48,6 @@ const (
 )
 
 var (
-	counters = cdb.NewMetrics()
-
 	Tasks = TaskList{
 		TaskChecks,
 		TaskSysreport,
@@ -165,7 +163,7 @@ func (t *Task) DBX(ctx context.Context) (*cdb.DB, error) {
 }
 
 func (t *Task) DB() *cdb.DB {
-	d := cdb.NewWithCounters(t.db, counters)
+	d := cdb.New(t.db)
 	d.CreateSession(t.ev)
 	return d
 }
