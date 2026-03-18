@@ -134,7 +134,7 @@ func (oDb *DB) HBUpdate(ctx context.Context, l ...*DBHeartbeat) error {
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Counters.HbUpdate.Add(float64(len(l)))
+	oDb.Metrics.HbStatusUpdate.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 	args := make([]any, 0, 9*len(l))
 	for _, v := range l {
@@ -205,7 +205,7 @@ func (oDb *DB) HBLogLastUpdate(ctx context.Context, l ...*DBHeartbeatLog) error 
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Counters.HbLogLastUpdate.Add(float64(len(l)))
+	oDb.Metrics.HbStatusLogInsert.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `hbmon_log_last` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
@@ -223,7 +223,7 @@ func (oDb *DB) HBLogLastExtend(ctx context.Context, l ...*DBHeartbeatLog) error 
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Counters.HbLogLastExtend.Add(float64(len(l)))
+	oDb.Metrics.HbStatusLogExtend.Add(float64(len(l)))
 	placeholders := strings.Repeat("(?,?,?),", len(l)-1) + "(?,?,?)"
 
 	query := fmt.Sprintf("UPDATE `hbmon_log_last` SET `end` = NOW() WHERE (`node_id`,`peer_node_id`,`name`) IN %s)", placeholders)
@@ -245,7 +245,7 @@ func (oDb *DB) HBLogUpdate(ctx context.Context, l ...*DBHeartbeatLog) error {
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Counters.HbLogUpdate.Add(float64(len(l)))
+	oDb.Metrics.HbStatusLogChange.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `hbmon_log` %s VALUES %s", insertColList, placeholders)

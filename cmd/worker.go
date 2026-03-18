@@ -71,7 +71,7 @@ func (t *workerT) run() error {
 	}
 
 	ev := newEv()
-	odb := cdb.New(t.db, t.Section())
+	odb := cdb.New(t.db)
 	odb.CreateSession(ev)
 
 	w := &worker.Worker{

@@ -360,7 +360,7 @@ func (oDb *DB) SvcmonLogLastUpdate(ctx context.Context, l ...*DBInstanceStatusLo
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Counters.SvcmonLogLastUpdate.Add(float64(len(l)))
+	oDb.Metrics.InstanceStatusLogInsert.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `svcmon_log_last` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
@@ -379,7 +379,7 @@ func (oDb *DB) SvcmonLogLastExtend(ctx context.Context, nodeID string, objectIDs
 	if len(objectIDs) == 0 {
 		return nil
 	}
-	oDb.Counters.SvcmonLogLastExtend.Add(float64(len(objectIDs)))
+	oDb.Metrics.InstanceStatusLogExtend.Add(float64(len(objectIDs)))
 	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
 
 	query := fmt.Sprintf("UPDATE `svcmon_log_last` SET `mon_end` = NOW() WHERE `node_id` = ? AND `svc_id` in (%s)", placeholders)
@@ -403,7 +403,7 @@ func (oDb *DB) SvcmonLogUpdate(ctx context.Context, l ...*DBInstanceStatusLog) e
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Counters.SvcmonLogUpdate.Add(float64(len(l)))
+	oDb.Metrics.InstanceStatusLogChange.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `svcmon_log` %s VALUES %s", insertColList, placeholders)
@@ -445,7 +445,7 @@ func (oDb *DB) SvcmonUpdate(ctx context.Context, l ...*DBInstanceStatus) error {
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Counters.SvcmonUpdate.Add(float64(len(l)))
+	oDb.Metrics.InstanceStatusUpdate.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 	args := make([]any, 0, 17*len(l))
 	for _, v := range l {

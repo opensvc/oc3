@@ -34,7 +34,7 @@ func newServer() (*server, error) {
 func (t *server) Section() string { return t.section }
 
 func (t *server) apiRegister(e *echo.Echo) {
-	odb := cdb.New(t.db, t.Section())
+	odb := cdb.New(t.db)
 	odb.CreateSession(nil)
 	api.RegisterHandlersWithBaseURL(e, &handlers.Api{
 		DB:          t.db,

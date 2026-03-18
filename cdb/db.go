@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type (
@@ -33,10 +32,10 @@ type (
 		dbPool *sql.DB
 		HasTx  bool
 
-		Counters Counters
+		Metrics Metrics
 	}
 
-	Counters struct {
+	Metrics struct {
 		ExecErr        prometheus.Counter
 		ExecOk         prometheus.Counter
 		BeginTxErr     prometheus.Counter
@@ -52,25 +51,25 @@ type (
 		ExecTxRetry  prometheus.Counter
 		ExecTxFailed prometheus.Counter
 
-		HbUpdate        prometheus.Counter
-		HbLogUpdate     prometheus.Counter
-		HbLogLastExtend prometheus.Counter
-		HbLogLastUpdate prometheus.Counter
+		HbStatusUpdate    prometheus.Counter
+		HbStatusLogChange prometheus.Counter
+		HbStatusLogExtend prometheus.Counter
+		HbStatusLogInsert prometheus.Counter
 
-		ObjectUpdate        prometheus.Counter
-		ObjectLogUpdate     prometheus.Counter
-		ObjectLogLastExtend prometheus.Counter
-		ObjectLogLastUpdate prometheus.Counter
+		ObjectStatusUpdate    prometheus.Counter
+		ObjectStatusLogChange prometheus.Counter
+		ObjectStatusLogExtend prometheus.Counter
+		ObjectStatusLogInsert prometheus.Counter
 
-		ResmonUpdate        prometheus.Counter
-		ResmonLogUpdate     prometheus.Counter
-		ResmonLogLastExtend prometheus.Counter
-		ResmonLogLastUpdate prometheus.Counter
+		ResourceStatusUpdate    prometheus.Counter
+		ResourceStatusLogChange prometheus.Counter
+		ResourceStatusLogExtend prometheus.Counter
+		ResourceStatusLogInsert prometheus.Counter
 
-		SvcmonUpdate        prometheus.Counter
-		SvcmonLogUpdate     prometheus.Counter
-		SvcmonLogLastExtend prometheus.Counter
-		SvcmonLogLastUpdate prometheus.Counter
+		InstanceStatusUpdate    prometheus.Counter
+		InstanceStatusLogChange prometheus.Counter
+		InstanceStatusLogExtend prometheus.Counter
+		InstanceStatusLogInsert prometheus.Counter
 	}
 
 	// DBLocker combines a database connection and a sync.Locker
@@ -105,21 +104,21 @@ func InitDbLocker(db *sql.DB) *DBLocker {
 	return dbLocker
 }
 
-func New(dbPool *sql.DB, subsystem string) *DB {
+func New(dbPool *sql.DB) *DB {
 	return &DB{
-		DB:       dbPool,
-		DBLck:    InitDbLocker(dbPool),
-		dbPool:   dbPool,
-		Counters: newCounters(subsystem),
+		DB:      dbPool,
+		DBLck:   InitDbLocker(dbPool),
+		dbPool:  dbPool,
+		Metrics: newMetrics(),
 	}
 }
 
-func NewWithCounters(dbPool *sql.DB, counters Counters) *DB {
+func NewWithCounters(dbPool *sql.DB, counters Metrics) *DB {
 	return &DB{
-		DB:       dbPool,
-		DBLck:    InitDbLocker(dbPool),
-		dbPool:   dbPool,
-		Counters: counters,
+		DB:      dbPool,
+		DBLck:   InitDbLocker(dbPool),
+		dbPool:  dbPool,
+		Metrics: counters,
 	}
 }
 
@@ -261,9 +260,9 @@ func (oDb *DB) ExecContext(ctx context.Context, query string, args ...any) (res 
 	if oDb.HasTx {
 		res, err := oDb.DB.ExecContext(ctx, query, args...)
 		if err != nil {
-			oDb.Counters.ExecErr.Inc()
+			oDb.Metrics.ExecErr.Inc()
 		} else {
-			oDb.Counters.ExecOk.Inc()
+			oDb.Metrics.ExecOk.Inc()
 		}
 		return res, err
 	}
@@ -274,41 +273,41 @@ func (oDb *DB) ExecContext(ctx context.Context, query string, args ...any) (res 
 	for i := 0; i < maxRetries; i++ {
 		tx, err = oDb.dbPool.BeginTx(ctx, nil)
 		if err != nil {
-			oDb.Counters.BeginTxErr.Inc()
-			oDb.Counters.ExecTxFailed.Inc()
+			oDb.Metrics.BeginTxErr.Inc()
+			oDb.Metrics.ExecTxFailed.Inc()
 			return res, fmt.Errorf("begin transaction: %w", err)
 		}
-		oDb.Counters.BeginTxOk.Inc()
+		oDb.Metrics.BeginTxOk.Inc()
 
 		res, err = tx.ExecContext(ctx, query, args...)
 		if err == nil {
-			oDb.Counters.ExecTxOk.Inc()
+			oDb.Metrics.ExecTxOk.Inc()
 			if err := tx.Commit(); err != nil {
-				oDb.Counters.CommitErr.Inc()
-				oDb.Counters.ExecTxFailed.Inc()
+				oDb.Metrics.CommitErr.Inc()
+				oDb.Metrics.ExecTxFailed.Inc()
 				return nil, fmt.Errorf("commit: %w", err)
 			}
-			oDb.Counters.CommitOk.Inc()
+			oDb.Metrics.CommitOk.Inc()
 			return res, nil
 		}
-		oDb.Counters.ExecTxErr.Inc()
+		oDb.Metrics.ExecTxErr.Inc()
 		if !isDeadlock(err) {
-			oDb.Counters.ExecTxFailed.Inc()
+			oDb.Metrics.ExecTxFailed.Inc()
 			return nil, err
 		}
-		oDb.Counters.ExecTxDeadlock.Inc()
+		oDb.Metrics.ExecTxDeadlock.Inc()
 
 		if err1 := tx.Rollback(); err1 != nil {
-			oDb.Counters.RollbackErr.Inc()
-			oDb.Counters.ExecTxFailed.Inc()
+			oDb.Metrics.RollbackErr.Inc()
+			oDb.Metrics.ExecTxFailed.Inc()
 			return res, fmt.Errorf("exec and rollback failed: %w", errors.Join(err, err1))
 		}
-		oDb.Counters.RollbackOk.Inc()
-		oDb.Counters.ExecTxRetry.Inc()
+		oDb.Metrics.RollbackOk.Inc()
+		oDb.Metrics.ExecTxRetry.Inc()
 		time.Sleep(Backoff(100*time.Millisecond, i, time.Second))
 		continue
 	}
-	oDb.Counters.ExecTxFailed.Inc()
+	oDb.Metrics.ExecTxFailed.Inc()
 	return res, fmt.Errorf("exec failed after %d retries (duration %s): %w", maxRetries, time.Since(begin), err)
 }
 
@@ -318,73 +317,6 @@ func isDeadlock(err error) bool {
 		return me.Number == 1213
 	}
 	return false
-}
-
-func NewCounters(subsystem string) Counters {
-	return newCounters(subsystem)
-}
-
-func newCounters(subsystem string) Counters {
-	execCountVec := promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "oc3",
-			Subsystem: subsystem,
-			Name:      "db_operation_count",
-			Help:      "Counter of db processed operations",
-		},
-		[]string{"desc"},
-	)
-
-	opensvcCountVec := promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "oc3",
-			Subsystem: subsystem,
-			Name:      "opensvc_db_operation_count",
-			Help:      "Counter of opensvc db processed operations",
-		},
-		[]string{"desc", "type"},
-	)
-
-	return Counters{
-		ExecErr: execCountVec.With(prometheus.Labels{"desc": "ExecErr"}),
-		ExecOk:  execCountVec.With(prometheus.Labels{"desc": "ExecOk"}),
-
-		BeginTxErr: execCountVec.With(prometheus.Labels{"desc": "BeginTxErr"}),
-		BeginTxOk:  execCountVec.With(prometheus.Labels{"desc": "BeginTxOk"}),
-
-		CommitErr: execCountVec.With(prometheus.Labels{"desc": "CommitErr"}),
-		CommitOk:  execCountVec.With(prometheus.Labels{"desc": "CommitOk"}),
-
-		RollbackErr: execCountVec.With(prometheus.Labels{"desc": "RollbackErr"}),
-		RollbackOk:  execCountVec.With(prometheus.Labels{"desc": "RollbackOk"}),
-
-		ExecTxErr: execCountVec.With(prometheus.Labels{"desc": "ExecTxErr"}),
-		ExecTxOk:  execCountVec.With(prometheus.Labels{"desc": "ExecTxOk"}),
-
-		ExecTxDeadlock: execCountVec.With(prometheus.Labels{"desc": "ExecTxDeadlock"}),
-		ExecTxRetry:    execCountVec.With(prometheus.Labels{"desc": "ExecTxRetry"}),
-		ExecTxFailed:   execCountVec.With(prometheus.Labels{"desc": "ExecTxFailed"}),
-
-		HbUpdate:        opensvcCountVec.With(prometheus.Labels{"desc": "hearbeat", "type": "update"}),
-		HbLogUpdate:     opensvcCountVec.With(prometheus.Labels{"desc": "hearbeat", "type": "log_update"}),
-		HbLogLastExtend: opensvcCountVec.With(prometheus.Labels{"desc": "hearbeat", "type": "log_last_extend"}),
-		HbLogLastUpdate: opensvcCountVec.With(prometheus.Labels{"desc": "hearbeat", "type": "log_last_update"}),
-
-		ObjectUpdate:        opensvcCountVec.With(prometheus.Labels{"desc": "object", "type": "update"}),
-		ObjectLogUpdate:     opensvcCountVec.With(prometheus.Labels{"desc": "object", "type": "log_update"}),
-		ObjectLogLastExtend: opensvcCountVec.With(prometheus.Labels{"desc": "object", "type": "log_last_extend"}),
-		ObjectLogLastUpdate: opensvcCountVec.With(prometheus.Labels{"desc": "object", "type": "log_last_update"}),
-
-		ResmonUpdate:        opensvcCountVec.With(prometheus.Labels{"desc": "Resmon", "type": "update"}),
-		ResmonLogUpdate:     opensvcCountVec.With(prometheus.Labels{"desc": "Resmon", "type": "log_update"}),
-		ResmonLogLastExtend: opensvcCountVec.With(prometheus.Labels{"desc": "Resmon", "type": "log_last_extend"}),
-		ResmonLogLastUpdate: opensvcCountVec.With(prometheus.Labels{"desc": "Resmon", "type": "log_last_update"}),
-
-		SvcmonUpdate:        opensvcCountVec.With(prometheus.Labels{"desc": "instance", "type": "update"}),
-		SvcmonLogUpdate:     opensvcCountVec.With(prometheus.Labels{"desc": "instance", "type": "log_update"}),
-		SvcmonLogLastExtend: opensvcCountVec.With(prometheus.Labels{"desc": "instance", "type": "log_last_extend"}),
-		SvcmonLogLastUpdate: opensvcCountVec.With(prometheus.Labels{"desc": "instance", "type": "log_last_update"}),
-	}
 }
 
 // Backoff calculates an exponential backoff duration with optional jitter,

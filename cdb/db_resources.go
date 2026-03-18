@@ -340,7 +340,7 @@ func (oDb *DB) ResmonLogLastUpdate(ctx context.Context, l ...*DBResmonLog) error
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Counters.ResmonLogLastUpdate.Add(float64(len(l)))
+	oDb.Metrics.ResourceStatusLogInsert.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `resmon_log_last` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
@@ -358,7 +358,7 @@ func (oDb *DB) ResmonLogLastExtend(ctx context.Context, l ...*DBInstanceResource
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Counters.ResmonLogLastExtend.Add(float64(len(l)))
+	oDb.Metrics.ResourceStatusLogExtend.Add(float64(len(l)))
 	placeholders := strings.Repeat("(?,?,?),", len(l)-1) + "(?,?,?)"
 
 	query := fmt.Sprintf("UPDATE `resmon_log_last` SET `res_end` = NOW() WHERE (`svc_id`, `node_id`, `rid`) in (%s)", placeholders)
@@ -380,7 +380,7 @@ func (oDb *DB) ResmonLogUpdate(ctx context.Context, l ...*DBResmonLog) error {
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Counters.ResmonLogUpdate.Add(float64(len(l)))
+	oDb.Metrics.ResourceStatusLogChange.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `resmon_log` %s VALUES %s", insertColList, placeholders)
@@ -406,7 +406,7 @@ func (oDb *DB) ResmonUpdate(ctx context.Context, l ...*DBInstanceResource) error
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Counters.ResmonUpdate.Add(float64(len(l)))
+	oDb.Metrics.ResourceStatusUpdate.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `resmon` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
