@@ -353,7 +353,7 @@ func (oDb *DB) CompNodeRulesets(ctx context.Context, nodeID string) (rulesets []
 }
 
 // get candidate modulesets for a node (modulesets that can be attached but are not yet attached)
-func (oDb *DB) CompNodeCandidateModulesets(ctx context.Context, nodeID string, attachedModulesets []int, groups []string, isManager bool) ([]Moduleset, error) {
+func (oDb *DB) CompNodeCandidateModulesets(ctx context.Context, nodeID string, attachedModulesets []int, groups []string, isManager bool, limit, offset int) ([]Moduleset, error) {
 	var query = `
 		SELECT DISTINCT comp_moduleset.id, comp_moduleset.modset_name, comp_moduleset.modset_author, comp_moduleset.modset_updated
 		FROM comp_moduleset
@@ -392,7 +392,8 @@ func (oDb *DB) CompNodeCandidateModulesets(ctx context.Context, nodeID string, a
 		query += ")"
 	}
 
-	query += " ORDER BY comp_moduleset.modset_name"
+	query += " ORDER BY comp_moduleset.modset_name, comp_moduleset.id"
+	query, args = appendLimitOffset(query, args, limit, offset)
 
 	rows, err := oDb.DB.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -417,7 +418,7 @@ func (oDb *DB) CompNodeCandidateModulesets(ctx context.Context, nodeID string, a
 }
 
 // get candidate rulesets for a node (rulesets that can be attached but are not yet attached)
-func (oDb *DB) CompNodeCandidateRulesets(ctx context.Context, nodeID string, attachedRulesets []int, groups []string, isManager bool) ([]Ruleset, error) {
+func (oDb *DB) CompNodeCandidateRulesets(ctx context.Context, nodeID string, attachedRulesets []int, groups []string, isManager bool, limit, offset int) ([]Ruleset, error) {
 	var query = `
 		SELECT DISTINCT comp_rulesets.id, comp_rulesets.ruleset_name, comp_rulesets.ruleset_public, comp_rulesets.ruleset_type
 		FROM comp_rulesets
@@ -456,7 +457,8 @@ func (oDb *DB) CompNodeCandidateRulesets(ctx context.Context, nodeID string, att
 		query += ")"
 	}
 
-	query += " ORDER BY comp_rulesets.ruleset_name"
+	query += " ORDER BY comp_rulesets.ruleset_name, comp_rulesets.id"
+	query, args = appendLimitOffset(query, args, limit, offset)
 
 	rows, err := oDb.DB.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -483,7 +485,7 @@ func (oDb *DB) CompNodeCandidateRulesets(ctx context.Context, nodeID string, att
 }
 
 // get attached modulesets for a node with details
-func (oDb *DB) CompNodeAttachedModulesets(ctx context.Context, nodeID string, groups []string, isManager bool) ([]Moduleset, error) {
+func (oDb *DB) CompNodeAttachedModulesets(ctx context.Context, nodeID string, groups []string, isManager bool, limit, offset int) ([]Moduleset, error) {
 	query := `
 		SELECT comp_moduleset.id, comp_moduleset.modset_name, comp_moduleset.modset_author, comp_moduleset.modset_updated
 		FROM comp_moduleset
@@ -508,7 +510,8 @@ func (oDb *DB) CompNodeAttachedModulesets(ctx context.Context, nodeID string, gr
 		args = append(args, filterArgs...)
 	}
 
-	query += " ORDER BY comp_moduleset.modset_name"
+	query += " ORDER BY comp_moduleset.modset_name, comp_moduleset.id"
+	query, args = appendLimitOffset(query, args, limit, offset)
 
 	rows, err := oDb.DB.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -533,7 +536,7 @@ func (oDb *DB) CompNodeAttachedModulesets(ctx context.Context, nodeID string, gr
 }
 
 // get attached rulesets for a node with details
-func (oDb *DB) CompNodeAttachedRulesets(ctx context.Context, nodeID string, groups []string, isManager bool) ([]Ruleset, error) {
+func (oDb *DB) CompNodeAttachedRulesets(ctx context.Context, nodeID string, groups []string, isManager bool, limit, offset int) ([]Ruleset, error) {
 	query := `
 		SELECT comp_rulesets.id, comp_rulesets.ruleset_name, comp_rulesets.ruleset_public, comp_rulesets.ruleset_type
 		FROM comp_rulesets
@@ -558,7 +561,8 @@ func (oDb *DB) CompNodeAttachedRulesets(ctx context.Context, nodeID string, grou
 		args = append(args, filterArgs...)
 	}
 
-	query += " ORDER BY comp_rulesets.ruleset_name"
+	query += " ORDER BY comp_rulesets.ruleset_name, comp_rulesets.id"
+	query, args = appendLimitOffset(query, args, limit, offset)
 
 	rows, err := oDb.DB.QueryContext(ctx, query, args...)
 	if err != nil {

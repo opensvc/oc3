@@ -3,15 +3,16 @@ package serverhandlers
 import (
 	"github.com/labstack/echo/v4"
 
+	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/util/echolog"
 	"github.com/opensvc/oc3/util/logkey"
 )
 
 // GetNodeComplianceLogs handles GET /nodes/{node_id}/compliance/logs
-func (a *Api) GetNodeComplianceLogs(c echo.Context, nodeId string) error {
+func (a *Api) GetNodeComplianceLogs(c echo.Context, nodeId string, params server.GetNodeComplianceLogsParams) error {
 	log := echolog.GetLogHandler(c, "GetNodeComplianceLogs")
 
-	log.Info("called", logkey.NodeID, nodeId)
+	log.Info("called", logkey.NodeID, nodeId, "props", params.Props)
 
 	// TODO
 

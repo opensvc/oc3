@@ -17,7 +17,7 @@ type Tag struct {
 }
 
 // GetTags returns all tags with id > 0, or a specific tag if tagID is provided
-func (oDb *DB) GetTags(ctx context.Context, tagID *int) ([]Tag, error) {
+func (oDb *DB) GetTags(ctx context.Context, tagID *int, limit, offset int) ([]Tag, error) {
 	query := `
 		SELECT id, tag_name, tag_created, tag_exclude, tag_data, tag_id
 		FROM tags
@@ -30,7 +30,10 @@ func (oDb *DB) GetTags(ctx context.Context, tagID *int) ([]Tag, error) {
 		args = append(args, *tagID)
 	}
 
-	query += " ORDER BY tag_name"
+	query += " ORDER BY tag_name, id"
+	if tagID == nil {
+		query, args = appendLimitOffset(query, args, limit, offset)
+	}
 
 	rows, err := oDb.DB.QueryContext(ctx, query, args...)
 	if err != nil {
