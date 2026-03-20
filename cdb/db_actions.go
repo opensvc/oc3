@@ -238,6 +238,7 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, act
 		return id, err
 	} else if rowsAffected > 0 {
 		oDb.SetChange("svcactions")
+		oDb.Metrics.InstanceActionInsert.Inc()
 	}
 
 	return id, nil
@@ -260,6 +261,7 @@ func (oDb *DB) UpdateSvcAction(ctx context.Context, svcActionID int64, end time.
 		return err
 	} else if rowsAffected > 0 {
 		oDb.SetChange("svcactions")
+		oDb.Metrics.InstanceActionUpdate.Inc()
 	}
 	return nil
 }

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 type (
@@ -33,43 +32,6 @@ type (
 		HasTx  bool
 
 		Metrics *Metrics
-	}
-
-	Metrics struct {
-		ExecErr        prometheus.Counter
-		ExecOk         prometheus.Counter
-		BeginTxErr     prometheus.Counter
-		BeginTxOk      prometheus.Counter
-		CommitErr      prometheus.Counter
-		CommitOk       prometheus.Counter
-		RollbackErr    prometheus.Counter
-		RollbackOk     prometheus.Counter
-		ExecTxErr      prometheus.Counter
-		ExecTxOk       prometheus.Counter
-		ExecTxDeadlock prometheus.Counter
-
-		ExecTxRetry  prometheus.Counter
-		ExecTxFailed prometheus.Counter
-
-		HbStatusUpdate    prometheus.Counter
-		HbStatusLogChange prometheus.Counter
-		HbStatusLogExtend prometheus.Counter
-		HbStatusLogInsert prometheus.Counter
-
-		ObjectStatusUpdate    prometheus.Counter
-		ObjectStatusLogChange prometheus.Counter
-		ObjectStatusLogExtend prometheus.Counter
-		ObjectStatusLogInsert prometheus.Counter
-
-		ResourceStatusUpdate    prometheus.Counter
-		ResourceStatusLogChange prometheus.Counter
-		ResourceStatusLogExtend prometheus.Counter
-		ResourceStatusLogInsert prometheus.Counter
-
-		InstanceStatusUpdate    prometheus.Counter
-		InstanceStatusLogChange prometheus.Counter
-		InstanceStatusLogExtend prometheus.Counter
-		InstanceStatusLogInsert prometheus.Counter
 	}
 
 	// DBLocker combines a database connection and a sync.Locker

@@ -314,6 +314,7 @@ func (oDb *DB) ObjectsPing(ctx context.Context, ids []string) (updates bool, err
 	} else if count > 0 {
 		updates = true
 		oDb.SetChange("services")
+		oDb.Metrics.ObjectStatusUpdate.Add(float64(count))
 	}
 	slog.Info(fmt.Sprintf("STAT: %s elapse: %s", "UpdateServicesSvcStatusUpdated", time.Since(begin)))
 
@@ -324,6 +325,7 @@ func (oDb *DB) ObjectsPing(ctx context.Context, ids []string) (updates bool, err
 	} else if count > 0 {
 		updates = true
 		oDb.SetChange("services")
+		oDb.Metrics.ObjectStatusLogExtend.Add(float64(count))
 	}
 	slog.Info(fmt.Sprintf("STAT: %s elapse: %s", "updateSvcLogLastSvc", time.Since(begin)))
 
@@ -349,7 +351,6 @@ func (oDb *DB) ObjectStatusUpdate(ctx context.Context, l ...*DBObject) error {
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.ObjectStatusUpdate.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 	query := fmt.Sprintf("INSERT INTO `services` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
 
@@ -357,11 +358,13 @@ func (oDb *DB) ObjectStatusUpdate(ctx context.Context, l ...*DBObject) error {
 	for _, o := range l {
 		args = append(args, o.SvcID, o.AvailStatus, o.OverallStatus, o.Placement, o.Frozen, o.Provisioned, o.Updated)
 	}
-	_, err := oDb.ExecContext(ctx, query, args...)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return err
+	} else if count > 0 {
 		oDb.SetChange("services")
+		oDb.Metrics.ObjectStatusUpdate.Add(float64(count))
 	}
-	return err
+	return nil
 }
 
 // ObjectUpdateLog handle services_log_last and services_log avail value changes.
@@ -428,14 +431,18 @@ func (oDb *DB) ObjectUpdateLog(ctx context.Context, svcID string, avail string) 
 		defer oDb.SetChange("services_log")
 		if previousAvail == avail {
 			// no change, extend last interval
-			if _, err := oDb.ExecContext(ctx, qExtendIntervalOfCurrentAvail, svcID); err != nil {
+			if count, err := oDb.execCountContext(ctx, qExtendIntervalOfCurrentAvail, svcID); err != nil {
 				return fmt.Errorf("objectUpdateLog can't set services_log_last.svc_end %s: %w", svcID, err)
+			} else if count > 0 {
+				oDb.Metrics.ObjectStatusLogExtend.Inc()
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of previous avail value before change
-			if _, err := oDb.ExecContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, svcID, previousBegin, previousAvail); err != nil {
+			if count, err := oDb.execCountContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, svcID, previousBegin, previousAvail); err != nil {
 				return fmt.Errorf("objectUpdateLog can't save services_log change %s: %w", svcID, err)
+			} else if count > 0 {
+				oDb.Metrics.ObjectStatusLogChange.Inc()
 			}
 			// reset begin and end interval for new avail
 			return setLogLast()
@@ -495,7 +502,6 @@ func (oDb *DB) ObjectStatusLogLastUpdate(ctx context.Context, l ...*DBObjectStat
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.ObjectStatusLogInsert.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `services_log_last` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
@@ -513,7 +519,6 @@ func (oDb *DB) ObjectStatusLogLastExtend(ctx context.Context, objectIDs ...strin
 	if len(objectIDs) == 0 {
 		return nil
 	}
-	oDb.Metrics.ObjectStatusLogExtend.Add(float64(len(objectIDs)))
 	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
 
 	query := fmt.Sprintf("UPDATE `services_log_last` SET `svc_end` = NOW() WHERE `svc_id` in (%s)", placeholders)
@@ -522,8 +527,12 @@ func (oDb *DB) ObjectStatusLogLastExtend(ctx context.Context, objectIDs ...strin
 		args[i] = v
 	}
 
-	_, err := oDb.ExecContext(ctx, query, args...)
-	return err
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.Metrics.ObjectStatusLogExtend.Add(float64(count))
+	}
+	return nil
 }
 
 func (oDb *DB) ObjectStatusLogUpdate(ctx context.Context, l ...*DBObjectStatusLog) error {
@@ -535,7 +544,6 @@ func (oDb *DB) ObjectStatusLogUpdate(ctx context.Context, l ...*DBObjectStatusLo
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.ObjectStatusLogChange.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `services_log` %s VALUES %s", insertColList, placeholders)
@@ -544,8 +552,12 @@ func (oDb *DB) ObjectStatusLogUpdate(ctx context.Context, l ...*DBObjectStatusLo
 		args = append(args, v.SvcID, v.AvailStatus, v.BeginAt)
 	}
 
-	_, err := oDb.ExecContext(ctx, query, args...)
-	return err
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.Metrics.ObjectStatusLogChange.Add(float64(count))
+	}
+	return nil
 }
 
 // insertOrUpdateObjectForNodeAndCandidateApp will insert or update object with svcID.
@@ -561,9 +573,11 @@ func (oDb *DB) insertOrUpdateObjectForNodeAndCandidateApp(ctx context.Context, o
 	if err != nil {
 		return fmt.Errorf("get application from candidate %s with node_id %s: %w", candidateApp, node.NodeID, err)
 	}
-	_, err = oDb.ExecContext(ctx, query, objectName, node.ClusterID, svcID, app, node.NodeEnv, objectName, node.ClusterID, app, node.NodeEnv)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, query, objectName, node.ClusterID, svcID, app, node.NodeEnv, objectName, node.ClusterID, app, node.NodeEnv); err != nil {
 		return fmt.Errorf("createServiceFromObjectAndCandidateApp %s %s: %w", objectName, svcID, err)
+	} else if count > 0 {
+		oDb.SetChange("services")
+		oDb.Metrics.ObjectConfigInsert.Inc()
 	}
 	return nil
 }
@@ -599,6 +613,9 @@ func (oDb *DB) InsertOrUpdateObjectConfig(ctx context.Context, c *DBObjectConfig
 	count, err := oDb.execCountContext(ctx, query, c.Name, c.ClusterID, c.SvcID, nodes, drpNode, drpNodes, app, env, c.Comment, c.FlexMin, c.FlexMax, c.FlexTarget, c.HA, c.Topology, c.Config)
 	if err != nil {
 		return false, fmt.Errorf("update services config: %w", err)
+	}
+	if count > 0 {
+		oDb.Metrics.ObjectConfigUpdate.Inc()
 	}
 	return count > 0, nil
 }

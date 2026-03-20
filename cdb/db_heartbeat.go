@@ -134,7 +134,6 @@ func (oDb *DB) HBUpdate(ctx context.Context, l ...*DBHeartbeat) error {
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.HbStatusUpdate.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 	args := make([]any, 0, 9*len(l))
 	for _, v := range l {
@@ -145,11 +144,12 @@ func (oDb *DB) HBUpdate(ctx context.Context, l ...*DBHeartbeat) error {
 		insertColList, placeholders, onDuplicateAssignment)
 
 	// TODO check vs v2
-	_, err := oDb.ExecContext(ctx, query, args...)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
 		return err
+	} else if count > 0 {
+		oDb.SetChange("hbmon")
+		oDb.Metrics.HbStatusUpdate.Add(float64(count))
 	}
-	oDb.SetChange("hbmon")
 	return nil
 }
 
@@ -205,7 +205,6 @@ func (oDb *DB) HBLogLastUpdate(ctx context.Context, l ...*DBHeartbeatLog) error 
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.HbStatusLogInsert.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `hbmon_log_last` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
@@ -223,7 +222,6 @@ func (oDb *DB) HBLogLastExtend(ctx context.Context, l ...*DBHeartbeatLog) error 
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.HbStatusLogExtend.Add(float64(len(l)))
 	placeholders := strings.Repeat("(?,?,?),", len(l)-1) + "(?,?,?)"
 
 	query := fmt.Sprintf("UPDATE `hbmon_log_last` SET `end` = NOW() WHERE (`node_id`,`peer_node_id`,`name`) IN %s)", placeholders)
@@ -232,8 +230,12 @@ func (oDb *DB) HBLogLastExtend(ctx context.Context, l ...*DBHeartbeatLog) error 
 		args = append(args, v.NodeID, v.PeerNodeID, v.Name)
 	}
 
-	_, err := oDb.ExecContext(ctx, query, args...)
-	return err
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.Metrics.HbStatusLogExtend.Add(float64(count))
+	}
+	return nil
 }
 
 func (oDb *DB) HBLogUpdate(ctx context.Context, l ...*DBHeartbeatLog) error {
@@ -245,7 +247,6 @@ func (oDb *DB) HBLogUpdate(ctx context.Context, l ...*DBHeartbeatLog) error {
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.HbStatusLogChange.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `hbmon_log` %s VALUES %s", insertColList, placeholders)
@@ -254,8 +255,12 @@ func (oDb *DB) HBLogUpdate(ctx context.Context, l ...*DBHeartbeatLog) error {
 		args = append(args, v.ClusterID, v.NodeID, v.PeerNodeID, v.Name, v.State, v.Beating, v.Begin)
 	}
 
-	_, err := oDb.ExecContext(ctx, query, args...)
-	return err
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.Metrics.HbStatusLogChange.Add(float64(count))
+	}
+	return nil
 }
 
 func (o *DBHeartbeat) SameAsLog(logStatus *DBHeartbeatLog) bool {

@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type (
@@ -599,6 +601,9 @@ func (oDb *DB) InsertNode(ctx context.Context, nodename, teamResponsible, app, n
 		return fmt.Errorf("InsertNode: %w", err)
 	}
 	oDb.SetChange("nodes")
-	oDb.Session.NotifyChanges(ctx)
+	oDb.Metrics.NodeConfigInsert.Inc()
+	if err := oDb.Session.NotifyChanges(ctx); err != nil {
+		slog.Debug("insert node can't notify changes", logkey.Error, err, logkey.Nodename, nodename, logkey.NodeID, nodeID)
+	}
 	return nil
 }
