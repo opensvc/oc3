@@ -80,9 +80,11 @@ func (oDb *DB) UpdateDiskinfoArrayID(ctx context.Context, diskID, arrayID string
 	)
 	if count, err := oDb.execCountContext(ctx, query, diskID, arrayID); err != nil {
 		return false, fmt.Errorf("update diskinfo: %w", err)
-	} else {
-		return count > 0, nil
+	} else if count > 0 {
+		oDb.Metrics.NodeDiskUpdate.Inc()
+		return true, nil
 	}
+	return false, nil
 }
 
 func (oDb *DB) UpdateDiskinfoArrayAndDevIDsAndSize(ctx context.Context, diskID, arrayID, devID string, size int32) (bool, error) {
@@ -93,9 +95,11 @@ func (oDb *DB) UpdateDiskinfoArrayAndDevIDsAndSize(ctx context.Context, diskID, 
 	)
 	if count, err := oDb.execCountContext(ctx, query, diskID, arrayID, devID, size); err != nil {
 		return false, fmt.Errorf("update diskinfo: %w", err)
-	} else {
-		return count > 0, nil
+	} else if count > 0 {
+		oDb.Metrics.NodeDiskUpdate.Inc()
+		return true, nil
 	}
+	return false, nil
 }
 
 func (oDb *DB) UpdateDiskinfoForDiskSize(ctx context.Context, diskID string, size int32) (bool, error) {
@@ -106,9 +110,11 @@ func (oDb *DB) UpdateDiskinfoForDiskSize(ctx context.Context, diskID string, siz
 	)
 	if count, err := oDb.execCountContext(ctx, query, diskID, size); err != nil {
 		return false, fmt.Errorf("update diskinfo: %w", err)
-	} else {
-		return count > 0, nil
+	} else if count > 0 {
+		oDb.Metrics.NodeDiskUpdate.Inc()
+		return true, nil
 	}
+	return false, nil
 }
 
 func (oDb *DB) UpdateDiskinfoSetMissingArrayID(ctx context.Context, diskID, arrayID string) (bool, error) {

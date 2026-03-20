@@ -146,7 +146,7 @@ func (oDb *DB) DashboardUpdateObjectFlexStartedBatch(ctx context.Context, l ...*
           AND d.dash_type = "flex error"
           AND d.dash_fmt LIKE "%%instances started%%"
           AND still_errors.svc_id IS NULL`,
-		placeholders(len(svcIDs)), placeholders(len(svcIDs)))
+		getPlaceholders(len(svcIDs)), getPlaceholders(len(svcIDs)))
 
 	// Combine args for the two IN clauses
 	deleteArgs := append(svcIDs, svcIDs...)
@@ -158,7 +158,7 @@ func (oDb *DB) DashboardUpdateObjectFlexStartedBatch(ctx context.Context, l ...*
 }
 
 // Helper to generate (?, ?, ?) strings
-func placeholders(n int) string {
+func getPlaceholders(n int) string {
 	ps := make([]string, n)
 	for i := range ps {
 		ps[i] = "?"

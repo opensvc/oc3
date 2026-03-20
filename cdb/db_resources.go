@@ -165,6 +165,7 @@ func (oDb *DB) ResmonRefreshTimestamp(ctx context.Context, nodeID string, object
 	} else if count > 0 {
 		updates = true
 		oDb.SetChange("resmon")
+		oDb.Metrics.ResourceStatusUpdate.Add(float64(count))
 	}
 
 	query = fmt.Sprintf(qUpdateResmonLogLast, placeholders)
@@ -239,14 +240,18 @@ func (oDb *DB) ResourceUpdateLog(ctx context.Context, resource ResourceMeta, ava
 		defer oDb.SetChange("resmon_log")
 		if previousAvail == avail {
 			// no change, extend last interval
-			if _, err := oDb.ExecContext(ctx, qExtendIntervalOfCurrentAvail, resource.OID, resource.NID, resource.RID); err != nil {
+			if count, err := oDb.execCountContext(ctx, qExtendIntervalOfCurrentAvail, resource.OID, resource.NID, resource.RID); err != nil {
 				return fmt.Errorf("objectUpdateLog can't set resmon_log_last.res_end %s: %w", resource, err)
+			} else if count > 0 {
+				oDb.Metrics.ObjectStatusLogExtend.Inc()
 			}
 			return nil
 		} else {
 			// the avail value will change, save interval of previous avail value before change
-			if _, err := oDb.ExecContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, resource.OID, resource.NID, resource.RID, previousBegin, previousAvail); err != nil {
+			if count, err := oDb.execCountContext(ctx, qSaveIntervalOfPreviousAvailBeforeTransition, resource.OID, resource.NID, resource.RID, previousBegin, previousAvail); err != nil {
 				return fmt.Errorf("objectUpdateLog can't save resmon_log change %s: %w", resource, err)
+			} else if count > 0 {
+				oDb.Metrics.ObjectStatusLogChange.Inc()
 			}
 			// reset begin and end interval for new avail
 			return setLogLast()
@@ -340,7 +345,6 @@ func (oDb *DB) ResmonLogLastUpdate(ctx context.Context, l ...*DBResmonLog) error
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.ResourceStatusLogInsert.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `resmon_log_last` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
@@ -358,7 +362,6 @@ func (oDb *DB) ResmonLogLastExtend(ctx context.Context, l ...*DBInstanceResource
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.ResourceStatusLogExtend.Add(float64(len(l)))
 	placeholders := strings.Repeat("(?,?,?),", len(l)-1) + "(?,?,?)"
 
 	query := fmt.Sprintf("UPDATE `resmon_log_last` SET `res_end` = NOW() WHERE (`svc_id`, `node_id`, `rid`) in (%s)", placeholders)
@@ -367,8 +370,12 @@ func (oDb *DB) ResmonLogLastExtend(ctx context.Context, l ...*DBInstanceResource
 		args = append(args, v.SvcID, v.NodeID, v.RID)
 	}
 
-	_, err := oDb.ExecContext(ctx, query, args...)
-	return err
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.Metrics.ResourceStatusLogExtend.Add(float64(count))
+	}
+	return nil
 }
 
 func (oDb *DB) ResmonLogUpdate(ctx context.Context, l ...*DBResmonLog) error {
@@ -380,7 +387,6 @@ func (oDb *DB) ResmonLogUpdate(ctx context.Context, l ...*DBResmonLog) error {
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.ResourceStatusLogChange.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `resmon_log` %s VALUES %s", insertColList, placeholders)
@@ -389,8 +395,12 @@ func (oDb *DB) ResmonLogUpdate(ctx context.Context, l ...*DBResmonLog) error {
 		args = append(args, v.SvcID, v.NodeID, v.RID, v.BeginAt, v.Status, v.Log)
 	}
 
-	_, err := oDb.ExecContext(ctx, query, args...)
-	return err
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.Metrics.ResourceStatusLogChange.Add(float64(count))
+	}
+	return nil
 }
 
 func (oDb *DB) ResmonUpdate(ctx context.Context, l ...*DBInstanceResource) error {
@@ -406,7 +416,6 @@ func (oDb *DB) ResmonUpdate(ctx context.Context, l ...*DBInstanceResource) error
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.ResourceStatusUpdate.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `resmon` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
@@ -415,8 +424,12 @@ func (oDb *DB) ResmonUpdate(ctx context.Context, l ...*DBInstanceResource) error
 		args = append(args, v.SvcID, v.NodeID, v.VmName, v.RID, v.Status, v.ResType, v.Log, v.Desc, v.Optional, v.Disable, v.Monitor, v.Changed)
 	}
 
-	_, err := oDb.ExecContext(ctx, query, args...)
-	return err
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.Metrics.ResourceStatusUpdate.Add(float64(count))
+	}
+	return nil
 }
 
 func (oDb *DB) ResmonPurgeExpired(ctx context.Context, maxTime time.Time, l ...string) error {
@@ -432,8 +445,12 @@ func (oDb *DB) ResmonPurgeExpired(ctx context.Context, maxTime time.Time, l ...s
 	}
 	args[len(l)] = maxTime
 
-	_, err := oDb.ExecContext(ctx, query, args...)
-	return err
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.Metrics.ResourceStatusDelete.Add(float64(count))
+	}
+	return nil
 }
 
 func (r *DBResmonLog) IDx() string {

@@ -8,6 +8,58 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+type (
+	Metrics struct {
+		ExecErr        prometheus.Counter
+		ExecOk         prometheus.Counter
+		BeginTxErr     prometheus.Counter
+		BeginTxOk      prometheus.Counter
+		CommitErr      prometheus.Counter
+		CommitOk       prometheus.Counter
+		RollbackErr    prometheus.Counter
+		RollbackOk     prometheus.Counter
+		ExecTxErr      prometheus.Counter
+		ExecTxOk       prometheus.Counter
+		ExecTxDeadlock prometheus.Counter
+
+		ExecTxRetry  prometheus.Counter
+		ExecTxFailed prometheus.Counter
+
+		// data metrics
+		HbStatusUpdate prometheus.Counter
+
+		InstanceActionInsert prometheus.Counter
+		InstanceActionUpdate prometheus.Counter
+		InstanceStatusUpdate prometheus.Counter
+
+		ObjectConfigUpdate prometheus.Counter
+		ObjectConfigDelete prometheus.Counter
+		ObjectConfigInsert prometheus.Counter
+		ObjectStatusUpdate prometheus.Counter
+
+		NodeDiskUpdate   prometheus.Counter
+		NodeConfigInsert prometheus.Counter
+
+		ResourceInfoUpdate   prometheus.Counter
+		ResourceInfoDelete   prometheus.Counter
+		ResourceStatusDelete prometheus.Counter
+		ResourceStatusUpdate prometheus.Counter
+
+		// status log metrics
+		HbStatusLogChange prometheus.Counter
+		HbStatusLogExtend prometheus.Counter
+
+		InstanceStatusLogChange prometheus.Counter
+		InstanceStatusLogExtend prometheus.Counter
+
+		ObjectStatusLogChange prometheus.Counter
+		ObjectStatusLogExtend prometheus.Counter
+
+		ResourceStatusLogChange prometheus.Counter
+		ResourceStatusLogExtend prometheus.Counter
+	}
+)
+
 var (
 	metrics *Metrics
 )
@@ -33,17 +85,23 @@ func newMetrics() *Metrics {
 		dbBeginTx  = "begin_tx"
 
 		// data operations
+		dataDelete = "delete"
 		dataUpdate = "update"
+		dataInsert = "insert"
 
 		// status log operations
 		logChange = "change"
 		logExtend = "extend"
-		logInsert = "insert"
 
 		// data types
 		hbStatus = "heartbeat_status"
+		iAction  = "instance_action"
 		iStatus  = "instance_status"
+		nConfig  = "node_config"
+		nDisk    = "node_disk"
+		oConfig  = "object_config"
 		oStatus  = "object_status"
+		rInfo    = "resource_info"
 		rStatus  = "resource_status"
 	)
 
@@ -65,8 +123,8 @@ func newMetrics() *Metrics {
 			Subsystem: "db",
 			Name:      "status_log_operations_total",
 			Help: fmt.Sprintf("Total number of data status log operations (datatype={%s}, operation={%s})",
-				strings.Join([]string{hbStatus, iStatus, oStatus, rStatus}, "|"),
-				strings.Join([]string{logChange, logExtend, logInsert}, "|")),
+				strings.Join([]string{hbStatus, iAction, iStatus, nConfig, oStatus, rInfo, rStatus}, "|"),
+				strings.Join([]string{logChange, logExtend}, "|")),
 		},
 		[]string{"datatype", "operation"},
 	)
@@ -98,22 +156,36 @@ func newMetrics() *Metrics {
 		ExecTxFailed:   dbOpCount.With(prometheus.Labels{"operation": dbExecTx, "status": dbOpFailure}),
 		ExecTxRetry:    dbOpCount.With(prometheus.Labels{"operation": dbExecTx, "status": dbOpRetry}),
 
-		HbStatusUpdate:       dataCount.With(prometheus.Labels{"datatype": hbStatus, "operation": dataUpdate}),
-		ObjectStatusUpdate:   dataCount.With(prometheus.Labels{"datatype": oStatus, "operation": dataUpdate}),
-		ResourceStatusUpdate: dataCount.With(prometheus.Labels{"datatype": rStatus, "operation": dataUpdate}),
+		// data metrics
+		HbStatusUpdate: dataCount.With(prometheus.Labels{"datatype": hbStatus, "operation": dataUpdate}),
+
+		InstanceActionInsert: dataCount.With(prometheus.Labels{"datatype": iAction, "operation": dataInsert}),
+		InstanceActionUpdate: dataCount.With(prometheus.Labels{"datatype": iAction, "operation": dataUpdate}),
 		InstanceStatusUpdate: dataCount.With(prometheus.Labels{"datatype": iStatus, "operation": dataUpdate}),
 
-		HbStatusLogChange:       logCount.With(prometheus.Labels{"datatype": hbStatus, "operation": logChange}),
-		HbStatusLogExtend:       logCount.With(prometheus.Labels{"datatype": hbStatus, "operation": logExtend}),
-		HbStatusLogInsert:       logCount.With(prometheus.Labels{"datatype": hbStatus, "operation": logInsert}),
-		ObjectStatusLogChange:   logCount.With(prometheus.Labels{"datatype": oStatus, "operation": logChange}),
-		ObjectStatusLogExtend:   logCount.With(prometheus.Labels{"datatype": oStatus, "operation": logExtend}),
-		ObjectStatusLogInsert:   logCount.With(prometheus.Labels{"datatype": oStatus, "operation": logInsert}),
-		ResourceStatusLogChange: logCount.With(prometheus.Labels{"datatype": rStatus, "operation": logChange}),
-		ResourceStatusLogExtend: logCount.With(prometheus.Labels{"datatype": rStatus, "operation": logExtend}),
-		ResourceStatusLogInsert: logCount.With(prometheus.Labels{"datatype": rStatus, "operation": logInsert}),
+		NodeConfigInsert: dataCount.With(prometheus.Labels{"datatype": nConfig, "operation": dataUpdate}),
+		NodeDiskUpdate:   dataCount.With(prometheus.Labels{"datatype": nDisk, "operation": dataUpdate}),
+
+		ObjectConfigInsert: dataCount.With(prometheus.Labels{"datatype": oConfig, "operation": dataInsert}),
+		ObjectConfigUpdate: dataCount.With(prometheus.Labels{"datatype": oConfig, "operation": dataUpdate}),
+		ObjectStatusUpdate: dataCount.With(prometheus.Labels{"datatype": oStatus, "operation": dataUpdate}),
+
+		ResourceInfoDelete:   dataCount.With(prometheus.Labels{"datatype": rInfo, "operation": dataDelete}),
+		ResourceInfoUpdate:   dataCount.With(prometheus.Labels{"datatype": rInfo, "operation": dataUpdate}),
+		ResourceStatusUpdate: dataCount.With(prometheus.Labels{"datatype": rStatus, "operation": dataUpdate}),
+		ResourceStatusDelete: dataCount.With(prometheus.Labels{"datatype": rStatus, "operation": dataDelete}),
+
+		// status log metrics
+		HbStatusLogChange: logCount.With(prometheus.Labels{"datatype": hbStatus, "operation": logChange}),
+		HbStatusLogExtend: logCount.With(prometheus.Labels{"datatype": hbStatus, "operation": logExtend}),
+
 		InstanceStatusLogChange: logCount.With(prometheus.Labels{"datatype": iStatus, "operation": logChange}),
 		InstanceStatusLogExtend: logCount.With(prometheus.Labels{"datatype": iStatus, "operation": logExtend}),
-		InstanceStatusLogInsert: logCount.With(prometheus.Labels{"datatype": iStatus, "operation": logInsert}),
+
+		ObjectStatusLogChange: logCount.With(prometheus.Labels{"datatype": oStatus, "operation": logChange}),
+		ObjectStatusLogExtend: logCount.With(prometheus.Labels{"datatype": oStatus, "operation": logExtend}),
+
+		ResourceStatusLogChange: logCount.With(prometheus.Labels{"datatype": rStatus, "operation": logChange}),
+		ResourceStatusLogExtend: logCount.With(prometheus.Labels{"datatype": rStatus, "operation": logExtend}),
 	}
 }

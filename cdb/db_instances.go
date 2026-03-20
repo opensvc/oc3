@@ -360,7 +360,6 @@ func (oDb *DB) SvcmonLogLastUpdate(ctx context.Context, l ...*DBInstanceStatusLo
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.InstanceStatusLogInsert.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `svcmon_log_last` %s VALUES %s ON DUPLICATE KEY UPDATE %s", insertColList, placeholders, onDuplicateAssignment)
@@ -379,7 +378,6 @@ func (oDb *DB) SvcmonLogLastExtend(ctx context.Context, nodeID string, objectIDs
 	if len(objectIDs) == 0 {
 		return nil
 	}
-	oDb.Metrics.InstanceStatusLogExtend.Add(float64(len(objectIDs)))
 	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
 
 	query := fmt.Sprintf("UPDATE `svcmon_log_last` SET `mon_end` = NOW() WHERE `node_id` = ? AND `svc_id` in (%s)", placeholders)
@@ -389,8 +387,12 @@ func (oDb *DB) SvcmonLogLastExtend(ctx context.Context, nodeID string, objectIDs
 		args[i+1] = v
 	}
 
-	_, err := oDb.ExecContext(ctx, query, args...)
-	return err
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.Metrics.InstanceStatusLogExtend.Add(float64(count))
+	}
+	return nil
 }
 
 func (oDb *DB) SvcmonLogUpdate(ctx context.Context, l ...*DBInstanceStatusLog) error {
@@ -403,7 +405,6 @@ func (oDb *DB) SvcmonLogUpdate(ctx context.Context, l ...*DBInstanceStatusLog) e
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.InstanceStatusLogChange.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 
 	query := fmt.Sprintf("INSERT INTO `svcmon_log` %s VALUES %s", insertColList, placeholders)
@@ -413,8 +414,12 @@ func (oDb *DB) SvcmonLogUpdate(ctx context.Context, l ...*DBInstanceStatusLog) e
 			v.MonFsStatus, v.MonDiskStatus, v.MonShareStatus, v.MonContainerStatus, v.MonAppStatus, v.MonBeginAt)
 	}
 
-	_, err := oDb.ExecContext(ctx, query, args...)
-	return err
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
+		return err
+	} else if count > 0 {
+		oDb.Metrics.InstanceStatusLogChange.Add(float64(count))
+	}
+	return nil
 }
 
 func (oDb *DB) SvcmonUpdate(ctx context.Context, l ...*DBInstanceStatus) error {
@@ -445,7 +450,6 @@ func (oDb *DB) SvcmonUpdate(ctx context.Context, l ...*DBInstanceStatus) error {
 	if len(l) == 0 {
 		return nil
 	}
-	oDb.Metrics.InstanceStatusUpdate.Add(float64(len(l)))
 	placeholders := strings.Repeat(valueList+", ", len(l)-1) + valueList
 	args := make([]any, 0, 17*len(l))
 	for _, v := range l {
@@ -460,11 +464,12 @@ func (oDb *DB) SvcmonUpdate(ctx context.Context, l ...*DBInstanceStatus) error {
 		insertColList, placeholders, onDuplicateAssignment)
 
 	// TODO check vs v2
-	_, err := oDb.ExecContext(ctx, query, args...)
-	if err != nil {
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
 		return fmt.Errorf("failed with instance status count %d query len %d: %s: %w", len(l), len(query), query, err)
+	} else if count > 0 {
+		oDb.SetChange("svcmon")
+		oDb.Metrics.InstanceStatusUpdate.Add(float64(count))
 	}
-	oDb.SetChange("svcmon")
 	return nil
 }
 
@@ -485,6 +490,7 @@ func (oDb *DB) DeleteNodeIDResmonInstances(ctx context.Context, nodeID string, o
 		return fmt.Errorf("DeleteNodeIDResmonInstances %s [%v]: %w", nodeID, objectIDs, err)
 	} else if count > 0 {
 		oDb.SetChange("resmon")
+		oDb.Metrics.ResourceStatusDelete.Add(float64(count))
 	}
 	return nil
 }
@@ -500,6 +506,9 @@ func (oDb *DB) InstanceResourcesDeleteObsolete(ctx context.Context, svcID, nodeI
 		return fmt.Errorf("InstanceResourcesDeleteObsolete: %w", err)
 	} else {
 		slog.Debug(fmt.Sprintf("InstanceResourcesDeleteObsolete %s@%s: %d", svcID, nodeID, count))
+		if count > 0 {
+			oDb.Metrics.ResourceStatusDelete.Add(float64(count))
+		}
 	}
 	return nil
 }
@@ -537,10 +546,12 @@ func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID str
 	query := fmt.Sprintf("INSERT INTO `resinfo` %s VALUES %s ON DUPLICATE KEY UPDATE %s",
 		insertColList, placeholders, onDuplicateAssignment)
 
-	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, args...); err != nil {
 		return err
+	} else if count > 0 {
+		oDb.SetChange("resinfo")
+		oDb.Metrics.ResourceInfoUpdate.Add(float64(count))
 	}
-	oDb.SetChange("resinfo")
 	return nil
 }
 
@@ -551,6 +562,7 @@ func (oDb *DB) InstanceResourceInfoDelete(ctx context.Context, svcID, nodeID str
 		return fmt.Errorf("query %s: %w", query, err)
 	} else if count > 0 {
 		oDb.SetChange("resinfo")
+		oDb.Metrics.ResourceInfoDelete.Add(float64(count))
 	}
 	return nil
 }
@@ -637,6 +649,7 @@ func (oDb *DB) InstanceResourceLogUpdate(ctx context.Context, res *DBInstanceRes
 			if _, err := oDb.ExecContext(ctx, queryExtendIntervalOfCurrent, res.SvcID, res.NodeID, res.RID); err != nil {
 				return fmt.Errorf("extend services_log_last: %w", err)
 			}
+			oDb.Metrics.ResourceStatusLogExtend.Inc()
 			return nil
 		} else {
 			// the avail value will change, save interval of previous status, log value before change
@@ -644,6 +657,7 @@ func (oDb *DB) InstanceResourceLogUpdate(ctx context.Context, res *DBInstanceRes
 				res.SvcID, res.NodeID, res.RID, previousBegin, previousStatus, previousLog); err != nil {
 				return fmt.Errorf("add services_log change: %w", err)
 			}
+			oDb.Metrics.ResourceStatusLogChange.Inc()
 			// reset begin and end interval for new status, log
 			return setLogLast()
 		}
