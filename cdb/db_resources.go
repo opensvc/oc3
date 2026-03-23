@@ -438,6 +438,7 @@ func (oDb *DB) ResmonPurgeExpired(ctx context.Context, maxTime time.Time, l ...s
 		return nil
 	}
 	placeholders := strings.Repeat("?,", len(l)-1) + "?"
+	// TODO: verify improvements with: DELETE FROM resmon FORCE INDEX (idx_node_id_updated)
 	query := fmt.Sprintf("DELETE FROM `resmon` WHERE `node_id` IN (%s) AND `updated` < ?", placeholders)
 	args := make([]any, len(l)+1)
 	for i, v := range l {
