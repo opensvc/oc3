@@ -240,6 +240,34 @@ func (oDb *DB) AppExists(ctx context.Context, app string) (bool, error) {
 	return ok, nil
 }
 
+func (oDb *DB) AppResponsible(ctx context.Context, appIDOrName string, groups []string, isManager bool, nodeID string) (bool, error) {
+	if isManager {
+		return true, nil
+	}
+
+	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
+	if err != nil {
+		return false, fmt.Errorf("appResponsible: %w", err)
+	}
+	if targetApp == nil {
+		return false, nil
+	}
+
+	if nodeID != "" {
+		nodeAppID, ok, err := oDb.AppIDFromNodeID(ctx, nodeID)
+		if err != nil {
+			return false, fmt.Errorf("appResponsible: %w", err)
+		}
+		return ok && nodeAppID == targetApp.ID, nil
+	}
+
+	visibleApp, err := oDb.GetApp(ctx, appIDOrName, groups, false)
+	if err != nil {
+		return false, fmt.Errorf("appResponsible: %w", err)
+	}
+	return visibleApp != nil, nil
+}
+
 func (oDb *DB) isAppAllowedForNodeID(ctx context.Context, nodeID, app string) (bool, error) {
 	// TODO: apps_responsibles PRIMARY KEY (app_id, group_id)
 	const query = "" +
