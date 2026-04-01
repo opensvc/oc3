@@ -6,6 +6,9 @@ type propMapping struct {
 }
 
 var propsMapping = map[string]propMapping{
+	"app": {
+		Available: []string{"id", "app", "updated", "app_domain", "app_team_ops", "description"},
+	},
 	"tag": {
 		Available: []string{"id", "tag_name", "tag_created", "tag_exclude", "tag_data", "tag_id"},
 		Blacklist: map[string]struct{}{"id": {}},

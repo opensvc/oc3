@@ -8,11 +8,83 @@ import (
 )
 
 type (
-	DBApp struct {
-		id  int64
-		app string
+	App struct {
+		ID          int64  `json:"id"`
+		App         string `json:"app"`
+		Updated     string `json:"updated"`
+		AppDomain   string `json:"app_domain"`
+		AppTeamOps  string `json:"app_team_ops"`
+		Description string `json:"description"`
 	}
 )
+
+func (oDb *DB) GetApps(ctx context.Context, groups []string, isManager bool, limit, offset int) ([]App, error) {
+	query := `
+		SELECT DISTINCT apps.id, apps.app, apps.updated, apps.app_domain, apps.app_team_ops, apps.description
+		FROM apps
+	`
+	args := make([]any, 0)
+
+	if !isManager {
+		cleanGroups := cleanGroups(groups)
+		query += `
+			JOIN apps_responsibles ON apps.id = apps_responsibles.app_id
+			JOIN auth_group ON apps_responsibles.group_id = auth_group.id
+		`
+		if len(cleanGroups) == 0 {
+			query += " WHERE 1=0"
+		} else {
+			query += " WHERE auth_group.role IN (" + Placeholders(len(cleanGroups)) + ")"
+			for _, g := range cleanGroups {
+				args = append(args, g)
+			}
+		}
+	} else {
+		query += " WHERE apps.id > 0"
+	}
+
+	query += " ORDER BY apps.app, apps.id"
+	query, args = appendLimitOffset(query, args, limit, offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getApps: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	apps := make([]App, 0)
+	for rows.Next() {
+		var (
+			item        App
+			updated     sql.NullString
+			appDomain   sql.NullString
+			appTeamOps  sql.NullString
+			description sql.NullString
+		)
+		if err := rows.Scan(&item.ID, &item.App, &updated, &appDomain, &appTeamOps, &description); err != nil {
+			return nil, fmt.Errorf("getApps scan: %w", err)
+		}
+		if updated.Valid {
+			item.Updated = updated.String
+		}
+		if appDomain.Valid {
+			item.AppDomain = appDomain.String
+		}
+		if appTeamOps.Valid {
+			item.AppTeamOps = appTeamOps.String
+		}
+		if description.Valid {
+			item.Description = description.String
+		}
+		apps = append(apps, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("getApps rows: %w", err)
+	}
+
+	return apps, nil
+}
 
 // AuthGroupIdsForNode is the oc3 implementation of oc2 node_responsibles(node_id):
 //
@@ -94,7 +166,7 @@ func (oDb *DB) ResponsibleAppsForNode(ctx context.Context, nodeID string) (apps 
 	return
 }
 
-func (oDb *DB) appFromAppName(ctx context.Context, app string) (bool, *DBApp, error) {
+func (oDb *DB) appFromAppName(ctx context.Context, app string) (bool, *App, error) {
 	const query = "SELECT id, app FROM apps WHERE app = ?"
 	var (
 		foundID  int64
@@ -110,7 +182,7 @@ func (oDb *DB) appFromAppName(ctx context.Context, app string) (bool, *DBApp, er
 	case err != nil:
 		return false, nil, err
 	default:
-		return true, &DBApp{id: foundID, app: foundApp}, nil
+		return true, &App{ID: foundID, App: foundApp}, nil
 	}
 }
 
