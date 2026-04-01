@@ -114,6 +114,12 @@ type GetAppsParams struct {
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 }
 
+// GetAppParams defines parameters for GetApp.
+type GetAppParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // PostAuthNodeJSONBody defines parameters for PostAuthNode.
 type PostAuthNodeJSONBody struct {
 	App      *string `json:"app,omitempty"`

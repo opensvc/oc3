@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 type (
@@ -18,7 +19,40 @@ type (
 	}
 )
 
-func (oDb *DB) GetApps(ctx context.Context, groups []string, isManager bool, limit, offset int) ([]App, error) {
+func scanApps(rows *sql.Rows) ([]App, error) {
+	apps := make([]App, 0)
+	for rows.Next() {
+		var (
+			item        App
+			updated     sql.NullString
+			appDomain   sql.NullString
+			appTeamOps  sql.NullString
+			description sql.NullString
+		)
+		if err := rows.Scan(&item.ID, &item.App, &updated, &appDomain, &appTeamOps, &description); err != nil {
+			return nil, fmt.Errorf("scanApps: %w", err)
+		}
+		if updated.Valid {
+			item.Updated = updated.String
+		}
+		if appDomain.Valid {
+			item.AppDomain = appDomain.String
+		}
+		if appTeamOps.Valid {
+			item.AppTeamOps = appTeamOps.String
+		}
+		if description.Valid {
+			item.Description = description.String
+		}
+		apps = append(apps, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("scanApps rows: %w", err)
+	}
+	return apps, nil
+}
+
+func buildAppsQuery(groups []string, isManager bool) (string, []any) {
 	query := `
 		SELECT DISTINCT apps.id, apps.app, apps.updated, apps.app_domain, apps.app_team_ops, apps.description
 		FROM apps
@@ -43,6 +77,11 @@ func (oDb *DB) GetApps(ctx context.Context, groups []string, isManager bool, lim
 		query += " WHERE apps.id > 0"
 	}
 
+	return query, args
+}
+
+func (oDb *DB) GetApps(ctx context.Context, groups []string, isManager bool, limit, offset int) ([]App, error) {
+	query, args := buildAppsQuery(groups, isManager)
 	query += " ORDER BY apps.app, apps.id"
 	query, args = appendLimitOffset(query, args, limit, offset)
 
@@ -52,38 +91,45 @@ func (oDb *DB) GetApps(ctx context.Context, groups []string, isManager bool, lim
 	}
 	defer func() { _ = rows.Close() }()
 
-	apps := make([]App, 0)
-	for rows.Next() {
-		var (
-			item        App
-			updated     sql.NullString
-			appDomain   sql.NullString
-			appTeamOps  sql.NullString
-			description sql.NullString
-		)
-		if err := rows.Scan(&item.ID, &item.App, &updated, &appDomain, &appTeamOps, &description); err != nil {
-			return nil, fmt.Errorf("getApps scan: %w", err)
-		}
-		if updated.Valid {
-			item.Updated = updated.String
-		}
-		if appDomain.Valid {
-			item.AppDomain = appDomain.String
-		}
-		if appTeamOps.Valid {
-			item.AppTeamOps = appTeamOps.String
-		}
-		if description.Valid {
-			item.Description = description.String
-		}
-		apps = append(apps, item)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("getApps rows: %w", err)
+	apps, err := scanApps(rows)
+	if err != nil {
+		return nil, fmt.Errorf("getApps: %w", err)
 	}
 
 	return apps, nil
+}
+
+func (oDb *DB) GetApp(ctx context.Context, appIDOrName string, groups []string, isManager bool) (*App, error) {
+	query, args := buildAppsQuery(groups, isManager)
+
+	if id, err := strconv.ParseInt(appIDOrName, 10, 64); err == nil {
+		query += " AND apps.id = ?"
+		args = append(args, id)
+	} else {
+		query += " AND apps.app = ?"
+		args = append(args, appIDOrName)
+	}
+	query += " ORDER BY apps.app, apps.id LIMIT 2"
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getApp: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	apps, err := scanApps(rows)
+	if err != nil {
+		return nil, fmt.Errorf("getApp: %w", err)
+	}
+
+	switch len(apps) {
+	case 0:
+		return nil, nil
+	case 1:
+		return &apps[0], nil
+	default:
+		return nil, fmt.Errorf("getApp: multiple apps found for %q", appIDOrName)
+	}
 }
 
 // AuthGroupIdsForNode is the oc3 implementation of oc2 node_responsibles(node_id):
