@@ -17,6 +17,13 @@ type (
 		AppTeamOps  string `json:"app_team_ops"`
 		Description string `json:"description"`
 	}
+
+	AuthGroup struct {
+		ID          int64  `json:"id"`
+		Role        string `json:"role"`
+		Privilege   bool   `json:"privilege"`
+		Description string `json:"description"`
+	}
 )
 
 func scanApps(rows *sql.Rows) ([]App, error) {
@@ -266,6 +273,70 @@ func (oDb *DB) AppResponsible(ctx context.Context, appIDOrName string, groups []
 		return false, fmt.Errorf("appResponsible: %w", err)
 	}
 	return visibleApp != nil, nil
+}
+
+func (oDb *DB) GetAppResponsibles(ctx context.Context, appIDOrName string, groups []string, isManager bool, limit, offset int) ([]AuthGroup, error) {
+	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("getAppResponsibles: %w", err)
+	}
+	if targetApp == nil {
+		return nil, nil
+	}
+
+	if !isManager {
+		visibleApp, err := oDb.GetApp(ctx, appIDOrName, groups, false)
+		if err != nil {
+			return nil, fmt.Errorf("getAppResponsibles: %w", err)
+		}
+		if visibleApp == nil {
+			return []AuthGroup{}, nil
+		}
+	}
+
+	query := `
+		SELECT auth_group.id, auth_group.role, auth_group.privilege, auth_group.description
+		FROM auth_group
+		JOIN apps_responsibles ON auth_group.id = apps_responsibles.group_id
+		WHERE apps_responsibles.app_id = ?
+		ORDER BY auth_group.role, auth_group.id
+	`
+	args := []any{targetApp.ID}
+	query, args = appendLimitOffset(query, args, limit, offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getAppResponsibles: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	items := make([]AuthGroup, 0)
+	for rows.Next() {
+		var (
+			item        AuthGroup
+			role        sql.NullString
+			privilege   sql.NullString
+			description sql.NullString
+		)
+		if err := rows.Scan(&item.ID, &role, &privilege, &description); err != nil {
+			return nil, fmt.Errorf("getAppResponsibles scan: %w", err)
+		}
+		if role.Valid {
+			item.Role = role.String
+		}
+		if privilege.Valid {
+			item.Privilege = privilege.String == "T"
+		}
+		if description.Valid {
+			item.Description = description.String
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("getAppResponsibles rows: %w", err)
+	}
+
+	return items, nil
 }
 
 func (oDb *DB) isAppAllowedForNodeID(ctx context.Context, nodeID, app string) (bool, error) {
