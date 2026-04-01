@@ -93,6 +93,13 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 		return JSONProblemf(c, http.StatusUnauthorized, "missing authentication")
 	}
 
+	if ok, err := odb.AppExists(ctx, app); err != nil {
+		log.Error("failed to verify app existence", "app", app, logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot verify app")
+	} else if !ok {
+		return JSONProblemf(c, http.StatusBadRequest, "unknown app %s", app)
+	}
+
 	var (
 		nodeID   string
 		nodename = body.Nodename

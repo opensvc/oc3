@@ -232,6 +232,14 @@ func (oDb *DB) appFromAppName(ctx context.Context, app string) (bool, *App, erro
 	}
 }
 
+func (oDb *DB) AppExists(ctx context.Context, app string) (bool, error) {
+	ok, _, err := oDb.appFromAppName(ctx, app)
+	if err != nil {
+		return false, fmt.Errorf("appExists: %w", err)
+	}
+	return ok, nil
+}
+
 func (oDb *DB) isAppAllowedForNodeID(ctx context.Context, nodeID, app string) (bool, error) {
 	// TODO: apps_responsibles PRIMARY KEY (app_id, group_id)
 	const query = "" +
