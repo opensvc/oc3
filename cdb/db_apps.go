@@ -339,6 +339,70 @@ func (oDb *DB) GetAppResponsibles(ctx context.Context, appIDOrName string, group
 	return items, nil
 }
 
+func (oDb *DB) GetAppPublications(ctx context.Context, appIDOrName string, groups []string, isManager bool, limit, offset int) ([]AuthGroup, error) {
+	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("getAppPublications: %w", err)
+	}
+	if targetApp == nil {
+		return nil, nil
+	}
+
+	if !isManager {
+		visibleApp, err := oDb.GetApp(ctx, appIDOrName, groups, false)
+		if err != nil {
+			return nil, fmt.Errorf("getAppPublications: %w", err)
+		}
+		if visibleApp == nil {
+			return []AuthGroup{}, nil
+		}
+	}
+
+	query := `
+		SELECT auth_group.id, auth_group.role, auth_group.privilege, auth_group.description
+		FROM auth_group
+		JOIN apps_publications ON auth_group.id = apps_publications.group_id
+		WHERE apps_publications.app_id = ?
+		ORDER BY auth_group.role, auth_group.id
+	`
+	args := []any{targetApp.ID}
+	query, args = appendLimitOffset(query, args, limit, offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getAppPublications: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	items := make([]AuthGroup, 0)
+	for rows.Next() {
+		var (
+			item        AuthGroup
+			role        sql.NullString
+			privilege   sql.NullString
+			description sql.NullString
+		)
+		if err := rows.Scan(&item.ID, &role, &privilege, &description); err != nil {
+			return nil, fmt.Errorf("getAppPublications scan: %w", err)
+		}
+		if role.Valid {
+			item.Role = role.String
+		}
+		if privilege.Valid {
+			item.Privilege = privilege.String == "T"
+		}
+		if description.Valid {
+			item.Description = description.String
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("getAppPublications rows: %w", err)
+	}
+
+	return items, nil
+}
+
 func (oDb *DB) isAppAllowedForNodeID(ctx context.Context, nodeID, app string) (bool, error) {
 	// TODO: apps_responsibles PRIMARY KEY (app_id, group_id)
 	const query = "" +
