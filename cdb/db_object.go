@@ -142,9 +142,9 @@ func (oDb *DB) ObjectFromID(ctx context.Context, svcID string) (*DBObject, error
 	case err != nil:
 		return nil, err
 	default:
-		o.Frozen = placement.String
+		o.Frozen = frozen.String
 		o.Placement = placement.String
-		o.Provisioned = placement.String
+		o.Provisioned = provisioned.String
 		return &o, nil
 	}
 }
