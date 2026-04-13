@@ -507,6 +507,71 @@ func (oDb *DB) AppIDFromObjectOrNodeIDs(ctx context.Context, nodeID, objectID st
 	return oDb.AppIDFromNodeID(ctx, nodeID)
 }
 
+// AppQuotaExceeded returns true if the user has reached their app creation quota.
+// A quota of 0 or NULL means unlimited.
+func (oDb *DB) AppQuotaExceeded(ctx context.Context, userID int64) (bool, error) {
+	var quota sql.NullInt64
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT quota_app FROM auth_user WHERE id = ?", userID,
+	).Scan(&quota)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("appQuotaExceeded: %w", err)
+	case !quota.Valid || quota.Int64 == 0:
+		return false, nil
+	}
+
+	var count int64
+	err = oDb.DB.QueryRowContext(ctx,
+		`SELECT COUNT(DISTINCT apps_responsibles.app_id)
+		 FROM apps_responsibles
+		 JOIN auth_membership ON apps_responsibles.group_id = auth_membership.group_id
+		 WHERE auth_membership.user_id = ?`, userID,
+	).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("appQuotaExceeded count: %w", err)
+	}
+	return count >= quota.Int64, nil
+}
+
+func (oDb *DB) InsertApp(ctx context.Context, app, description, appDomain, appTeamOps string) (*App, error) {
+	const query = `INSERT INTO apps (app, description, app_domain, app_team_ops) VALUES (?, ?, ?, ?)`
+	result, err := oDb.DB.ExecContext(ctx, query, app,
+		sql.NullString{String: description, Valid: description != ""},
+		sql.NullString{String: appDomain, Valid: appDomain != ""},
+		sql.NullString{String: appTeamOps, Valid: appTeamOps != ""},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("insertApp: %w", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, fmt.Errorf("insertApp lastInsertId: %w", err)
+	}
+	oDb.SetChange("apps")
+	return &App{ID: id, App: app, Description: description, AppDomain: appDomain, AppTeamOps: appTeamOps}, nil
+}
+
+func (oDb *DB) InsertAppResponsible(ctx context.Context, appID, groupID int64) error {
+	const query = `INSERT INTO apps_responsibles (app_id, group_id) VALUES (?, ?)`
+	if _, err := oDb.DB.ExecContext(ctx, query, appID, groupID); err != nil {
+		return fmt.Errorf("insertAppResponsible: %w", err)
+	}
+	oDb.SetChange("apps_responsibles")
+	return nil
+}
+
+func (oDb *DB) InsertAppPublication(ctx context.Context, appID, groupID int64) error {
+	const query = `INSERT INTO apps_publications (app_id, group_id) VALUES (?, ?)`
+	if _, err := oDb.DB.ExecContext(ctx, query, appID, groupID); err != nil {
+		return fmt.Errorf("insertAppPublication: %w", err)
+	}
+	oDb.SetChange("apps_publications")
+	return nil
+}
+
 func (oDb *DB) AppsWithoutResponsible(ctx context.Context) (apps []string, err error) {
 	const query = `SELECT apps.app
 	  FROM apps

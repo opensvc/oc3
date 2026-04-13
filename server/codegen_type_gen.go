@@ -114,6 +114,14 @@ type GetAppsParams struct {
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 }
 
+// PostAppsJSONBody defines parameters for PostApps.
+type PostAppsJSONBody struct {
+	App         string  `json:"app"`
+	AppDomain   *string `json:"app_domain,omitempty"`
+	AppTeamOps  *string `json:"app_team_ops,omitempty"`
+	Description *string `json:"description,omitempty"`
+}
+
 // GetAppParams defines parameters for GetApp.
 type GetAppParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -281,6 +289,9 @@ type GetTagNodesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 }
+
+// PostAppsJSONRequestBody defines body for PostApps for application/json ContentType.
+type PostAppsJSONRequestBody PostAppsJSONBody
 
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
