@@ -572,6 +572,49 @@ func (oDb *DB) InsertAppPublication(ctx context.Context, appID, groupID int64) e
 	return nil
 }
 
+func (oDb *DB) AppUsageCounts(ctx context.Context, app string) (nodesCount, servicesCount int64, err error) {
+	const nodeQuery = `SELECT COUNT(*) FROM nodes WHERE app = ?`
+	if err = oDb.DB.QueryRowContext(ctx, nodeQuery, app).Scan(&nodesCount); err != nil {
+		err = fmt.Errorf("appUsageCounts nodes: %w", err)
+		return
+	}
+
+	const serviceQuery = `SELECT COUNT(*) FROM services WHERE svc_app = ?`
+	if err = oDb.DB.QueryRowContext(ctx, serviceQuery, app).Scan(&servicesCount); err != nil {
+		err = fmt.Errorf("appUsageCounts services: %w", err)
+		return
+	}
+
+	return
+}
+
+func (oDb *DB) DeleteApp(ctx context.Context, appID int64) error {
+	const query = `DELETE FROM apps WHERE id = ?`
+	if _, err := oDb.DB.ExecContext(ctx, query, appID); err != nil {
+		return fmt.Errorf("deleteApp: %w", err)
+	}
+	oDb.SetChange("apps")
+	return nil
+}
+
+func (oDb *DB) DeleteAppResponsibles(ctx context.Context, appID int64) error {
+	const query = `DELETE FROM apps_responsibles WHERE app_id = ?`
+	if _, err := oDb.DB.ExecContext(ctx, query, appID); err != nil {
+		return fmt.Errorf("deleteAppResponsibles: %w", err)
+	}
+	oDb.SetChange("apps_responsibles")
+	return nil
+}
+
+func (oDb *DB) DeleteAppPublications(ctx context.Context, appID int64) error {
+	const query = `DELETE FROM apps_publications WHERE app_id = ?`
+	if _, err := oDb.DB.ExecContext(ctx, query, appID); err != nil {
+		return fmt.Errorf("deleteAppPublications: %w", err)
+	}
+	oDb.SetChange("apps_publications")
+	return nil
+}
+
 func (oDb *DB) AppsWithoutResponsible(ctx context.Context) (apps []string, err error) {
 	const query = `SELECT apps.app
 	  FROM apps
