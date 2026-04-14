@@ -12,7 +12,7 @@ import (
 
 // GetApps handles GET /apps
 func (a *Api) GetApps(c echo.Context, params server.GetAppsParams) error {
-	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, propsMapping["app"])
+	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, propsMapping["app"])
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}

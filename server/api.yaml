@@ -18,6 +18,8 @@ paths:
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
       responses:
@@ -185,6 +187,8 @@ paths:
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
       responses:
@@ -218,6 +222,8 @@ paths:
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
       responses:
@@ -312,6 +318,8 @@ paths:
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
       responses:
         200:
           description: List of candidate modulesets
@@ -341,6 +349,8 @@ paths:
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
       responses:
         200:
           description: List of candidate rulesets
@@ -397,6 +407,8 @@ paths:
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
       responses:
         200:
           description: List of attached modulesets
@@ -476,6 +488,8 @@ paths:
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
       responses:
         200:
           description: List of attached rulesets
@@ -553,6 +567,8 @@ paths:
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
       responses:
@@ -836,6 +852,22 @@ components:
       name: stats
       required: false
       description: Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+      schema:
+        type: string
+
+    inQueryOrderby:
+      in: query
+      name: orderby
+      required: false
+      description: Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+      schema:
+        type: string
+
+    inQueryGroupby:
+      in: query
+      name: groupby
+      required: false
+      description: Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
       schema:
         type: string
 

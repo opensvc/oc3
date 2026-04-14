@@ -12,7 +12,7 @@ import (
 
 // GetAppPublications handles GET /apps/{app_id}/publications
 func (a *Api) GetAppPublications(c echo.Context, appId string, params server.GetAppPublicationsParams) error {
-	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, propsMapping["auth_group"])
+	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, propsMapping["auth_group"])
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}

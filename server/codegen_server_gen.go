@@ -138,6 +138,20 @@ func (w *ServerInterfaceWrapper) GetApps(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
 	}
 
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetApps(ctx, params)
 	return err
@@ -277,6 +291,20 @@ func (w *ServerInterfaceWrapper) GetAppPublications(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
 	}
 
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetAppPublications(ctx, appId, params)
 	return err
@@ -332,6 +360,20 @@ func (w *ServerInterfaceWrapper) GetAppResponsibles(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -404,6 +446,20 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceCandidateModulesets(ctx echo.C
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
 	}
 
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetNodeComplianceCandidateModulesets(ctx, nodeId, params)
 	return err
@@ -459,6 +515,20 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceCandidateRulesets(ctx echo.Con
 	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -545,6 +615,20 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceModulesets(ctx echo.Context) e
 	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -660,6 +744,20 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceRulesets(ctx echo.Context) err
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
 	}
 
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetNodeComplianceRulesets(ctx, nodeId, params)
 	return err
@@ -773,6 +871,20 @@ func (w *ServerInterfaceWrapper) GetTags(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -917,41 +1029,43 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"E0EAAA==",
+	"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",
+	"/wUAAP//o9hXbbxFAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

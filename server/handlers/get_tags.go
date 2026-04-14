@@ -46,7 +46,7 @@ func (a *Api) handleGetTags(c echo.Context, tagID *int, query ListQueryParameter
 
 // GetTags handles GET /tags
 func (a *Api) GetTags(c echo.Context, params server.GetTagsParams) error {
-	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, propsMapping["tag"])
+	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, propsMapping["tag"])
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
