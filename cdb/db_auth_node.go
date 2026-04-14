@@ -12,12 +12,13 @@ type DBAuthNode struct {
 	Nodename string
 	UUID     string
 	NodeID   string
+	Updated  string
 }
 
 // return the list of auth_node rows matching the given node_id
 func (oDb *DB) AuthNodesByNodeID(ctx context.Context, nodeID string) ([]DBAuthNode, error) {
 	defer logDuration("AuthNodesByNodeID", time.Now())
-	const query = `SELECT id, nodename, uuid, node_id FROM auth_node WHERE node_id = ?`
+	const query = `SELECT id, nodename, uuid, node_id, COALESCE(updated, '') FROM auth_node WHERE node_id = ?`
 	rows, err := oDb.DB.QueryContext(ctx, query, nodeID)
 	if err != nil {
 		return nil, fmt.Errorf("AuthNodesByNodeID: %w", err)
@@ -28,7 +29,7 @@ func (oDb *DB) AuthNodesByNodeID(ctx context.Context, nodeID string) ([]DBAuthNo
 	for rows.Next() {
 		var r DBAuthNode
 		var nodename, uid, nid sql.NullString
-		if err := rows.Scan(&r.ID, &nodename, &uid, &nid); err != nil {
+		if err := rows.Scan(&r.ID, &nodename, &uid, &nid, &r.Updated); err != nil {
 			return nil, fmt.Errorf("AuthNodesByNodeID scan: %w", err)
 		}
 		r.Nodename = nodename.String

@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/opensvc/oc3/qb"
+	"github.com/opensvc/oc3/schema"
 	"github.com/opensvc/oc3/util/logkey"
 )
 
@@ -47,6 +49,73 @@ type (
 
 func (n *DBNode) String() string {
 	return fmt.Sprintf("node: {nodename: %s, node_id: %s, cluster_id: %s, app: %s}", n.Nodename, n.NodeID, n.ClusterID, n.App)
+}
+
+func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (string, []any) {
+	q := qb.From(schema.TNodes).
+		RawSelect(selectExprs...)
+
+	if !isManager {
+		cleanGroups := cleanGroups(groups)
+		if len(cleanGroups) == 0 {
+			q = q.WhereRaw("1=0")
+		} else {
+			args := make([]any, len(cleanGroups))
+			for i, g := range cleanGroups {
+				args[i] = g
+			}
+			q = q.WhereRaw(
+				"nodes.app IN ("+
+					"SELECT a.app FROM apps a"+
+					" JOIN apps_responsibles ar ON ar.app_id = a.id"+
+					" JOIN auth_group ag ON ag.id = ar.group_id"+
+					" WHERE ag.role IN ("+Placeholders(len(cleanGroups))+")"+
+					")",
+				args...,
+			)
+		}
+	} else {
+		q = q.Where(schema.NodesID, ">", 0)
+	}
+
+	query, args, err := q.Build()
+	if err != nil {
+		panic(fmt.Sprintf("buildNodesQuery: %v", err))
+	}
+	return query, args
+}
+
+func (oDb *DB) GetNodes(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	query, args := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("nodes.nodename")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getNodes: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// GetNode fetches a single node by node_id or nodename.
+func (oDb *DB) GetNode(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
+	query, args := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query += " AND (nodes.node_id = ? OR nodes.nodename = ?)"
+	args = append(args, nodeID, nodeID)
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getNode: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
 func (oDb *DB) NodeByNodeID(ctx context.Context, nodeID string) (*DBNode, error) {
