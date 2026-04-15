@@ -140,6 +140,14 @@ type GetAppParams struct {
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
 
+// PostAppJSONBody defines parameters for PostApp.
+type PostAppJSONBody struct {
+	App         *string `json:"app,omitempty"`
+	AppDomain   *string `json:"app_domain,omitempty"`
+	AppTeamOps  *string `json:"app_team_ops,omitempty"`
+	Description *string `json:"description,omitempty"`
+}
+
 // GetAppPublicationsParams defines parameters for GetAppPublications.
 type GetAppPublicationsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -682,6 +690,9 @@ type GetTagNodesParams struct {
 
 // PostAppsJSONRequestBody defines body for PostApps for application/json ContentType.
 type PostAppsJSONRequestBody PostAppsJSONBody
+
+// PostAppJSONRequestBody defines body for PostApp for application/json ContentType.
+type PostAppJSONRequestBody PostAppJSONBody
 
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody

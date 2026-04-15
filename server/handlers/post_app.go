@@ -8,13 +8,14 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/util/echolog"
 	"github.com/opensvc/oc3/util/logkey"
 )
 
-// DeleteApps handles DELETE /apps/{app_id}
-func (a *Api) DeleteApps(c echo.Context, appId string) error {
-	log := echolog.GetLogHandler(c, "DeleteApps")
+// PostApp handles POST /apps/{app_id}
+func (a *Api) PostApp(c echo.Context, appId string) error {
+	log := echolog.GetLogHandler(c, "PostApp")
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 
@@ -26,10 +27,16 @@ func (a *Api) DeleteApps(c echo.Context, appId string) error {
 		return JSONProblemf(c, http.StatusForbidden, "AppManager privilege required")
 	}
 
-	odb := cdb.New(a.DB)
-	odb.CreateSession(a.Ev)
+	var body server.PostAppJSONRequestBody
+	if err := c.Bind(&body); err != nil {
+		log.Error("invalid request body", logkey.Error, err)
+		return JSONProblem(c, http.StatusBadRequest, err.Error())
+	}
 
 	log.Info("called", "app_id", appId)
+
+	odb := cdb.New(a.DB)
+	odb.CreateSession(a.Ev)
 
 	isManager := IsManager(c)
 
@@ -51,40 +58,42 @@ func (a *Api) DeleteApps(c echo.Context, appId string) error {
 		return JSONProblemf(c, http.StatusForbidden, "you are not responsible for this app")
 	}
 
-	nodesCount, servicesCount, err := odb.AppUsageCounts(ctx, app.App)
-	if err != nil {
-		log.Error("cannot count app usage", "app_id", appId, "app", app.App, logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot count app usage")
-	}
-	if nodesCount+servicesCount > 0 {
-		return JSONProblemf(c, http.StatusConflict, "this app code cannot be deleted. used by %d nodes and %d services", nodesCount, servicesCount)
+	fields := cdb.UpdateAppFields{
+		App:        body.App,
+		Description: body.Description,
+		AppDomain:  body.AppDomain,
+		AppTeamOps: body.AppTeamOps,
 	}
 
 	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
 		log.Error("cannot start transaction", logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete app")
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot update app")
 	}
 	defer endTx()
 
-	if err := odb.DeleteApp(ctx, app.ID); err != nil {
-		log.Error("cannot delete app", "app_id", appId, "app", app.App, logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete app")
+	if err := odb.UpdateApp(ctx, app.ID, fields); err != nil {
+		log.Error("cannot update app", "app_id", appId, logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot update app")
 	}
-	if err := odb.DeleteAppResponsibles(ctx, app.ID); err != nil {
-		log.Error("cannot delete app responsibles", "app_id", appId, "app", app.App, logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete app responsibles")
-	}
-	if err := odb.DeleteAppPublications(ctx, app.ID); err != nil {
-		log.Error("cannot delete app publications", "app_id", appId, "app", app.App, logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete app publications")
+
+	// If the app code is renamed, update nodes and services references
+	if body.App != nil && *body.App != app.App {
+		if err := odb.UpdateNodesApp(ctx, app.App, *body.App); err != nil {
+			log.Error("cannot update nodes app", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot update nodes app reference")
+		}
+		if err := odb.UpdateServicesApp(ctx, app.App, *body.App); err != nil {
+			log.Error("cannot update services app", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot update services app reference")
+		}
 	}
 
 	userEmail, _ := c.Get(XUserEmail).(string)
 	if err := odb.Log(ctx, cdb.LogEntry{
-		Action: "apps.delete",
+		Action: "apps.change",
 		User:   userEmail,
-		Fmt:    "app %(app)s deleted",
+		Fmt:    "app %(app)s changed",
 		Dict: map[string]any{
 			"app": app.App,
 		},
@@ -99,14 +108,14 @@ func (a *Api) DeleteApps(c echo.Context, appId string) error {
 	if err := odb.Session.NotifyTableChangeWithData(ctx, "apps", map[string]any{"id": app.ID}); err != nil {
 		log.Error("cannot notify apps change", logkey.Error, err)
 	}
-	if err := odb.Session.NotifyTableChangeWithData(ctx, "apps_responsibles", nil); err != nil {
-		log.Error("cannot notify apps_responsibles change", logkey.Error, err)
-	}
-	if err := odb.Session.NotifyTableChangeWithData(ctx, "apps_publications", nil); err != nil {
-		log.Error("cannot notify apps_publications change", logkey.Error, err)
-	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"info": "app " + app.App + " deleted",
-	})
+	newAppId := appId
+	if body.App != nil {
+		newAppId = *body.App
+	}
+	updated, err := odb.GetApp(ctx, newAppId, nil, true)
+	if err != nil || updated == nil {
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot fetch updated app")
+	}
+	return c.JSON(http.StatusOK, updated)
 }

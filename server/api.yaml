@@ -79,6 +79,53 @@ paths:
         - bearerAuth: [ ]
 
   /apps/{app_id}:
+    post:
+      operationId: PostApp
+      description: Change an application code properties
+      parameters:
+        - in: path
+          name: app_id
+          required: true
+          description: App record id or app code
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                app:
+                  type: string
+                description:
+                  type: string
+                app_domain:
+                  type: string
+                app_team_ops:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
     get:
       operationId: GetApp
       description: Display app properties
