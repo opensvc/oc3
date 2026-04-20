@@ -248,6 +248,36 @@ var propsMapping = map[string]propMapping{
 	"tag": {
 		Available: []string{"id", "tag_name", "tag_created", "tag_exclude", "tag_data", "tag_id"},
 		Blacklist: map[string]struct{}{"id": {}},
+		Props: map[string]propDef{
+			"id":          col(schema.TagsID),
+			"tag_name":    colStr(schema.TagsTagName),
+			"tag_created": colStr(schema.TagsTagCreated),
+			"tag_exclude": colStr(schema.TagsTagExclude),
+			"tag_data":    col(schema.TagsTagData),
+			"tag_id":      colStr(schema.TagsTagID),
+		},
+	},
+	"node_tag": {
+		Available: []string{"id", "created", "node_id", "tag_id", "tag_attach_data"},
+		Blacklist: map[string]struct{}{"id": {}},
+		Props: map[string]propDef{
+			"id":              col(schema.NodeTagsID),
+			"created":         colStr(schema.NodeTagsCreated),
+			"node_id":         colStr(schema.NodeTagsNodeID),
+			"tag_id":          colStr(schema.NodeTagsTagID),
+			"tag_attach_data": colStr(schema.NodeTagsTagAttachData),
+		},
+	},
+	"svc_tag": {
+		Available: []string{"id", "created", "svc_id", "tag_id", "tag_attach_data"},
+		Blacklist: map[string]struct{}{"id": {}},
+		Props: map[string]propDef{
+			"id":              col(schema.SvcTagsID),
+			"created":         colStr(schema.SvcTagsCreated),
+			"svc_id":          colStr(schema.SvcTagsSvcID),
+			"tag_id":          colStr(schema.SvcTagsTagID),
+			"tag_attach_data": colStr(schema.SvcTagsTagAttachData),
+		},
 	},
 	"service": {
 		Available: []string{
