@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/opensvc/oc3/qb"
 	"github.com/opensvc/oc3/schema"
 	"github.com/opensvc/oc3/util/logkey"
 )
@@ -52,7 +51,7 @@ func (n *DBNode) String() string {
 }
 
 func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (string, []any) {
-	q := qb.From(schema.TNodes).
+	q := From(schema.TNodes).
 		RawSelect(selectExprs...)
 
 	if !isManager {

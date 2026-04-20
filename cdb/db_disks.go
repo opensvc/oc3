@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/opensvc/oc3/qb"
 	"github.com/opensvc/oc3/schema"
 )
 
 func buildDisksQuery(groups []string, isManager bool, selectExprs []string) (string, []any) {
-	q := qb.From(schema.TDiskinfo).
+	q := From(schema.TDiskinfo).
 		LeftJoin(schema.TSvcdisks, schema.TNodes, schema.TServices, schema.TApps).
 		RawSelect(selectExprs...)
 

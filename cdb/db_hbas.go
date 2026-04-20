@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/opensvc/oc3/qb"
 	"github.com/opensvc/oc3/schema"
 )
 
 func buildHbasQuery(groups []string, isManager bool, selectExprs []string) (string, []any) {
-	q := qb.From(schema.TNodeHBA).
+	q := From(schema.TNodeHBA).
 		RawSelect(selectExprs...)
 
 	if !isManager {

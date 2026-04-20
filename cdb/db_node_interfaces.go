@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/opensvc/oc3/qb"
 	"github.com/opensvc/oc3/schema"
 )
 
 func buildNodeInterfacesQuery(nodeID string, p ListParams) (string, []any) {
-	q := qb.From(schema.TNodeIP).
+	q := From(schema.TNodeIP).
 		RawSelect(p.SelectExprs...).
 		Where(schema.NodeIPNodeID, "=", nodeID)
 

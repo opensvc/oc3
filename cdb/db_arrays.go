@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/opensvc/oc3/qb"
 	"github.com/opensvc/oc3/schema"
 )
 
 func buildArraysQuery(selectExprs []string) (string, []any) {
-	q := qb.From(schema.TStorArray).
+	q := From(schema.TStorArray).
 		RawSelect(selectExprs...).
 		Where(schema.StorArrayID, ">", 0)
 

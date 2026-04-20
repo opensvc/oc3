@@ -1,9 +1,11 @@
-// Package qb provides a lightweight SQL query builder with automatic JOIN
-// resolution based on the FK relationships declared in schema/relations.go.
+// Package cdb - query builder
+//
+// Lightweight SQL query builder with automatic JOIN resolution based on the FK
+// relationships declared in schema/relations.go.
 //
 // # Basic usage
 //
-//	sql, args, err := qb.From(schema.TApps).
+//	sql, args, err := From(schema.TApps).
 //	    Select(schema.AppsID, schema.AppsApp).
 //	    Where(schema.AppsID, ">", 0).
 //	    Build()
@@ -14,7 +16,7 @@
 // builder resolves the required JOINs automatically by walking the Ref chain
 // declared in schema/relations.go:
 //
-//	sql, args, err := qb.From(schema.TAuthGroup).
+//	sql, args, err := From(schema.TAuthGroup).
 //	    Select(schema.AuthGroupID, schema.AuthGroupRole).
 //	    Via(schema.TAppsResponsibles).        // disambiguates: apps_responsibles vs apps_publications
 //	    Where(schema.AppsResponsiblesAppID, "=", appID).
@@ -31,11 +33,11 @@
 // disambiguate the path:
 //
 //	// Error: both apps_responsibles and apps_publications connect apps to auth_group
-//	qb.From(schema.TApps).Select(schema.AuthGroupRole).Build()
+//	From(schema.TApps).Select(schema.AuthGroupRole).Build()
 //
 //	// OK: path is explicit
-//	qb.From(schema.TApps).Select(schema.AuthGroupRole).Via(schema.TAppsResponsibles).Build()
-package qb
+//	From(schema.TApps).Select(schema.AuthGroupRole).Via(schema.TAppsResponsibles).Build()
+package cdb
 
 import (
 	"fmt"
@@ -96,7 +98,7 @@ func (q *Query) Select(cols ...*schema.Col) *Query {
 	return q
 }
 
-// RawSelect adds raw SQL expressions to the SELECT clause (e.g. "COALESCE(apps.updated, ”)").
+// RawSelect adds raw SQL expressions to the SELECT clause (e.g. "COALESCE(apps.updated, ")").
 // These are emitted verbatim and do not participate in JOIN resolution.
 // Use Select() for typed column references whenever possible.
 func (q *Query) RawSelect(exprs ...string) *Query {

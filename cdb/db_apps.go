@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/opensvc/oc3/qb"
 	"github.com/opensvc/oc3/schema"
 )
 
@@ -64,7 +63,7 @@ func scanApps(rows *sql.Rows) ([]App, error) {
 }
 
 func buildAppsQuery(groups []string, isManager bool, selectExprs []string) (string, []any) {
-	q := qb.From(schema.TApps).
+	q := From(schema.TApps).
 		Distinct().
 		RawSelect(selectExprs...)
 

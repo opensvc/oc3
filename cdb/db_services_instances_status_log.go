@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/opensvc/oc3/qb"
 	"github.com/opensvc/oc3/schema"
 )
 
 func buildServicesInstancesStatusLogQuery(groups []string, isManager bool, selectExprs []string) (string, []any) {
-	q := qb.From(schema.TSvcmonLog).
+	q := From(schema.TSvcmonLog).
 		Via(schema.TServices).
 		RawSelect(selectExprs...)
 

@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/opensvc/oc3/qb"
 	"github.com/opensvc/oc3/schema"
 )
 
 func buildServicesQuery(groups []string, isManager bool, selectExprs []string) (string, []any) {
-	q := qb.From(schema.TServices).
+	q := From(schema.TServices).
 		RawSelect(selectExprs...)
 
 	if !isManager {
