@@ -12,7 +12,7 @@ import (
 
 // GetNodeComplianceModulesets handles GET /nodes/{node_id}/compliance/modulesets
 func (a *Api) GetNodeComplianceModulesets(c echo.Context, nodeId string, params server.GetNodeComplianceModulesetsParams) error {
-	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, propsMapping["moduleset"])
+	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, propsMapping["moduleset"])
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}

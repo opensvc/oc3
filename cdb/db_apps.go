@@ -5,14 +5,140 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/opensvc/oc3/schema"
 )
 
 type (
-	DBApp struct {
-		id  int64
-		app string
+	App struct {
+		ID          int64  `json:"id"`
+		App         string `json:"app"`
+		Updated     string `json:"updated"`
+		AppDomain   string `json:"app_domain"`
+		AppTeamOps  string `json:"app_team_ops"`
+		Description string `json:"description"`
+	}
+
+	AuthGroup struct {
+		ID          int64  `json:"id"`
+		Role        string `json:"role"`
+		Privilege   bool   `json:"privilege"`
+		Description string `json:"description"`
 	}
 )
+
+func scanApps(rows *sql.Rows) ([]App, error) {
+	apps := make([]App, 0)
+	for rows.Next() {
+		var (
+			item        App
+			updated     sql.NullString
+			appDomain   sql.NullString
+			appTeamOps  sql.NullString
+			description sql.NullString
+		)
+		if err := rows.Scan(&item.ID, &item.App, &updated, &appDomain, &appTeamOps, &description); err != nil {
+			return nil, fmt.Errorf("scanApps: %w", err)
+		}
+		if updated.Valid {
+			item.Updated = updated.String
+		}
+		if appDomain.Valid {
+			item.AppDomain = appDomain.String
+		}
+		if appTeamOps.Valid {
+			item.AppTeamOps = appTeamOps.String
+		}
+		if description.Valid {
+			item.Description = description.String
+		}
+		apps = append(apps, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("scanApps rows: %w", err)
+	}
+	return apps, nil
+}
+
+func buildAppsQuery(groups []string, isManager bool, selectExprs []string) (string, []any) {
+	q := From(schema.TApps).
+		Distinct().
+		RawSelect(selectExprs...)
+
+	if !isManager {
+		cleanGroups := cleanGroups(groups)
+		q = q.Via(schema.TAppsResponsibles).
+			WhereIn(schema.AuthGroupRole, cleanGroups)
+	} else {
+		q = q.Where(schema.AppsID, ">", 0)
+	}
+
+	query, args, err := q.Build()
+	if err != nil {
+		panic(fmt.Sprintf("buildAppsQuery: %v", err))
+	}
+	return query, args
+}
+
+func buildAppsQueryAll(groups []string, isManager bool) (string, []any) {
+	return buildAppsQuery(groups, isManager, []string{
+		"apps.id", "apps.app",
+		"COALESCE(apps.updated, '')", "COALESCE(apps.app_domain, '')",
+		"COALESCE(apps.app_team_ops, '')", "COALESCE(apps.description, '')",
+	})
+}
+
+func (oDb *DB) GetApps(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	query, args := buildAppsQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("apps.app, apps.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getApps: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+func (oDb *DB) GetApp(ctx context.Context, appIDOrName string, groups []string, isManager bool) (*App, error) {
+	query, args := buildAppsQueryAll(groups, isManager)
+
+	if id, err := strconv.ParseInt(appIDOrName, 10, 64); err == nil {
+		query += " AND apps.id = ?"
+		args = append(args, id)
+	} else {
+		query += " AND apps.app = ?"
+		args = append(args, appIDOrName)
+	}
+	query += " ORDER BY apps.app, apps.id LIMIT 2"
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getApp: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	apps, err := scanApps(rows)
+	if err != nil {
+		return nil, fmt.Errorf("getApp: %w", err)
+	}
+
+	switch len(apps) {
+	case 0:
+		return nil, nil
+	case 1:
+		return &apps[0], nil
+	default:
+		return nil, fmt.Errorf("getApp: multiple apps found for %q", appIDOrName)
+	}
+}
 
 // AuthGroupIdsForNode is the oc3 implementation of oc2 node_responsibles(node_id):
 //
@@ -94,7 +220,7 @@ func (oDb *DB) ResponsibleAppsForNode(ctx context.Context, nodeID string) (apps 
 	return
 }
 
-func (oDb *DB) appFromAppName(ctx context.Context, app string) (bool, *DBApp, error) {
+func (oDb *DB) appFromAppName(ctx context.Context, app string) (bool, *App, error) {
 	const query = "SELECT id, app FROM apps WHERE app = ?"
 	var (
 		foundID  int64
@@ -110,8 +236,172 @@ func (oDb *DB) appFromAppName(ctx context.Context, app string) (bool, *DBApp, er
 	case err != nil:
 		return false, nil, err
 	default:
-		return true, &DBApp{id: foundID, app: foundApp}, nil
+		return true, &App{ID: foundID, App: foundApp}, nil
 	}
+}
+
+func (oDb *DB) AppExists(ctx context.Context, app string) (bool, error) {
+	ok, _, err := oDb.appFromAppName(ctx, app)
+	if err != nil {
+		return false, fmt.Errorf("appExists: %w", err)
+	}
+	return ok, nil
+}
+
+func (oDb *DB) AppResponsible(ctx context.Context, appIDOrName string, groups []string, isManager bool, nodeID string) (bool, error) {
+	if isManager {
+		return true, nil
+	}
+
+	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
+	if err != nil {
+		return false, fmt.Errorf("appResponsible: %w", err)
+	}
+	if targetApp == nil {
+		return false, nil
+	}
+
+	if nodeID != "" {
+		nodeAppID, ok, err := oDb.AppIDFromNodeID(ctx, nodeID)
+		if err != nil {
+			return false, fmt.Errorf("appResponsible: %w", err)
+		}
+		return ok && nodeAppID == targetApp.ID, nil
+	}
+
+	visibleApp, err := oDb.GetApp(ctx, appIDOrName, groups, false)
+	if err != nil {
+		return false, fmt.Errorf("appResponsible: %w", err)
+	}
+	return visibleApp != nil, nil
+}
+
+func (oDb *DB) GetAppResponsibles(ctx context.Context, appIDOrName string, groups []string, isManager bool, limit, offset int) ([]AuthGroup, error) {
+	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("getAppResponsibles: %w", err)
+	}
+	if targetApp == nil {
+		return nil, nil
+	}
+
+	if !isManager {
+		visibleApp, err := oDb.GetApp(ctx, appIDOrName, groups, false)
+		if err != nil {
+			return nil, fmt.Errorf("getAppResponsibles: %w", err)
+		}
+		if visibleApp == nil {
+			return []AuthGroup{}, nil
+		}
+	}
+
+	query := `
+		SELECT auth_group.id, auth_group.role, auth_group.privilege, auth_group.description
+		FROM auth_group
+		JOIN apps_responsibles ON auth_group.id = apps_responsibles.group_id
+		WHERE apps_responsibles.app_id = ?
+		ORDER BY auth_group.role, auth_group.id
+	`
+	args := []any{targetApp.ID}
+	query, args = appendLimitOffset(query, args, limit, offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getAppResponsibles: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	items := make([]AuthGroup, 0)
+	for rows.Next() {
+		var (
+			item        AuthGroup
+			role        sql.NullString
+			privilege   sql.NullString
+			description sql.NullString
+		)
+		if err := rows.Scan(&item.ID, &role, &privilege, &description); err != nil {
+			return nil, fmt.Errorf("getAppResponsibles scan: %w", err)
+		}
+		if role.Valid {
+			item.Role = role.String
+		}
+		if privilege.Valid {
+			item.Privilege = privilege.String == "T"
+		}
+		if description.Valid {
+			item.Description = description.String
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("getAppResponsibles rows: %w", err)
+	}
+
+	return items, nil
+}
+
+func (oDb *DB) GetAppPublications(ctx context.Context, appIDOrName string, groups []string, isManager bool, limit, offset int) ([]AuthGroup, error) {
+	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("getAppPublications: %w", err)
+	}
+	if targetApp == nil {
+		return nil, nil
+	}
+
+	if !isManager {
+		visibleApp, err := oDb.GetApp(ctx, appIDOrName, groups, false)
+		if err != nil {
+			return nil, fmt.Errorf("getAppPublications: %w", err)
+		}
+		if visibleApp == nil {
+			return []AuthGroup{}, nil
+		}
+	}
+
+	query := `
+		SELECT auth_group.id, auth_group.role, auth_group.privilege, auth_group.description
+		FROM auth_group
+		JOIN apps_publications ON auth_group.id = apps_publications.group_id
+		WHERE apps_publications.app_id = ?
+		ORDER BY auth_group.role, auth_group.id
+	`
+	args := []any{targetApp.ID}
+	query, args = appendLimitOffset(query, args, limit, offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getAppPublications: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	items := make([]AuthGroup, 0)
+	for rows.Next() {
+		var (
+			item        AuthGroup
+			role        sql.NullString
+			privilege   sql.NullString
+			description sql.NullString
+		)
+		if err := rows.Scan(&item.ID, &role, &privilege, &description); err != nil {
+			return nil, fmt.Errorf("getAppPublications scan: %w", err)
+		}
+		if role.Valid {
+			item.Role = role.String
+		}
+		if privilege.Valid {
+			item.Privilege = privilege.String == "T"
+		}
+		if description.Valid {
+			item.Description = description.String
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("getAppPublications rows: %w", err)
+	}
+
+	return items, nil
 }
 
 func (oDb *DB) isAppAllowedForNodeID(ctx context.Context, nodeID, app string) (bool, error) {
@@ -216,6 +506,168 @@ func (oDb *DB) AppIDFromObjectOrNodeIDs(ctx context.Context, nodeID, objectID st
 		}
 	}
 	return oDb.AppIDFromNodeID(ctx, nodeID)
+}
+
+// AppQuotaExceeded returns true if the user has reached their app creation quota.
+// A quota of 0 or NULL means unlimited.
+func (oDb *DB) AppQuotaExceeded(ctx context.Context, userID int64) (bool, error) {
+	var quota sql.NullInt64
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT quota_app FROM auth_user WHERE id = ?", userID,
+	).Scan(&quota)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("appQuotaExceeded: %w", err)
+	case !quota.Valid || quota.Int64 == 0:
+		return false, nil
+	}
+
+	var count int64
+	err = oDb.DB.QueryRowContext(ctx,
+		`SELECT COUNT(DISTINCT apps_responsibles.app_id)
+		 FROM apps_responsibles
+		 JOIN auth_membership ON apps_responsibles.group_id = auth_membership.group_id
+		 WHERE auth_membership.user_id = ?`, userID,
+	).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("appQuotaExceeded count: %w", err)
+	}
+	return count >= quota.Int64, nil
+}
+
+func (oDb *DB) InsertApp(ctx context.Context, app, description, appDomain, appTeamOps string) (*App, error) {
+	const query = `INSERT INTO apps (app, description, app_domain, app_team_ops) VALUES (?, ?, ?, ?)`
+	result, err := oDb.DB.ExecContext(ctx, query, app,
+		sql.NullString{String: description, Valid: description != ""},
+		sql.NullString{String: appDomain, Valid: appDomain != ""},
+		sql.NullString{String: appTeamOps, Valid: appTeamOps != ""},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("insertApp: %w", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, fmt.Errorf("insertApp lastInsertId: %w", err)
+	}
+	oDb.SetChange("apps")
+	return &App{ID: id, App: app, Description: description, AppDomain: appDomain, AppTeamOps: appTeamOps}, nil
+}
+
+type UpdateAppFields struct {
+	App         *string
+	Description *string
+	AppDomain   *string
+	AppTeamOps  *string
+}
+
+func (oDb *DB) UpdateApp(ctx context.Context, appID int64, fields UpdateAppFields) error {
+	setClauses := []string{}
+	args := []any{}
+	if fields.App != nil {
+		setClauses = append(setClauses, "app = ?")
+		args = append(args, *fields.App)
+	}
+	if fields.Description != nil {
+		setClauses = append(setClauses, "description = ?")
+		args = append(args, sql.NullString{String: *fields.Description, Valid: true})
+	}
+	if fields.AppDomain != nil {
+		setClauses = append(setClauses, "app_domain = ?")
+		args = append(args, sql.NullString{String: *fields.AppDomain, Valid: true})
+	}
+	if fields.AppTeamOps != nil {
+		setClauses = append(setClauses, "app_team_ops = ?")
+		args = append(args, sql.NullString{String: *fields.AppTeamOps, Valid: true})
+	}
+	if len(setClauses) == 0 {
+		return nil
+	}
+	query := "UPDATE apps SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
+	args = append(args, appID)
+	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("updateApp: %w", err)
+	}
+	oDb.SetChange("apps")
+	return nil
+}
+
+func (oDb *DB) UpdateNodesApp(ctx context.Context, oldApp, newApp string) error {
+	const query = `UPDATE nodes SET app = ? WHERE app = ?`
+	if _, err := oDb.DB.ExecContext(ctx, query, newApp, oldApp); err != nil {
+		return fmt.Errorf("updateNodesApp: %w", err)
+	}
+	return nil
+}
+
+func (oDb *DB) UpdateServicesApp(ctx context.Context, oldApp, newApp string) error {
+	const query = `UPDATE services SET svc_app = ? WHERE svc_app = ?`
+	if _, err := oDb.DB.ExecContext(ctx, query, newApp, oldApp); err != nil {
+		return fmt.Errorf("updateServicesApp: %w", err)
+	}
+	return nil
+}
+
+func (oDb *DB) InsertAppResponsible(ctx context.Context, appID, groupID int64) error {
+	const query = `INSERT INTO apps_responsibles (app_id, group_id) VALUES (?, ?)`
+	if _, err := oDb.DB.ExecContext(ctx, query, appID, groupID); err != nil {
+		return fmt.Errorf("insertAppResponsible: %w", err)
+	}
+	oDb.SetChange("apps_responsibles")
+	return nil
+}
+
+func (oDb *DB) InsertAppPublication(ctx context.Context, appID, groupID int64) error {
+	const query = `INSERT INTO apps_publications (app_id, group_id) VALUES (?, ?)`
+	if _, err := oDb.DB.ExecContext(ctx, query, appID, groupID); err != nil {
+		return fmt.Errorf("insertAppPublication: %w", err)
+	}
+	oDb.SetChange("apps_publications")
+	return nil
+}
+
+func (oDb *DB) AppUsageCounts(ctx context.Context, app string) (nodesCount, servicesCount int64, err error) {
+	const nodeQuery = `SELECT COUNT(*) FROM nodes WHERE app = ?`
+	if err = oDb.DB.QueryRowContext(ctx, nodeQuery, app).Scan(&nodesCount); err != nil {
+		err = fmt.Errorf("appUsageCounts nodes: %w", err)
+		return
+	}
+
+	const serviceQuery = `SELECT COUNT(*) FROM services WHERE svc_app = ?`
+	if err = oDb.DB.QueryRowContext(ctx, serviceQuery, app).Scan(&servicesCount); err != nil {
+		err = fmt.Errorf("appUsageCounts services: %w", err)
+		return
+	}
+
+	return
+}
+
+func (oDb *DB) DeleteApp(ctx context.Context, appID int64) error {
+	const query = `DELETE FROM apps WHERE id = ?`
+	if _, err := oDb.DB.ExecContext(ctx, query, appID); err != nil {
+		return fmt.Errorf("deleteApp: %w", err)
+	}
+	oDb.SetChange("apps")
+	return nil
+}
+
+func (oDb *DB) DeleteAppResponsibles(ctx context.Context, appID int64) error {
+	const query = `DELETE FROM apps_responsibles WHERE app_id = ?`
+	if _, err := oDb.DB.ExecContext(ctx, query, appID); err != nil {
+		return fmt.Errorf("deleteAppResponsibles: %w", err)
+	}
+	oDb.SetChange("apps_responsibles")
+	return nil
+}
+
+func (oDb *DB) DeleteAppPublications(ctx context.Context, appID int64) error {
+	const query = `DELETE FROM apps_publications WHERE app_id = ?`
+	if _, err := oDb.DB.ExecContext(ctx, query, appID); err != nil {
+		return fmt.Errorf("deleteAppPublications: %w", err)
+	}
+	oDb.SetChange("apps_publications")
+	return nil
 }
 
 func (oDb *DB) AppsWithoutResponsible(ctx context.Context) (apps []string, err error) {

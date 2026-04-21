@@ -53,6 +53,7 @@ func (t *server) docMiddleware() echo.MiddlewareFunc {
 func (t *server) authMiddleware(publicPath, publicPrefix []string) echo.MiddlewareFunc {
 	return handlers.AuthMiddleware(union.New(
 		xauth.NewPublicStrategy(publicPath, publicPrefix),
+		xauth.NewAnonRegister(),
 		xauth.NewBasicWeb2py(t.db, viper.GetString("w2p_hmac")),
 		xauth.NewBasicNode(t.db),
 	))

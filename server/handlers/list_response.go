@@ -117,7 +117,7 @@ func newListResponse(items []map[string]any, mapping propMapping, query ListQuer
 
 	response.Meta = &listMeta{
 		Count:          len(items),
-		AvailableProps: allowedProps(mapping),
+		AvailableProps: availableProps(mapping),
 		IncludedProps:  query.Props,
 		Limit:          query.Page.Limit,
 		Offset:         query.Page.Offset,

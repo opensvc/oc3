@@ -21,8 +21,9 @@ const (
 )
 
 const (
-	AuthModeUser = "user"
-	AuthModeNode = "node"
+	AuthModeUser         = "user"
+	AuthModeNode         = "node"
+	AuthModeAnonRegister = "anon_register"
 )
 
 // AuthMiddleware returns auth middleware that authenticate requests from strategies.
@@ -37,6 +38,9 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 			}
 
 			ext := user.GetExtensions()
+			if authMode := ext.Get(xauth.XAuthMode); authMode != "" {
+				c.Set(XAuthMode, authMode)
+			}
 			if nodeID := ext.Get(xauth.XNodeID); nodeID != "" {
 				c.Set(XNodeID, nodeID)
 				c.Set(XAuthMode, AuthModeNode)
@@ -94,4 +98,14 @@ func IsManager(c echo.Context) bool {
 func IsAuthByNode(c echo.Context) bool {
 	authMode, ok := c.Get(XAuthMode).(string)
 	return ok && authMode == AuthModeNode
+}
+
+func IsAuthByUser(c echo.Context) bool {
+	authMode, ok := c.Get(XAuthMode).(string)
+	return ok && authMode == AuthModeUser
+}
+
+func IsAuthByAnonRegister(c echo.Context) bool {
+	authMode, ok := c.Get(XAuthMode).(string)
+	return ok && authMode == AuthModeAnonRegister
 }

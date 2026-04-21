@@ -12,7 +12,7 @@ import (
 
 // GetNodeComplianceRulesets handles GET /nodes/{node_id}/compliance/rulesets
 func (a *Api) GetNodeComplianceRulesets(c echo.Context, nodeId string, params server.GetNodeComplianceRulesetsParams) error {
-	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, propsMapping["ruleset"])
+	query, err := buildListQueryParameters(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, propsMapping["ruleset"])
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}

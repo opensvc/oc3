@@ -31,12 +31,14 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 
 	var app string
 	var userID int64
+	var teamResponsible string
 
 	if body.App != nil {
 		app = *body.App
 	}
 
-	if !IsAuthByNode(c) {
+	switch {
+	case IsAuthByUser(c):
 		// User auth
 		user := UserInfoFromContext(c)
 		if user == nil {
@@ -68,13 +70,34 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 				return JSONProblemf(c, http.StatusForbidden, "you are not responsible for the '%s' app", app)
 			}
 		}
-	} else {
-		// Node auth
-		// Check in config that refuse_anon_register is not set to true
-		allowAnonRegister := viper.GetBool("server.allow_anon_register")
-		if !allowAnonRegister {
+
+		teamResponsible, _, err = odb.UserDefaultGroup(ctx, userID)
+		if err != nil {
+			log.Error("failed to find default group", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot find default group")
+		}
+	case IsAuthByNode(c), IsAuthByAnonRegister(c):
+		if !viper.GetBool("server.allow_anon_register") {
 			return JSONProblemf(c, http.StatusForbidden, "anonymous node registration is disabled")
 		}
+		if app == "" && IsAuthByNode(c) {
+			if s, ok := c.Get(XApp).(string); ok {
+				app = s
+			}
+		}
+		if app == "" {
+			return JSONProblemf(c, http.StatusBadRequest, "missing app")
+		}
+		teamResponsible = "Everybody"
+	default:
+		return JSONProblemf(c, http.StatusUnauthorized, "missing authentication")
+	}
+
+	if ok, err := odb.AppExists(ctx, app); err != nil {
+		log.Error("failed to verify app existence", "app", app, logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot verify app")
+	} else if !ok {
+		return JSONProblemf(c, http.StatusBadRequest, "unknown app %s", app)
 	}
 
 	var (
@@ -92,12 +115,6 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 		nodeID = node.NodeID
 	} else {
 		// Node does not exist: create it with a new node_id
-		teamResponsible, _, err := odb.UserDefaultGroup(ctx, userID)
-		if err != nil {
-			log.Error("failed to find default group", logkey.Error, err)
-			return JSONProblemf(c, http.StatusInternalServerError, "cannot find default group")
-		}
-
 		nodeID = uuid.New().String()
 		if err := odb.InsertNode(ctx, nodename, teamResponsible, app, nodeID); err != nil {
 			log.Error("failed to insert node", logkey.Error, err)
