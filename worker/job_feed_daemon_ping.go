@@ -59,7 +59,7 @@ func (d *jobFeedDaemonPing) Operations() []operation {
 		{name: "dropPending", do: d.dropPending},
 		{name: "getData", do: d.getData},
 		{name: "dbFetchNodes", do: d.dbFetchNodes},
-		{name: "dbFetchObjects", do: d.dbFetchObjects},
+		{name: "dbFindObjects", do: d.dbFindObjects},
 		{name: "dbPingInstances", do: d.dbPingInstances},
 		{name: "dbPingObjects", do: d.dbPingObjects},
 		{name: "cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
@@ -85,8 +85,9 @@ func (d *jobFeedDaemonPing) getData(ctx context.Context) error {
 	return nil
 }
 
-// dbFetchNodes fetch nodes (that are associated with caller node ID) from database
+// dbFetchNodes fetch the data nodes (that are associated with caller node ID) from the database
 // and sets d.byNodeID and d.clusterID.
+// It also updates node last_comm field.
 func (d *jobFeedDaemonPing) dbFetchNodes(ctx context.Context) (err error) {
 	var (
 		dbNodes []*cdb.DBNode
@@ -107,15 +108,23 @@ func (d *jobFeedDaemonPing) dbFetchNodes(ctx context.Context) (err error) {
 	}
 	d.callerNode = callerNode
 	d.clusterID = callerNode.ClusterID
+
+	nodeIDs := make([]string, 0, len(d.byNodeID))
+	for nodeID := range d.byNodeID {
+		nodeIDs = append(nodeIDs, nodeID)
+	}
+	if err := d.oDb.NodeUpdateLastComm(ctx, nodeIDs...); err != nil {
+		return fmt.Errorf("dbFetchNodes %s [%s] can't update node last comm for node ids %s: %w", d.callerNode, d.nodeID, nodeIDs, err)
+	}
 	return nil
 }
 
-func (d *jobFeedDaemonPing) dbFetchObjects(ctx context.Context) (err error) {
+func (d *jobFeedDaemonPing) dbFindObjects(ctx context.Context) (err error) {
 	var (
 		objects []*cdb.DBObject
 	)
 	if objects, err = d.oDb.ObjectsFromClusterID(ctx, d.clusterID); err != nil {
-		return fmt.Errorf("dbFetchObjects query node %s (%s) clusterID: %s: %w",
+		return fmt.Errorf("dbFindObjects query node %s (%s) clusterID: %s: %w",
 			d.callerNode.Nodename, d.nodeID, d.clusterID, err)
 	}
 	for _, o := range objects {
@@ -124,7 +133,7 @@ func (d *jobFeedDaemonPing) dbFetchObjects(ctx context.Context) (err error) {
 			continue
 		}
 		d.byObjectID[o.SvcID] = o
-		slog.Debug("dbFetchObjects", logkey.ObjectID, o.SvcID)
+		slog.Debug("dbFindObjects", logkey.ObjectID, o.SvcID)
 	}
 	return nil
 }
