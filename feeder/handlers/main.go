@@ -9,6 +9,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 
+	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/feeder"
 	"github.com/opensvc/oc3/util/echolog"
 )
@@ -16,6 +17,7 @@ import (
 type (
 	Api struct {
 		DB    *sql.DB
+		ODB   *cdb.DB
 		Redis *redis.Client
 		UI    bool
 
