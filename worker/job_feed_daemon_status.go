@@ -146,17 +146,6 @@ func (d *jobFeedDaemonStatus) Operations() []operation {
 
 func (d *jobFeedDaemonStatus) LogResult() {
 	slog.Debug(fmt.Sprintf("handleDaemonStatus done for %s", d.byNodeID[d.nodeID]))
-	for k, v := range d.byNodename {
-		slog.Debug(fmt.Sprintf("found db node %s: %#v", k, v))
-	}
-
-	for k, v := range d.byObjectID {
-		slog.Debug(fmt.Sprintf("found db object %s: %#v", k, v))
-	}
-
-	for k, v := range d.byInstanceName {
-		slog.Debug(fmt.Sprintf("found db instance %s: %#v", k, v))
-	}
 }
 
 func (d *jobFeedDaemonStatus) getChanges(ctx context.Context) error {
@@ -335,7 +324,6 @@ func (d *jobFeedDaemonStatus) dataToNodeHeartbeat(_ context.Context) error {
 					continue
 				}
 			}
-			slog.Debug(fmt.Sprintf("dataToNodeHeartbeat: found %s", hb))
 			d.heartbeats = append(d.heartbeats, hb)
 		}
 	}
@@ -420,7 +408,6 @@ func (d *jobFeedDaemonStatus) dbFindServices(ctx context.Context) error {
 	for _, o := range objects {
 		d.byObjectName[o.Svcname] = o
 		d.byObjectID[o.SvcID] = o
-		slog.Debug(fmt.Sprintf("dbFindServices %s (%s)", o.Svcname, o.SvcID))
 	}
 	return nil
 }
@@ -470,8 +457,6 @@ func (d *jobFeedDaemonStatus) dbFindInstances(ctx context.Context) error {
 				// Only pickup instances from known objects
 				d.byInstanceName[s.Svcname+"@"+n.Nodename] = mon
 				d.byInstanceID[s.SvcID+"@"+n.NodeID] = mon
-				slog.Debug(fmt.Sprintf("dbFindInstances found %s@%s (%s@%s)",
-					s.Svcname, n.Nodename, s.SvcID, n.NodeID))
 			}
 		}
 	}
