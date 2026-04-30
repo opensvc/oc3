@@ -24,12 +24,12 @@ type Action struct {
 	Cron  bool   `json:"cron"`
 
 	// End end action timestamp in RFC3339Nano format
-	End         string  `json:"end"`
-	Path        string  `json:"path"`
-	SessionUuid string  `json:"session_uuid"`
-	Status      string  `json:"status"`
-	StatusLog   *string `json:"status_log,omitempty"`
-	Uuid        string  `json:"uuid"`
+	End         string `json:"end"`
+	Path        string `json:"path"`
+	SessionUuid string `json:"session_uuid"`
+	Status      string `json:"status"`
+	StatusLog   string `json:"status_log"`
+	Uuid        string `json:"uuid"`
 
 	// Version the opensvc client data version
 	Version string `json:"version"`
@@ -133,6 +133,38 @@ type Problem struct {
 	Text string `json:"text"`
 }
 
+// QueuedAction defines model for QueuedAction.
+type QueuedAction struct {
+	Command    string    `json:"command"`
+	DequeuedAt time.Time `json:"dequeued_at"`
+	Id         int       `json:"id"`
+	Node       string    `json:"node"`
+	QueuedAt   time.Time `json:"queued_at"`
+	Status     string    `json:"status"`
+	SvcId      string    `json:"svc_id"`
+	Svcname    string    `json:"svcname"`
+}
+
+// QueuedActionDone the action queued result processed by the node
+type QueuedActionDone struct {
+	DequeuedAt time.Time `json:"dequeued_at"`
+	Id         int       `json:"id"`
+	Ret        int       `json:"ret"`
+	Stderr     string    `json:"stderr"`
+	Stdout     string    `json:"stdout"`
+}
+
+// QueuedActionRunning defines model for QueuedActionRunning.
+type QueuedActionRunning struct {
+	// Ids list of queued action ids
+	Ids []int `json:"ids"`
+}
+
+// QueuedActions defines model for QueuedActions.
+type QueuedActions struct {
+	Actions []QueuedAction `json:"actions"`
+}
+
 // SysReport defines model for SysReport.
 type SysReport struct {
 	Deleted []string           `json:"deleted"`
@@ -176,12 +208,18 @@ type N500 = Problem
 
 // DaemonPingAccepted defines model for DaemonPingAccepted.
 type DaemonPingAccepted struct {
+	// NodeWithActionQueued list of cluster nodes with pending queued actions
+	NodeWithActionQueued *[]string `json:"node_with_action_queued,omitempty"`
+
 	// ObjectWithoutConfig list of object names that requires POST /api/object/config
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
 }
 
 // DaemonStatusAccepted defines model for DaemonStatusAccepted.
 type DaemonStatusAccepted struct {
+	// NodeWithActionQueued list of cluster nodes with pending queued actions
+	NodeWithActionQueued *[]string `json:"node_with_action_queued,omitempty"`
+
 	// ObjectWithoutConfig list of object names that requires POST /api/object/config
 	ObjectWithoutConfig *[]string `json:"object_without_config,omitempty"`
 }
@@ -211,6 +249,12 @@ type PostInstanceResourceInfoJSONRequestBody = InstanceResourceInfo
 
 // PostInstanceStatusJSONRequestBody defines body for PostInstanceStatus for application/json ContentType.
 type PostInstanceStatusJSONRequestBody = InstanceStatus
+
+// PostNodeActionQueuedDoneJSONRequestBody defines body for PostNodeActionQueuedDone for application/json ContentType.
+type PostNodeActionQueuedDoneJSONRequestBody = QueuedActionDone
+
+// PostNodeActionQueuedRunningJSONRequestBody defines body for PostNodeActionQueuedRunning for application/json ContentType.
+type PostNodeActionQueuedRunningJSONRequestBody = QueuedActionRunning
 
 // PostNodeDiskJSONRequestBody defines body for PostNodeDisk for application/json ContentType.
 type PostNodeDiskJSONRequestBody = NodeDisks

@@ -129,8 +129,8 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 	}
 
 	var statusLog string
-	if d.data.StatusLog != nil && len(*d.data.StatusLog) > 0 {
-		statusLog = *d.data.StatusLog
+	if len(d.data.StatusLog) > 0 {
+		statusLog = d.data.StatusLog
 	} else if len(d.data.Argv) > 0 {
 		statusLog = strings.Join(d.data.Argv, " ")
 	}
