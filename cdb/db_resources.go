@@ -322,10 +322,14 @@ func (oDb *DB) ResmonLogLastFromObjectIDs(ctx context.Context, objectIDs ...stri
 		return nil, fmt.Errorf("query returns nil rows")
 	}
 	defer func() { _ = rows.Close() }()
+	var resLog sql.NullString
 	for rows.Next() {
 		var r DBResmonLog
-		if err := rows.Scan(&r.SvcID, &r.NodeID, &r.RID, &r.Status, &r.Log, &r.BeginAt, &r.EndAt); err != nil {
+		if err := rows.Scan(&r.SvcID, &r.NodeID, &r.RID, &r.Status, &resLog, &r.BeginAt, &r.EndAt); err != nil {
 			return nil, fmt.Errorf("query scan rows: %w", err)
+		}
+		if resLog.Valid {
+			r.Log = resLog.String
 		}
 		l = append(l, &r)
 	}
