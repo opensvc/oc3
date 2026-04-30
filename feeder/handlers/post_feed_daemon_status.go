@@ -16,7 +16,7 @@ import (
 )
 
 func (a *Api) PostDaemonStatus(c echo.Context) error {
-	nodeID, log := getNodeIDAndLogger(c, "PostDaemonStatus")
+	nodeID, clusterID, log := getNodeIDClusterIDAndLogger(c, "PostDaemonStatus")
 	if nodeID == "" {
 		return JSONNodeAuthProblem(c)
 	}
@@ -91,19 +91,26 @@ func (a *Api) PostDaemonStatus(c echo.Context) error {
 		return JSONError(c)
 	}
 
-	clusterID := clusterIDFromContext(c)
+	responseData := feeder.DaemonStatusAccepted{}
 	if clusterID != "" {
+		if nodes, err := a.getNodeWithActionQueued(ctx, clusterID); err != nil {
+			log.Warn("nodesWithActionQueued", logkey.Error, err)
+		} else {
+			responseData.NodeWithActionQueued = &nodes
+			// TODO: add metric
+			log.Debug(fmt.Sprintf("found action queued for nodes: %s", nodes))
+		}
 		if objects, err := a.getObjectConfigToFeed(ctx, clusterID); err != nil {
 			log.Warn("getObjectConfigToFeed", logkey.Error, err)
 		} else if len(objects) > 0 {
 			if err := a.removeObjectConfigToFeed(ctx, clusterID); err != nil {
 				log.Warn("removeObjectConfigToFeed", logkey.Error, err)
 			}
-			// TODO: add metric about PostDaemonStatus accepted with detected missing object configs
-			log.Debug("accepted with detected missing object configs", logkey.Objects, objects)
-			return c.JSON(http.StatusAccepted, feeder.DaemonStatusAccepted{ObjectWithoutConfig: &objects})
+			responseData.ObjectWithoutConfig = &objects
+			// TODO: add metric
+			log.Debug("detect missing object configs", logkey.Objects, objects)
 		}
 	}
 	log.Debug("accepted")
-	return c.JSON(http.StatusAccepted, feeder.DaemonStatusAccepted{})
+	return c.JSON(http.StatusAccepted, responseData)
 }

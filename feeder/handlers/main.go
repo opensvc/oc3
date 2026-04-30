@@ -44,3 +44,9 @@ func getNodeIDAndLogger(c echo.Context, handler string) (string, *slog.Logger) {
 	}
 	return nodeID, log
 }
+
+func getNodeIDClusterIDAndLogger(c echo.Context, handler string) (string, string, *slog.Logger) {
+	nodeID, log := getNodeIDAndLogger(c, handler)
+	clusterID := clusterIDFromContext(c)
+	return nodeID, clusterID, log
+}
