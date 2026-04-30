@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc feeder api
-  version: 3.0.1
+  version: 3.0.2
 
 paths:
   /checks:
@@ -96,6 +96,70 @@ paths:
           $ref: '#/components/responses/403'
         500:
           $ref: '#/components/responses/500'
+
+  /node/actionq:
+    get:
+      description: |
+        get the actions queued for the authenticated node
+      operationId: GetNodeActionQueued
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueuedActions'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
+  /node/actionq/running:
+    post:
+      description: |
+        the node acknowledges receipt and will run the following action ids list.
+      operationId: PostNodeActionQueuedRunning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueuedActionRunning'
+      responses:
+        202:
+          description: accepted
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
+  /node/actionq/done:
+    post:
+      description: |
+        set actions queued received by the node
+      operationId: PostNodeActionQueuedDone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueuedActionDone'
+      responses:
+        202:
+          description: accepted
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
 
   /node/disk:
     post:
@@ -449,6 +513,47 @@ components:
         status:
           type: string
 
+    QueuedActions:
+      type: object
+      required:
+        - actions
+      properties:
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueuedAction'
+
+    QueuedAction:
+      type: object
+      required:
+        - id
+        - queued_at
+        - dequeued_at
+        - svc_id
+        - svcname
+        - node
+        - command
+        - status
+      properties:
+        id:
+          type: integer
+        queued_at:
+          type: string
+          format: date-time
+        dequeued_at:
+          type: string
+          format: date-time
+        svc_id:
+          type: string
+        svcname:
+          type: string
+        node:
+          type: string
+        command:
+          type: string
+        status:
+          type: string
+
     NodeDisks:
       type: object
       properties:
@@ -495,6 +600,41 @@ components:
         raw_config:
           type: string
           format: byte
+
+    QueuedActionRunning:
+      type: object
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          description: list of queued action ids
+          items:
+            type: integer
+            description: a queued action id
+
+    QueuedActionDone:
+      type: object
+      description: |
+        the action queued result processed by the node
+      required:
+        - id
+        - dequeued_at
+        - ret
+        - stdout
+        - stderr
+      properties:
+        id:
+          type: integer
+        ret:
+          type: integer
+        dequeued_at:
+          type: string
+          format: date-time
+        stdout:
+          type: string
+        stderr:
+          type: string
 
     PostDaemonPing:
       type: object
@@ -717,6 +857,12 @@ components:
                 items:
                   type: string
                   description: object name
+              node_with_action_queued:
+                type: array
+                description: list of cluster nodes with pending queued actions
+                items:
+                  type: string
+                  description: cluster nodename
 
     DaemonStatusAccepted:
       description: daemon status will be refreshed for node
@@ -731,5 +877,9 @@ components:
                 items:
                   type: string
                   description: object name
-
-    
+              node_with_action_queued:
+                type: array
+                description: list of cluster nodes with pending queued actions
+                items:
+                  type: string
+                  description: cluster nodename
