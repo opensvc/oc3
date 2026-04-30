@@ -78,3 +78,10 @@ worker.fast:
     - "object_config"
     - "system"
 ```
+
+## manual build docker image
+
+    docker build \
+        --build-arg BUILDTIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        --build-arg VERSION="$(git describe --tags --abbrev)" \
+        -t opensvc/oc3 .

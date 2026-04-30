@@ -1,25 +1,27 @@
 FROM golang:latest AS builder
 
-ARG BRANCH=${BRANCH:-main}
-ARG OSVC_GITREPO_URL=${OSVC_GITREPO_URL:-https://github.com/opensvc/oc3.git}
-
-WORKDIR /opt
-
-RUN git clone $OSVC_GITREPO_URL && echo "Cache busted at $(date): git clone $OSVC_GITREPO_URL"
+ARG BUILDTIME
+ARG VERSION
 
 WORKDIR /opt/oc3
+COPY . .
 
-RUN git checkout $BRANCH && echo "Cache busted at $(date): git checkout $BRANCH"
+RUN echo "VERSION=${VERSION}"
 
-RUN git describe --tags --abbrev > util/version/text/VERSION
+RUN echo "BUILDTIME=${BUILDTIME}"
+
+RUN echo "${VERSION}" > util/version/text/VERSION
 
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/oc3 .
 
+RUN dist/oc3 version
+
 RUN echo "Cache busted at $(date): oc3 version: $(./dist/oc3 version)"
 
-FROM alpine:3.20.1
+FROM alpine:3.22.4
+ARG BUILDTIME
 
-RUN apk add --no-cache bash git
+RUN apk add --no-cache bash
 
 COPY --from=builder /opt/oc3/dist/oc3 /usr/bin/oc3
 
