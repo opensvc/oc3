@@ -18,7 +18,7 @@ RUN dist/oc3 version
 
 RUN echo "Cache busted at $(date): oc3 version: $(./dist/oc3 version)"
 
-FROM alpine:3.20.1
+FROM alpine:3.22.4
 ARG BUILDTIME
 
 RUN apk add --no-cache bash
