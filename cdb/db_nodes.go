@@ -353,6 +353,22 @@ func (oDb *DB) NodeUpdateFrozen(ctx context.Context, nodeID, frozen string) erro
 	return nil
 }
 
+func (oDb *DB) NodeUpdateLastComm(ctx context.Context, nodeIds ...string) error {
+	const queryS = `UPDATE nodes SET last_comm = NOW() WHERE node_id in (%s)`
+	placeholders := strings.Repeat("?,", len(nodeIds)-1) + "?"
+
+	query := fmt.Sprintf(queryS, placeholders)
+	args := make([]any, len(nodeIds))
+	for i, v := range nodeIds {
+		args[i] = v
+	}
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("NodeUpdateLastComm: %w", err)
+	}
+	oDb.SetChange("nodes")
+	return nil
+}
+
 // NodeUpdateClusterIDForNodeID update cluster_id value on nodes with node_id. the returned bool indicate table has been updated
 func (oDb *DB) NodeUpdateClusterIDForNodeID(ctx context.Context, nodeID, clusterID string) (bool, error) {
 	const (

@@ -127,7 +127,7 @@ func (d *jobFeedDaemonStatus) Operations() []operation {
 		{name: "getData", do: d.getData, blocking: true},
 		{name: "dbCheckClusterIDForNodeID", do: d.dbCheckClusterIDForNodeID, blocking: true},
 		{name: "dbCheckClusters", do: d.dbCheckClusters, blocking: true},
-		{name: "dbFindNodes", do: d.dbFindNodes, blocking: true},
+		{name: "dbFetchNodes", do: d.dbFetchNodes, blocking: true},
 		{name: "dataToNodeFrozen", do: d.dataToNodeFrozen, blocking: true},
 		{name: "dataToNodeHeartbeat", do: d.dataToNodeHeartbeat, blocking: true},
 		{name: "heartbeatToDB", do: d.heartbeatToDB, blocking: true},
@@ -219,7 +219,10 @@ func (d *jobFeedDaemonStatus) dbCheckClusters(ctx context.Context) error {
 	return nil
 }
 
-func (d *jobFeedDaemonStatus) dbFindNodes(ctx context.Context) (err error) {
+// dbFetchNodes fetch the data nodes (that are associated with caller node ID) from the database
+// and sets d.byNodeID and d.clusterID.
+// It also updates node last_comm field.
+func (d *jobFeedDaemonStatus) dbFetchNodes(ctx context.Context) (err error) {
 	var (
 		nodes   []string
 		dbNodes []*cdb.DBNode
@@ -228,9 +231,9 @@ func (d *jobFeedDaemonStatus) dbFindNodes(ctx context.Context) (err error) {
 	// search the caller node from its node_id: we can't trust yet search from
 	// d.data.nodeNames() because initial push daemon status may omit caller node.
 	if callerNode, err := d.oDb.NodeByNodeID(ctx, d.nodeID); err != nil {
-		return fmt.Errorf("dbFindNodes nodeByNodeID %s: %s", d.nodeID, err)
+		return fmt.Errorf("dbFetchNodes nodeByNodeID %s: %w", d.nodeID, err)
 	} else if callerNode == nil {
-		return fmt.Errorf("dbFindNodes can't find caller node %s", d.nodeID)
+		return fmt.Errorf("dbFetchNodes can't find caller node %s", d.nodeID)
 	} else {
 		d.callerNode = callerNode
 		d.nodeApp = callerNode.App
@@ -245,10 +248,10 @@ func (d *jobFeedDaemonStatus) dbFindNodes(ctx context.Context) (err error) {
 		return fmt.Errorf("getData %s: %w", d.nodeID, err)
 	}
 	if len(nodes) == 0 {
-		return fmt.Errorf("dbFindNodes: empty nodes for %s", d.nodeID)
+		return fmt.Errorf("dbFetchNodes: empty nodes for %s", d.nodeID)
 	}
 	if dbNodes, err = d.oDb.NodesFromClusterIDWithNodenames(ctx, d.clusterID, nodes); err != nil {
-		return fmt.Errorf("dbFindNodes %s [%s]: %w", nodes, d.nodeID, err)
+		return fmt.Errorf("dbFetchNodes %s [%s]: %w", nodes, d.nodeID, err)
 	}
 	for _, n := range dbNodes {
 		if n.NodeID == d.nodeID {
@@ -256,7 +259,7 @@ func (d *jobFeedDaemonStatus) dbFindNodes(ctx context.Context) (err error) {
 			continue
 		}
 		if found, isDuplicate := d.byNodename[n.Nodename]; isDuplicate {
-			return fmt.Errorf("dbFindNodes %s [%s] duplicate nodename %s entry with node id: %s and %s", nodes, d.nodeID, n.Nodename, found.NodeID, n.NodeID)
+			return fmt.Errorf("dbFetchNodes %s [%s] duplicate nodename %s entry with node id: %s and %s", nodes, d.nodeID, n.Nodename, found.NodeID, n.NodeID)
 		}
 		d.byNodeID[n.NodeID] = n
 		d.byNodename[n.Nodename] = n
@@ -267,6 +270,15 @@ func (d *jobFeedDaemonStatus) dbFindNodes(ctx context.Context) (err error) {
 		d.nodes[i] = nodename
 		i++
 	}
+
+	nodeIDs := make([]string, 0, len(d.byNodeID))
+	for nodeID := range d.byNodeID {
+		nodeIDs = append(nodeIDs, nodeID)
+	}
+	if err := d.oDb.NodeUpdateLastComm(ctx, nodeIDs...); err != nil {
+		return fmt.Errorf("dbFetchNodes %s [%s] can't update node last comm for node ids %s: %w", d.callerNode, d.nodeID, nodeIDs, err)
+	}
+
 	slog.Debug(fmt.Sprintf("handleDaemonStatus run details: %s changes: [%s]", d.callerNode, d.rawChanges))
 	return nil
 }
