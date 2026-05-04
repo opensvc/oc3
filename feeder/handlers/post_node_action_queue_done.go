@@ -36,14 +36,12 @@ func (a *Api) PostNodeActionQueuedDone(c echo.Context) error {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
 	ctx := c.Request().Context()
-	action := cdb.ActionQueueNamedEntry{
-		ActionQueueEntry: cdb.ActionQueueEntry{
-			ID:           data.Id,
-			Ret:          data.Ret,
-			Stdout:       data.Stdout,
-			Stderr:       data.Stderr,
-			DateDequeued: data.DequeuedAt,
-		},
+	action := cdb.ActionQueue{
+		ID:           data.Id,
+		Ret:          data.Ret,
+		Stdout:       data.Stdout,
+		Stderr:       data.Stderr,
+		DateDequeued: data.DequeuedAt,
 	}
 	if err := a.ODB.ActionQSetDoneForNodeID(ctx, nodeID, action); err != nil {
 		log.Error("set received actionq", logkey.Error, err)

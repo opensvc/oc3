@@ -531,7 +531,7 @@ components:
         - dequeued_at
         - svc_id
         - svcname
-        - node
+        - nodename
         - command
         - status
       properties:
@@ -547,7 +547,7 @@ components:
           type: string
         svcname:
           type: string
-        node:
+        nodename:
           type: string
         command:
           type: string

@@ -138,7 +138,7 @@ type QueuedAction struct {
 	Command    string    `json:"command"`
 	DequeuedAt time.Time `json:"dequeued_at"`
 	Id         int       `json:"id"`
-	Node       string    `json:"node"`
+	Nodename   string    `json:"nodename"`
 	QueuedAt   time.Time `json:"queued_at"`
 	Status     string    `json:"status"`
 	SvcId      string    `json:"svc_id"`

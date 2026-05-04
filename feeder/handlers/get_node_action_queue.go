@@ -14,8 +14,8 @@ func (a *Api) GetNodeActionQueued(c echo.Context) error {
 		return JSONNodeAuthProblem(c)
 	}
 	ctx := c.Request().Context()
-	var l []cdb.ActionQueueNamedEntry
-	l, err := a.ODB.ActionQByNodeID(ctx, nodeID)
+	var l []cdb.ActionQueueNamed
+	l, err := a.ODB.ActionQueueNamedByNodeID(ctx, nodeID)
 	if err != nil {
 		log.Error("get node action queued", logkey.Error, err)
 		return JSONError(c)
@@ -31,10 +31,8 @@ func (a *Api) GetNodeActionQueued(c echo.Context) error {
 			Id:         a.ID,
 			SvcId:      a.SvcId,
 			Svcname:    a.Svcname,
+			Nodename:   a.Nodename,
 			Status:     a.Status,
-		}
-		if a.ConnectTo != nil {
-			actions[i].Node = *a.ConnectTo
 		}
 		ids[i] = a.ID
 	}

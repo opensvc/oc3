@@ -9,8 +9,27 @@ import (
 )
 
 type (
+	ActionQueueEntry struct {
+		ID           int
+		Status       string
+		Command      string
+		DateQueued   time.Time
+		DateDequeued time.Time
+		Ret          int
+		Stdout       string
+		Stderr       string
+		ActionType   string
+		UserId       *int
+		FormId       *int
+		ConnectTo    *string
+		NodeId       string
+		SvcId        string
+		Fqdn         *string
+		ListenerPort int
+	}
+
 	/*
-		ActionQueueEntry represents a row in the action_queue table
+		ActionQueue represents a row in the action_queue table
 
 			CREATE TABLE `action_queue` (
 			  `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -35,7 +54,7 @@ type (
 			  KEY `k_svc_id` (`svc_id`)
 			) ENGINE=InnoDB AUTO_INCREMENT=640 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
 	*/
-	ActionQueueEntry struct {
+	ActionQueue struct {
 		ID           int
 		Status       string
 		Command      string
@@ -50,14 +69,13 @@ type (
 		ConnectTo    *string
 		NodeId       string
 		SvcId        string
-		Fqdn         *string
-		ListenerPort int
 	}
 
-	// ActionQueueNamedEntry is a db ActionQueueEntry with additional fields
-	ActionQueueNamedEntry struct {
-		ActionQueueEntry
-		nodename string
+	// ActionQueueNamed is a db ActionQueue with explicit Nodename and Svcname fields
+	ActionQueueNamed struct {
+		ActionQueue
+
+		Nodename string
 		Svcname  string
 	}
 )
@@ -74,22 +92,23 @@ func (oDb *DB) ActionQSetDequeuedToNow(ctx context.Context) error {
 	return err
 }
 
-// ActionQByClusterID retrieves action queue entries for a specific cluster ID meeting given conditions from the database.
-func (oDb *DB) ActionQByClusterID(ctx context.Context, clusterID string) (lines []ActionQueueNamedEntry, err error) {
+// ActionQueueNamedByClusterID retrieves action queue named entries for a specific cluster ID meeting given conditions from the database.
+func (oDb *DB) ActionQueueNamedByClusterID(ctx context.Context, clusterID string) (lines []ActionQueueNamed, err error) {
 	const query = `SELECT
-    	a.id, a.command, a.action_type, a.status, a.connect_to, a.form_id, a.svc_id, s.svcname, a.date_queued, a.date_dequeued
+    	a.id, a.command, a.action_type, a.status, a.form_id, a.svc_id, s.svcname, a.date_queued, a.date_dequeued, n.nodename
 		FROM action_queue a
 		LEFT JOIN services s
-		  ON a.svc_id != ""
-		  AND a.svc_id = s.svc_id
+		    ON a.svc_id = s.svc_id
+		JOIN nodes n
+		    ON a.node_id = n.node_id
 		WHERE
-		    a.node_id IN (SELECT node_id FROM nodes n WHERE n.cluster_id = ?)
+		    n.cluster_id = ?
 		    AND a.action_type = 'pull'
 		    AND (
                 a.status IN ('W', 'N')
                 OR (
                     a.status = 'S'
-            		AND a.date_queued < DATE_SUB(NOW(), INTERVAL 20 SECOND)
+            		AND a.date_queued < NOW() - INTERVAL 20 SECOND
             	)
             )
 		`
@@ -103,15 +122,11 @@ func (oDb *DB) ActionQByClusterID(ctx context.Context, clusterID string) (lines 
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
-		var a ActionQueueNamedEntry
-		var connectTo sql.NullString
+		var a ActionQueueNamed
 		var formID sql.NullInt64
 		var svcname sql.NullString
-		if err := rows.Scan(&a.ID, &a.Command, &a.ActionType, &a.Status, &connectTo, &formID, &a.SvcId, &svcname, &a.DateQueued, &a.DateDequeued); err != nil {
+		if err := rows.Scan(&a.ID, &a.Command, &a.ActionType, &a.Status, &formID, &a.SvcId, &svcname, &a.DateQueued, &a.DateDequeued, &a.Nodename); err != nil {
 			return nil, fmt.Errorf("instancesFromObjectIDs scan: %w", err)
-		}
-		if connectTo.Valid {
-			a.ConnectTo = &connectTo.String
 		}
 		if formID.Valid {
 			i := int(formID.Int64)
@@ -125,14 +140,15 @@ func (oDb *DB) ActionQByClusterID(ctx context.Context, clusterID string) (lines 
 	return lines, rows.Err()
 }
 
-// ActionQByNodeID retrieves action queue entries associated with the specified node ID, filtered by specific conditions.
-func (oDb *DB) ActionQByNodeID(ctx context.Context, nodeID string) (lines []ActionQueueNamedEntry, err error) {
+// ActionQueueNamedByNodeID retrieves action queue named entries associated with the specified node ID, filtered by specific conditions.
+func (oDb *DB) ActionQueueNamedByNodeID(ctx context.Context, nodeID string) (lines []ActionQueueNamed, err error) {
 	const query = `SELECT
-    	a.id, a.command, a.action_type, a.status, a.connect_to, a.form_id, a.svc_id, s.svcname, a.date_queued, a.date_dequeued
+    	a.id, a.command, a.action_type, a.status, a.form_id, a.svc_id, s.svcname, a.date_queued, a.date_dequeued, n.nodename
 		FROM action_queue a
 		LEFT JOIN services s
-		  ON a.svc_id != ""
-		  AND a.svc_id = s.svc_id
+		    ON a.svc_id = s.svc_id
+		JOIN nodes n
+			ON a.node_id = n.node_id
 		WHERE
 		    a.node_id = ?
 		    AND a.action_type = 'pull'
@@ -154,15 +170,11 @@ func (oDb *DB) ActionQByNodeID(ctx context.Context, nodeID string) (lines []Acti
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
-		var a ActionQueueNamedEntry
-		var connectTo sql.NullString
+		var a ActionQueueNamed
 		var formID sql.NullInt64
 		var svcname sql.NullString
-		if err := rows.Scan(&a.ID, &a.Command, &a.ActionType, &a.Status, &connectTo, &formID, &a.SvcId, &svcname, &a.DateQueued, &a.DateDequeued); err != nil {
+		if err := rows.Scan(&a.ID, &a.Command, &a.ActionType, &a.Status, &formID, &a.SvcId, &svcname, &a.DateQueued, &a.DateDequeued, &a.Nodename); err != nil {
 			return nil, fmt.Errorf("instancesFromObjectIDs scan: %w", err)
-		}
-		if connectTo.Valid {
-			a.ConnectTo = &connectTo.String
 		}
 		if formID.Valid {
 			i := int(formID.Int64)
@@ -196,7 +208,7 @@ func (oDb *DB) ActionQSetSent(ctx context.Context, ids ...int) error {
 
 // ActionQSetRunningForClusterID updates the status of action queue entries to 'R' for the given cluster ID and entry IDs.
 // It requires a non-empty list of entry IDs and uses the context for database operations.
-// It challenges the action id node vs the cluster id of the requester to prevent compromised node
+// It challenges the action id node vs the cluster id of the requester to prevent the compromised node
 // from corrupting action_queue.
 func (oDb *DB) ActionQSetRunningForClusterID(ctx context.Context, clusterID string, ids ...int) error {
 	if len(ids) == 0 {
@@ -215,7 +227,7 @@ func (oDb *DB) ActionQSetRunningForClusterID(ctx context.Context, clusterID stri
 }
 
 // ActionQSetDoneForNodeID updates the status and results of an action queue entry for a given node ID in the database.
-func (oDb *DB) ActionQSetDoneForNodeID(ctx context.Context, nodeID string, a ActionQueueNamedEntry) error {
+func (oDb *DB) ActionQSetDoneForNodeID(ctx context.Context, nodeID string, a ActionQueue) error {
 	query := `UPDATE action_queue SET
 			status='T',
 			stdout = ?,
