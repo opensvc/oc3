@@ -80,6 +80,12 @@ type (
 	}
 )
 
+const (
+	ActionQTypePull = "pull"
+	ActionQTypePush = "push"
+	ActionQTypeFeed = "feed"
+)
+
 func (oDb *DB) ActionQSetNow(ctx context.Context) error {
 	const query = `SET @now := NOW();`
 	_, err := oDb.ExecContext(ctx, query)
