@@ -15,7 +15,7 @@ func (a *Api) GetNodeActionQueued(c echo.Context) error {
 	}
 	ctx := c.Request().Context()
 	var l []cdb.ActionQueueNamed
-	l, err := a.ODB.ActionQueueNamedByNodeID(ctx, nodeID)
+	l, err := a.ODB.ActionQueueNamedByNodeID(ctx, nodeID, cdb.ActionQTypeFeed)
 	if err != nil {
 		log.Error("get node action queued", logkey.Error, err)
 		return JSONError(c)

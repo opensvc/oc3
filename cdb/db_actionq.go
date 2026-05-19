@@ -98,8 +98,8 @@ func (oDb *DB) ActionQPushPullSetDequeuedToNow(ctx context.Context) error {
 	return err
 }
 
-// ActionQueueNamedByClusterID retrieves action queue named entries for a specific cluster ID meeting given conditions from the database.
-func (oDb *DB) ActionQueueNamedByClusterID(ctx context.Context, clusterID string) (lines []ActionQueueNamed, err error) {
+// ActionQueueNamedByClusterID retrieves action queue named entries of type feed for a specific cluster ID meeting given conditions from the database.
+func (oDb *DB) ActionQueueNamedByClusterID(ctx context.Context, clusterID string, actionType string) (lines []ActionQueueNamed, err error) {
 	const query = `SELECT
     	a.id, a.command, a.action_type, a.status, a.form_id, a.svc_id, s.svcname, a.date_queued, a.date_dequeued, n.nodename
 		FROM action_queue a
@@ -109,7 +109,7 @@ func (oDb *DB) ActionQueueNamedByClusterID(ctx context.Context, clusterID string
 		    ON a.node_id = n.node_id
 		WHERE
 		    n.cluster_id = ?
-		    AND a.action_type = 'pull'
+		    AND a.action_type = ?
 		    AND (
                 a.status IN ('W', 'N')
                 OR (
@@ -119,7 +119,7 @@ func (oDb *DB) ActionQueueNamedByClusterID(ctx context.Context, clusterID string
             )
 		`
 
-	rows, err := oDb.DB.QueryContext(ctx, query, clusterID)
+	rows, err := oDb.DB.QueryContext(ctx, query, clusterID, actionType)
 	if err != nil {
 		return nil, fmt.Errorf("instancesFromObjectIDs query: %w", err)
 	}
@@ -147,7 +147,7 @@ func (oDb *DB) ActionQueueNamedByClusterID(ctx context.Context, clusterID string
 }
 
 // ActionQueueNamedByNodeID retrieves action queue named entries associated with the specified node ID, filtered by specific conditions.
-func (oDb *DB) ActionQueueNamedByNodeID(ctx context.Context, nodeID string) (lines []ActionQueueNamed, err error) {
+func (oDb *DB) ActionQueueNamedByNodeID(ctx context.Context, nodeID string, actionType string) (lines []ActionQueueNamed, err error) {
 	const query = `SELECT
     	a.id, a.command, a.action_type, a.status, a.form_id, a.svc_id, s.svcname, a.date_queued, a.date_dequeued, n.nodename
 		FROM action_queue a
@@ -157,7 +157,7 @@ func (oDb *DB) ActionQueueNamedByNodeID(ctx context.Context, nodeID string) (lin
 			ON a.node_id = n.node_id
 		WHERE
 		    a.node_id = ?
-		    AND a.action_type = 'pull'
+		    AND a.action_type = ?
 		    AND (
                 a.status IN ('W', 'N')
                 OR (
@@ -167,7 +167,7 @@ func (oDb *DB) ActionQueueNamedByNodeID(ctx context.Context, nodeID string) (lin
             )
 		`
 
-	rows, err := oDb.DB.QueryContext(ctx, query, nodeID)
+	rows, err := oDb.DB.QueryContext(ctx, query, nodeID, actionType)
 	if err != nil {
 		return nil, fmt.Errorf("instancesFromObjectIDs query: %w", err)
 	}

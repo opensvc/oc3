@@ -8,7 +8,7 @@ import (
 
 func (a *Api) getNodeWithActionQueued(ctx context.Context, clusterID string) (nodeL []string, err error) {
 	var actions []cdb.ActionQueueNamed
-	actions, err = a.ODB.ActionQueueNamedByClusterID(ctx, clusterID)
+	actions, err = a.ODB.ActionQueueNamedByClusterID(ctx, clusterID, cdb.ActionQTypeFeed)
 	if err != nil {
 		return
 	} else if len(actions) > 0 {
