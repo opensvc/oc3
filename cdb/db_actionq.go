@@ -92,9 +92,9 @@ func (oDb *DB) ActionQSetNow(ctx context.Context) error {
 	return err
 }
 
-func (oDb *DB) ActionQSetDequeuedToNow(ctx context.Context) error {
-	const query = `UPDATE action_queue SET date_dequeued = @now WHERE status = 'W' AND date_dequeued=0;`
-	_, err := oDb.ExecContext(ctx, query)
+func (oDb *DB) ActionQPushPullSetDequeuedToNow(ctx context.Context) error {
+	const query = `UPDATE action_queue SET date_dequeued = @now WHERE status = 'W' AND date_dequeued=0 AND action_type IN (?, ?);`
+	_, err := oDb.ExecContext(ctx, query, ActionQTypePush, ActionQTypePull)
 	return err
 }
 
@@ -245,14 +245,14 @@ func (oDb *DB) ActionQSetDoneForNodeID(ctx context.Context, nodeID string, a Act
 	return err
 }
 
-func (oDb *DB) ActionQGetQueued(ctx context.Context) (lines []ActionQueueEntry, err error) {
+func (oDb *DB) ActionQPushPullGetQueued(ctx context.Context) (lines []ActionQueueEntry, err error) {
 	const query = `SELECT
     	a.id, a.command, a.action_type, a.connect_to, n.fqdn, n.listener_port, a.form_id 
-		FROM action_queue a JOIN nodes n ON a.node_id=n.node_id WHERE a.status='W' AND a.date_dequeued=@now`
+		FROM action_queue a JOIN nodes n ON a.node_id=n.node_id WHERE a.status='W' AND a.action_type IN (?, ?) AND a.date_dequeued=@now`
 
 	var rows *sql.Rows
 
-	rows, err = oDb.DB.QueryContext(ctx, query)
+	rows, err = oDb.DB.QueryContext(ctx, query, ActionQTypePush, ActionQTypePull)
 	if err != nil {
 		return
 	}
