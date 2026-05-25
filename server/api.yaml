@@ -288,6 +288,51 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /apps/{app_id}/publications/{group_id}:
+    post:
+      operationId: PostAppPublication
+      description: Attach a publication group to an application code
+      parameters:
+        - in: path
+          name: app_id
+          required: true
+          description: App record id or app code
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group record id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: Publication attached
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /apps/{app_id}/publications:
     get:
       operationId: GetAppPublications
