@@ -387,6 +387,47 @@ func (oDb *DB) GetAppNodes(ctx context.Context, appIDOrName string, p ListParams
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+// GetAppServices returns services belonging to App name or id
+func (oDb *DB) GetAppServices(ctx context.Context, appIDOrName string, p ListParams) ([]map[string]any, error) {
+	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("GetAppServices: %w", err)
+	}
+	if targetApp == nil {
+		return nil, nil
+	}
+
+	if !p.IsManager {
+		visibleApp, err := oDb.GetApp(ctx, appIDOrName, p.Groups, false)
+		if err != nil {
+			return nil, fmt.Errorf("GetAppServices: %w", err)
+		}
+		if visibleApp == nil {
+			return []map[string]any{}, nil
+		}
+	}
+
+	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if err != nil {
+		return nil, err
+	}
+	query += " AND services.svc_app = ?"
+	args = append(args, targetApp.App)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("services.svcname")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("GetAppServices: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 // GetAppQuotas returns rows from v_disk_quota for an App
 func (oDb *DB) GetAppQuotas(ctx context.Context, appIDOrName string, p ListParams) ([]map[string]any, error) {
 	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
