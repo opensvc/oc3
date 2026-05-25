@@ -168,8 +168,8 @@ func (d *ActionDaemon) Run() error {
 		}
 		nowErrorLogger.reset()
 
-		// mark all waiting actions as dequeued at @now
-		err = odb.ActionQSetDequeuedToNow(d.Ctx)
+		// mark all waiting actions with type push or pull as dequeued at @now
+		err = odb.ActionQPushPullSetDequeuedToNow(d.Ctx)
 		dbRequests.WithLabelValues("set_dequeued_to_now").Inc()
 		if err != nil {
 			setDequeuedToNowErrorLogger.warnf("set dequeued to now: %s", err)
@@ -178,8 +178,8 @@ func (d *ActionDaemon) Run() error {
 		}
 		setDequeuedToNowErrorLogger.reset()
 
-		// fetch all actions marked as dequeued at @now
-		lines, err := odb.ActionQGetQueued(d.Ctx)
+		// fetch all actions with type push or pull marked as dequeued at @now
+		lines, err := odb.ActionQPushPullGetQueued(d.Ctx)
 		dbRequests.WithLabelValues("get_queued").Inc()
 		if err != nil {
 			getQueuedErrorLogger.warnf("get queued: %s", err)
@@ -189,9 +189,12 @@ func (d *ActionDaemon) Run() error {
 		queueQueued.Add(float64(len(lines)))
 		getQueuedErrorLogger.reset()
 
-		// dispatch each action to a worker
+		// dispatch each action push or pull to a worker
 		for _, line := range lines {
-			dispatchC <- line
+			switch line.ActionType {
+			case cdb.ActionQTypePull, cdb.ActionQTypePush:
+				dispatchC <- line
+			}
 		}
 	}
 	for {
@@ -340,10 +343,12 @@ func (w *Worker) work(e cdb.ActionQueueEntry) error {
 		return fmt.Errorf("invalid command: %s", err)
 	}
 	switch e.ActionType {
-	case "pull":
+	case cdb.ActionQTypePull:
 		w.workPull(e)
-	case "push":
+	case cdb.ActionQTypePush:
 		w.workPush(e)
+	case cdb.ActionQTypeFeed:
+		return fmt.Errorf("unexpected action type: %s", e.ActionType)
 	default:
 		return fmt.Errorf("unknown action type: %s", e.ActionType)
 	}
@@ -370,7 +375,7 @@ func (w *Worker) workPull(e cdb.ActionQueueEntry) {
 
 	notifTimeout := getOptionDuration("runner.notification_timeout", DefaultNotificationTimeout)
 
-	actionInProgress.WithLabelValues("pull").Inc()
+	actionInProgress.WithLabelValues(cdb.ActionQTypePull).Inc()
 
 	ctx, cancel := context.WithTimeout(w.ctx, notifTimeout)
 	defer cancel()
@@ -403,7 +408,7 @@ func (w *Worker) workPull(e cdb.ActionQueueEntry) {
 }
 
 func (w *Worker) workPush(e cdb.ActionQueueEntry) {
-	actionInProgress.WithLabelValues("push").Inc()
+	actionInProgress.WithLabelValues(cdb.ActionQTypePush).Inc()
 	w.cmdC <- cmdSetRunning{
 		id: e.ID,
 	}

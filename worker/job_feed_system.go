@@ -9,6 +9,7 @@ import (
 	"github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cachekeys"
+	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/mariadb"
 	"github.com/opensvc/oc3/util/logkey"
 )
@@ -435,6 +436,7 @@ func (d *jobFeedSystem) properties(ctx context.Context) error {
 	now := d.now
 	data["node_id"] = map[string]any{"value": nodeID}
 	data["updated"] = map[string]any{"value": now}
+	data["action_type"] = map[string]any{"value": cdb.ActionQTypeFeed}
 
 	get := func(v any) (any, error) {
 		keyData, ok := v.(map[string]any)
@@ -451,6 +453,7 @@ func (d *jobFeedSystem) properties(ctx context.Context) error {
 	request := mariadb.InsertOrUpdate{
 		Table: tableName,
 		Mappings: mariadb.Mappings{
+			mariadb.Mapping{To: "action_type", Get: get},
 			mariadb.Mapping{To: "asset_env", Get: get, Optional: true},
 			mariadb.Mapping{To: "bios_version", Get: get},
 			mariadb.Mapping{To: "cluster_id", Get: get},
