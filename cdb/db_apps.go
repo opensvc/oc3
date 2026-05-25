@@ -387,6 +387,46 @@ func (oDb *DB) GetAppNodes(ctx context.Context, appIDOrName string, p ListParams
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+// GetAppQuotas returns rows from v_disk_quota for an App
+func (oDb *DB) GetAppQuotas(ctx context.Context, appIDOrName string, p ListParams) ([]map[string]any, error) {
+	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("GetAppQuotas: %w", err)
+	}
+	if targetApp == nil {
+		return nil, nil
+	}
+
+	if !p.IsManager {
+		visibleApp, err := oDb.GetApp(ctx, appIDOrName, p.Groups, false)
+		if err != nil {
+			return nil, fmt.Errorf("GetAppQuotas: %w", err)
+		}
+		if visibleApp == nil {
+			return []map[string]any{}, nil
+		}
+	}
+
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("GetAppQuotas: no columns selected")
+	}
+	query := fmt.Sprintf("SELECT %s FROM v_disk_quota WHERE app = ?", strings.Join(p.SelectExprs, ", "))
+	args := []any{targetApp.App}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("array_name, dg_name")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("GetAppQuotas: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 func (oDb *DB) GetAppPublications(ctx context.Context, appIDOrName string, groups []string, isManager bool, limit, offset int) ([]AuthGroup, error) {
 	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
 	if err != nil {

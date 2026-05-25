@@ -184,6 +184,30 @@ var propsMapping = map[string]propMapping{
 			"updated":      colStr(schema.DiskinfoDiskUpdated),
 		},
 	},
+	"disk_quota": {
+		Available: []string{
+			"array_name", "array_model", "dg_name",
+			"dg_free", "dg_used", "dg_size", "dg_reserved", "dg_reservable",
+			"app", "quota", "quota_used",
+			"dg_id", "array_id", "app_id",
+		},
+		Props: map[string]propDef{
+			"array_name":   {SQLExpr: "COALESCE(array_name, '') AS array_name", Kind: "string"},
+			"array_model":  {SQLExpr: "COALESCE(array_model, '') AS array_model", Kind: "string"},
+			"dg_name":      {SQLExpr: "COALESCE(dg_name, '') AS dg_name", Kind: "string"},
+			"dg_free":      {SQLExpr: "COALESCE(dg_free, 0) AS dg_free", Kind: "int64"},
+			"dg_used":      {SQLExpr: "COALESCE(dg_used, 0) AS dg_used", Kind: "int64"},
+			"dg_size":      {SQLExpr: "COALESCE(dg_size, 0) AS dg_size", Kind: "int64"},
+			"dg_reserved":  {SQLExpr: "COALESCE(dg_reserved, 0) AS dg_reserved", Kind: "int64"},
+			"dg_reservable": {SQLExpr: "COALESCE(dg_reservable, 0) AS dg_reservable", Kind: "int64"},
+			"app":          {SQLExpr: "COALESCE(app, '') AS app", Kind: "string"},
+			"quota":        {SQLExpr: "COALESCE(quota, 0) AS quota", Kind: "int64"},
+			"quota_used":   {SQLExpr: "COALESCE(quota_used, 0) AS quota_used", Kind: "int64"},
+			"dg_id":        {SQLExpr: "COALESCE(dg_id, 0) AS dg_id", Kind: "int64"},
+			"array_id":     {SQLExpr: "COALESCE(array_id, 0) AS array_id", Kind: "int64"},
+			"app_id":       {SQLExpr: "COALESCE(app_id, 0) AS app_id", Kind: "int64"},
+		},
+	},
 	"node_ip": {
 		Available: []string{
 			"id", "node_id", "nodename", "intf", "mac", "type", "addr", "mask", "updated", "flag_deprecated",
