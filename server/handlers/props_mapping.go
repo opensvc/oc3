@@ -487,6 +487,37 @@ var propsMapping = map[string]propMapping{
 	"ruleset": {
 		Available: []string{"id", "ruleset_name", "ruleset_type", "ruleset_public"},
 	},
+	"alert": {
+		Available: []string{
+			"id", "dash_type", "svc_id", "node_id",
+			"dash_severity", "dash_fmt", "dash_dict",
+			"dash_created", "dash_updated",
+			"dash_md5", "dash_dict_md5", "dash_env", "dash_instance",
+			"alert",
+		},
+		Default: []string{
+			"id", "dash_type", "svc_id", "node_id",
+			"dash_severity",
+			"dash_created", "dash_updated",
+			"dash_env", "dash_instance",
+			"alert",
+		},
+		Props: map[string]propDef{
+			"id":            col(schema.DashboardID),
+			"dash_type":     colStr(schema.DashboardDashType),
+			"svc_id":        colStr(schema.DashboardSvcID),
+			"node_id":       colStr(schema.DashboardNodeID),
+			"dash_severity": colInt(schema.DashboardDashSeverity),
+			"dash_fmt":      colStr(schema.DashboardDashFmt),
+			"dash_dict":     colStr(schema.DashboardDashDict),
+			"dash_created":  colStr(schema.DashboardDashCreated),
+			"dash_updated":  colStr(schema.DashboardDashUpdated),
+			"dash_md5":      colStr(schema.DashboardDashMD5),
+			"dash_dict_md5": colStr(schema.DashboardDashDictMD5),
+			"dash_env":      colStr(schema.DashboardDashEnv),
+			"dash_instance": colStr(schema.DashboardDashInstance),
+		},
+	},
 	"comp_status": {
 		Available: []string{"id", "run_module", "node_id", "svc_id", "run_status", "run_log", "run_date", "run_action", "rset_md5"},
 		Default:   []string{"id", "run_module", "run_status", "run_date", "run_action", "svc_id"},
