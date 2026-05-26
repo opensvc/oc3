@@ -755,6 +755,23 @@ func (oDb *DB) InsertAppPublication(ctx context.Context, appID, groupID int64) e
 	return nil
 }
 
+// DeleteAppPublication removes the (app_id, group_id) row from apps_publications
+func (oDb *DB) DeleteAppPublication(ctx context.Context, appID, groupID int64) (int64, error) {
+	const query = `DELETE FROM apps_publications WHERE app_id = ? AND group_id = ?`
+	res, err := oDb.DB.ExecContext(ctx, query, appID, groupID)
+	if err != nil {
+		return 0, fmt.Errorf("deleteAppPublication: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("deleteAppPublication rowsAffected: %w", err)
+	}
+	if n > 0 {
+		oDb.SetChange("apps_publications")
+	}
+	return n, nil
+}
+
 func (oDb *DB) AppUsageCounts(ctx context.Context, app string) (nodesCount, servicesCount int64, err error) {
 	const nodeQuery = `SELECT COUNT(*) FROM nodes WHERE app = ?`
 	if err = oDb.DB.QueryRowContext(ctx, nodeQuery, app).Scan(&nodesCount); err != nil {

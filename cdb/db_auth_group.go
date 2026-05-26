@@ -85,6 +85,55 @@ func (oDb *DB) OrgGroup(ctx context.Context, idOrRole string, userGroupIDs []int
 	}
 }
 
+func (oDb *DB) AuthGroupByIDOrRole(ctx context.Context, idOrRole string) (*AuthGroup, bool, error) {
+	if idOrRole == "" {
+		return nil, false, nil
+	}
+	query := "SELECT id, role, privilege, COALESCE(description, '') FROM auth_group WHERE "
+	args := []any{}
+	if id, err := strconv.ParseInt(idOrRole, 10, 64); err == nil {
+		query += "(id = ? OR role = ?)"
+		args = append(args, id, idOrRole)
+	} else {
+		query += "role = ?"
+		args = append(args, idOrRole)
+	}
+	query += " LIMIT 2"
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, false, fmt.Errorf("AuthGroupByIDOrRole: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	groups := make([]AuthGroup, 0, 2)
+	for rows.Next() {
+		var (
+			g         AuthGroup
+			role      sql.NullString
+			privilege sql.NullString
+		)
+		if err := rows.Scan(&g.ID, &role, &privilege, &g.Description); err != nil {
+			return nil, false, fmt.Errorf("AuthGroupByIDOrRole scan: %w", err)
+		}
+		if role.Valid {
+			g.Role = role.String
+		}
+		if privilege.Valid {
+			g.Privilege = privilege.String == "T"
+		}
+		groups = append(groups, g)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, false, fmt.Errorf("AuthGroupByIDOrRole rows: %w", err)
+	}
+
+	if len(groups) != 1 {
+		return nil, false, nil
+	}
+	return &groups[0], true, nil
+}
+
 // UserGroupIDs returns the list of group ids the user belongs to.
 func (oDb *DB) UserGroupIDs(ctx context.Context, userID int64) ([]int64, error) {
 	const query = "SELECT auth_group.id FROM auth_group " +
