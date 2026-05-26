@@ -173,6 +173,20 @@ func (oDb *DB) AppPublicationExists(ctx context.Context, appID, groupID int64) (
 	}
 }
 
+func (oDb *DB) AppResponsibleExists(ctx context.Context, appID, groupID int64) (bool, error) {
+	const query = "SELECT 1 FROM apps_responsibles WHERE app_id = ? AND group_id = ? LIMIT 1"
+	var x int
+	err := oDb.DB.QueryRowContext(ctx, query, appID, groupID).Scan(&x)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("AppResponsibleExists: %w", err)
+	default:
+		return true, nil
+	}
+}
+
 // removes App without publication from dashboard
 func (oDb *DB) DeleteDashboardAppWithoutPublication(ctx context.Context, app string) error {
 	const query = `DELETE FROM dashboard
@@ -181,6 +195,19 @@ func (oDb *DB) DeleteDashboardAppWithoutPublication(ctx context.Context, app str
 	pattern := "%:\"" + app + "\"%"
 	if _, err := oDb.DB.ExecContext(ctx, query, pattern); err != nil {
 		return fmt.Errorf("DeleteDashboardAppWithoutPublication: %w", err)
+	}
+	oDb.SetChange("dashboard")
+	return nil
+}
+
+// removes App without responsible from dashboard
+func (oDb *DB) DeleteDashboardAppWithoutResponsible(ctx context.Context, app string) error {
+	const query = `DELETE FROM dashboard
+		WHERE dash_type = 'application code without responsible'
+		  AND dash_dict LIKE ?`
+	pattern := "%:\"" + app + "\"%"
+	if _, err := oDb.DB.ExecContext(ctx, query, pattern); err != nil {
+		return fmt.Errorf("DeleteDashboardAppWithoutResponsible: %w", err)
 	}
 	oDb.SetChange("dashboard")
 	return nil
