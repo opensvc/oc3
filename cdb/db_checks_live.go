@@ -8,6 +8,50 @@ import (
 	"time"
 )
 
+func (oDb *DB) GetNodeChecks(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
+	defer logDuration("getNodeChecks", time.Now())
+
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getNodeChecks: no select expressions")
+	}
+
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM checks_live" +
+		" WHERE checks_live.node_id = ?"
+	args := []any{nodeID}
+
+	if !p.IsManager {
+		clean := cleanGroups(p.Groups)
+		if len(clean) == 0 {
+			query += " AND checks_live.node_id IN (SELECT n.node_id FROM nodes n WHERE n.team_responsible = 'Everybody')"
+		} else {
+			placeholders := Placeholders(len(clean))
+			query += " AND checks_live.node_id IN (" +
+				"SELECT n.node_id FROM nodes n " +
+				"WHERE n.team_responsible = 'Everybody' " +
+				"OR n.team_responsible IN (" + placeholders + ")" +
+				")"
+			for _, g := range clean {
+				args = append(args, g)
+			}
+		}
+	}
+
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("checks_live.chk_type, checks_live.chk_instance")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getNodeChecks: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 func (oDb *DB) PurgeChecksLive(ctx context.Context, nodeID string) error {
 	defer logDuration("PurgeChecksLive", time.Now())
 	query := `DELETE FROM checks_live WHERE node_id = ? AND chk_type NOT IN ("netdev_err", "save") AND chk_updated < DATE_SUB(NOW(), INTERVAL 20 SECOND)`
