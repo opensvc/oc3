@@ -172,3 +172,46 @@ func (oDb *DB) InsertService(ctx context.Context, svcID, svcname, clusterID, svc
 	oDb.SetChange("services")
 	return nil
 }
+
+// DeleteServiceCascade deletes a service and all its related data
+func (oDb *DB) DeleteServiceCascade(ctx context.Context, svcID string) error {
+	defer logDuration("DeleteServiceCascade", time.Now())
+	if svcID == "" {
+		return fmt.Errorf("DeleteServiceCascade: empty svc_id")
+	}
+	tables := []string{
+		"services",
+		"drpservices",
+		"checks_settings",
+		"comp_rulesets_services",
+		"comp_modulesets_services",
+		"action_queue",
+		"svc_tags",
+		"svcmon",
+		"dashboard",
+		"svcdisks",
+		"resmon",
+		"checks_live",
+		"comp_status",
+		"resinfo",
+		"saves",
+		"svcactions",
+		"svcmon_log",
+		"resmon_log",
+		"svcmon_log_ack",
+		"comp_log",
+		"comp_log_daily",
+		"form_output_results",
+		"svcmon_log_last",
+		"resmon_log_last",
+		"dashboard_events",
+	}
+	for _, t := range tables {
+		query := "DELETE FROM " + t + " WHERE svc_id = ?"
+		if _, err := oDb.ExecContext(ctx, query, svcID); err != nil {
+			return fmt.Errorf("DeleteServiceCascade %s: %w", t, err)
+		}
+		oDb.SetChange(t)
+	}
+	return nil
+}
