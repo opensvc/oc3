@@ -745,3 +745,37 @@ func (oDb *DB) UpdateNodeFields(ctx context.Context, nodeID string, fields map[s
 	oDb.SetChange("nodes")
 	return nil
 }
+
+// DeleteNodeCascade deletes a node and all its related data in other tables
+func (oDb *DB) DeleteNodeCascade(ctx context.Context, nodeID string) error {
+	defer logDuration("DeleteNodeCascade", time.Now())
+	if nodeID == "" {
+		return fmt.Errorf("DeleteNodeCascade: empty node_id")
+	}
+	tables := []string{
+		"nodes",
+		"svcmon",
+		"dashboard",
+		"checks_live",
+		"packages",
+		"patches",
+		"node_tags",
+		"node_ip",
+		"node_hba",
+		"stor_zone",
+		"stor_array_proxy",
+		"auth_node",
+		"resmon_log",
+		"resmon_log_last",
+		"svcmon_log",
+		"svcmon_log_last",
+	}
+	for _, t := range tables {
+		query := "DELETE FROM " + t + " WHERE node_id = ?"
+		if _, err := oDb.ExecContext(ctx, query, nodeID); err != nil {
+			return fmt.Errorf("DeleteNodeCascade %s: %w", t, err)
+		}
+		oDb.SetChange(t)
+	}
+	return nil
+}
