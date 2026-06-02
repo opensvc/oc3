@@ -530,10 +530,16 @@ func (oDb *DB) InstanceResourceInfoUpdate(ctx context.Context, svcID, nodeID str
 	)
 	for _, info := range data.Info {
 		for _, key := range info.Keys {
-			if len(key.Value) > 255 {
-				value = key.Value[:255]
-			} else {
-				value = key.Value
+			switch v := key.Value.(type) {
+			case string:
+				value = v
+			case float64:
+				value = fmt.Sprintf("%f", v)
+			default:
+				continue
+			}
+			if len(value) > 255 {
+				value = value[:255]
 			}
 			resCount++
 			args = append(args, svcID, nodeID, info.Rid, key.Key, data.Topology, value)

@@ -30,6 +30,7 @@ type (
 		Runners int
 
 		SubSystem string
+		UploadDir string
 	}
 
 	EventPublisher interface {
@@ -46,6 +47,10 @@ type (
 
 	EvSetter interface {
 		SetEv(ev EventPublisher)
+	}
+
+	UploadDirSetter interface {
+		SetUploadDir(s string)
 	}
 
 	JobRunner interface {
@@ -193,6 +198,11 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	if a, ok := j.(EvSetter); ok {
 		a.SetEv(w.Ev)
 	}
+
+	if a, ok := j.(UploadDirSetter); ok {
+		a.SetUploadDir(w.UploadDir)
+	}
+
 	status := jobStatusOk
 	err := RunJob(ctx, j)
 	duration := time.Since(begin)

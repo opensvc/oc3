@@ -20,11 +20,12 @@ import (
 
 type (
 	workerT struct {
-		db      *sql.DB
-		redis   *redis.Client
-		section string
-		runners int
-		queues  []string
+		db        *sql.DB
+		redis     *redis.Client
+		section   string
+		runners   int
+		queues    []string
+		uploadDir string
 	}
 )
 
@@ -43,6 +44,7 @@ func newWorker(section string, runners int, queues []string) (*workerT, error) {
 	for _, q := range queues {
 		t.queues = append(t.queues, cachekeys.QueuePrefix+q)
 	}
+	t.uploadDir = viper.GetString(t.section + ".directories.uploads")
 	return t, nil
 }
 
@@ -82,6 +84,7 @@ func (t *workerT) run() error {
 		Runners:   t.runners,
 		SubSystem: t.Section(),
 		ODB:       odb,
+		UploadDir: t.uploadDir,
 	}
 	return w.Run()
 }

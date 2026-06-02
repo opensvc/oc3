@@ -34,6 +34,7 @@ func setDefaultWorkerConfig(name string) {
 
 	viper.SetDefault(section+".runners", 1)
 	viper.SetDefault(section+".log.request.level", "none")
+	viper.SetDefault(section+".directories.uploads", "/oc3/uploads")
 }
 
 func setDefaultFeederConfig() {
