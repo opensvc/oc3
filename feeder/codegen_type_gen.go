@@ -56,8 +56,8 @@ type Disk struct {
 type InstanceResourceInfo struct {
 	Info []struct {
 		Keys []struct {
-			Key   string `json:"key"`
-			Value string `json:"value"`
+			Key   string      `json:"key"`
+			Value interface{} `json:"value"`
 		} `json:"keys"`
 		Rid string `json:"rid"`
 	} `json:"info"`
