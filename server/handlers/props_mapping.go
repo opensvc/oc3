@@ -541,6 +541,19 @@ var propsMapping = map[string]propMapping{
 			"chk_updated":            colStr(schema.ChecksLiveChkUpdated),
 		},
 	},
+	"resinfo": {
+		Available: []string{"id", "rid", "res_key", "res_value", "updated", "topology", "node_id", "svc_id"},
+		Props: map[string]propDef{
+			"id":       col(schema.ResinfoID),
+			"rid":      colStr(schema.ResinfoRid),
+			"res_key":  colStr(schema.ResinfoResKey),
+			"res_value": colStr(schema.ResinfoResValue),
+			"updated":  colStr(schema.ResinfoUpdated),
+			"topology": colStr(schema.ResinfoTopology),
+			"node_id":  colStr(schema.ResinfoNodeID),
+			"svc_id":   colStr(schema.ResinfoSvcID),
+		},
+	},
 	"comp_status": {
 		Available: []string{"id", "run_module", "node_id", "svc_id", "run_status", "run_log", "run_date", "run_action", "rset_md5"},
 		Default:   []string{"id", "run_module", "run_status", "run_date", "run_action", "svc_id"},
