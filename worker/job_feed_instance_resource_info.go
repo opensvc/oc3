@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"path/filepath"
+	"strconv"
 
+	"github.com/go-graphite/go-whisper"
 	"github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/feeder"
+	"github.com/opensvc/oc3/timeseries"
 	"github.com/opensvc/oc3/util/logkey"
 )
 
@@ -18,6 +22,7 @@ type (
 		JobBase
 		JobRedis
 		JobDB
+		JobUpload
 
 		// idX is the id of the posted instance config with the expected pattern: <objectName>@<nodeID>@<clusterID>
 		idX string
@@ -36,6 +41,10 @@ type (
 		// data is the posted instance resource info
 		data feeder.InstanceResourceInfo
 	}
+)
+
+var (
+	ErrResInfoValue = fmt.Errorf("invalid resource info value")
 )
 
 func newjobFeedInstanceResourceInfo(objectName, nodeID, clusterID string) *jobFeedInstanceResourceInfo {
@@ -64,6 +73,7 @@ func (j *jobFeedInstanceResourceInfo) Operations() []operation {
 		{name: "dbNow", do: j.dbNow},
 		{name: "updateDB", do: j.updateDB},
 		{name: "purgeDB", do: j.purgeDB},
+		{name: "updateWSP", do: j.updateWSP, blocking: false},
 		{name: "pushFromTableChanges", do: j.pushFromTableChanges},
 	}
 }
@@ -112,4 +122,76 @@ func (j *jobFeedInstanceResourceInfo) purgeDB(ctx context.Context) (err error) {
 	}
 
 	return nil
+}
+
+// updateWSP updates Whisper files with new data points for instance resource information.
+// Returns an error on failure.
+// filename: <UploadDir>/stats/nodes/<nodeID>/services/<objectID>/resources/<rid>/info/<key>.wsp
+func (j *jobFeedInstanceResourceInfo) updateWSP(ctx context.Context) (err error) {
+	if j.objectID == "" {
+		return fmt.Errorf("updateWSP: objectID is empty")
+	}
+	timestamp := int(j.now.Unix())
+	baseDir := filepath.Join(j.UploadDir, "stats", "nodes", j.nodeID, "services", j.objectID)
+
+	var okKeys []string
+	var badKeys []string
+	for _, info := range j.data.Info {
+		rid := info.Rid
+		for _, v := range info.Keys {
+			value, err := j.valueToFloat64(v.Value)
+			if err != nil {
+				continue
+			}
+			fName := filepath.Join(baseDir, "resources", rid, "info", v.Key+".wsp")
+
+			if err := timeseries.Update(fName, value, timestamp, timeseries.DefaultRetentions, whisper.Average, 0.0); err != nil {
+				badKeys = append(badKeys, v.Key)
+			} else {
+				okKeys = append(okKeys, v.Key)
+			}
+		}
+		if len(okKeys) > 0 {
+			j.logger.Debug(fmt.Sprintf("updateWSP done for keys %v", okKeys))
+		}
+	}
+	if len(badKeys) > 0 {
+		return fmt.Errorf("jobFeedInstanceResourceInfo: updateWSP failed for keys %v", badKeys)
+	}
+	return nil
+}
+
+// valueToFloat64 converts an arbitrary value to a float64, returning an error if the conversion is not possible.
+func (j *jobFeedInstanceResourceInfo) valueToFloat64(i any) (float64, error) {
+	switch n := i.(type) {
+	case string:
+		// most common values are strings, so start with that
+		return strconv.ParseFloat(n, 64)
+	case int:
+		return float64(n), nil
+	case float64:
+		return n, nil
+	case float32:
+		return float64(n), nil
+	case int8:
+		return float64(n), nil
+	case int16:
+		return float64(n), nil
+	case int32:
+		return float64(n), nil
+	case int64:
+		return float64(n), nil
+	case uint:
+		return float64(n), nil
+	case uint8:
+		return float64(n), nil
+	case uint16:
+		return float64(n), nil
+	case uint32:
+		return float64(n), nil
+	case uint64:
+		return float64(n), nil
+	default:
+		return 0, ErrResInfoValue
+	}
 }
