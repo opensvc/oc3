@@ -25,10 +25,14 @@ type Action struct {
 
 	// End end action timestamp in RFC3339Nano format
 	End         string `json:"end"`
+	Origin      string `json:"origin"`
 	Path        string `json:"path"`
+	Pid         string `json:"pid"`
+	Rid         string `json:"rid"`
 	SessionUuid string `json:"session_uuid"`
 	Status      string `json:"status"`
 	StatusLog   string `json:"status_log"`
+	Subset      string `json:"subset"`
 	Uuid        string `json:"uuid"`
 
 	// Version the opensvc client data version

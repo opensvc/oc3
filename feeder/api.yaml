@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc feeder api
-  version: 3.0.2
+  version: 3.0.3
 
 paths:
   /checks:
@@ -473,11 +473,16 @@ components:
       type: object
       required:
         - path
+        - rid
+        - subset
         - action
+        - command
+        - origin
         - version
         - begin
         - cron
         - session_uuid
+        - pid
         - argv
         - uuid
         - end
@@ -486,7 +491,13 @@ components:
       properties:
         path:
           type: string
+        rid:
+          type: string
+        subset:
+          type: string
         action:
+          type: string
+        origin:
           type: string
         version:
           type: string
@@ -497,6 +508,8 @@ components:
         cron:
           type: boolean
         session_uuid:
+          type: string
+        pid:
           type: string
         argv:
           type: array
