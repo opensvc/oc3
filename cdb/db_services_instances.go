@@ -62,6 +62,25 @@ func (oDb *DB) GetServicesInstances(ctx context.Context, p ListParams) ([]map[st
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+// GetServiceNodeInstance fetches the service instance on a specific node.
+func (oDb *DB) GetServiceNodeInstance(ctx context.Context, svcID, nodeID string, p ListParams) ([]map[string]any, error) {
+	query, args, err := buildServicesInstancesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if err != nil {
+		return nil, err
+	}
+	query += " AND svcmon.svc_id = ? AND svcmon.node_id = ?"
+	args = append(args, svcID, nodeID)
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getServiceNodeInstance: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 // GetServicesInstance fetches all instances of a single service by svc_id (UUID) or svcname.
 func (oDb *DB) GetServicesInstance(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
 	query, args, err := buildServicesInstancesQuery(p.Groups, p.IsManager, p.SelectExprs)
