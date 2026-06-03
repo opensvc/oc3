@@ -1,0 +1,55 @@
+package cdb
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+)
+
+// GetServiceNodeResources returns the resmon rows for a given service instance
+func (oDb *DB) GetServiceNodeResources(ctx context.Context, svcID, nodeID string, p ListParams) ([]map[string]any, error) {
+	defer logDuration("getServiceNodeResources", time.Now())
+
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getServiceNodeResources: no select expressions")
+	}
+
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM resmon" +
+		" WHERE resmon.svc_id = ? AND resmon.node_id = ?"
+	args := []any{svcID, nodeID}
+
+	if !p.IsManager {
+		clean := cleanGroups(p.Groups)
+		if len(clean) == 0 {
+			query += " AND 1=0"
+		} else {
+			placeholders := Placeholders(len(clean))
+			query += ` AND resmon.svc_id IN (
+				SELECT s.svc_id FROM services s
+				JOIN apps a ON s.svc_app = a.app
+				JOIN apps_responsibles ar ON ar.app_id = a.id
+				JOIN auth_group ag ON ag.id = ar.group_id
+				WHERE ag.role IN (` + placeholders + `)
+			)`
+			for _, g := range clean {
+				args = append(args, g)
+			}
+		}
+	}
+
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("resmon.rid")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getServiceNodeResources: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}

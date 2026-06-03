@@ -541,6 +541,35 @@ var propsMapping = map[string]propMapping{
 			"chk_updated":            colStr(schema.ChecksLiveChkUpdated),
 		},
 	},
+	"resource": {
+		Available: []string{
+			"id", "svc_id", "node_id", "rid", "res_status",
+			"res_type", "res_desc", "res_log",
+			"res_monitor", "res_disable", "res_optional",
+			"vmname", "changed", "updated",
+		},
+		Default: []string{
+			"svc_id", "node_id", "rid", "res_status",
+			"res_type", "res_monitor", "res_disable", "res_optional",
+			"updated",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.ResmonID),
+			"svc_id":       colStr(schema.ResmonSvcID),
+			"node_id":      colStr(schema.ResmonNodeID),
+			"rid":          colStr(schema.ResmonRid),
+			"res_status":   colStr(schema.ResmonResStatus),
+			"res_type":     colStr(schema.ResmonResType),
+			"res_desc":     colStr(schema.ResmonResDesc),
+			"res_log":      colStr(schema.ResmonResLog),
+			"res_monitor":  colStr(schema.ResmonResMonitor),
+			"res_disable":  colStr(schema.ResmonResDisable),
+			"res_optional": colStr(schema.ResmonResOptional),
+			"vmname":       colStr(schema.ResmonVmname),
+			"changed":      colStr(schema.ResmonChanged),
+			"updated":      colStr(schema.ResmonUpdated),
+		},
+	},
 	"resinfo": {
 		Available: []string{"id", "rid", "res_key", "res_value", "updated", "topology", "node_id", "svc_id"},
 		Props: map[string]propDef{
