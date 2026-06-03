@@ -195,6 +195,9 @@ type ServerInterface interface {
 	// (GET /services/{svc_id}/checks)
 	GetServiceChecks(ctx echo.Context, svcId string, params GetServiceChecksParams) error
 
+	// (GET /services/{svc_id}/disks)
+	GetServiceDisks(ctx echo.Context, svcId string, params GetServiceDisksParams) error
+
 	// (GET /services/{svc_id}/resinfo)
 	GetServiceResinfo(ctx echo.Context, svcId string, params GetServiceResinfoParams) error
 
@@ -3023,6 +3026,77 @@ func (w *ServerInterfaceWrapper) GetServiceChecks(ctx echo.Context) error {
 	return err
 }
 
+// GetServiceDisks converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceDisks(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceDisksParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceDisks(ctx, svcId, params)
+	return err
+}
+
 // GetServiceResinfo converts echo context to params.
 func (w *ServerInterfaceWrapper) GetServiceResinfo(ctx echo.Context) error {
 	var err error
@@ -3794,6 +3868,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/services/:svc_id/am_i_responsible", wrapper.GetServiceAmIResponsible)
 	router.GET(baseURL+"/services/:svc_id/candidate_tags", wrapper.GetServiceCandidateTags)
 	router.GET(baseURL+"/services/:svc_id/checks", wrapper.GetServiceChecks)
+	router.GET(baseURL+"/services/:svc_id/disks", wrapper.GetServiceDisks)
 	router.GET(baseURL+"/services/:svc_id/resinfo", wrapper.GetServiceResinfo)
 	router.GET(baseURL+"/services/:svc_id/tags", wrapper.GetServiceTags)
 	router.GET(baseURL+"/services_instances", wrapper.GetServicesInstances)
@@ -3877,15 +3952,15 @@ var swaggerSpec = []string{
 	"Jq8hCWfg57ez5Nw8iRXPOeXThZfgEs/Bu87+e4gfv0pbqSVQYnROulI6z3sLYeUUjK6ttG9ZHr9S13er",
 	"kF++m64ooHqFzUDAcl3HAaUQesKAEtAhCniyRfJlLSk+F3YfhShkeEKGZ99K5Veau6Na/r6r5vvw94ND",
 	"/4wc+uC1P0Wvfc9c9b1Prm649T1LLdf+vLfacvlG+hVcDs5WcLaeyec0B+IetORyOd6wDaNbFV4O0fVz",
-	"MAN3Lr1cJ+hvV325lLKtCjAHKxKsyLO1Iv1KMFeo9FdhroDXqxBzQFxA3LNFnABZ7fjsAzkBkhciAYn0",
-	"U+gCFqM5pgWgHBPRBsWTcpyAxYDFgEU3Fm+1Cbj7I1HwOgPuAu42cBcTJhVmvXcSohV9y57CowZR2FwY",
-	"NhfuRIDX9rP4Jbmm92w0QC8wpWZ3uXzZR8aDUQk4C0bFg8nYVv6KKZ9ua1+qomGUT4fod5zMzAahBSIS",
-	"YaRIBkhgNgV0OQPR3N1QdVA9f4lNV2PamjhfmSxby+4jnwbbFWzXw+CkO8SBKyIVYVMT67jE1h3OBAEN",
-	"AnpfAjqqd8S0pMQo1RL6yl7XbCLyTLPmk9jPpssgtkFsH05s+52MqyS33v3SLbzhwFyQ3x3I77XC09Yo",
-	"tjqYrfC02sq78MhsV2yqw0+7+0QZYkf0abnpE33WWwx3fq1W7z0hex4/rb3/Dvv7p6lzn4IsA6DyJZrw",
-	"qCqU7hYKjxHeS8l4cGX5eDe6VZdZlC+RqJnd5aXX21cT+yueOktiP6aYbncSfWtp9Vvd5ymwwbo/h0za",
-	"HIQka0Uy1qch7P5RnBNUkTrg8++66cHWuxr9fhypejlwjseEEnNc53xpV1bMK+QXgkaH0XAULc+X/x8A",
-	"AP//GsVkE3P0AAA=",
+	"MAN3Lr1cJ+hvV325lLKtCjAHKxKsyLO1Iv1KMFeo9FdhroDXqxBzQFxA3LNFXI8j3SvApeVhbR/eeh3m",
+	"DnALcHu2cBMgqw3WfQAnQPJCJCCRfgpdwGI0x7QAlGMi2pB4Uo4TsBiwGLDoxuKt9tx3f5MNQV7AXcDd",
+	"Bu5iwqTCrPfGXbSib9nCe9QgCnt5w17enQjw2vYxvyTX9J59PegFptQc5pAv+8h4MCoBZ8GoeDAZ20J7",
+	"MeXTbe1LVaOP8ukQ/Y6TmdmPt0BEIowUyQAJzKaALmcgmpuJqg6q5y+x6WpMW79TrUyWLR35kU+D7Qq2",
+	"62Fw0h3iwBWRirCpiXVcYusOZ4KABgG9LwEd1RvQWlJilGoJfWVvRzcReaZZ80nsZ9NlENsgtg8ntv0O",
+	"olaSW2826xbecD41yO8O5Pda4WlrFFvVQVB4Wu2cX3hktis21eGn3eylDLEj+rTc9Ik+6x29O7/FrvcW",
+	"rD2Pn9bef4f9/dNcK5GCLAOg8iWa8Ki6l8AtFB4jvJeS8eDK8vEuUKzujilfIlEzu6lSr7evBP1XPHVW",
+	"oH9MMd2u8MPW0uq3us9TYIN1fw6ZtDkISdZq0qxPQ9jt2jgnqCJ1wOffddODrXc1+v04UvVy4ByPCSXm",
+	"dNz50q6smFfILwSNDqPhKFqeL/8/AAD//yyvHxvi9wAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

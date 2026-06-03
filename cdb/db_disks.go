@@ -66,6 +66,57 @@ func (oDb *DB) GetDisk(ctx context.Context, diskID string, p ListParams) ([]map[
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+// GetServiceDisks returns the disks attached to a given service
+func (oDb *DB) GetServiceDisks(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
+	q := From(schema.TDiskinfo).
+		LeftJoin(schema.TSvcdisks, schema.TNodes, schema.TServices, schema.TApps).
+		RawSelect(p.SelectExprs...)
+
+	if !p.IsManager {
+		clean := cleanGroups(p.Groups)
+		if len(clean) == 0 {
+			q = q.WhereRaw("1=0")
+		} else {
+			args := make([]any, len(clean))
+			for i, g := range clean {
+				args[i] = g
+			}
+			q = q.WhereRaw(
+				"svcdisks.svc_id IN ("+
+					"SELECT s.svc_id FROM services s"+
+					" JOIN apps a ON s.svc_app = a.app"+
+					" JOIN apps_responsibles ar ON ar.app_id = a.id"+
+					" JOIN auth_group ag ON ag.id = ar.group_id"+
+					" WHERE ag.role IN ("+Placeholders(len(clean))+")"+
+					")",
+				args...,
+			)
+		}
+	} else {
+		q = q.Where(schema.DiskinfoID, ">", 0)
+	}
+
+	query, args, err := q.Build()
+	if err != nil {
+		return nil, fmt.Errorf("getServiceDisks: %w", err)
+	}
+	query += " AND svcdisks.svc_id = ?"
+	args = append(args, svcID)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("diskinfo.disk_id, diskinfo.disk_group")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getServiceDisks: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 func (oDb *DB) GetNodeDisks(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
 	query, args, err := buildDisksQuery(p.Groups, p.IsManager, p.SelectExprs)
 	if err != nil {
