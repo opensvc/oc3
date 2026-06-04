@@ -330,6 +330,94 @@ func (oDb *DB) CompNodeModulesets(ctx context.Context, nodeID string) (moduleset
 	return
 }
 
+// CompServiceModulesets returns the modset ids attached to a service
+func (oDb *DB) CompServiceModulesets(ctx context.Context, svcID string, slave bool) (modulesets []int, err error) {
+	const query = `SELECT modset_id FROM comp_modulesets_services WHERE svc_id = ? AND slave = ?`
+	rows, err := oDb.DB.QueryContext(ctx, query, svcID, slave)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var modsetID sql.NullInt64
+		if err = rows.Scan(&modsetID); err != nil {
+			return nil, err
+		}
+		if modsetID.Valid {
+			modulesets = append(modulesets, int(modsetID.Int64))
+		}
+	}
+	err = rows.Err()
+	return
+}
+
+// CompServiceCandidateModulesets returns modulesets that can be attached to a
+// service but are not yet attached.
+func (oDb *DB) CompServiceCandidateModulesets(ctx context.Context, svcID string, attachedModulesets []int, groups []string, isManager bool, limit, offset int) ([]Moduleset, error) {
+	var query = `
+		SELECT DISTINCT comp_moduleset.id, comp_moduleset.modset_name, comp_moduleset.modset_author, comp_moduleset.modset_updated
+		FROM comp_moduleset
+		JOIN comp_moduleset_team_publication ON comp_moduleset.id = comp_moduleset_team_publication.modset_id
+		JOIN auth_group ON auth_group.id = comp_moduleset_team_publication.group_id
+		JOIN services ON services.svc_id = ?
+		JOIN apps ON services.svc_app = apps.app
+		JOIN apps_responsibles ON apps.id = apps_responsibles.app_id
+		WHERE (apps_responsibles.group_id = auth_group.id OR auth_group.role = 'Everybody')
+	`
+
+	args := []any{svcID}
+
+	filter, filterArgs, err := QFilter(ctx, QFilterInput{
+		SvcField:   "services.svc_id",
+		IsManager:  isManager,
+		UserGroups: groups,
+		ResolvePublishedServices: func(ctx context.Context) ([]string, error) {
+			return oDb.PublishedSvcIDsForGroups(ctx, groups)
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if filter != "" {
+		query += " AND (" + filter + ")"
+		args = append(args, filterArgs...)
+	}
+
+	if len(attachedModulesets) > 0 {
+		query += " AND comp_moduleset.id NOT IN (?"
+		args = append(args, attachedModulesets[0])
+		for i := 1; i < len(attachedModulesets); i++ {
+			query += ", ?"
+			args = append(args, attachedModulesets[i])
+		}
+		query += ")"
+	}
+
+	query += " ORDER BY comp_moduleset.modset_name, comp_moduleset.id"
+	query, args = appendLimitOffset(query, args, limit, offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("compServiceCandidateModulesets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var candidates []Moduleset
+	for rows.Next() {
+		var candidate Moduleset
+		if err := rows.Scan(&candidate.ID, &candidate.Name, &candidate.Author, &candidate.Updated); err != nil {
+			return nil, fmt.Errorf("compServiceCandidateModulesets scan: %w", err)
+		}
+		candidates = append(candidates, candidate)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("compServiceCandidateModulesets rows: %w", err)
+	}
+
+	return candidates, nil
+}
+
 // find attached rulesets for a node
 func (oDb *DB) CompNodeRulesets(ctx context.Context, nodeID string) (rulesets []int, err error) {
 	const query = `SELECT ruleset_id FROM comp_rulesets_nodes WHERE node_id = ?`
