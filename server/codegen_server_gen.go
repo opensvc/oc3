@@ -156,6 +156,9 @@ type ServerInterface interface {
 	// (GET /nodes/{node_id}/ips)
 	GetNodeIps(ctx echo.Context, nodeId string, params GetNodeIpsParams) error
 
+	// (GET /nodes/{node_id}/services/{svc_id})
+	GetNodeService(ctx echo.Context, nodeId string, svcId string, params GetNodeServiceParams) error
+
 	// (POST /nodes/{node_id}/snooze)
 	PostNodeSnooze(ctx echo.Context, nodeId InPathNodeId) error
 
@@ -2506,6 +2509,85 @@ func (w *ServerInterfaceWrapper) GetNodeIps(ctx echo.Context) error {
 	return err
 }
 
+// GetNodeService converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeService(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeServiceParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeService(ctx, nodeId, svcId, params)
+	return err
+}
+
 // PostNodeSnooze converts echo context to params.
 func (w *ServerInterfaceWrapper) PostNodeSnooze(ctx echo.Context) error {
 	var err error
@@ -4389,6 +4471,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/nodes/:node_id/hbas", wrapper.GetNodeHbas)
 	router.GET(baseURL+"/nodes/:node_id/interfaces", wrapper.GetNodeInterfaces)
 	router.GET(baseURL+"/nodes/:node_id/ips", wrapper.GetNodeIps)
+	router.GET(baseURL+"/nodes/:node_id/services/:svc_id", wrapper.GetNodeService)
 	router.POST(baseURL+"/nodes/:node_id/snooze", wrapper.PostNodeSnooze)
 	router.GET(baseURL+"/nodes/:node_id/tags", wrapper.GetNodeTags)
 	router.GET(baseURL+"/nodes/:node_id/uuid", wrapper.GetNodeUUID)
@@ -4482,29 +4565,30 @@ var swaggerSpec = []string{
 	"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",
-	"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",
+	"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",
+	"1oIWAQA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
