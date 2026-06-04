@@ -147,14 +147,32 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 			return fmt.Errorf("find action ID failed: %w", err)
 		}
 
+		action := cdb.SvcAction{
+			SvcID:     objectUUID,
+			NodeID:    nodeUUID,
+			RID:       d.data.Rid,
+			Subset:    d.data.Subset,
+			Action:    d.data.Action,
+			Command:   strings.Join(d.data.Argv, " "),
+			Origin:    d.data.Origin,
+			Session:   d.data.SessionUuid,
+			Pid:       d.data.Pid,
+			Cron:      d.data.Cron,
+			BeginAt:   beginTime,
+			EndAt:     endTime,
+			Status:    d.data.Status,
+			StatusLog: statusLog,
+		}
+
 		if !found {
 			// begin not processed yet, insert full record
-			if _, err := d.oDb.InsertSvcAction(ctx, objectUUID, nodeUUID, d.data.Action, beginTime, statusLog, d.data.SessionUuid, d.data.Cron, endTime, d.data.Status); err != nil {
+			if _, err := d.oDb.InsertSvcAction(ctx, action); err != nil {
 				return fmt.Errorf("insert svc action failed: %w", err)
 			}
 		} else {
 			// begin already processed, update record with end info
-			if err := d.oDb.UpdateSvcAction(ctx, actionID, endTime, d.data.Status, statusLog); err != nil {
+			action.ID = actionID
+			if err := d.oDb.UpdateSvcAction(ctx, action); err != nil {
 				return fmt.Errorf("end svc action failed, initial statusLog length %d: %w", len(statusLog), err)
 			}
 		}
@@ -177,7 +195,22 @@ func (d *jobFeedInstanceAction) updateDB(ctx context.Context) error {
 
 	} else {
 		// field End is not present, process as action begin
-		if _, err := d.oDb.InsertSvcAction(ctx, objectUUID, nodeUUID, d.data.Action, beginTime, statusLog, d.data.SessionUuid, d.data.Cron, time.Time{}, ""); err != nil {
+		action := cdb.SvcAction{
+			SvcID:     objectUUID,
+			NodeID:    nodeUUID,
+			RID:       d.data.Rid,
+			Subset:    d.data.Subset,
+			Action:    d.data.Action,
+			Command:   strings.Join(d.data.Argv, " "),
+			Origin:    d.data.Origin,
+			Session:   d.data.SessionUuid,
+			Pid:       d.data.Pid,
+			Cron:      d.data.Cron,
+			BeginAt:   beginTime,
+			Status:    "",
+			StatusLog: statusLog,
+		}
+		if _, err := d.oDb.InsertSvcAction(ctx, action); err != nil {
 			return fmt.Errorf("insert new action failed: %w", err)
 		}
 	}

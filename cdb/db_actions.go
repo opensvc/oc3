@@ -11,10 +11,60 @@ import (
 )
 
 type (
+	/*
+		CREATE TABLE `svcactions` (
+		  `action` varchar(128) DEFAULT NULL,
+		  `status` enum('err','ok','warn','') DEFAULT '',
+		  `begin` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+		  `end` datetime DEFAULT NULL,
+		  `hostid` varchar(30) DEFAULT NULL,
+		  `status_log` text CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+		  `pid` varchar(32) DEFAULT NULL,
+		  `id` int(11) NOT NULL AUTO_INCREMENT,
+		  `ack` tinyint(4) DEFAULT NULL,
+		  `alert` tinyint(1) DEFAULT NULL,
+		  `acked_by` varchar(50) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+		  `acked_comment` text CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+		  `acked_date` datetime DEFAULT NULL,
+		  `version` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+		  `cron` tinyint(1) DEFAULT 0,
+		  `time` int(11) DEFAULT NULL,
+		  `node_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
+		  `svc_id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT '',
+		  `sid` char(36) DEFAULT NULL,
+		  `rid` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+		  `subset` varchar(255) DEFAULT NULL,
+		  `command` varchar(256) DEFAULT '',
+		  `origin` varchar(128) DEFAULT '',
+		  PRIMARY KEY (`id`),
+		  KEY `action` (`action`),
+		  KEY `end` (`end`),
+		  KEY `status` (`status`),
+		  KEY `k_node_id` (`node_id`),
+		  KEY `k_svc_id` (`svc_id`),
+		  KEY `begin` (`begin`),
+		  KEY `errcount` (`svc_id`,`node_id`,`begin`),
+		  KEY `k_instance` (`node_id`,`svc_id`),
+		  KEY `idx_count_err` (`svc_id`,`node_id`,`status`,`begin`),
+		  KEY `k_sid` (`sid`)
+		) ENGINE=InnoDB AUTO_INCREMENT=398516 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
+	*/
 	SvcAction struct {
-		ID     int64
-		SvcID  uuid.UUID
-		NodeID uuid.UUID
+		ID        int64
+		SvcID     uuid.UUID
+		NodeID    uuid.UUID
+		RID       string
+		Subset    string
+		Action    string
+		Session   string
+		Pid       string
+		Cron      bool
+		BeginAt   time.Time
+		EndAt     time.Time
+		Status    string
+		StatusLog string
+		Command   string
+		Origin    string
 	}
 
 	BActionErrorCount struct {
@@ -200,31 +250,40 @@ func (oDb *DB) GetUnfinishedActions(ctx context.Context) (lines []SvcAction, err
 
 }
 
-func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, action string, begin time.Time, statusLog string, sid string, cron bool, end time.Time, status string) (int64, error) {
-	query := "INSERT INTO svcactions (svc_id, node_id, action, begin, status_log, sid, cron"
-	placeholders := "?, ?, ?, ?, ?, ?, ?"
-	if len(statusLog) > TextMax {
+func (oDb *DB) InsertSvcAction(ctx context.Context, a SvcAction) (int64, error) {
+	maxCommandLen := 255
+	query := "INSERT INTO svcactions (svc_id, node_id, rid, subset, action, begin, status_log, sid, pid, cron, command, origin"
+	placeholders := "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
+
+	statusLogLen := len(a.StatusLog)
+	if statusLogLen > TextMax {
 		// Fix end svc action failed: Error 1406 (22001): Data too long for column 'status_log' at row 1
 		// TODO: add metrics svcactions status_log truncated with len / TextMax
-		statusLog = statusLog[:TextMax]
+		a.StatusLog = a.StatusLog[:TextMax]
 	}
-	args := []any{svcID, nodeID, action, begin, statusLog, sid, cron}
 
-	if !end.IsZero() {
-		query += ", end"
-		placeholders += ", ?"
-		args = append(args, end)
+	if runes := []rune(a.Command); len(runes) > maxCommandLen {
+		a.Command = string(runes[:maxCommandLen])
 	}
-	if status != "" {
+
+	args := []any{a.SvcID, a.NodeID, a.RID, a.Subset, a.Action, a.BeginAt, a.StatusLog, a.Session, a.Pid, a.Cron, a.Command, a.Origin}
+
+	if !a.EndAt.IsZero() {
+		query += ", end, time"
+		placeholders += ", ?, ?"
+		args = append(args, a.EndAt, a.BeginAt.Sub(a.EndAt).Seconds())
+
+	}
+	if a.Status != "" {
 		query += ", status"
 		placeholders += ", ?"
-		args = append(args, status)
+		args = append(args, a.Status)
 	}
 	query += fmt.Sprintf(") VALUES (%s)", placeholders)
 
 	result, err := oDb.ExecContext(ctx, query, args...)
 	if err != nil {
-		return 0, fmt.Errorf("insert svcactions failed, status_log length %d: %w", len(statusLog), err)
+		return 0, fmt.Errorf("insert svcactions failed, status_log length %d: %w", statusLogLen, err)
 	} else if result == nil {
 		return 0, errors.New("insert svcactions returns unexpected nil result")
 	}
@@ -244,16 +303,17 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, svcID, nodeID uuid.UUID, act
 	return id, nil
 }
 
-func (oDb *DB) UpdateSvcAction(ctx context.Context, svcActionID int64, end time.Time, status, statusLog string) error {
+func (oDb *DB) UpdateSvcAction(ctx context.Context, a SvcAction) error {
 	const query = `UPDATE svcactions SET end = ?, status = ?, time = TIMESTAMPDIFF(SECOND, begin, ?), status_log = ? WHERE id = ?`
-	if len(statusLog) > TextMax {
+	statusLogLen := len(a.StatusLog)
+	if statusLogLen > TextMax {
 		// Fix end svc action failed: Error 1406 (22001): Data too long for column 'status_log' at row 1
 		// TODO: add metrics svcactions status_log truncated with len / TextMax
-		statusLog = statusLog[:TextMax]
+		a.StatusLog = a.StatusLog[:TextMax]
 	}
-	result, err := oDb.ExecContext(ctx, query, end, status, end, statusLog, svcActionID)
+	result, err := oDb.ExecContext(ctx, query, a.EndAt, a.Status, a.EndAt, a.StatusLog, a.ID)
 	if err != nil {
-		return fmt.Errorf("update svcactions failed status_log length %d: %w", len(statusLog), err)
+		return fmt.Errorf("update svcactions failed status_log length %d: %w", statusLogLen, err)
 	} else if result == nil {
 		return errors.New("update svcactions returns unexpected nil result")
 	}
