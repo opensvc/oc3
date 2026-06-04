@@ -570,6 +570,26 @@ var propsMapping = map[string]propMapping{
 			"updated":      colStr(schema.ResmonUpdated),
 		},
 	},
+	"resource_log": {
+		Available: []string{
+			"id", "svc_id", "node_id", "rid", "res_status",
+			"res_begin", "res_end", "res_log",
+		},
+		Default: []string{
+			"svc_id", "node_id", "rid", "res_status",
+			"res_begin", "res_end",
+		},
+		Props: map[string]propDef{
+			"id":         {SQLExpr: "id", Kind: "int64"},
+			"svc_id":     {SQLExpr: "COALESCE(svc_id, '') AS svc_id", Kind: "string"},
+			"node_id":    {SQLExpr: "COALESCE(node_id, '') AS node_id", Kind: "string"},
+			"rid":        {SQLExpr: "COALESCE(rid, '') AS rid", Kind: "string"},
+			"res_status": {SQLExpr: "COALESCE(res_status, '') AS res_status", Kind: "string"},
+			"res_begin":  {SQLExpr: "COALESCE(res_begin, '') AS res_begin", Kind: "string"},
+			"res_end":    {SQLExpr: "COALESCE(res_end, '') AS res_end", Kind: "string"},
+			"res_log":    {SQLExpr: "COALESCE(res_log, '') AS res_log", Kind: "string"},
+		},
+	},
 	"resinfo": {
 		Available: []string{"id", "rid", "res_key", "res_value", "updated", "topology", "node_id", "svc_id"},
 		Props: map[string]propDef{

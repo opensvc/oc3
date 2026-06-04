@@ -213,6 +213,9 @@ type ServerInterface interface {
 	// (GET /services/{svc_id}/resources)
 	GetServiceResources(ctx echo.Context, svcId string, params GetServiceResourcesParams) error
 
+	// (GET /services/{svc_id}/resources/logs)
+	GetServiceResourceLogs(ctx echo.Context, svcId string, params GetServiceResourceLogsParams) error
+
 	// (GET /services/{svc_id}/tags)
 	GetServiceTags(ctx echo.Context, svcId string, params GetServiceTagsParams) error
 
@@ -3480,6 +3483,77 @@ func (w *ServerInterfaceWrapper) GetServiceResources(ctx echo.Context) error {
 	return err
 }
 
+// GetServiceResourceLogs converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceResourceLogs(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceResourceLogsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceResourceLogs(ctx, svcId, params)
+	return err
+}
+
 // GetServiceTags converts echo context to params.
 func (w *ServerInterfaceWrapper) GetServiceTags(ctx echo.Context) error {
 	var err error
@@ -4186,6 +4260,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/services/:svc_id/nodes/:node_id/resources", wrapper.GetServiceNodeResources)
 	router.GET(baseURL+"/services/:svc_id/resinfo", wrapper.GetServiceResinfo)
 	router.GET(baseURL+"/services/:svc_id/resources", wrapper.GetServiceResources)
+	router.GET(baseURL+"/services/:svc_id/resources/logs", wrapper.GetServiceResourceLogs)
 	router.GET(baseURL+"/services/:svc_id/tags", wrapper.GetServiceTags)
 	router.GET(baseURL+"/services_instances", wrapper.GetServicesInstances)
 	router.GET(baseURL+"/services_instances/:svc_id", wrapper.GetServicesInstance)
@@ -4271,14 +4346,14 @@ var swaggerSpec = []string{
 	"MAN3Lr1cJ+hvV325lLKtCjAHKxKsyLO1Iv1KMFeo9FdhroDXqxBzQFxA3LNFXI8j3SvApeVhbR/eeh3m",
 	"DnALcHu2cKtzbX3gRphUzSISnCHAyQzxifneaPvyo/Fz2R7QGNAY0OhF4/pl+a0bgluAqWZQfbiF1Lsz",
 	"v4HMPQVmOCEQtEPQDi7toMfmhWjbeezVE/Wjt1IVJ/XAQWcEnRF0xh7rDAGyOkDZx8Nf6QX9FLqAxWiO",
-	"aQEox0S0+fYn5TjBuw9YDFj0YrHDXnvRyBnClHZG2PtumAMOAw4fH4e3Otvevfc5fEwNuAu428BdXAWd",
-	"PQ/IohV9y1HZowZRODMbzszuRIDXjmn5Jbmm95yfQS9qX+5lHxkPRiXgLBgVDyZj+8kjpny6rX2pvpZQ",
-	"Ph2i33EyM+feFohIhJEiGSCB2RTQ5QwEtHwGvcSmqzFt3Q+6Mln2ioaPfBpsV7BdD4OT7hAHrohUhE1N",
-	"rOMSW3c4EwQ0COh9CWivzSeUagl9ZUpd2Yg806z5JNazxySIbRDbexPbfgWfKsmtD3V1C2+oAxXkdwfy",
-	"e63wtNf2IoWn1Qn1hUdmu2JTHX7aQ1XKEDuiT8tNn+izPjm789viex912vP4ae39d9jfP831jSnIMgAq",
-	"X6IJj6r7/9xC0Wuj555IxoMry7uKHlGQSYcM1gfEsRB40XZHa/kSiZrZw4t6vX1XvX3FU+dNb48pptsV",
-	"WNxaWv1W93kKbLDuzyGTNgchyVrt1/VpCHssGucEVaQO+Py7bnqw9a5Gvx9Hql4OnOMxocRUoTlf2pUV",
-	"8wr5haDRYTQcRcvz5f8HAAD//ypdfBlKBwEA",
+	"aQEox0S0+fYn5TjBuw9YDFj0YrHDXnvRyBnClHZG2PtumAMOAw73CIft1yJ5waiDbEDJDLPp9tB0X5UU",
+	"0BnQGdB5+8oT3ScTwlaHgLuAuw3cxVVKqOfxdbSibznIftQgCifaw4n2nQjw2iFKvyTX9J7TbehF7c69",
+	"7CPjwagEnAWj4sFkbD9IxpRPt7Uv1bdMyqdD9DtOZuZU6gIRiTBSJAMkdACGLmcgoGWTwiU2XY1p627t",
+	"lcmyF6h85NNgu4LtehicdIc4cEWkImxqYh2X2LrDmSCgQUDvS0B7bQ2jVEvoK1OIzkbkmWbNJ7GeHWBB",
+	"bIPY3pvY9ivHVklufeSyW3hDlbYgvzuQ32uFp702/yk8repHLDwy2xWb6vDTHnlUhtgRfVpu+kSf9bn2",
+	"rcPPnR1E3PP4ae39d9jfP83lqinIMgAqX6IJj6rbOd1C0Wsb9p5IxoMry7uKHlGQSYcM1uUbsBB40XaD",
+	"cvkSiZrZo8V6vX0XMX7FU+c9jI8pptuVP91aWv1W93kKbLDuzyGTNgchyVpl5vVpCFu0AOcEVaQO+Py7",
+	"bnqw9a5Gvx9Hql4OnOMxocTUiDpf2pUV8wr5haDRYTQcRcvz5f8HAAD//2ADBXroCgEA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
