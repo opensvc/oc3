@@ -745,6 +745,48 @@ func buildCompStatusQuery(groups []string, isManager bool, selectExprs []string)
 	return query, args, nil
 }
 
+// GetServiceComplianceStatus returns the last compliance check run status entries for a service.
+func (oDb *DB) GetServiceComplianceStatus(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getServiceComplianceStatus: no columns selected")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + "\nFROM comp_status\nWHERE comp_status.svc_id = ?"
+	args := []any{svcID}
+
+	if !p.IsManager {
+		clean := cleanGroups(p.Groups)
+		if len(clean) == 0 {
+			query += " AND 1=0"
+		} else {
+			placeholders := Placeholders(len(clean))
+			query += ` AND comp_status.svc_id IN (
+				SELECT s.svc_id FROM services s
+				JOIN apps a ON s.svc_app = a.app
+				JOIN apps_responsibles ar ON ar.app_id = a.id
+				JOIN auth_group ag ON ag.id = ar.group_id
+				WHERE ag.role IN (` + placeholders + `)
+			)`
+			for _, g := range clean {
+				args = append(args, g)
+			}
+		}
+	}
+
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("comp_status.run_date DESC")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getServiceComplianceStatus: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 // GetNodeComplianceStatus returns the last compliance check run status entries for a node.
 func (oDb *DB) GetNodeComplianceStatus(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
 	query, args, err := buildCompStatusQuery(p.Groups, p.IsManager, p.SelectExprs)
