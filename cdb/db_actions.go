@@ -326,10 +326,10 @@ func (oDb *DB) UpdateSvcAction(ctx context.Context, a SvcAction) error {
 	return nil
 }
 
-// FindInstanceActionIDFromSID finds the instance action ID from the sid.
-func (oDb *DB) FindInstanceActionIDFromSID(ctx context.Context, nodeID string, svcID string, sid string) (id int64, found bool, err error) {
-	const query = "SELECT id FROM svcactions WHERE node_id = ? AND svc_id = ? AND sid = ?"
-	err = oDb.DB.QueryRowContext(ctx, query, nodeID, svcID, sid).Scan(&id)
+// FindInstanceActionIDFromPidAndSID finds the instance action ID from the sid.
+func (oDb *DB) FindInstanceActionIDFromPidAndSID(ctx context.Context, nodeID string, svcID string, pid, sid string) (id int64, found bool, err error) {
+	const query = "SELECT id FROM svcactions WHERE node_id = ? AND svc_id = ? AND pid = ? AND sid = ?"
+	err = oDb.DB.QueryRowContext(ctx, query, nodeID, svcID, pid, sid).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = nil

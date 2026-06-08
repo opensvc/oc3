@@ -246,6 +246,12 @@ func (oDb *DB) ExecContext(ctx context.Context, query string, args ...any) (res 
 		oDb.Metrics.ExecTxErr.Inc()
 		if !isDeadlock(err) {
 			oDb.Metrics.ExecTxFailed.Inc()
+			// We must roll back any partial updates
+			if err1 := tx.Rollback(); err1 != nil {
+				oDb.Metrics.RollbackErr.Inc()
+				return res, fmt.Errorf("exec and rollback failed: %w", errors.Join(err, err1))
+			}
+			oDb.Metrics.RollbackOk.Inc()
 			return nil, err
 		}
 		oDb.Metrics.ExecTxDeadlock.Inc()

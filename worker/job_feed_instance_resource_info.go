@@ -68,11 +68,11 @@ func newjobFeedInstanceResourceInfo(objectName, nodeID, clusterID string) *jobFe
 
 func (j *jobFeedInstanceResourceInfo) Operations() []operation {
 	return []operation{
-		{name: "dropPending", do: j.dropPending},
-		{name: "getData", do: j.getData},
-		{name: "dbNow", do: j.dbNow},
-		{name: "updateDB", do: j.updateDB},
-		{name: "purgeDB", do: j.purgeDB},
+		{name: "dropPending", do: j.dropPending, blocking: true},
+		{name: "getData", do: j.getData, blocking: true},
+		{name: "dbNow", do: j.dbNow, blocking: true},
+		{name: "updateDB", do: j.updateDB, blocking: true},
+		{name: "purgeDB", do: j.purgeDB, blocking: true},
 		{name: "updateWSP", do: j.updateWSP, blocking: false},
 		{name: "pushFromTableChanges", do: j.pushFromTableChanges},
 	}
@@ -151,9 +151,9 @@ func (j *jobFeedInstanceResourceInfo) updateWSP(ctx context.Context) (err error)
 				okKeys = append(okKeys, v.Key)
 			}
 		}
-		if len(okKeys) > 0 {
-			j.logger.Debug(fmt.Sprintf("updateWSP done for keys %v", okKeys))
-		}
+	}
+	if len(okKeys) > 0 {
+		j.logger.Debug(fmt.Sprintf("updateWSP done for keys %v", okKeys))
 	}
 	if len(badKeys) > 0 {
 		return fmt.Errorf("jobFeedInstanceResourceInfo: updateWSP failed for keys %v", badKeys)
