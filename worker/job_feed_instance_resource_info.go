@@ -151,9 +151,9 @@ func (j *jobFeedInstanceResourceInfo) updateWSP(ctx context.Context) (err error)
 				okKeys = append(okKeys, v.Key)
 			}
 		}
-		if len(okKeys) > 0 {
-			j.logger.Debug(fmt.Sprintf("updateWSP done for keys %v", okKeys))
-		}
+	}
+	if len(okKeys) > 0 {
+		j.logger.Debug(fmt.Sprintf("updateWSP done for keys %v", okKeys))
 	}
 	if len(badKeys) > 0 {
 		return fmt.Errorf("jobFeedInstanceResourceInfo: updateWSP failed for keys %v", badKeys)
