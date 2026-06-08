@@ -56,6 +56,7 @@ func RunJob(ctx context.Context, j JobRunner) error {
 
 	err := j.runOps(ctx, jlog, ops...)
 	if err != nil {
+		// TODO: confirm not anymore required rollack
 		if tx, ok := j.(cdb.DBTxer); ok {
 			jlog.Debug("call rollback on error")
 			if err := tx.Rollback(); err != nil {
@@ -64,6 +65,7 @@ func RunJob(ctx context.Context, j JobRunner) error {
 		}
 		return err
 	} else if tx, ok := j.(cdb.DBTxer); ok {
+		// TODO: confirm not anymore required commit
 		jlog.Debug("call commit")
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("commit: %w", err)
