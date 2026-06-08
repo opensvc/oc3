@@ -68,11 +68,11 @@ func newjobFeedInstanceResourceInfo(objectName, nodeID, clusterID string) *jobFe
 
 func (j *jobFeedInstanceResourceInfo) Operations() []operation {
 	return []operation{
-		{name: "dropPending", do: j.dropPending},
-		{name: "getData", do: j.getData},
-		{name: "dbNow", do: j.dbNow},
-		{name: "updateDB", do: j.updateDB},
-		{name: "purgeDB", do: j.purgeDB},
+		{name: "dropPending", do: j.dropPending, blocking: true},
+		{name: "getData", do: j.getData, blocking: true},
+		{name: "dbNow", do: j.dbNow, blocking: true},
+		{name: "updateDB", do: j.updateDB, blocking: true},
+		{name: "purgeDB", do: j.purgeDB, blocking: true},
 		{name: "updateWSP", do: j.updateWSP, blocking: false},
 		{name: "pushFromTableChanges", do: j.pushFromTableChanges},
 	}
