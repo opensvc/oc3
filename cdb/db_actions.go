@@ -18,7 +18,7 @@ type (
 		  `begin` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 		  `end` datetime DEFAULT NULL,
 		  `hostid` varchar(30) DEFAULT NULL,
-		  `status_log` text CHARACTER SET latin1 COLLATE latin1_swedish_ci DEFAULT NULL,
+		  `status_log` mediumtext CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
 		  `pid` varchar(32) DEFAULT NULL,
 		  `id` int(11) NOT NULL AUTO_INCREMENT,
 		  `ack` tinyint(4) DEFAULT NULL,
@@ -256,10 +256,10 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, a SvcAction) (int64, error) 
 	placeholders := "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
 
 	statusLogLen := len(a.StatusLog)
-	if statusLogLen > TextMax {
+	if statusLogLen > MediumTextMax {
 		// Fix end svc action failed: Error 1406 (22001): Data too long for column 'status_log' at row 1
 		// TODO: add metrics svcactions status_log truncated with len / TextMax
-		a.StatusLog = a.StatusLog[:TextMax]
+		a.StatusLog = a.StatusLog[:MediumTextMax]
 	}
 
 	if runes := []rune(a.Command); len(runes) > maxCommandLen {
@@ -306,10 +306,10 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, a SvcAction) (int64, error) 
 func (oDb *DB) UpdateSvcAction(ctx context.Context, a SvcAction) error {
 	const query = `UPDATE svcactions SET end = ?, status = ?, time = TIMESTAMPDIFF(SECOND, begin, ?), status_log = ? WHERE id = ?`
 	statusLogLen := len(a.StatusLog)
-	if statusLogLen > TextMax {
+	if statusLogLen > MediumTextMax {
 		// Fix end svc action failed: Error 1406 (22001): Data too long for column 'status_log' at row 1
 		// TODO: add metrics svcactions status_log truncated with len / TextMax
-		a.StatusLog = a.StatusLog[:TextMax]
+		a.StatusLog = a.StatusLog[:MediumTextMax]
 	}
 	result, err := oDb.ExecContext(ctx, query, a.EndAt, a.Status, a.EndAt, a.StatusLog, a.ID)
 	if err != nil {
