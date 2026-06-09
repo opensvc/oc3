@@ -111,7 +111,7 @@ type (
 	// CREATE TABLE `resinfo` (
 	//  `id` int(11) NOT NULL AUTO_INCREMENT,
 	//  `rid` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
-	//  `res_key` varchar(40) DEFAULT '',
+	//  `res_key` varchar(255) DEFAULT '',
 	//  `res_value` varchar(255) DEFAULT NULL,
 	//  `updated` timestamp NOT NULL DEFAULT current_timestamp(),
 	//  `topology` varchar(20) DEFAULT 'failover',
