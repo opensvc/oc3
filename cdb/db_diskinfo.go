@@ -210,6 +210,19 @@ func (oDb *DB) UpsertDiskinfo(ctx context.Context, fields map[string]any) error 
 	return nil
 }
 
+// DeleteDiskinfoByDiskID deletes a diskinfo row by disk_id
+func (oDb *DB) DeleteDiskinfoByDiskID(ctx context.Context, diskID string) (int64, error) {
+	var query = "DELETE FROM `diskinfo` WHERE `disk_id` = ?"
+	count, err := oDb.execCountContext(ctx, query, diskID)
+	if err != nil {
+		return 0, fmt.Errorf("DeleteDiskinfoByDiskID: %w", err)
+	}
+	if count > 0 {
+		oDb.SetChange("diskinfo")
+	}
+	return count, nil
+}
+
 func (oDb *DB) PurgeDiskinfoOutdated(ctx context.Context) error {
 	var query = `DELETE
 		FROM diskinfo
