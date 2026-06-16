@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type (
@@ -127,6 +128,86 @@ func (oDb *DB) UpdateDiskinfoSetMissingArrayID(ctx context.Context, diskID, arra
 	} else {
 		return count > 0, nil
 	}
+}
+
+// ArrayProxyNodeIDs returns the node_id list registered as proxy of the array
+func (oDb *DB) ArrayProxyNodeIDs(ctx context.Context, arrayName string) ([]string, error) {
+	var query = "SELECT sap.node_id FROM stor_array_proxy sap" +
+		" JOIN stor_array sa ON sa.id = sap.array_id" +
+		" WHERE sa.array_name = ?"
+	rows, err := oDb.DB.QueryContext(ctx, query, arrayName)
+	if err != nil {
+		return nil, fmt.Errorf("ArrayProxyNodeIDs: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]string, 0)
+	for rows.Next() {
+		var nodeID sql.NullString
+		if err := rows.Scan(&nodeID); err != nil {
+			return nil, fmt.Errorf("ArrayProxyNodeIDs scan: %w", err)
+		}
+		if nodeID.Valid && nodeID.String != "" {
+			out = append(out, nodeID.String)
+		}
+	}
+	return out, nil
+}
+
+// UpsertDiskinfo inserts or updates a diskinfo row
+func (oDb *DB) UpsertDiskinfo(ctx context.Context, fields map[string]any) error {
+	allowed := []string{
+		"disk_id",
+		"disk_devid",
+		"disk_arrayid",
+		"disk_raid",
+		"disk_size",
+		"disk_group",
+		"disk_level",
+		"disk_controller",
+		"disk_name",
+		"disk_alloc",
+	}
+	quotedCols := make([]string, 0, len(allowed)+1)
+	placeholders := make([]string, 0, len(allowed)+1)
+	updates := make([]string, 0, len(allowed)+1)
+	args := make([]any, 0, len(allowed)+1)
+	hasDiskID := false
+	for _, c := range allowed {
+		v, ok := fields[c]
+		if !ok {
+			continue
+		}
+		if c == "disk_id" {
+			hasDiskID = true
+		}
+		quotedCols = append(quotedCols, "`"+c+"`")
+		placeholders = append(placeholders, "?")
+		args = append(args, v)
+		if c != "disk_id" {
+			updates = append(updates, "`"+c+"` = VALUES(`"+c+"`)")
+		}
+	}
+	if !hasDiskID {
+		return fmt.Errorf("UpsertDiskinfo: disk_id is required")
+	}
+	if v, ok := fields["disk_updated"]; ok {
+		quotedCols = append(quotedCols, "`disk_updated`")
+		placeholders = append(placeholders, "?")
+		args = append(args, v)
+		updates = append(updates, "`disk_updated` = VALUES(`disk_updated`)")
+	} else {
+		quotedCols = append(quotedCols, "`disk_updated`")
+		placeholders = append(placeholders, "NOW()")
+		updates = append(updates, "`disk_updated` = NOW()")
+	}
+	query := "INSERT INTO `diskinfo` (" + strings.Join(quotedCols, ", ") + ")" +
+		" VALUES (" + strings.Join(placeholders, ", ") + ")" +
+		" ON DUPLICATE KEY UPDATE " + strings.Join(updates, ", ")
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("UpsertDiskinfo: %w", err)
+	}
+	oDb.SetChange("diskinfo")
+	return nil
 }
 
 func (oDb *DB) PurgeDiskinfoOutdated(ctx context.Context) error {

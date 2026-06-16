@@ -334,6 +334,21 @@ type GetDisksParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostDisksJSONBody defines parameters for PostDisks.
+type PostDisksJSONBody struct {
+	DiskAlloc      *int64  `json:"disk_alloc,omitempty"`
+	DiskArrayid    string  `json:"disk_arrayid"`
+	DiskController *string `json:"disk_controller,omitempty"`
+	DiskDevid      *string `json:"disk_devid,omitempty"`
+	DiskGroup      *string `json:"disk_group,omitempty"`
+	DiskId         string  `json:"disk_id"`
+	DiskLevel      *int    `json:"disk_level,omitempty"`
+	DiskName       *string `json:"disk_name,omitempty"`
+	DiskRaid       *string `json:"disk_raid,omitempty"`
+	DiskSize       *int64  `json:"disk_size,omitempty"`
+	DiskUpdated    *string `json:"disk_updated,omitempty"`
+}
+
 // GetDiskParams defines parameters for GetDisk.
 type GetDiskParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -1627,6 +1642,9 @@ type PostAppJSONRequestBody PostAppJSONBody
 
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
+
+// PostDisksJSONRequestBody defines body for PostDisks for application/json ContentType.
+type PostDisksJSONRequestBody PostDisksJSONBody
 
 // PostNodesJSONRequestBody defines body for PostNodes for application/json ContentType.
 type PostNodesJSONRequestBody PostNodesJSONBody

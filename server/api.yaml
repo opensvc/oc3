@@ -639,6 +639,64 @@ paths:
         - auth
 
   /disks:
+    post:
+      operationId: PostDisks
+      description: Create or update a disk in diskinfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - disk_id
+                - disk_arrayid
+              properties:
+                disk_id:
+                  type: string
+                disk_arrayid:
+                  type: string
+                disk_devid:
+                  type: string
+                disk_raid:
+                  type: string
+                disk_group:
+                  type: string
+                disk_name:
+                  type: string
+                disk_controller:
+                  type: string
+                disk_size:
+                  type: integer
+                  format: int64
+                disk_alloc:
+                  type: integer
+                  format: int64
+                disk_level:
+                  type: integer
+                disk_updated:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
     get:
       operationId: GetDisks
       description: List disks
