@@ -418,6 +418,98 @@ func (oDb *DB) CompServiceCandidateModulesets(ctx context.Context, svcID string,
 	return candidates, nil
 }
 
+// CompServiceRulesets returns the ruleset ids attached to a service
+func (oDb *DB) CompServiceRulesets(ctx context.Context, svcID string, slave bool) (rulesets []int, err error) {
+	const query = `SELECT ruleset_id FROM comp_rulesets_services WHERE svc_id = ? AND slave = ?`
+	rows, err := oDb.DB.QueryContext(ctx, query, svcID, slave)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var rulesetID sql.NullInt64
+		if err = rows.Scan(&rulesetID); err != nil {
+			return nil, err
+		}
+		if rulesetID.Valid {
+			rulesets = append(rulesets, int(rulesetID.Int64))
+		}
+	}
+	err = rows.Err()
+	return
+}
+
+// CompServiceCandidateRulesets returns rulesets that can be attached to a
+// service but are not yet attached.
+func (oDb *DB) CompServiceCandidateRulesets(ctx context.Context, svcID string, attachedRulesets []int, groups []string, isManager bool, limit, offset int) ([]Ruleset, error) {
+	var query = `
+		SELECT DISTINCT comp_rulesets.id, comp_rulesets.ruleset_name, comp_rulesets.ruleset_public, comp_rulesets.ruleset_type
+		FROM comp_rulesets
+		JOIN comp_ruleset_team_publication ON comp_rulesets.id = comp_ruleset_team_publication.ruleset_id
+		JOIN auth_group ON auth_group.id = comp_ruleset_team_publication.group_id
+		JOIN services ON services.svc_id = ?
+		JOIN apps ON services.svc_app = apps.app
+		JOIN apps_responsibles ON apps.id = apps_responsibles.app_id
+		WHERE comp_rulesets.ruleset_type = 'explicit'
+		AND comp_rulesets.ruleset_public = 'T'
+		AND (apps_responsibles.group_id = auth_group.id OR auth_group.role = 'Everybody')
+	`
+
+	args := []any{svcID}
+
+	filter, filterArgs, err := QFilter(ctx, QFilterInput{
+		SvcField:   "services.svc_id",
+		IsManager:  isManager,
+		UserGroups: groups,
+		ResolvePublishedServices: func(ctx context.Context) ([]string, error) {
+			return oDb.PublishedSvcIDsForGroups(ctx, groups)
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if filter != "" {
+		query += " AND (" + filter + ")"
+		args = append(args, filterArgs...)
+	}
+
+	if len(attachedRulesets) > 0 {
+		query += " AND comp_rulesets.id NOT IN (?"
+		args = append(args, attachedRulesets[0])
+		for i := 1; i < len(attachedRulesets); i++ {
+			query += ", ?"
+			args = append(args, attachedRulesets[i])
+		}
+		query += ")"
+	}
+
+	query += " ORDER BY comp_rulesets.ruleset_name, comp_rulesets.id"
+	query, args = appendLimitOffset(query, args, limit, offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("compServiceCandidateRulesets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var candidates []Ruleset
+	for rows.Next() {
+		var candidate Ruleset
+		var publicStr string
+		if err := rows.Scan(&candidate.ID, &candidate.Name, &publicStr, &candidate.Type); err != nil {
+			return nil, fmt.Errorf("compServiceCandidateRulesets scan: %w", err)
+		}
+		candidate.Public = (publicStr == "T")
+		candidates = append(candidates, candidate)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("compServiceCandidateRulesets rows: %w", err)
+	}
+
+	return candidates, nil
+}
+
 // find attached rulesets for a node
 func (oDb *DB) CompNodeRulesets(ctx context.Context, nodeID string) (rulesets []int, err error) {
 	const query = `SELECT ruleset_id FROM comp_rulesets_nodes WHERE node_id = ?`
