@@ -2843,6 +2843,38 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /services/{svc_id}/compliance/logs:
+    get:
+      description: |
+        Get compliance logs for a service
+      operationId: GetServiceComplianceLogs
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service identifier (svc_id UUID or svcname)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      responses:
+        200:
+          description: Compliance logs for the service
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        404:
+          description: Service not found
+        500:
+          description: Internal server error
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
   /services/{svc_id}/compliance/status:
     get:
       operationId: GetServiceComplianceStatus

@@ -1256,6 +1256,12 @@ type GetServiceComplianceCandidateRulesetsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetServiceComplianceLogsParams defines parameters for GetServiceComplianceLogs.
+type GetServiceComplianceLogsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetServiceComplianceStatusParams defines parameters for GetServiceComplianceStatus.
 type GetServiceComplianceStatusParams struct {
 	// Props A list of properties to include in each data dictionnary.
