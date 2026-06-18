@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc feeder api
-  version: 3.0.3
+  version: 3.0.4
 
 paths:
   /checks:
@@ -471,58 +471,92 @@ components:
 
     Action:
       type: object
+      description: |
+        The begin or end action request
       required:
         - path
-        - rid
-        - subset
         - action
-        - command
+        - argv
+        - pid
+        - rids
         - origin
         - version
-        - begin
         - cron
-        - session_uuid
-        - pid
-        - argv
         - uuid
+        - session_uuid
+        - begin
         - end
-        - status_log
         - status
+        - status_log
+        - lines
       properties:
         path:
           type: string
-        rid:
-          type: string
-        subset:
-          type: string
         action:
+          type: string
+        argv:
+          type: array
+          items:
+            type: string
+          description: the command line arguments
+        pid:
+          description: action pid
+          type: string
+        rids:
+          description: the action resolved rids
           type: string
         origin:
           type: string
         version:
           type: string
           description: the opensvc client data version
+        cron:
+          type: boolean
+        uuid:
+          description: action uuid that have been assigned during the action begin
+          type: string
+        session_uuid:
+          type: string
         begin:
           type: string
           description: begin action timestamp in RFC3339Nano format
-        cron:
-          type: boolean
-        session_uuid:
-          type: string
-        pid:
-          type: string
-        argv:
-          type: array
-          items:
-            type: string
-        uuid:
-          type: string
         end:
           type: string
           description: end action timestamp in RFC3339Nano format
+        status:
+          type: string
+          description: action status
         status_log:
+          description: describe the command line
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionLine'
+
+    ActionLine:
+      type: object
+      required:
+        - begin
+        - rid
+        - subset
+        - pid
+        - status_log
+        - status
+      properties:
+        begin:
+          type: string
+          description: begin action timestamp
+        rid:
+          type: string
+        subset:
+          type: string
+        pid:
+          description: the action line pid if meaningful
           type: string
         status:
+          type: string
+        status_log:
           type: string
 
     QueuedActions:

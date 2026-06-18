@@ -14,29 +14,54 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
-// Action defines model for Action.
+// Action The begin or end action request
 type Action struct {
-	Action string   `json:"action"`
-	Argv   []string `json:"argv"`
+	Action string `json:"action"`
+
+	// Argv the command line arguments
+	Argv []string `json:"argv"`
 
 	// Begin begin action timestamp in RFC3339Nano format
 	Begin string `json:"begin"`
 	Cron  bool   `json:"cron"`
 
 	// End end action timestamp in RFC3339Nano format
-	End         string `json:"end"`
-	Origin      string `json:"origin"`
-	Path        string `json:"path"`
-	Pid         string `json:"pid"`
-	Rid         string `json:"rid"`
+	End    string       `json:"end"`
+	Lines  []ActionLine `json:"lines"`
+	Origin string       `json:"origin"`
+	Path   string       `json:"path"`
+
+	// Pid action pid
+	Pid string `json:"pid"`
+
+	// Rids the action resolved rids
+	Rids        string `json:"rids"`
 	SessionUuid string `json:"session_uuid"`
-	Status      string `json:"status"`
-	StatusLog   string `json:"status_log"`
-	Subset      string `json:"subset"`
-	Uuid        string `json:"uuid"`
+
+	// Status action status
+	Status string `json:"status"`
+
+	// StatusLog describe the command line
+	StatusLog string `json:"status_log"`
+
+	// Uuid action uuid that have been assigned during the action begin
+	Uuid string `json:"uuid"`
 
 	// Version the opensvc client data version
 	Version string `json:"version"`
+}
+
+// ActionLine defines model for ActionLine.
+type ActionLine struct {
+	// Begin begin action timestamp
+	Begin string `json:"begin"`
+
+	// Pid the action line pid if meaningful
+	Pid       string `json:"pid"`
+	Rid       string `json:"rid"`
+	Status    string `json:"status"`
+	StatusLog string `json:"status_log"`
+	Subset    string `json:"subset"`
 }
 
 // ActionRequestAccepted defines model for ActionRequestAccepted.
