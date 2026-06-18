@@ -219,6 +219,9 @@ type ServerInterface interface {
 	// (GET /services/{svc_id}/disks)
 	GetServiceDisks(ctx echo.Context, svcId string, params GetServiceDisksParams) error
 
+	// (DELETE /services/{svc_id}/instances/{node_id})
+	DeleteServiceInstance(ctx echo.Context, svcId string, nodeId string) error
+
 	// (GET /services/{svc_id}/instances/{node_id})
 	GetServiceInstance(ctx echo.Context, svcId string, nodeId string, params GetServiceInstanceParams) error
 
@@ -3535,6 +3538,34 @@ func (w *ServerInterfaceWrapper) GetServiceDisks(ctx echo.Context) error {
 	return err
 }
 
+// DeleteServiceInstance converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteServiceInstance(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteServiceInstance(ctx, svcId, nodeId)
+	return err
+}
+
 // GetServiceInstance converts echo context to params.
 func (w *ServerInterfaceWrapper) GetServiceInstance(ctx echo.Context) error {
 	var err error
@@ -4843,6 +4874,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/services/:svc_id/compliance/candidate_rulesets", wrapper.GetServiceComplianceCandidateRulesets)
 	router.GET(baseURL+"/services/:svc_id/compliance/status", wrapper.GetServiceComplianceStatus)
 	router.GET(baseURL+"/services/:svc_id/disks", wrapper.GetServiceDisks)
+	router.DELETE(baseURL+"/services/:svc_id/instances/:node_id", wrapper.DeleteServiceInstance)
 	router.GET(baseURL+"/services/:svc_id/instances/:node_id", wrapper.GetServiceInstance)
 	router.GET(baseURL+"/services/:svc_id/nodes", wrapper.GetServiceNodes)
 	router.GET(baseURL+"/services/:svc_id/nodes/:node_id", wrapper.GetServiceNode)
@@ -4938,17 +4970,18 @@ var swaggerSpec = []string{
 	"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",
-	"sAjYoRkMVx5rWuUmDCFvUO5ChBvC7cnCrclTsbrMs/19+hQ0ZdkWF+oryB1XHewpQvF2H4oJFBNWTDRn",
-	"WoZoZU+eDaDJnIipPdfr+gpLhT+rdlTaiEZEYxCNt1HY2ybAaSETdTVKB5QOj0g6mLFFKbtu+AblRPPo",
-	"jUTFSTMwygyUGSgzHqPM6C6UXAsO2iU6jLEBJJlTPrulIPFXVUZZgrIEZcn+yBIJqk56NiRasBIU5ily",
-	"DsuDBc1KIAVlsitOcFKNg5ECxCJiMYjFHts/iEbBCc2y3mjdvhv5iEPE4R7hsNueDoJxw4beBpp7bDYj",
-	"OhGdD4/OG2WL7T/3hdeTEHeIuw3cxc2Zk2EpJ1e1VLqSTx63iDALJWah3AkD99cgsZy8Kgbkz0hFnjXm",
-	"3C9DeByVCuIMlUoAk7E73BBnYratfqnPRWRiNia/0WRuM8ktCVOEEs1yINI4YORiDhI6DjxdUNvVJOvM",
-	"sLBSWe5awDsxQ92Fuut+cNLv4sB3pjTjM+vr+NjW784ggyKD3hWDDjpmmmWGQ5/b4hHOI8/N1EIcGzhN",
-	"imyLbHtnbDushELNuU2atH7mxcoKyL874N9LTWeDDhJrOqtzvi4DPNvnmxr306Up05bY43262QzxPptc",
-	"lFu7nztLHrbn/tPa++/Rv3+AdkGKygGqXqJ1j6rQeIApBl3p2BPOuHdheVvWYxpy5eHBJuUqlZIufTxp",
-	"1ZCY1i+R6blLB2j2e8Ws6898ojObmG0qSp7uCZtuV7Joa24dWoT7qTAsavenEElbgFRsrZra+jKkSzRK",
-	"C0ZqUg98/tk03dt+16PfjSHVbAct6IRlzOZ1/3rldlYuauSXMouOovFBdPX16t8BAAD//8cXWtUuLAEA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

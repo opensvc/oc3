@@ -104,6 +104,30 @@ func (oDb *DB) GetNodeServices(ctx context.Context, nodeID string, p ListParams)
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+func (oDb *DB) DeleteServiceInstanceCascade(ctx context.Context, svcID, nodeID string) (int64, error) {
+	if svcID == "" || nodeID == "" {
+		return 0, fmt.Errorf("DeleteServiceInstanceCascade: empty svc_id or node_id")
+	}
+	svcmonCount, err := oDb.execCountContext(ctx,
+		"DELETE FROM svcmon WHERE svc_id = ? AND node_id = ?", svcID, nodeID)
+	if err != nil {
+		return 0, fmt.Errorf("DeleteServiceInstanceCascade svcmon: %w", err)
+	}
+	if svcmonCount == 0 {
+		return 0, nil
+	}
+	oDb.SetChange("svcmon")
+	cascade := []string{"dashboard", "resmon", "resinfo", "checks_live"}
+	for _, t := range cascade {
+		query := "DELETE FROM " + t + " WHERE svc_id = ? AND node_id = ?"
+		if _, err := oDb.ExecContext(ctx, query, svcID, nodeID); err != nil {
+			return svcmonCount, fmt.Errorf("DeleteServiceInstanceCascade %s: %w", t, err)
+		}
+		oDb.SetChange(t)
+	}
+	return svcmonCount, nil
+}
+
 // GetServicesInstance fetches all instances of a single service by svc_id (UUID) or svcname.
 func (oDb *DB) GetServicesInstance(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
 	query, args, err := buildServicesInstancesQuery(p.Groups, p.IsManager, p.SelectExprs)
