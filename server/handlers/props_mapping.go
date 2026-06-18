@@ -618,4 +618,29 @@ var propsMapping = map[string]propMapping{
 			"rset_md5":    colStr(schema.CompStatusRsetMD5),
 		},
 	},
+	"log_event": {
+		Available: []string{
+			"id", "log_action", "log_user", "log_fmt", "log_dict", "log_date",
+			"svc_id", "node_id", "log_level", "log_entry_id",
+			"log_gtalk_sent", "log_email_sent",
+		},
+		Default: []string{
+			"id", "log_action", "log_user", "log_fmt", "log_date",
+			"svc_id", "node_id", "log_level",
+		},
+		Props: map[string]propDef{
+			"id":             col(schema.LogID),
+			"log_action":     colStr(schema.LogLogAction),
+			"log_user":       colStr(schema.LogLogUser),
+			"log_fmt":        colStr(schema.LogLogFmt),
+			"log_dict":       colStr(schema.LogLogDict),
+			"log_date":       colStr(schema.LogLogDate),
+			"svc_id":         colStr(schema.LogSvcID),
+			"node_id":        colStr(schema.LogNodeID),
+			"log_level":      colStr(schema.LogLogLevel),
+			"log_entry_id":   colInt(schema.LogLogEntryID),
+			"log_gtalk_sent": colInt(schema.LogLogGtalkSent),
+			"log_email_sent": colInt(schema.LogLogEmailSent),
+		},
+	},
 }

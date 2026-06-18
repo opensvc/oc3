@@ -27,6 +27,27 @@ type (
 	}
 )
 
+// GetLogs returns rows from the collector log table.
+func (oDb *DB) GetLogs(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getLogs: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM log WHERE log.id > 0"
+	args := []any{}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("log.id DESC")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getLogs: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 func (oDb *DB) Log(ctx context.Context, entries ...LogEntry) error {
 	toDict := func(d map[string]any) string {
 		if d == nil {
