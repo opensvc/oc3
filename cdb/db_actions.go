@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -36,6 +37,7 @@ type (
 		  `subset` varchar(255) DEFAULT NULL,
 		  `command` varchar(256) DEFAULT '',
 		  `origin` varchar(128) DEFAULT '',
+		  `log_type` varchar(30) DEFAULT '',
 		  PRIMARY KEY (`id`),
 		  KEY `action` (`action`),
 		  KEY `end` (`end`),
@@ -65,6 +67,18 @@ type (
 		StatusLog string
 		Command   string
 		Origin    string
+		Version   string
+		LogType   string
+	}
+
+	// SvcActionLine contains the SvcAction log line for a rid or subset
+	SvcActionLine struct {
+		Begin     string
+		RID       string
+		Subset    string
+		Pid       string
+		Status    string
+		StatusLog string
 	}
 
 	BActionErrorCount struct {
@@ -250,10 +264,10 @@ func (oDb *DB) GetUnfinishedActions(ctx context.Context) (lines []SvcAction, err
 
 }
 
-func (oDb *DB) InsertSvcAction(ctx context.Context, a SvcAction) (int64, error) {
+func (oDb *DB) InsertSvcAction(ctx context.Context, a SvcAction, lines ...SvcActionLine) (int64, error) {
 	maxCommandLen := 255
-	query := "INSERT INTO svcactions (svc_id, node_id, rid, subset, action, begin, status_log, sid, pid, cron, command, origin"
-	placeholders := "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
+	query := "INSERT INTO svcactions (svc_id, node_id, rid, subset, action, begin, status_log, sid, pid, cron, command, origin, log_type"
+	placeholders := "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
 
 	statusLogLen := len(a.StatusLog)
 	if statusLogLen > MediumTextMax {
@@ -266,7 +280,7 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, a SvcAction) (int64, error) 
 		a.Command = string(runes[:maxCommandLen])
 	}
 
-	args := []any{a.SvcID, a.NodeID, a.RID, a.Subset, a.Action, a.BeginAt, a.StatusLog, a.Session, a.Pid, a.Cron, a.Command, a.Origin}
+	args := []any{a.SvcID, a.NodeID, a.RID, a.Subset, a.Action, a.BeginAt, a.StatusLog, a.Session, a.Pid, a.Cron, a.Command, a.Origin, "status"}
 
 	if !a.EndAt.IsZero() {
 		query += ", end, time"
@@ -300,18 +314,26 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, a SvcAction) (int64, error) 
 		oDb.Metrics.InstanceActionInsert.Inc()
 	}
 
+	if len(lines) > 0 {
+		if err := oDb.insertSvcActionLines(ctx, a, lines); err != nil {
+			return id, err
+		}
+	}
+
 	return id, nil
 }
 
-func (oDb *DB) UpdateSvcAction(ctx context.Context, a SvcAction) error {
-	const query = `UPDATE svcactions SET end = ?, status = ?, time = TIMESTAMPDIFF(SECOND, begin, ?), status_log = ? WHERE id = ?`
+func (oDb *DB) UpdateSvcAction(ctx context.Context, a SvcAction, lines ...SvcActionLine) error {
+	const (
+		queryEnd = `UPDATE svcactions SET end = ?, status = ?, time = TIMESTAMPDIFF(SECOND, begin, ?), status_log = ? WHERE id = ?`
+	)
 	statusLogLen := len(a.StatusLog)
 	if statusLogLen > MediumTextMax {
 		// Fix end svc action failed: Error 1406 (22001): Data too long for column 'status_log' at row 1
 		// TODO: add metrics svcactions status_log truncated with len / TextMax
 		a.StatusLog = a.StatusLog[:MediumTextMax]
 	}
-	result, err := oDb.ExecContext(ctx, query, a.EndAt, a.Status, a.EndAt, a.StatusLog, a.ID)
+	result, err := oDb.ExecContext(ctx, queryEnd, a.EndAt, a.Status, a.EndAt, a.StatusLog, a.ID)
 	if err != nil {
 		return fmt.Errorf("update svcactions failed status_log length %d: %w", statusLogLen, err)
 	} else if result == nil {
@@ -322,6 +344,29 @@ func (oDb *DB) UpdateSvcAction(ctx context.Context, a SvcAction) error {
 	} else if rowsAffected > 0 {
 		oDb.SetChange("svcactions")
 		oDb.Metrics.InstanceActionUpdate.Inc()
+	}
+
+	if len(lines) == 0 {
+		return nil
+	}
+	return oDb.insertSvcActionLines(ctx, a, lines)
+}
+
+func (oDb *DB) insertSvcActionLines(ctx context.Context, a SvcAction, lines []SvcActionLine) error {
+	if len(lines) == 0 {
+		return nil
+	}
+
+	placeholders := strings.Repeat("(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),", len(lines)-1) + "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	query := fmt.Sprintf("INSERT INTO svcactions (svc_id,node_id,sid,action,command,origin,version,cron,begin,pid,rid,subset,status,status_log) VALUES %s", placeholders)
+	args := make([]any, 0, 14*len(lines))
+	for _, line := range lines {
+		args = append(args, a.SvcID, a.NodeID, a.Session, a.Action, a.Command, a.Origin, a.Version, a.Cron,
+			line.Begin, line.Pid, line.RID, line.Subset, line.Status, line.StatusLog)
+	}
+
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("insert svcactions loglines failed: %w", err)
 	}
 	return nil
 }

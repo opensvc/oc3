@@ -66,6 +66,7 @@ func (a *Api) PostInstanceAction(c echo.Context) error {
 
 	uuid := uuid.New().String()
 	idx := fmt.Sprintf("%s@%s@%s:%s", payload.Path, nodeID, ClusterID, uuid)
+	log.Debug("post feed instance action sid:"+payload.SessionUuid+" uuid:"+uuid, logkey.Error, err)
 
 	log.Debug("Hset FeedInstanceActionH")
 	if _, err := a.Redis.HSet(ctx, keyH, idx, b).Result(); err != nil {

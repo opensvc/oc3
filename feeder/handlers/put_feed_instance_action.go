@@ -58,6 +58,7 @@ func (a *Api) PutInstanceActionEnd(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	idx := fmt.Sprintf("%s@%s@%s:%s", payload.Path, nodeID, ClusterID, payload.Uuid)
+	log.Debug("put feed instance action sid:"+payload.SessionUuid+" uuid:"+payload.Uuid, logkey.Error, err)
 
 	log.Debug("HSet keyH")
 	if _, err := a.Redis.HSet(ctx, keyH, idx, b).Result(); err != nil {
