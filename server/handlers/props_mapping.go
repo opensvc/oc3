@@ -618,6 +618,23 @@ var propsMapping = map[string]propMapping{
 			"rset_md5":    colStr(schema.CompStatusRsetMD5),
 		},
 	},
+	"filter": {
+		Available: []string{
+			"id", "f_table", "f_field", "f_value", "f_op",
+			"f_updated", "f_author", "f_cksum", "f_label",
+		},
+		Props: map[string]propDef{
+			"id":        col(schema.GenFiltersID),
+			"f_table":   colStr(schema.GenFiltersFTable),
+			"f_field":   colStr(schema.GenFiltersFField),
+			"f_value":   colStr(schema.GenFiltersFValue),
+			"f_op":      colStr(schema.GenFiltersFOp),
+			"f_updated": colStr(schema.GenFiltersFUpdated),
+			"f_author":  colStr(schema.GenFiltersFAuthor),
+			"f_cksum":   colStr(schema.GenFiltersFCksum),
+			"f_label":   colStr(schema.GenFiltersFLabel),
+		},
+	},
 	"log_event": {
 		Available: []string{
 			"id", "log_action", "log_user", "log_fmt", "log_dict", "log_date",
