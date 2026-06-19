@@ -635,6 +635,18 @@ var propsMapping = map[string]propMapping{
 			"f_label":   colStr(schema.GenFiltersFLabel),
 		},
 	},
+	"filterset": {
+		Available: []string{
+			"id", "fset_name", "fset_updated", "fset_author", "fset_stats",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.GenFiltersetsID),
+			"fset_name":    colStr(schema.GenFiltersetsFsetName),
+			"fset_updated": colStr(schema.GenFiltersetsFsetUpdated),
+			"fset_author":  colStr(schema.GenFiltersetsFsetAuthor),
+			"fset_stats":   colStr(schema.GenFiltersetsFsetStats),
+		},
+	},
 	"log_event": {
 		Available: []string{
 			"id", "log_action", "log_user", "log_fmt", "log_dict", "log_date",

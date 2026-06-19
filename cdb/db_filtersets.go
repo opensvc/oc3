@@ -40,6 +40,27 @@ type (
 	}
 )
 
+// GetFiltersets returns rows from the gen_filtersets table.
+func (oDb *DB) GetFiltersets(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getFiltersets: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM gen_filtersets WHERE gen_filtersets.id > 0"
+	args := []any{}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("gen_filtersets.fset_name, gen_filtersets.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getFiltersets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 func (oDb *DB) GetVFiltersetsWithEncap(ctx context.Context, fsetID int) (l []VFilterset, err error) {
 	l, err = oDb.GetVFiltersets(ctx, fsetID)
 	if err != nil {
