@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -39,6 +40,29 @@ type (
 		SvcIDs  string
 	}
 )
+
+// GetFilterset returns a single gen_filtersets row by id or fset_name.
+func (oDb *DB) GetFilterset(ctx context.Context, idOrName string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getFilterset: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM gen_filtersets WHERE "
+	args := []any{}
+	if _, err := strconv.Atoi(idOrName); err == nil {
+		query += "gen_filtersets.id = ?"
+		args = append(args, idOrName)
+	} else {
+		query += "gen_filtersets.fset_name = ?"
+		args = append(args, idOrName)
+	}
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getFilterset: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
 
 // GetFiltersets returns rows from the gen_filtersets table.
 func (oDb *DB) GetFiltersets(ctx context.Context, p ListParams) ([]map[string]any, error) {
