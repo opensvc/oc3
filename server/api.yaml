@@ -913,6 +913,34 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /filtersets/{filterset_id}/usage:
+    get:
+      operationId: GetFiltersetUsage
+      description: Display where a filterset is used (encapsulating filtersets, rulesets, check thresholds)
+      parameters:
+        - in: path
+          name: filterset_id
+          required: true
+          description: Filterset identifier (gen_filtersets.id or fset_name)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /logs:
     get:
       operationId: GetLogs

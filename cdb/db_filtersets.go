@@ -2,6 +2,8 @@ package cdb
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -40,6 +42,119 @@ type (
 		SvcIDs  string
 	}
 )
+
+type FiltersetRef struct {
+	ID   int    `json:"id"`
+	Name string `json:"fset_name,omitempty"`
+}
+
+type FiltersetThreshold struct {
+	ChkType     string
+	ChkInstance string
+	ChkLow      string
+	ChkHigh     string
+}
+
+// FiltersetByIDOrName returns the (id, fset_name) of a filterset
+func (oDb *DB) FiltersetByIDOrName(ctx context.Context, idOrName string) (int, string, error) {
+	var (
+		query string
+		args  []any
+	)
+	if _, err := strconv.Atoi(idOrName); err == nil {
+		query = "SELECT id, fset_name FROM gen_filtersets WHERE id = ?"
+		args = []any{idOrName}
+	} else {
+		query = "SELECT id, fset_name FROM gen_filtersets WHERE fset_name = ?"
+		args = []any{idOrName}
+	}
+	row := oDb.DB.QueryRowContext(ctx, query, args...)
+	var (
+		id   int
+		name sql.NullString
+	)
+	if err := row.Scan(&id, &name); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, "", nil
+		}
+		return 0, "", fmt.Errorf("FiltersetByIDOrName: %w", err)
+	}
+	return id, name.String, nil
+}
+
+// FiltersetUsageEncapFiltersets lists the filtersets encapsulating the given fsetID.
+func (oDb *DB) FiltersetUsageEncapFiltersets(ctx context.Context, fsetID int) ([]FiltersetRef, error) {
+	const query = `SELECT gen_filtersets.fset_name, gen_filtersets.id
+		FROM gen_filtersets_filters
+		JOIN gen_filtersets ON gen_filtersets.id = gen_filtersets_filters.fset_id
+		WHERE gen_filtersets_filters.encap_fset_id = ?
+		GROUP BY gen_filtersets.fset_name
+		ORDER BY gen_filtersets.fset_name`
+	rows, err := oDb.DB.QueryContext(ctx, query, fsetID)
+	if err != nil {
+		return nil, fmt.Errorf("FiltersetUsageEncapFiltersets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]FiltersetRef, 0)
+	for rows.Next() {
+		var (
+			name sql.NullString
+			id   int
+		)
+		if err := rows.Scan(&name, &id); err != nil {
+			return nil, fmt.Errorf("FiltersetUsageEncapFiltersets scan: %w", err)
+		}
+		out = append(out, FiltersetRef{ID: id, Name: name.String})
+	}
+	return out, nil
+}
+
+// FiltersetUsageRulesets lists the comp_rulesets attached to the given filterset.
+func (oDb *DB) FiltersetUsageRulesets(ctx context.Context, fsetID int) ([]FiltersetRef, error) {
+	const query = `SELECT comp_rulesets.ruleset_name, comp_rulesets.id
+		FROM comp_rulesets_filtersets
+		JOIN comp_rulesets ON comp_rulesets.id = comp_rulesets_filtersets.ruleset_id
+		WHERE comp_rulesets_filtersets.fset_id = ?
+		ORDER BY comp_rulesets.ruleset_name`
+	rows, err := oDb.DB.QueryContext(ctx, query, fsetID)
+	if err != nil {
+		return nil, fmt.Errorf("FiltersetUsageRulesets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]FiltersetRef, 0)
+	for rows.Next() {
+		var (
+			name sql.NullString
+			id   int
+		)
+		if err := rows.Scan(&name, &id); err != nil {
+			return nil, fmt.Errorf("FiltersetUsageRulesets scan: %w", err)
+		}
+		out = append(out, FiltersetRef{ID: id, Name: name.String})
+	}
+	return out, nil
+}
+
+// FiltersetUsageThresholds returns the gen_filterset_check_threshold rows for the given filterset.
+func (oDb *DB) FiltersetUsageThresholds(ctx context.Context, fsetID int) ([]FiltersetThreshold, error) {
+	const query = `SELECT chk_type, chk_instance, chk_low, chk_high
+		FROM gen_filterset_check_threshold
+		WHERE fset_id = ?`
+	rows, err := oDb.DB.QueryContext(ctx, query, fsetID)
+	if err != nil {
+		return nil, fmt.Errorf("FiltersetUsageThresholds: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]FiltersetThreshold, 0)
+	for rows.Next() {
+		var t FiltersetThreshold
+		if err := rows.Scan(&t.ChkType, &t.ChkInstance, &t.ChkLow, &t.ChkHigh); err != nil {
+			return nil, fmt.Errorf("FiltersetUsageThresholds scan: %w", err)
+		}
+		out = append(out, t)
+	}
+	return out, nil
+}
 
 // GetFilterset returns a single gen_filtersets row by id or fset_name.
 func (oDb *DB) GetFilterset(ctx context.Context, idOrName string, p ListParams) ([]map[string]any, error) {
