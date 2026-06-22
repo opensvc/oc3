@@ -156,6 +156,216 @@ func (oDb *DB) FiltersetUsageThresholds(ctx context.Context, fsetID int) ([]Filt
 	return out, nil
 }
 
+type FiltersetExportFilter struct {
+	ID     int    `json:"id"`
+	FTable string `json:"f_table"`
+	FField string `json:"f_field"`
+	FOp    string `json:"f_op"`
+	FValue string `json:"f_value"`
+}
+
+type FiltersetExportFilterEntry struct {
+	FLogOp    string                 `json:"f_log_op"`
+	FOrder    int                    `json:"f_order"`
+	Filter    *FiltersetExportFilter `json:"filter"`
+	Filterset *string                `json:"filterset"`
+}
+
+type FiltersetExport struct {
+	ID        int                          `json:"id"`
+	FsetName  string                       `json:"fset_name"`
+	FsetStats *string                      `json:"fset_stats"`
+	Filters   []FiltersetExportFilterEntry `json:"filters"`
+}
+
+type FiltersetExportData struct {
+	Filtersets []FiltersetExport `json:"filtersets"`
+}
+
+func (oDb *DB) ExportFiltersets(ctx context.Context, rootFsetIDs []int) (FiltersetExportData, error) {
+	out := FiltersetExportData{Filtersets: []FiltersetExport{}}
+	if len(rootFsetIDs) == 0 {
+		return out, nil
+	}
+
+	relations := make(map[int][]int)
+	relRows, err := oDb.DB.QueryContext(ctx,
+		"SELECT fset_id, encap_fset_id FROM gen_filtersets_filters WHERE encap_fset_id > 0")
+	if err != nil {
+		return out, fmt.Errorf("ExportFiltersets relations: %w", err)
+	}
+	for relRows.Next() {
+		var parent, child int
+		if err := relRows.Scan(&parent, &child); err != nil {
+			_ = relRows.Close()
+			return out, fmt.Errorf("ExportFiltersets relations scan: %w", err)
+		}
+		relations[parent] = append(relations[parent], child)
+	}
+	_ = relRows.Close()
+
+	all := make(map[int]bool)
+	for _, id := range rootFsetIDs {
+		all[id] = true
+	}
+	queue := append([]int{}, rootFsetIDs...)
+	for len(queue) > 0 {
+		head := queue[0]
+		queue = queue[1:]
+		for _, child := range relations[head] {
+			if !all[child] {
+				all[child] = true
+				queue = append(queue, child)
+			}
+		}
+	}
+
+	allIDs := make([]int, 0, len(all))
+	for id := range all {
+		allIDs = append(allIDs, id)
+	}
+
+	fsetByID := make(map[int]*FiltersetExport, len(allIDs))
+	nameByID := make(map[int]string, len(allIDs))
+	{
+		placeholders := Placeholders(len(allIDs))
+		args := make([]any, len(allIDs))
+		for i, id := range allIDs {
+			args[i] = id
+		}
+		query := "SELECT id, fset_name, fset_stats FROM gen_filtersets WHERE id IN (" + placeholders + ")"
+		rows, err := oDb.DB.QueryContext(ctx, query, args...)
+		if err != nil {
+			return out, fmt.Errorf("ExportFiltersets gen_filtersets: %w", err)
+		}
+		for rows.Next() {
+			var (
+				id    int
+				name  sql.NullString
+				stats sql.NullString
+			)
+			if err := rows.Scan(&id, &name, &stats); err != nil {
+				_ = rows.Close()
+				return out, fmt.Errorf("ExportFiltersets gen_filtersets scan: %w", err)
+			}
+			fs := &FiltersetExport{
+				ID:       id,
+				FsetName: name.String,
+				Filters:  []FiltersetExportFilterEntry{},
+			}
+			if stats.Valid {
+				s := stats.String
+				fs.FsetStats = &s
+			}
+			fsetByID[id] = fs
+			nameByID[id] = name.String
+		}
+		_ = rows.Close()
+	}
+
+	type fsetFilterRow struct {
+		fsetID      int
+		fID         sql.NullInt64
+		fLogOp      string
+		fOrder      sql.NullInt64
+		encapFsetID sql.NullInt64
+	}
+	var filterRows []fsetFilterRow
+	fIDs := make(map[int64]bool)
+	{
+		placeholders := Placeholders(len(allIDs))
+		args := make([]any, len(allIDs))
+		for i, id := range allIDs {
+			args[i] = id
+		}
+		query := "SELECT fset_id, f_id, f_log_op, f_order, encap_fset_id" +
+			" FROM gen_filtersets_filters WHERE fset_id IN (" + placeholders + ")" +
+			" ORDER BY f_order, id"
+		rows, err := oDb.DB.QueryContext(ctx, query, args...)
+		if err != nil {
+			return out, fmt.Errorf("ExportFiltersets gen_filtersets_filters: %w", err)
+		}
+		for rows.Next() {
+			var r fsetFilterRow
+			if err := rows.Scan(&r.fsetID, &r.fID, &r.fLogOp, &r.fOrder, &r.encapFsetID); err != nil {
+				_ = rows.Close()
+				return out, fmt.Errorf("ExportFiltersets gen_filtersets_filters scan: %w", err)
+			}
+			filterRows = append(filterRows, r)
+			if r.fID.Valid && r.fID.Int64 > 0 {
+				fIDs[r.fID.Int64] = true
+			}
+		}
+		_ = rows.Close()
+	}
+
+	filters := make(map[int64]FiltersetExportFilter, len(fIDs))
+	if len(fIDs) > 0 {
+		ids := make([]any, 0, len(fIDs))
+		for id := range fIDs {
+			ids = append(ids, id)
+		}
+		placeholders := Placeholders(len(ids))
+		query := "SELECT id, f_table, f_field, f_op, f_value FROM gen_filters WHERE id IN (" + placeholders + ")"
+		rows, err := oDb.DB.QueryContext(ctx, query, ids...)
+		if err != nil {
+			return out, fmt.Errorf("ExportFiltersets gen_filters: %w", err)
+		}
+		for rows.Next() {
+			var (
+				id     int64
+				fTable sql.NullString
+				fField sql.NullString
+				fOp    sql.NullString
+				fValue sql.NullString
+			)
+			if err := rows.Scan(&id, &fTable, &fField, &fOp, &fValue); err != nil {
+				_ = rows.Close()
+				return out, fmt.Errorf("ExportFiltersets gen_filters scan: %w", err)
+			}
+			filters[id] = FiltersetExportFilter{
+				ID:     int(id),
+				FTable: fTable.String,
+				FField: fField.String,
+				FOp:    fOp.String,
+				FValue: fValue.String,
+			}
+		}
+		_ = rows.Close()
+	}
+
+	for _, r := range filterRows {
+		fs, ok := fsetByID[r.fsetID]
+		if !ok {
+			continue
+		}
+		entry := FiltersetExportFilterEntry{FLogOp: r.fLogOp}
+		if r.fOrder.Valid {
+			entry.FOrder = int(r.fOrder.Int64)
+		}
+		if r.fID.Valid && r.fID.Int64 > 0 {
+			if f, ok := filters[r.fID.Int64]; ok {
+				fcopy := f
+				entry.Filter = &fcopy
+			}
+		}
+		if r.encapFsetID.Valid {
+			if name, ok := nameByID[int(r.encapFsetID.Int64)]; ok {
+				n := name
+				entry.Filterset = &n
+			}
+		}
+		fs.Filters = append(fs.Filters, entry)
+	}
+
+	for _, id := range allIDs {
+		if fs, ok := fsetByID[id]; ok {
+			out.Filtersets = append(out.Filtersets, *fs)
+		}
+	}
+	return out, nil
+}
+
 // GetFilterset returns a single gen_filtersets row by id or fset_name.
 func (oDb *DB) GetFilterset(ctx context.Context, idOrName string, p ListParams) ([]map[string]any, error) {
 	if len(p.SelectExprs) == 0 {

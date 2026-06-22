@@ -941,6 +941,32 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /filtersets/{filterset_id}/export:
+    get:
+      operationId: GetFiltersetExport
+      description: Export a filterset in a JSON format compatible with the import handler
+      parameters:
+        - in: path
+          name: filterset_id
+          required: true
+          description: Filterset identifier (gen_filtersets.id or fset_name)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /logs:
     get:
       operationId: GetLogs
