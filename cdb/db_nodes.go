@@ -104,6 +104,35 @@ func (oDb *DB) GetNodes(ctx context.Context, p ListParams) ([]map[string]any, er
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+// GetNodesByIDs fetches nodes whose node_id is in the given list.
+func (oDb *DB) GetNodesByIDs(ctx context.Context, ids []string, p ListParams) ([]map[string]any, error) {
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		query += " AND 1=0"
+	} else {
+		query += " AND nodes.node_id IN (" + Placeholders(len(ids)) + ")"
+		for _, id := range ids {
+			args = append(args, id)
+		}
+	}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("nodes.nodename")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getNodesByIDs: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 // GetNode fetches a single node by node_id or nodename.
 func (oDb *DB) GetNode(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
 	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
