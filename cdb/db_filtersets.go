@@ -366,6 +366,29 @@ func (oDb *DB) ExportFiltersets(ctx context.Context, rootFsetIDs []int) (Filters
 	return out, nil
 }
 
+// GetFiltersetEncapFiltersets returns the gen_filtersets rows encapsulated by fsetID.
+func (oDb *DB) GetFiltersetEncapFiltersets(ctx context.Context, fsetID int, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getFiltersetEncapFiltersets: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM gen_filtersets" +
+		" JOIN gen_filtersets_filters ON gen_filtersets.id = gen_filtersets_filters.encap_fset_id" +
+		" WHERE gen_filtersets_filters.fset_id = ?"
+	args := []any{fsetID}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("gen_filtersets.fset_name, gen_filtersets.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getFiltersetEncapFiltersets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 // GetFilterset returns a single gen_filtersets row by id or fset_name.
 func (oDb *DB) GetFilterset(ctx context.Context, idOrName string, p ListParams) ([]map[string]any, error) {
 	if len(p.SelectExprs) == 0 {
