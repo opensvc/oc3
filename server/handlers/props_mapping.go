@@ -647,6 +647,29 @@ var propsMapping = map[string]propMapping{
 			"fset_stats":   colStr(schema.GenFiltersetsFsetStats),
 		},
 	},
+	"filterset_filter": {
+		Available: []string{
+			"id", "f_table", "f_field", "f_value", "f_op",
+			"f_updated", "f_author", "f_cksum", "f_label",
+			"f_log_op", "f_order", "fset_id", "encap_fset_id", "join_id",
+		},
+		Props: map[string]propDef{
+			"id":            col(schema.GenFiltersID),
+			"f_table":       colStr(schema.GenFiltersFTable),
+			"f_field":       colStr(schema.GenFiltersFField),
+			"f_value":       colStr(schema.GenFiltersFValue),
+			"f_op":          colStr(schema.GenFiltersFOp),
+			"f_updated":     colStr(schema.GenFiltersFUpdated),
+			"f_author":      colStr(schema.GenFiltersFAuthor),
+			"f_cksum":       colStr(schema.GenFiltersFCksum),
+			"f_label":       colStr(schema.GenFiltersFLabel),
+			"f_log_op":      colStr(schema.GenFiltersetsFiltersFLogOp),
+			"f_order":       colInt(schema.GenFiltersetsFiltersFOrder),
+			"fset_id":       col(schema.GenFiltersetsFiltersFsetID),
+			"encap_fset_id": colInt(schema.GenFiltersetsFiltersEncapFsetID),
+			"join_id":       {SQLExpr: "gen_filtersets_filters.id AS join_id", Kind: "int64"},
+		},
+	},
 	"log_event": {
 		Available: []string{
 			"id", "log_action", "log_user", "log_fmt", "log_dict", "log_date",
