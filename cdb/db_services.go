@@ -65,6 +65,35 @@ func (oDb *DB) GetServices(ctx context.Context, p ListParams) ([]map[string]any,
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+// GetServicesByIDs fetches services whose svc_id is in the given list.
+func (oDb *DB) GetServicesByIDs(ctx context.Context, ids []string, p ListParams) ([]map[string]any, error) {
+	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		query += " AND 1=0"
+	} else {
+		query += " AND services.svc_id IN (" + Placeholders(len(ids)) + ")"
+		for _, id := range ids {
+			args = append(args, id)
+		}
+	}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("services.svcname")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getServicesByIDs: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 // GetService fetches a single service by svc_id (UUID) or svcname.
 func (oDb *DB) GetService(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
 	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs)
