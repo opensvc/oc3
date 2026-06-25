@@ -567,6 +567,9 @@ type GetFiltersetServicesParams struct {
 
 // GetLogsParams defines parameters for GetLogs.
 type GetLogsParams struct {
+	// FsetId Restrict to log events matching this filterset (gen_filtersets.id or fset_name)
+	FsetId *string `form:"fset_id,omitempty" json:"fset_id,omitempty"`
+
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 

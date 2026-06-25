@@ -1112,6 +1112,12 @@ paths:
       operationId: GetLogs
       description: List events in the collector log
       parameters:
+        - in: query
+          name: fset_id
+          required: false
+          description: Restrict to log events matching this filterset (gen_filtersets.id or fset_name)
+          schema:
+            type: string
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
