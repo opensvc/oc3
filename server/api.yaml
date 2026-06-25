@@ -1823,19 +1823,23 @@ paths:
       parameters:
         - $ref: '#/components/parameters/inPathNodeId'
         - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
       responses:
         200:
           description: Compliance logs for the node
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
+                $ref: '#/components/schemas/ListResponse'
         404:
-          description: Node not found
+          $ref: '#/components/responses/404'
         500:
-          description: Internal server error
+          $ref: '#/components/responses/500'
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
@@ -3201,19 +3205,23 @@ paths:
           schema:
             type: string
         - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
       responses:
         200:
           description: Compliance logs for the service
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
+                $ref: '#/components/schemas/ListResponse'
         404:
-          description: Service not found
+          $ref: '#/components/responses/404'
         500:
-          description: Internal server error
+          $ref: '#/components/responses/500'
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]

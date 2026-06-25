@@ -670,6 +670,28 @@ var propsMapping = map[string]propMapping{
 			"join_id":       {SQLExpr: "gen_filtersets_filters.id AS join_id", Kind: "int64"},
 		},
 	},
+	"comp_log": {
+		Available: []string{
+			"id", "run_module", "run_status", "run_log",
+			"run_date", "run_action", "rset_md5",
+			"node_id", "svc_id",
+		},
+		Default: []string{
+			"id", "run_module", "run_status", "run_date", "run_action",
+			"node_id", "svc_id",
+		},
+		Props: map[string]propDef{
+			"id":         col(schema.CompLogID),
+			"run_module": colStr(schema.CompLogRunModule),
+			"run_status": colInt(schema.CompLogRunStatus),
+			"run_log":    colStr(schema.CompLogRunLog),
+			"run_date":   colStr(schema.CompLogRunDate),
+			"run_action": colStr(schema.CompLogRunAction),
+			"rset_md5":   colStr(schema.CompLogRsetMD5),
+			"node_id":    colStr(schema.CompLogNodeID),
+			"svc_id":     colStr(schema.CompLogSvcID),
+		},
+	},
 	"log_event": {
 		Available: []string{
 			"id", "log_action", "log_user", "log_fmt", "log_dict", "log_date",
