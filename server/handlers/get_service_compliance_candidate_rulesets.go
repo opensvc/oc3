@@ -31,7 +31,11 @@ func (a *Api) GetServiceComplianceCandidateRulesets(c echo.Context, svcId string
 		return JSONProblemf(c, http.StatusNotFound, "service %s not found", svcId)
 	}
 
-	attachedRulesets, err := odb.CompServiceRulesets(ctx, svc.SvcID, false)
+	slave := false
+	if params.Slave != nil {
+		slave = *params.Slave
+	}
+	attachedRulesets, err := odb.CompServiceRulesets(ctx, svc.SvcID, slave)
 	if err != nil {
 		log.Error("cannot get attached rulesets", "svc_id", svc.SvcID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get attached rulesets for service %s", svc.SvcID)

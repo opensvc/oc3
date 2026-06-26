@@ -3209,6 +3209,13 @@ paths:
           description: Service identifier (svc_id UUID or svcname)
           schema:
             type: string
+        - in: query
+          name: slave
+          required: false
+          description: If true, list rulesets attachable to the encapsulated service
+          schema:
+            type: boolean
+            default: false
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'

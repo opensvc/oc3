@@ -1495,6 +1495,9 @@ type GetServiceComplianceCandidateModulesetsParams struct {
 
 // GetServiceComplianceCandidateRulesetsParams defines parameters for GetServiceComplianceCandidateRulesets.
 type GetServiceComplianceCandidateRulesetsParams struct {
+	// Slave If true, list rulesets attachable to the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 
