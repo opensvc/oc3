@@ -33,6 +33,23 @@ type LogsFiltersetFilter struct {
 	SvcIDs  []string
 }
 
+// GetLog returns a single log row by id.
+func (oDb *DB) GetLog(ctx context.Context, id string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getLog: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM log WHERE log.id = ?"
+	args := []any{id}
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getLog: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 // GetLogs returns rows from the collector log table.
 func (oDb *DB) GetLogs(ctx context.Context, p ListParams, fset LogsFiltersetFilter) ([]map[string]any, error) {
 	if len(p.SelectExprs) == 0 {
