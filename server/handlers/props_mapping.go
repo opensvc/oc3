@@ -481,6 +481,21 @@ var propsMapping = map[string]propMapping{
 			"mon_appstatus":       colStr(schema.SvcmonLogMonAppstatus),
 		},
 	},
+	"service_status_log": {
+		Available: []string{
+			"id", "svc_id", "svc_begin", "svc_end", "svc_availstatus",
+		},
+		Default: []string{
+			"svc_id", "svc_begin", "svc_end", "svc_availstatus",
+		},
+		Props: map[string]propDef{
+			"id":              col(schema.ServicesLogID),
+			"svc_id":          colStr(schema.ServicesLogSvcID),
+			"svc_begin":       colStr(schema.ServicesLogSvcBegin),
+			"svc_end":         colStr(schema.ServicesLogSvcEnd),
+			"svc_availstatus": colStr(schema.ServicesLogSvcAvailstatus),
+		},
+	},
 	"moduleset": {
 		Available: []string{"id", "modset_name", "modset_author", "modset_updated"},
 	},

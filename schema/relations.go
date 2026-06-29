@@ -16,4 +16,5 @@ func init() {
 
 	SvcmonSvcID.Ref = ServicesSvcID
 	SvcmonLogSvcID.Ref = ServicesSvcID
+	ServicesLogSvcID.Ref = ServicesSvcID
 }
