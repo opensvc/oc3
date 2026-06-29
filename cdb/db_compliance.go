@@ -767,6 +767,61 @@ func (oDb *DB) CompServiceAttachedModulesets(ctx context.Context, svcID string, 
 	return modulesets, nil
 }
 
+// CompServiceAttachedRulesets returns the comp_rulesets rows attached to a service.
+func (oDb *DB) CompServiceAttachedRulesets(ctx context.Context, svcID string, slave bool, groups []string, isManager bool, limit, offset int) ([]Ruleset, error) {
+	query := `
+		SELECT comp_rulesets.id, comp_rulesets.ruleset_name, comp_rulesets.ruleset_public, comp_rulesets.ruleset_type
+		FROM comp_rulesets
+		JOIN comp_rulesets_services ON comp_rulesets.id = comp_rulesets_services.ruleset_id
+		WHERE comp_rulesets_services.svc_id = ? AND comp_rulesets_services.slave = ?
+	`
+
+	args := []any{svcID, slave}
+	filter, filterArgs, err := QFilter(ctx, QFilterInput{
+		SvcField:   "comp_rulesets_services.svc_id",
+		IsManager:  isManager,
+		UserGroups: groups,
+		ResolvePublishedServices: func(ctx context.Context) ([]string, error) {
+			return oDb.PublishedSvcIDsForGroups(ctx, groups)
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if filter != "" {
+		query += " AND (" + filter + ")"
+		args = append(args, filterArgs...)
+	}
+
+	query += " ORDER BY comp_rulesets.ruleset_name, comp_rulesets.id"
+	query, args = appendLimitOffset(query, args, limit, offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("compServiceAttachedRulesets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var rulesets []Ruleset
+	for rows.Next() {
+		var (
+			rs        Ruleset
+			publicStr string
+		)
+		if err := rows.Scan(&rs.ID, &rs.Name, &publicStr, &rs.Type); err != nil {
+			return nil, fmt.Errorf("compServiceAttachedRulesets scan: %w", err)
+		}
+		rs.Public = (publicStr == "T")
+		rulesets = append(rulesets, rs)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("compServiceAttachedRulesets rows: %w", err)
+	}
+
+	return rulesets, nil
+}
+
 // get attached rulesets for a node with details
 func (oDb *DB) CompNodeAttachedRulesets(ctx context.Context, nodeID string, groups []string, isManager bool, limit, offset int) ([]Ruleset, error) {
 	query := `
