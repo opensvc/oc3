@@ -716,6 +716,57 @@ func (oDb *DB) CompNodeAttachedModulesets(ctx context.Context, nodeID string, gr
 	return modulesets, nil
 }
 
+// CompServiceAttachedModulesets returns the comp_moduleset rows attached to a service.
+func (oDb *DB) CompServiceAttachedModulesets(ctx context.Context, svcID string, slave bool, groups []string, isManager bool, limit, offset int) ([]Moduleset, error) {
+	query := `
+		SELECT comp_moduleset.id, comp_moduleset.modset_name, comp_moduleset.modset_author, comp_moduleset.modset_updated
+		FROM comp_moduleset
+		JOIN comp_modulesets_services ON comp_moduleset.id = comp_modulesets_services.modset_id
+		WHERE comp_modulesets_services.svc_id = ? AND comp_modulesets_services.slave = ?
+	`
+
+	args := []any{svcID, slave}
+	filter, filterArgs, err := QFilter(ctx, QFilterInput{
+		SvcField:   "comp_modulesets_services.svc_id",
+		IsManager:  isManager,
+		UserGroups: groups,
+		ResolvePublishedServices: func(ctx context.Context) ([]string, error) {
+			return oDb.PublishedSvcIDsForGroups(ctx, groups)
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if filter != "" {
+		query += " AND (" + filter + ")"
+		args = append(args, filterArgs...)
+	}
+
+	query += " ORDER BY comp_moduleset.modset_name, comp_moduleset.id"
+	query, args = appendLimitOffset(query, args, limit, offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("compServiceAttachedModulesets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var modulesets []Moduleset
+	for rows.Next() {
+		var moduleset Moduleset
+		if err := rows.Scan(&moduleset.ID, &moduleset.Name, &moduleset.Author, &moduleset.Updated); err != nil {
+			return nil, fmt.Errorf("compServiceAttachedModulesets scan: %w", err)
+		}
+		modulesets = append(modulesets, moduleset)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("compServiceAttachedModulesets rows: %w", err)
+	}
+
+	return modulesets, nil
+}
+
 // get attached rulesets for a node with details
 func (oDb *DB) CompNodeAttachedRulesets(ctx context.Context, nodeID string, groups []string, isManager bool, limit, offset int) ([]Ruleset, error) {
 	query := `
