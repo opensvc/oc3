@@ -115,6 +115,40 @@ func (oDb *DB) UpdateTag(ctx context.Context, id int, fields UpdateTagFields) (i
 	return n, nil
 }
 
+type DeleteTagResult struct {
+	NodeAttachments int64
+	SvcAttachments  int64
+	TagDeleted      bool
+}
+
+func (oDb *DB) DeleteTagCascade(ctx context.Context, id int, tagID string) (DeleteTagResult, error) {
+	var res DeleteTagResult
+
+	r, err := oDb.ExecContext(ctx, "DELETE FROM node_tags WHERE tag_id = ?", tagID)
+	if err != nil {
+		return res, fmt.Errorf("DeleteTagCascade node_tags: %w", err)
+	}
+	res.NodeAttachments, _ = r.RowsAffected()
+	oDb.SetChange("node_tags")
+
+	r, err = oDb.ExecContext(ctx, "DELETE FROM svc_tags WHERE tag_id = ?", tagID)
+	if err != nil {
+		return res, fmt.Errorf("DeleteTagCascade svc_tags: %w", err)
+	}
+	res.SvcAttachments, _ = r.RowsAffected()
+	oDb.SetChange("svc_tags")
+
+	r, err = oDb.ExecContext(ctx, "DELETE FROM tags WHERE id = ?", id)
+	if err != nil {
+		return res, fmt.Errorf("DeleteTagCascade tags: %w", err)
+	}
+	n, _ := r.RowsAffected()
+	res.TagDeleted = n > 0
+	oDb.SetChange("tags")
+
+	return res, nil
+}
+
 // GetTagNodes returns nodes where a tag (by integer id) is attached, with app-based auth.
 func (oDb *DB) GetTagNodes(ctx context.Context, tagID int, p ListParams) ([]map[string]any, error) {
 	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)

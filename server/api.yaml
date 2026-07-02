@@ -3938,6 +3938,36 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteTag
+      description: Delete the tag and its attachments to nodes and services
+      parameters:
+        - in: path
+          name: tag_id
+          required: true
+          description: ID of the tag
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
     get:
       operationId: GetTag
       description: Display tag property
