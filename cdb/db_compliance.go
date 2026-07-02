@@ -1054,6 +1054,91 @@ func (oDb *DB) CompModulesetDetachService(ctx context.Context, svcID, modulesetI
 	return rows, nil
 }
 
+// CompRulesetSvcAttached checks if a ruleset is already attached to a service.
+func (oDb *DB) CompRulesetSvcAttached(ctx context.Context, svcID, rulesetID string, slave bool) (bool, error) {
+	const query = "SELECT EXISTS(SELECT 1 FROM comp_rulesets_services WHERE svc_id = ? AND ruleset_id = ? AND slave = ?)"
+	var exists bool
+
+	err := oDb.DB.QueryRowContext(ctx, query, svcID, rulesetID, slave).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("compRulesetSvcAttached: %w", err)
+	}
+	return exists, nil
+}
+
+// CompRulesetSvcAttachable checks if a ruleset can be attached to a service.
+func (oDb *DB) CompRulesetSvcAttachable(ctx context.Context, svcID, rulesetID string) (bool, error) {
+	hasEveryBody, err := oDb.RulesetHasEverybodyPublication(ctx, rulesetID)
+	if err != nil {
+		return false, fmt.Errorf("compRulesetSvcAttachable: %w", err)
+	}
+	if hasEveryBody {
+		return true, nil
+	}
+
+	const query = `
+        SELECT EXISTS(
+            SELECT 1 FROM services
+            JOIN apps ON services.svc_app = apps.app
+            JOIN apps_responsibles ON apps.id = apps_responsibles.app_id
+            JOIN auth_group ON apps_responsibles.group_id = auth_group.id
+            JOIN comp_ruleset_team_publication ON auth_group.id = comp_ruleset_team_publication.group_id
+            JOIN comp_rulesets ON comp_ruleset_team_publication.ruleset_id = comp_rulesets.id
+            WHERE comp_rulesets.id = ?
+            AND comp_rulesets.ruleset_public = "T"
+            AND comp_rulesets.ruleset_type = 'explicit'
+            AND services.svc_id = ?
+        )
+    `
+
+	var attachable bool
+	err = oDb.DB.QueryRowContext(ctx, query, rulesetID, svcID).Scan(&attachable)
+	if err != nil {
+		return false, fmt.Errorf("compRulesetSvcAttachable: %w", err)
+	}
+	return attachable, nil
+}
+
+// CompRulesetAttachService attaches a ruleset to a service.
+func (oDb *DB) CompRulesetAttachService(ctx context.Context, svcID, rulesetID string, slave bool) (int64, error) {
+	const query = "INSERT INTO comp_rulesets_services (svc_id, ruleset_id, slave) VALUES (?, ?, ?)"
+
+	result, err := oDb.ExecContext(ctx, query, svcID, rulesetID, slave)
+	if err != nil {
+		return 0, fmt.Errorf("compRulesetAttachService: %w", err)
+	}
+
+	if rows, err := result.RowsAffected(); err == nil && rows > 0 {
+		oDb.SetChange("comp_rulesets_services")
+		oDb.Session.NotifyChanges(ctx)
+	}
+
+	id, _ := result.LastInsertId()
+	return id, nil
+}
+
+// CompRulesetDetachService detaches a ruleset from a service.
+func (oDb *DB) CompRulesetDetachService(ctx context.Context, svcID, rulesetID string, slave bool) (int64, error) {
+	const query = "DELETE FROM comp_rulesets_services WHERE svc_id = ? AND ruleset_id = ? AND slave = ?"
+
+	result, err := oDb.ExecContext(ctx, query, svcID, rulesetID, slave)
+	if err != nil {
+		return 0, fmt.Errorf("compRulesetDetachService: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("compRulesetDetachService rowsAffected: %w", err)
+	}
+
+	if rows > 0 {
+		oDb.SetChange("comp_rulesets_services")
+		oDb.Session.NotifyChanges(ctx)
+	}
+
+	return rows, nil
+}
+
 // checks if a ruleset has "Everybody" publication rights.
 func (oDb *DB) RulesetHasEverybodyPublication(ctx context.Context, rulesetID string) (bool, error) {
 	const query = `

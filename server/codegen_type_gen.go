@@ -1610,6 +1610,18 @@ type GetServiceComplianceRulesetsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteServiceComplianceRulesetParams defines parameters for DeleteServiceComplianceRuleset.
+type DeleteServiceComplianceRulesetParams struct {
+	// Slave If true, detach from the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+}
+
+// PostServiceComplianceRulesetParams defines parameters for PostServiceComplianceRuleset.
+type PostServiceComplianceRulesetParams struct {
+	// Slave If true, attach to the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+}
+
 // GetServiceComplianceStatusParams defines parameters for GetServiceComplianceStatus.
 type GetServiceComplianceStatusParams struct {
 	// Props A list of properties to include in each data dictionnary.

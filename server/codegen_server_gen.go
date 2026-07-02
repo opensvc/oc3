@@ -264,6 +264,12 @@ type ServerInterface interface {
 	// (GET /services/{svc_id}/compliance/rulesets)
 	GetServiceComplianceRulesets(ctx echo.Context, svcId string, params GetServiceComplianceRulesetsParams) error
 
+	// (DELETE /services/{svc_id}/compliance/rulesets/{rset_id})
+	DeleteServiceComplianceRuleset(ctx echo.Context, svcId string, rsetId InPathRsetId, params DeleteServiceComplianceRulesetParams) error
+
+	// (POST /services/{svc_id}/compliance/rulesets/{rset_id})
+	PostServiceComplianceRuleset(ctx echo.Context, svcId string, rsetId InPathRsetId, params PostServiceComplianceRulesetParams) error
+
 	// (GET /services/{svc_id}/compliance/status)
 	GetServiceComplianceStatus(ctx echo.Context, svcId string, params GetServiceComplianceStatusParams) error
 
@@ -4539,6 +4545,80 @@ func (w *ServerInterfaceWrapper) GetServiceComplianceRulesets(ctx echo.Context) 
 	return err
 }
 
+// DeleteServiceComplianceRuleset converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteServiceComplianceRuleset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "rset_id" -------------
+	var rsetId InPathRsetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "rset_id", ctx.Param("rset_id"), &rsetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter rset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteServiceComplianceRulesetParams
+	// ------------- Optional query parameter "slave" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "slave", ctx.QueryParams(), &params.Slave)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter slave: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteServiceComplianceRuleset(ctx, svcId, rsetId, params)
+	return err
+}
+
+// PostServiceComplianceRuleset converts echo context to params.
+func (w *ServerInterfaceWrapper) PostServiceComplianceRuleset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "rset_id" -------------
+	var rsetId InPathRsetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "rset_id", ctx.Param("rset_id"), &rsetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter rset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostServiceComplianceRulesetParams
+	// ------------- Optional query parameter "slave" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "slave", ctx.QueryParams(), &params.Slave)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter slave: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostServiceComplianceRuleset(ctx, svcId, rsetId, params)
+	return err
+}
+
 // GetServiceComplianceStatus converts echo context to params.
 func (w *ServerInterfaceWrapper) GetServiceComplianceStatus(ctx echo.Context) error {
 	var err error
@@ -6116,6 +6196,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/services/:svc_id/compliance/modulesets/:mset_id", wrapper.DeleteServiceComplianceModuleset)
 	router.POST(baseURL+"/services/:svc_id/compliance/modulesets/:mset_id", wrapper.PostServiceComplianceModuleset)
 	router.GET(baseURL+"/services/:svc_id/compliance/rulesets", wrapper.GetServiceComplianceRulesets)
+	router.DELETE(baseURL+"/services/:svc_id/compliance/rulesets/:rset_id", wrapper.DeleteServiceComplianceRuleset)
+	router.POST(baseURL+"/services/:svc_id/compliance/rulesets/:rset_id", wrapper.PostServiceComplianceRuleset)
 	router.GET(baseURL+"/services/:svc_id/compliance/status", wrapper.GetServiceComplianceStatus)
 	router.GET(baseURL+"/services/:svc_id/disks", wrapper.GetServiceDisks)
 	router.DELETE(baseURL+"/services/:svc_id/instances/:node_id", wrapper.DeleteServiceInstance)
@@ -6227,20 +6309,20 @@ var swaggerSpec = []string{
 	"a+a2qCPC7fp0LAqIlBa69J9+1+vi2PpihbrFF6dL27ZmI4MZLblJXs0o1zDaiq2ickHlsnfK5YY1O6o+",
 	"wykQt7RGuHIHWnsE5MOUA6k1+cGj9S58eX/h6OYuwN478F22v2M10Pajqnlatv/uCqHE3YGNY5KDymkc",
 	"hlvQrtER1zk+QbtfpfvXMZ93q+exmT3+sI4mvDz+eQjtz3t1gi1WhCaOntY5tieHHW+fH8Y6fz7sSjjf",
-	"DXJ6TdZtI2C3dX6/n7AXOr7o+D5Vx/duCoJsZfDaRZHECoNgUAwBi4AdWk5kfXwkqwqFxJA3qJAIwg3h",
-	"9mTh1iSNXWfWGXKjdjvBZftGrZEko3oxlVRlI6JA51K4f5mYSU/pjnVNOFtCd/DopOr/IFxvTPvzJC78",
-	"RpO8ZmAo4ztkeUUhR3OJ5vKAzGVz0XKIdxpI/gw0XRA5c8kmfF9xrfBH1Y7OK6IR0RhF46bjer9Z2VvI",
-	"RFuN2gG1wwFpBzu2LFVX2smonmgevZGqOG0GRp2BOgN1xiHqjO4j07XioF2qwzobQNIFFfNbKpI9PlmN",
-	"ugR1CeqSWnfUlTiGRAvWisJFyc9hdbSkvARSUKa64gSn1TgYKUAsIhajWOzx/aNolIJQznujdfvu5CMO",
-	"EYd7hMNufzoKxi0fehdo4oVERCeiswOdNyph1n/+EXNmIe4Qd1u4mzRnr4bVQVoX+O6qiHTSIsLSSFga",
-	"6UEEuL8wtpPkdYX6cJkE8qxx554PkXE0KogzNCoRTE784YYJl/Nd7Ut9LoLL+Zj8QtOFK2+yIkwTSgzL",
-	"gSi7ASMXC1DQceDpgrquprwz7e/aZPnrMe/kHG0X2q57xsnO6LghJnaDAiIAEXDPCOjf5MNXpg0Tc7fb",
-	"D0lreEOPAooCelcCOuigNedWQn9wNb19TCq3rMUkNnKeGsUWxfbOxHZYZetacpvqNf3CiwWvUX4fQH4v",
-	"DZ0POkpv6LwuxbeKyGxfdObkLZG+eoxxxIH4i+dmSPylKRG2cwDmwS5QHnL1xdbrjlVefLw3fmeFFe3g",
-	"GTXhYny2sSoVE23f59J0tRhiNbrdVGGPK/obGB+xrnb+lXS7uECdMCysHwfd79sTJXnvfsNttTAzkOsA",
-	"DhrkUaXoKoQL55HJWf0SmVn4gmV2vdfCuvnMn3TuSkfNZCmyPRHTYa5nE87aVVrjDujTFFh0dJ/CZ5Ul",
-	"KF1VQQ5iSvlSiLRgpCYNwOffTdO9rXc9+t3sKZrloAWdMs6cg/T5yq+sWtbILxVPXiXjo+Tq89X/BgAA",
-	"//8QP6Q/528BAA==",
+	"DXJ6TdZtI2C3dX6/n7AXOr7o+D5Vx/duCgvt7PSeHr7ZPj1El/cUHd5HdnjVLdzdJ4GavXN2T9HVfWQj",
+	"dTdVq7bSTO7i7caqV+GXG/Qq0ascWvNqfcYxq6pZxZA3qNoVwg3h9mTh1mQ2X6d/G5L2YTsLczvtg5Ek",
+	"o3oxlVRlI6JA51K4f5mYSU/pzh5POFtC92bvpOr/IOJDmJvuSWSliGYit/thxndIRY5CjuYSzeUBmcsm",
+	"G8AQ7zRQoQBouiBy5jIi+b7iWuGPqh2dV0QjojGKxk3H9X5Lh7SQibYatQNqhwPSDnZsWaqu3MhRPdE8",
+	"eiNVcdoMjDoDdQbqjEPUGd33emrFQbtUh3U2gKQLKua3VCR7fP0HdQnqEtQlte6oy0UNiRasFYWLkp/D",
+	"6mhJeQmkoEx1xQlOq3EwUoBYRCxGsdjj+0fRKAWhnPdG6/bdyUccIg73CIfd/nQUjFs+9C7QxFvziE5E",
+	"Zwc6b1Rns//8IyZ2RNwh7rZwN2nOXg0r1kfW9B1l+05aRFi/D+v3PYgAb5SMiktyQx+p5UOeNe7c8yEy",
+	"jkYFcYZGJYLJiT/cMOFyvqt9qc9FcDkfk19ounA1uFaEaUKJYTkQZTdg5GIBCjoOPF1Q19WUd+amX5ss",
+	"fz3mnZyj7ULbdc842RkdN8TEblBABCAC7hkB/Zt8+Mq0YWLudvshaQ1v6FFAUUDvSkAHHbTm3EroD5a0",
+	"iknllrWYxEbOU6PYotjemdjW3sIwyW1KrPULb6uyPcovyu99ye+lofNBR+kNndf1YlcRme2Lzpy8JdKX",
+	"ODOOOBB/8dwMib80dSx3DsA82AXKQy4R3HrdsfLAj/fG76z6rx08oyZcMdY2VvXMou37XD+1FkMsmbqb",
+	"KuxxRX8D4yPW1c6/km4XF6hT/YT146D7fXuiJO/db7itFmYGch3AQYM8qhRdhXDhPDI5q18iMwtfVdOu",
+	"91pYN5/5k85dfcOZLEW2J2I6zPVswlm7SmvcAX2aAouO7lP4rLIEpatS/UFMKV+vlxaM1KQB+Py7abq3",
+	"9a5Hv5s9RbMctKBTxplzkD5f+ZVVyxr5peLJq2R8lFx9vvrfAAAA//+5rLXXjHYBAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
