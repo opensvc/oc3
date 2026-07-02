@@ -2036,6 +2036,13 @@ type GetTagParams struct {
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
 
+// PostTagJSONBody defines parameters for PostTag.
+type PostTagJSONBody struct {
+	TagData    *string `json:"tag_data,omitempty"`
+	TagExclude *string `json:"tag_exclude,omitempty"`
+	TagName    *string `json:"tag_name,omitempty"`
+}
+
 // GetTagNodesParams defines parameters for GetTagNodes.
 type GetTagNodesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2104,6 +2111,9 @@ type PostServicesJSONRequestBody PostServicesJSONBody
 
 // PostServiceJSONRequestBody defines body for PostService for application/json ContentType.
 type PostServiceJSONRequestBody PostServiceJSONBody
+
+// PostTagJSONRequestBody defines body for PostTag for application/json ContentType.
+type PostTagJSONRequestBody PostTagJSONBody
 
 // AsListResponseData0 returns the union data inside the ListResponse_Data as a ListResponseData0
 func (t ListResponse_Data) AsListResponseData0() (ListResponseData0, error) {

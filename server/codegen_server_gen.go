@@ -318,6 +318,9 @@ type ServerInterface interface {
 	// (GET /tags/{tag_id})
 	GetTag(ctx echo.Context, tagId int, params GetTagParams) error
 
+	// (POST /tags/{tag_id})
+	PostTag(ctx echo.Context, tagId int) error
+
 	// (GET /tags/{tag_id}/nodes)
 	GetTagNodes(ctx echo.Context, tagId int, params GetTagNodesParams) error
 
@@ -5781,6 +5784,26 @@ func (w *ServerInterfaceWrapper) GetTag(ctx echo.Context) error {
 	return err
 }
 
+// PostTag converts echo context to params.
+func (w *ServerInterfaceWrapper) PostTag(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "tag_id" -------------
+	var tagId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tag_id", ctx.Param("tag_id"), &tagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tag_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostTag(ctx, tagId)
+	return err
+}
+
 // GetTagNodes converts echo context to params.
 func (w *ServerInterfaceWrapper) GetTagNodes(ctx echo.Context) error {
 	var err error
@@ -6031,6 +6054,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/tags/nodes", wrapper.GetTagsNodes)
 	router.GET(baseURL+"/tags/services", wrapper.GetTagsServices)
 	router.GET(baseURL+"/tags/:tag_id", wrapper.GetTag)
+	router.POST(baseURL+"/tags/:tag_id", wrapper.PostTag)
 	router.GET(baseURL+"/tags/:tag_id/nodes", wrapper.GetTagNodes)
 	router.GET(baseURL+"/tags/:tag_id/services", wrapper.GetTagServices)
 	router.GET(baseURL+"/version", wrapper.GetVersion)
@@ -6129,10 +6153,10 @@ var swaggerSpec = []string{
 	"50NkHI0K4gyNSgSTE3+4YcLlfFf7Up+L4HI+Jj/TdOFyxa8I04QSw3Igym7AyMUCFHQceLqgrqsp78yh",
 	"uDZZ/nrMOzlH24W2655xsjM6boiJ3aCACEAE3DMC+jf58JVpw8Tc7fZD0hre0KOAooDelYAOOmjNuZXQ",
 	"H1yBVB+Tyi1rMYmNnKdGsUWxvTOxHVYmtJbcphRAv/Bi9VCU3z3I76Wh80FH6Q2d13WNVhGZ7YvOnLwl",
-	"0qfiN444EH/x3AyJvzT1VnYOwOztAuWBRxA23n+P/f0VjA/TVdud6iW6zVD1cSgiFIMuNR2IZNy7sryt",
-	"6DEDuQ7IYJOQhypFVyGZdGZIzuqXyMzCl7yw670W1s1n/qBzV3xgJkuRHYiY7laWe2dpjVvdpymwaN2f",
-	"Qix5CUpXdfSCmFK+mA4tGKlJA/D5V9N0b+tdj343jlSzHLSgU8aZq134+cqvrFrWyC8VT14l46Pk6vPV",
-	"/wcAAP//P8bYPilmAQA=",
+	"0qfiN444EH/x3AyJvzT1VnYOwOztAuVjLmXVet2xMlYP98bvrEqVHTyjJlzZyDZWefej7Ydc56cWQyzt",
+	"s5sq7HFFfwXjI9bVzr+SbhcXqL6TRvTjoPt9B6Ik791vuK0WZgZyHcBBgzyqFF2FcOE8MjmrXyIzC1/9",
+	"xa73Wlg3n/mDzl0djpksRXYgYrpbhfqdpTXugD5NgUVH9yl8VlmC0lVJySCmlK8rRQtGatIAfP7VNN3b",
+	"etej382eolkOWtAp48w5SJ+v/MqqZY38UvHkVTI+Sq4+X/1/AAAA//9GUJDGNGkBAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

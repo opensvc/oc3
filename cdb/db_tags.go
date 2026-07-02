@@ -80,6 +80,41 @@ func (oDb *DB) GetTags(ctx context.Context, tagID *int, limit, offset int) ([]Ta
 	return tags, nil
 }
 
+type UpdateTagFields struct {
+	TagName    *string
+	TagExclude *string
+	TagData    *string
+}
+
+func (oDb *DB) UpdateTag(ctx context.Context, id int, fields UpdateTagFields) (int64, error) {
+	setClauses := []string{}
+	args := []any{}
+	if fields.TagName != nil {
+		setClauses = append(setClauses, "tag_name = ?")
+		args = append(args, *fields.TagName)
+	}
+	if fields.TagExclude != nil {
+		setClauses = append(setClauses, "tag_exclude = ?")
+		args = append(args, sql.NullString{String: *fields.TagExclude, Valid: true})
+	}
+	if fields.TagData != nil {
+		setClauses = append(setClauses, "tag_data = ?")
+		args = append(args, sql.NullString{String: *fields.TagData, Valid: true})
+	}
+	if len(setClauses) == 0 {
+		return 0, nil
+	}
+	query := "UPDATE tags SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
+	args = append(args, id)
+	res, err := oDb.DB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("updateTag: %w", err)
+	}
+	oDb.SetChange("tags")
+	n, _ := res.RowsAffected()
+	return n, nil
+}
+
 // GetTagNodes returns nodes where a tag (by integer id) is attached, with app-based auth.
 func (oDb *DB) GetTagNodes(ctx context.Context, tagID int, p ListParams) ([]map[string]any, error) {
 	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
