@@ -971,6 +971,89 @@ func (oDb *DB) CompModulesetAttachNode(ctx context.Context, nodeID, modulesetID 
 	return id, nil
 }
 
+// CompModulesetSvcAttached checks if a moduleset is already attached to a service.
+func (oDb *DB) CompModulesetSvcAttached(ctx context.Context, svcID, modulesetID string, slave bool) (bool, error) {
+	const query = "SELECT EXISTS(SELECT 1 FROM comp_modulesets_services WHERE svc_id = ? AND modset_id = ? AND slave = ?)"
+	var exists bool
+
+	err := oDb.DB.QueryRowContext(ctx, query, svcID, modulesetID, slave).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("compModulesetSvcAttached: %w", err)
+	}
+	return exists, nil
+}
+
+// CompModulesetSvcAttachable checks if a moduleset can be attached to a service.
+func (oDb *DB) CompModulesetSvcAttachable(ctx context.Context, svcID, modulesetID string) (bool, error) {
+	hasEveryBody, err := oDb.modulesetHasEverybodyPublication(ctx, modulesetID)
+	if err != nil {
+		return false, fmt.Errorf("compModulesetSvcAttachable: %w", err)
+	}
+	if hasEveryBody {
+		return true, nil
+	}
+
+	const query = `
+        SELECT EXISTS(
+            SELECT 1 FROM services
+            JOIN apps ON services.svc_app = apps.app
+            JOIN apps_responsibles ON apps.id = apps_responsibles.app_id
+            JOIN auth_group ON apps_responsibles.group_id = auth_group.id
+            JOIN comp_moduleset_team_publication ON auth_group.id = comp_moduleset_team_publication.group_id
+            JOIN comp_moduleset ON comp_moduleset_team_publication.modset_id = comp_moduleset.id
+            WHERE comp_moduleset.id = ?
+            AND services.svc_id = ?
+        )
+    `
+
+	var attachable bool
+	err = oDb.DB.QueryRowContext(ctx, query, modulesetID, svcID).Scan(&attachable)
+	if err != nil {
+		return false, fmt.Errorf("compModulesetSvcAttachable: %w", err)
+	}
+	return attachable, nil
+}
+
+// CompModulesetAttachService attaches a moduleset to a service.
+func (oDb *DB) CompModulesetAttachService(ctx context.Context, svcID, modulesetID string, slave bool) (int64, error) {
+	const query = "INSERT INTO comp_modulesets_services (svc_id, modset_id, slave) VALUES (?, ?, ?)"
+
+	result, err := oDb.ExecContext(ctx, query, svcID, modulesetID, slave)
+	if err != nil {
+		return 0, fmt.Errorf("compModulesetAttachService: %w", err)
+	}
+
+	if rows, err := result.RowsAffected(); err == nil && rows > 0 {
+		oDb.SetChange("comp_modulesets_services")
+		oDb.Session.NotifyChanges(ctx)
+	}
+
+	id, _ := result.LastInsertId()
+	return id, nil
+}
+
+// CompModulesetDetachService detaches a moduleset from a service.
+func (oDb *DB) CompModulesetDetachService(ctx context.Context, svcID, modulesetID string, slave bool) (int64, error) {
+	const query = "DELETE FROM comp_modulesets_services WHERE svc_id = ? AND modset_id = ? AND slave = ?"
+
+	result, err := oDb.ExecContext(ctx, query, svcID, modulesetID, slave)
+	if err != nil {
+		return 0, fmt.Errorf("compModulesetDetachService: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("compModulesetDetachService rowsAffected: %w", err)
+	}
+
+	if rows > 0 {
+		oDb.SetChange("comp_modulesets_services")
+		oDb.Session.NotifyChanges(ctx)
+	}
+
+	return rows, nil
+}
+
 // checks if a ruleset has "Everybody" publication rights.
 func (oDb *DB) RulesetHasEverybodyPublication(ctx context.Context, rulesetID string) (bool, error) {
 	const query = `

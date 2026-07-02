@@ -3318,6 +3318,86 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /services/{svc_id}/compliance/modulesets/{mset_id}:
+    delete:
+      operationId: DeleteServiceComplianceModuleset
+      description: |
+        Detach a moduleset from a service
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service identifier (svc_id UUID or svcname)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inPathMsetId'
+        - in: query
+          name: slave
+          required: false
+          description: If true, detach from the encapsulated service
+          schema:
+            type: boolean
+            default: false
+      tags:
+        - collector
+      responses:
+        202:
+          description: Moduleset detached
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostServiceComplianceModuleset
+      description: |
+        Attach a moduleset to a service
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service identifier (svc_id UUID or svcname)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inPathMsetId'
+        - in: query
+          name: slave
+          required: false
+          description: If true, attach to the encapsulated service
+          schema:
+            type: boolean
+            default: false
+      tags:
+        - collector
+      responses:
+        202:
+          description: Moduleset attached
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /services/{svc_id}/compliance/rulesets:
     get:
       operationId: GetServiceComplianceRulesets

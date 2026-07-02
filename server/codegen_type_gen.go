@@ -1571,6 +1571,18 @@ type GetServiceComplianceModulesetsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteServiceComplianceModulesetParams defines parameters for DeleteServiceComplianceModuleset.
+type DeleteServiceComplianceModulesetParams struct {
+	// Slave If true, detach from the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+}
+
+// PostServiceComplianceModulesetParams defines parameters for PostServiceComplianceModuleset.
+type PostServiceComplianceModulesetParams struct {
+	// Slave If true, attach to the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+}
+
 // GetServiceComplianceRulesetsParams defines parameters for GetServiceComplianceRulesets.
 type GetServiceComplianceRulesetsParams struct {
 	// Slave If true, list rulesets attached to the encapsulated service
