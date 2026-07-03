@@ -4122,6 +4122,99 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /tags/{tag_id}/services/{svc_id}:
+    post:
+      operationId: PostTagService
+      description: Attach a tag to a service
+      parameters:
+        - in: path
+          name: tag_id
+          required: true
+          description: ID of the tag
+          schema:
+            type: integer
+        - in: path
+          name: svc_id
+          required: true
+          description: ID or name of the service
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tag_attach_data:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteTagService
+      description: Detach a tag from a service
+      parameters:
+        - in: path
+          name: tag_id
+          required: true
+          description: ID of the tag
+          schema:
+            type: integer
+        - in: path
+          name: svc_id
+          required: true
+          description: ID or name of the service
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /tags/{tag_id}/services:
     get:
       operationId: GetTagServices

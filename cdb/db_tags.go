@@ -233,6 +233,89 @@ func (oDb *DB) DetachNodeTag(ctx context.Context, nodeID, tagID string) (int64, 
 	return n, nil
 }
 
+type ServiceTagAttachment struct {
+	TagAttachData string
+}
+
+func (oDb *DB) GetServiceTagAttachment(ctx context.Context, svcID, tagID string) (*ServiceTagAttachment, error) {
+	const query = "SELECT tag_attach_data FROM svc_tags WHERE svc_id = ? AND tag_id = ? LIMIT 1"
+	var data sql.NullString
+	err := oDb.DB.QueryRowContext(ctx, query, svcID, tagID).Scan(&data)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("GetServiceTagAttachment: %w", err)
+	}
+	return &ServiceTagAttachment{TagAttachData: data.String}, nil
+}
+
+func (oDb *DB) ServiceTagAttachAllowed(ctx context.Context, svcID, tagName string) (bool, error) {
+	rows, err := oDb.DB.QueryContext(ctx,
+		"SELECT DISTINCT tags.tag_exclude FROM tags"+
+			" JOIN svc_tags ON svc_tags.tag_id = tags.tag_id"+
+			" WHERE svc_tags.svc_id = ? AND tags.tag_exclude IS NOT NULL AND tags.tag_exclude != ''",
+		svcID)
+	if err != nil {
+		return false, fmt.Errorf("ServiceTagAttachAllowed patterns: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var patterns []string
+	for rows.Next() {
+		var p string
+		if err := rows.Scan(&p); err != nil {
+			return false, fmt.Errorf("ServiceTagAttachAllowed scan: %w", err)
+		}
+		patterns = append(patterns, p)
+	}
+	if err := rows.Err(); err != nil {
+		return false, fmt.Errorf("ServiceTagAttachAllowed rows: %w", err)
+	}
+	if len(patterns) == 0 {
+		return true, nil
+	}
+
+	pattern := strings.Join(patterns, "|")
+	var n int
+	if err := oDb.DB.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM tags WHERE tag_name = ? AND tag_name NOT REGEXP ?",
+		tagName, pattern).Scan(&n); err != nil {
+		return false, fmt.Errorf("ServiceTagAttachAllowed match: %w", err)
+	}
+	return n > 0, nil
+}
+
+func (oDb *DB) AttachServiceTag(ctx context.Context, svcID, tagID string) error {
+	if _, err := oDb.ExecContext(ctx,
+		"INSERT INTO svc_tags (svc_id, tag_id) VALUES (?, ?)", svcID, tagID); err != nil {
+		return fmt.Errorf("AttachServiceTag: %w", err)
+	}
+	oDb.SetChange("svc_tags")
+	return nil
+}
+
+func (oDb *DB) UpdateServiceTagAttachData(ctx context.Context, svcID, tagID, data string) error {
+	if _, err := oDb.ExecContext(ctx,
+		"UPDATE svc_tags SET tag_attach_data = ? WHERE svc_id = ? AND tag_id = ?",
+		data, svcID, tagID); err != nil {
+		return fmt.Errorf("UpdateServiceTagAttachData: %w", err)
+	}
+	oDb.SetChange("svc_tags")
+	return nil
+}
+
+func (oDb *DB) DetachServiceTag(ctx context.Context, svcID, tagID string) (int64, error) {
+	res, err := oDb.ExecContext(ctx,
+		"DELETE FROM svc_tags WHERE svc_id = ? AND tag_id = ?", svcID, tagID)
+	if err != nil {
+		return 0, fmt.Errorf("DetachServiceTag: %w", err)
+	}
+	oDb.SetChange("svc_tags")
+	n, _ := res.RowsAffected()
+	return n, nil
+}
+
 // GetTagNodes returns nodes where a tag (by integer id) is attached, with app-based auth.
 func (oDb *DB) GetTagNodes(ctx context.Context, tagID int, p ListParams) ([]map[string]any, error) {
 	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)

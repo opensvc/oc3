@@ -2108,6 +2108,11 @@ type GetTagServicesParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostTagServiceJSONBody defines parameters for PostTagService.
+type PostTagServiceJSONBody struct {
+	TagAttachData *string `json:"tag_attach_data,omitempty"`
+}
+
 // PostAppsJSONRequestBody defines body for PostApps for application/json ContentType.
 type PostAppsJSONRequestBody PostAppsJSONBody
 
@@ -2146,6 +2151,9 @@ type PostTagJSONRequestBody PostTagJSONBody
 
 // PostTagNodeJSONRequestBody defines body for PostTagNode for application/json ContentType.
 type PostTagNodeJSONRequestBody PostTagNodeJSONBody
+
+// PostTagServiceJSONRequestBody defines body for PostTagService for application/json ContentType.
+type PostTagServiceJSONRequestBody PostTagServiceJSONBody
 
 // AsListResponseData0 returns the union data inside the ListResponse_Data as a ListResponseData0
 func (t ListResponse_Data) AsListResponseData0() (ListResponseData0, error) {
