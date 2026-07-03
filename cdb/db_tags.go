@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -147,6 +148,89 @@ func (oDb *DB) DeleteTagCascade(ctx context.Context, id int, tagID string) (Dele
 	oDb.SetChange("tags")
 
 	return res, nil
+}
+
+type NodeTagAttachment struct {
+	TagAttachData string
+}
+
+func (oDb *DB) GetNodeTagAttachment(ctx context.Context, nodeID, tagID string) (*NodeTagAttachment, error) {
+	const query = "SELECT tag_attach_data FROM node_tags WHERE node_id = ? AND tag_id = ? LIMIT 1"
+	var data sql.NullString
+	err := oDb.DB.QueryRowContext(ctx, query, nodeID, tagID).Scan(&data)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("GetNodeTagAttachment: %w", err)
+	}
+	return &NodeTagAttachment{TagAttachData: data.String}, nil
+}
+
+func (oDb *DB) NodeTagAttachAllowed(ctx context.Context, nodeID, tagName string) (bool, error) {
+	rows, err := oDb.DB.QueryContext(ctx,
+		"SELECT DISTINCT tags.tag_exclude FROM tags"+
+			" JOIN node_tags ON node_tags.tag_id = tags.tag_id"+
+			" WHERE node_tags.node_id = ? AND tags.tag_exclude IS NOT NULL AND tags.tag_exclude != ''",
+		nodeID)
+	if err != nil {
+		return false, fmt.Errorf("NodeTagAttachAllowed patterns: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var patterns []string
+	for rows.Next() {
+		var p string
+		if err := rows.Scan(&p); err != nil {
+			return false, fmt.Errorf("NodeTagAttachAllowed scan: %w", err)
+		}
+		patterns = append(patterns, p)
+	}
+	if err := rows.Err(); err != nil {
+		return false, fmt.Errorf("NodeTagAttachAllowed rows: %w", err)
+	}
+	if len(patterns) == 0 {
+		return true, nil
+	}
+
+	pattern := strings.Join(patterns, "|")
+	var n int
+	if err := oDb.DB.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM tags WHERE tag_name = ? AND tag_name NOT REGEXP ?",
+		tagName, pattern).Scan(&n); err != nil {
+		return false, fmt.Errorf("NodeTagAttachAllowed match: %w", err)
+	}
+	return n > 0, nil
+}
+
+func (oDb *DB) AttachNodeTag(ctx context.Context, nodeID, tagID string) error {
+	if _, err := oDb.ExecContext(ctx,
+		"INSERT INTO node_tags (node_id, tag_id) VALUES (?, ?)", nodeID, tagID); err != nil {
+		return fmt.Errorf("AttachNodeTag: %w", err)
+	}
+	oDb.SetChange("node_tags")
+	return nil
+}
+
+func (oDb *DB) UpdateNodeTagAttachData(ctx context.Context, nodeID, tagID, data string) error {
+	if _, err := oDb.ExecContext(ctx,
+		"UPDATE node_tags SET tag_attach_data = ? WHERE node_id = ? AND tag_id = ?",
+		data, nodeID, tagID); err != nil {
+		return fmt.Errorf("UpdateNodeTagAttachData: %w", err)
+	}
+	oDb.SetChange("node_tags")
+	return nil
+}
+
+func (oDb *DB) DetachNodeTag(ctx context.Context, nodeID, tagID string) (int64, error) {
+	res, err := oDb.ExecContext(ctx,
+		"DELETE FROM node_tags WHERE node_id = ? AND tag_id = ?", nodeID, tagID)
+	if err != nil {
+		return 0, fmt.Errorf("DetachNodeTag: %w", err)
+	}
+	oDb.SetChange("node_tags")
+	n, _ := res.RowsAffected()
+	return n, nil
 }
 
 // GetTagNodes returns nodes where a tag (by integer id) is attached, with app-based auth.

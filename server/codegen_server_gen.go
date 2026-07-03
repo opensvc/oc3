@@ -339,6 +339,12 @@ type ServerInterface interface {
 	// (GET /tags/{tag_id}/nodes)
 	GetTagNodes(ctx echo.Context, tagId int, params GetTagNodesParams) error
 
+	// (DELETE /tags/{tag_id}/nodes/{node_id})
+	DeleteTagNode(ctx echo.Context, tagId int, nodeId string) error
+
+	// (POST /tags/{tag_id}/nodes/{node_id})
+	PostTagNode(ctx echo.Context, tagId int, nodeId string) error
+
 	// (GET /tags/{tag_id}/services)
 	GetTagServices(ctx echo.Context, tagId int, params GetTagServicesParams) error
 
@@ -6030,6 +6036,62 @@ func (w *ServerInterfaceWrapper) GetTagNodes(ctx echo.Context) error {
 	return err
 }
 
+// DeleteTagNode converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTagNode(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "tag_id" -------------
+	var tagId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tag_id", ctx.Param("tag_id"), &tagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tag_id: %s", err))
+	}
+
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteTagNode(ctx, tagId, nodeId)
+	return err
+}
+
+// PostTagNode converts echo context to params.
+func (w *ServerInterfaceWrapper) PostTagNode(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "tag_id" -------------
+	var tagId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tag_id", ctx.Param("tag_id"), &tagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tag_id: %s", err))
+	}
+
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostTagNode(ctx, tagId, nodeId)
+	return err
+}
+
 // GetTagServices converts echo context to params.
 func (w *ServerInterfaceWrapper) GetTagServices(ctx echo.Context) error {
 	var err error
@@ -6244,6 +6306,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/tags/:tag_id", wrapper.GetTag)
 	router.POST(baseURL+"/tags/:tag_id", wrapper.PostTag)
 	router.GET(baseURL+"/tags/:tag_id/nodes", wrapper.GetTagNodes)
+	router.DELETE(baseURL+"/tags/:tag_id/nodes/:node_id", wrapper.DeleteTagNode)
+	router.POST(baseURL+"/tags/:tag_id/nodes/:node_id", wrapper.PostTagNode)
 	router.GET(baseURL+"/tags/:tag_id/services", wrapper.GetTagServices)
 	router.GET(baseURL+"/version", wrapper.GetVersion)
 
@@ -6345,9 +6409,10 @@ var swaggerSpec = []string{
 	"KiaVW9ZiEhs5T41ii2J7Z2JbewvDJLcpsdYvvK3K9ii/KL/3Jb+Xhs4H3gE1C7BC7K5zsiYLlhNiYqSP",
 	"4rhGvRbd0EXPD3TeF8c5eUvkrB4wHKnxfA+J1DQVL/Hq5ONdnbSCU1XeXUVU3iMJxa7xuwcTokOuMN16",
 	"3bHq0o+sBu6ieLQdPKMmXHDYNlbl8KLt+1x+txZDrLi7myXt2cn8BqYylT5wVFtVtv7MHtGPg66H7omS",
-	"vHe387ZamBnIdQAHDfKoUnQVwoVz6OWsfonMLHxRVrvea2HdfOYDnbvymDNZimxPxHTYzqWJhu4qrfH9",
-	"y9MUWNwnPYWvcktQmvl5BzGlfLlnWjBSkwbg8++m6d7Wux79brakzXLQgk4ZZ85B+nzlV1Yta+SXiiev",
-	"kvFRcvX56n8DAAD//y7gm9bLeAEA",
+	"vHe387ZamBnIdQAHDfKoUnQVwoVz6OWsfonMLHxRVrvea2HdfOYDnbvymDNZimyfxHRoEpAqC50V1Cp3",
+	"Y/D2QuPgDbkweX+iGhun4nlPEnFs2pL65PggU4Be59C8iVZi3amloLxWfsiTkda7cnq8pYr5PiGZvdo3",
+	"sGAixnu0LcOiYs2Xtl09oXhs7Gk6QxiDewonPpagNPPzDmJKgSmVILRgpCYNwOffTdO9rXc9+t2EO5vl",
+	"oAWdMs6cDfh85VdWLWvkl4onr5LxUXL1+ep/AwAA//8i7wjbJ38BAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
