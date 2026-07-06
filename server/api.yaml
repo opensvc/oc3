@@ -961,6 +961,82 @@ paths:
         - bearerAuth: [ ]
 
   /filtersets/{filterset_id}:
+    post:
+      operationId: PostFilterset
+      description: Modify a filterset properties
+      parameters:
+        - in: path
+          name: filterset_id
+          required: true
+          description: Filterset identifier (gen_filtersets.id or fset_name)
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fset_name:
+                  type: string
+                fset_stats:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteFilterset
+      description: Delete a filterset and its attachments and references
+      parameters:
+        - in: path
+          name: filterset_id
+          required: true
+          description: Filterset identifier (gen_filtersets.id or fset_name)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
     get:
       operationId: GetFilterset
       description: Display a filterset properties

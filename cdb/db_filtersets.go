@@ -412,6 +412,98 @@ func (oDb *DB) GetFilterset(ctx context.Context, idOrName string, p ListParams) 
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+func (oDb *DB) FiltersetID(ctx context.Context, idOrName string) (int, bool, error) {
+	if id, err := strconv.Atoi(idOrName); err == nil {
+		return id, true, nil
+	}
+	var id int
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT id FROM gen_filtersets WHERE fset_name = ? LIMIT 1", idOrName).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("FiltersetID: %w", err)
+	}
+	return id, true, nil
+}
+
+type FiltersetRow struct {
+	ID        int
+	FsetName  string
+	FsetStats string
+}
+
+// GetFiltersetRow returns the gen_filtersets row for the given id, or nil when absent.
+func (oDb *DB) GetFiltersetRow(ctx context.Context, id int) (*FiltersetRow, error) {
+	const query = "SELECT id, fset_name, fset_stats FROM gen_filtersets WHERE id = ? LIMIT 1"
+	var (
+		row                 FiltersetRow
+		fsetName, fsetStats sql.NullString
+	)
+	err := oDb.DB.QueryRowContext(ctx, query, id).Scan(&row.ID, &fsetName, &fsetStats)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("GetFiltersetRow: %w", err)
+	}
+	row.FsetName = fsetName.String
+	row.FsetStats = fsetStats.String
+	return &row, nil
+}
+
+type UpdateFiltersetFields struct {
+	FsetName  *string
+	FsetStats *string
+}
+
+func (oDb *DB) UpdateFilterset(ctx context.Context, id int, fields UpdateFiltersetFields) error {
+	setClauses := []string{}
+	args := []any{}
+	if fields.FsetName != nil {
+		setClauses = append(setClauses, "fset_name = ?")
+		args = append(args, sql.NullString{String: *fields.FsetName, Valid: true})
+	}
+	if fields.FsetStats != nil {
+		setClauses = append(setClauses, "fset_stats = ?")
+		args = append(args, sql.NullString{String: *fields.FsetStats, Valid: true})
+	}
+	if len(setClauses) == 0 {
+		return nil
+	}
+	query := "UPDATE gen_filtersets SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
+	args = append(args, id)
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("UpdateFilterset: %w", err)
+	}
+	oDb.SetChange("gen_filtersets")
+	return nil
+}
+
+func (oDb *DB) DeleteFiltersetCascade(ctx context.Context, id int) error {
+	stmts := []struct {
+		table string
+		query string
+	}{
+		{"gen_filtersets_filters", "DELETE FROM gen_filtersets_filters WHERE fset_id = ?"},
+		{"gen_filtersets_filters", "DELETE FROM gen_filtersets_filters WHERE encap_fset_id = ?"},
+		{"comp_rulesets_filtersets", "DELETE FROM comp_rulesets_filtersets WHERE fset_id = ?"},
+		{"gen_filterset_team_responsible", "DELETE FROM gen_filterset_team_responsible WHERE fset_id = ?"},
+		{"gen_filterset_check_threshold", "DELETE FROM gen_filterset_check_threshold WHERE fset_id = ?"},
+		{"gen_filterset_user", "DELETE FROM gen_filterset_user WHERE fset_id = ?"},
+		{"stats_compare_fset", "DELETE FROM stats_compare_fset WHERE fset_id = ?"},
+		{"gen_filtersets", "DELETE FROM gen_filtersets WHERE id = ?"},
+	}
+	for _, s := range stmts {
+		if _, err := oDb.ExecContext(ctx, s.query, id); err != nil {
+			return fmt.Errorf("DeleteFiltersetCascade %s: %w", s.table, err)
+		}
+		oDb.SetChange(s.table)
+	}
+	return nil
+}
+
 // GetFiltersets returns rows from the gen_filtersets table.
 func (oDb *DB) GetFiltersets(ctx context.Context, p ListParams) ([]map[string]any, error) {
 	if len(p.SelectExprs) == 0 {
