@@ -817,6 +817,88 @@ paths:
         - bearerAuth: [ ]
 
   /filters/{filter_id}:
+    post:
+      operationId: PostFilter
+      description: Modify a filter properties
+      parameters:
+        - in: path
+          name: filter_id
+          required: true
+          description: Filter identifier (gen_filters.id or f_label)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                f_table:
+                  type: string
+                f_field:
+                  type: string
+                f_op:
+                  type: string
+                f_value:
+                  type: string
+                f_label:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteFilter
+      description: Delete a filter and its attachments to filtersets
+      parameters:
+        - in: path
+          name: filter_id
+          required: true
+          description: Filter identifier (gen_filters.id or f_label)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
     get:
       operationId: GetFilter
       description: Display a filter properties

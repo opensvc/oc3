@@ -421,6 +421,15 @@ type GetFilterParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostFilterJSONBody defines parameters for PostFilter.
+type PostFilterJSONBody struct {
+	FField *string `json:"f_field,omitempty"`
+	FLabel *string `json:"f_label,omitempty"`
+	FOp    *string `json:"f_op,omitempty"`
+	FTable *string `json:"f_table,omitempty"`
+	FValue *string `json:"f_value,omitempty"`
+}
+
 // GetFiltersetsParams defines parameters for GetFiltersets.
 type GetFiltersetsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2124,6 +2133,9 @@ type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
 
 // PostDisksJSONRequestBody defines body for PostDisks for application/json ContentType.
 type PostDisksJSONRequestBody PostDisksJSONBody
+
+// PostFilterJSONRequestBody defines body for PostFilter for application/json ContentType.
+type PostFilterJSONRequestBody PostFilterJSONBody
 
 // PostNodesJSONRequestBody defines body for PostNodes for application/json ContentType.
 type PostNodesJSONRequestBody PostNodesJSONBody
