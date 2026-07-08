@@ -1454,6 +1454,50 @@ paths:
         - bearerAuth: [ ]
 
   /logs:
+    post:
+      operationId: PostLogs
+      description: |
+        Create a log event. The entry type is forced to 'message', the default
+        level is 'info', and empty log events are discarded.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - log_fmt
+              properties:
+                log_fmt:
+                  type: string
+                log_level:
+                  type: string
+                log_dict:
+                  type: object
+                node_id:
+                  type: string
+                svc_id:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
     get:
       operationId: GetLogs
       description: List events in the collector log

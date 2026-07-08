@@ -619,6 +619,15 @@ type GetLogsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostLogsJSONBody defines parameters for PostLogs.
+type PostLogsJSONBody struct {
+	LogDict  *map[string]interface{} `json:"log_dict,omitempty"`
+	LogFmt   string                  `json:"log_fmt"`
+	LogLevel *string                 `json:"log_level,omitempty"`
+	NodeId   *string                 `json:"node_id,omitempty"`
+	SvcId    *string                 `json:"svc_id,omitempty"`
+}
+
 // GetLogParams defines parameters for GetLog.
 type GetLogParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2163,6 +2172,9 @@ type PostFiltersetFilterJSONRequestBody PostFiltersetFilterJSONBody
 
 // PostFiltersetFiltersetJSONRequestBody defines body for PostFiltersetFilterset for application/json ContentType.
 type PostFiltersetFiltersetJSONRequestBody PostFiltersetFiltersetJSONBody
+
+// PostLogsJSONRequestBody defines body for PostLogs for application/json ContentType.
+type PostLogsJSONRequestBody PostLogsJSONBody
 
 // PostNodesJSONRequestBody defines body for PostNodes for application/json ContentType.
 type PostNodesJSONRequestBody PostNodesJSONBody

@@ -2,6 +2,7 @@ package cdb
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -134,4 +135,37 @@ func (oDb *DB) Log(ctx context.Context, entries ...LogEntry) error {
 	defer cancel()
 	_, err := oDb.ExecContext(ctx, sql, args...)
 	return err
+}
+
+type LogMessage struct {
+	User   string
+	Fmt    string
+	Dict   string // JSON-encoded log_dict
+	Level  string
+	SvcID  *string
+	NodeID *string
+}
+
+// InsertLogMessage inserts a single 'message' log event and returns its id.
+func (oDb *DB) InsertLogMessage(ctx context.Context, m LogMessage) (int64, error) {
+	const query = "INSERT INTO log (log_action, log_user, log_fmt, log_dict, log_level, svc_id, node_id, log_date)" +
+		" VALUES ('message', ?, ?, ?, ?, ?, ?, NOW())"
+	var svcID, nodeID sql.NullString
+	if m.SvcID != nil {
+		svcID = sql.NullString{String: *m.SvcID, Valid: true}
+	}
+	if m.NodeID != nil {
+		nodeID = sql.NullString{String: *m.NodeID, Valid: true}
+	}
+	dict := m.Dict
+	if dict == "" {
+		dict = "{}"
+	}
+	res, err := oDb.ExecContext(ctx, query, m.User, m.Fmt, dict, m.Level, svcID, nodeID)
+	if err != nil {
+		return 0, fmt.Errorf("InsertLogMessage: %w", err)
+	}
+	oDb.SetChange("log")
+	id, _ := res.LastInsertId()
+	return id, nil
 }
