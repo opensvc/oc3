@@ -538,6 +538,12 @@ type GetFiltersetFiltersetsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostFiltersetFiltersetJSONBody defines parameters for PostFiltersetFilterset.
+type PostFiltersetFiltersetJSONBody struct {
+	FLogOp *string `json:"f_log_op,omitempty"`
+	FOrder *int    `json:"f_order,omitempty"`
+}
+
 // GetFiltersetNodesParams defines parameters for GetFiltersetNodes.
 type GetFiltersetNodesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2154,6 +2160,9 @@ type PostFiltersetJSONRequestBody PostFiltersetJSONBody
 
 // PostFiltersetFilterJSONRequestBody defines body for PostFiltersetFilter for application/json ContentType.
 type PostFiltersetFilterJSONRequestBody PostFiltersetFilterJSONBody
+
+// PostFiltersetFiltersetJSONRequestBody defines body for PostFiltersetFilterset for application/json ContentType.
+type PostFiltersetFiltersetJSONRequestBody PostFiltersetFiltersetJSONBody
 
 // PostNodesJSONRequestBody defines body for PostNodes for application/json ContentType.
 type PostNodesJSONRequestBody PostNodesJSONBody

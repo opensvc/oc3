@@ -504,6 +504,111 @@ func (oDb *DB) DeleteFiltersetCascade(ctx context.Context, id int) error {
 	return nil
 }
 
+func (oDb *DB) GetFiltersetEncapAttachment(ctx context.Context, parentID, childID int) (*FiltersetFilterAttachment, error) {
+	const query = "SELECT f_order, f_log_op FROM gen_filtersets_filters WHERE fset_id = ? AND encap_fset_id = ? LIMIT 1"
+	var (
+		fOrder sql.NullInt64
+		fLogOp sql.NullString
+	)
+	err := oDb.DB.QueryRowContext(ctx, query, parentID, childID).Scan(&fOrder, &fLogOp)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("GetFiltersetEncapAttachment: %w", err)
+	}
+	return &FiltersetFilterAttachment{FOrder: int(fOrder.Int64), FLogOp: fLogOp.String}, nil
+}
+
+func (oDb *DB) InsertFiltersetEncap(ctx context.Context, parentID, childID, fOrder int, fLogOp string) error {
+	if _, err := oDb.ExecContext(ctx,
+		"INSERT INTO gen_filtersets_filters (f_id, fset_id, encap_fset_id, f_order, f_log_op) VALUES (0, ?, ?, ?, ?)",
+		parentID, childID, fOrder, fLogOp); err != nil {
+		return fmt.Errorf("InsertFiltersetEncap: %w", err)
+	}
+	oDb.SetChange("gen_filtersets_filters")
+	return nil
+}
+
+func (oDb *DB) UpdateFiltersetEncap(ctx context.Context, parentID, childID int, fOrder *int, fLogOp *string) error {
+	setClauses := []string{}
+	args := []any{}
+	if fOrder != nil {
+		setClauses = append(setClauses, "f_order = ?")
+		args = append(args, *fOrder)
+	}
+	if fLogOp != nil {
+		setClauses = append(setClauses, "f_log_op = ?")
+		args = append(args, *fLogOp)
+	}
+	if len(setClauses) == 0 {
+		return nil
+	}
+	query := "UPDATE gen_filtersets_filters SET " + strings.Join(setClauses, ", ") + " WHERE fset_id = ? AND encap_fset_id = ?"
+	args = append(args, parentID, childID)
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("UpdateFiltersetEncap: %w", err)
+	}
+	oDb.SetChange("gen_filtersets_filters")
+	return nil
+}
+
+func (oDb *DB) DetachFiltersetFromFilterset(ctx context.Context, parentID, childID int) (int64, error) {
+	res, err := oDb.ExecContext(ctx,
+		"DELETE FROM gen_filtersets_filters WHERE fset_id = ? AND encap_fset_id = ?", parentID, childID)
+	if err != nil {
+		return 0, fmt.Errorf("DetachFiltersetFromFilterset: %w", err)
+	}
+	oDb.SetChange("gen_filtersets_filters")
+	n, _ := res.RowsAffected()
+	return n, nil
+}
+
+func (oDb *DB) FiltersetEncapWouldLoop(ctx context.Context, childID, parentID int) (bool, error) {
+	if childID == parentID {
+		return true, nil
+	}
+	rows, err := oDb.DB.QueryContext(ctx,
+		"SELECT encap_fset_id, fset_id FROM gen_filtersets_filters WHERE f_id = 0")
+	if err != nil {
+		return false, fmt.Errorf("FiltersetEncapWouldLoop: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	ancestors := make(map[int][]int)
+	for rows.Next() {
+		var encap, fset sql.NullInt64
+		if err := rows.Scan(&encap, &fset); err != nil {
+			return false, fmt.Errorf("FiltersetEncapWouldLoop scan: %w", err)
+		}
+		if !encap.Valid {
+			continue
+		}
+		ancestors[int(encap.Int64)] = append(ancestors[int(encap.Int64)], int(fset.Int64))
+	}
+	if err := rows.Err(); err != nil {
+		return false, fmt.Errorf("FiltersetEncapWouldLoop rows: %w", err)
+	}
+
+	visited := make(map[int]bool)
+	var recurse func(node int) bool
+	recurse = func(node int) bool {
+		if visited[node] {
+			return false
+		}
+		visited[node] = true
+		for _, parent := range ancestors[node] {
+			if parent == childID {
+				return true
+			}
+			if recurse(parent) {
+				return true
+			}
+		}
+		return false
+	}
+	return recurse(parentID), nil
+}
+
 // GetFiltersets returns rows from the gen_filtersets table.
 func (oDb *DB) GetFiltersets(ctx context.Context, p ListParams) ([]map[string]any, error) {
 	if len(p.SelectExprs) == 0 {
