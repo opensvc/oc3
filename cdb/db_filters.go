@@ -31,6 +31,68 @@ func (oDb *DB) GetFiltersetFilters(ctx context.Context, fsetID int, p ListParams
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+type FiltersetFilterAttachment struct {
+	FOrder int
+	FLogOp string
+}
+
+func (oDb *DB) GetFiltersetFilterAttachment(ctx context.Context, fsetID, fID int) (*FiltersetFilterAttachment, error) {
+	const query = "SELECT f_order, f_log_op FROM gen_filtersets_filters WHERE fset_id = ? AND f_id = ? LIMIT 1"
+	var (
+		fOrder sql.NullInt64
+		fLogOp sql.NullString
+	)
+	err := oDb.DB.QueryRowContext(ctx, query, fsetID, fID).Scan(&fOrder, &fLogOp)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("GetFiltersetFilterAttachment: %w", err)
+	}
+	return &FiltersetFilterAttachment{FOrder: int(fOrder.Int64), FLogOp: fLogOp.String}, nil
+}
+
+func (oDb *DB) InsertFiltersetFilter(ctx context.Context, fsetID, fID, fOrder int, fLogOp string) error {
+	if _, err := oDb.ExecContext(ctx,
+		"INSERT INTO gen_filtersets_filters (f_id, fset_id, encap_fset_id, f_order, f_log_op) VALUES (?, ?, NULL, ?, ?)",
+		fID, fsetID, fOrder, fLogOp); err != nil {
+		return fmt.Errorf("InsertFiltersetFilter: %w", err)
+	}
+	oDb.SetChange("gen_filtersets_filters")
+	return nil
+}
+
+func (oDb *DB) UpdateFiltersetFilter(ctx context.Context, fsetID, fID int, fOrder *int, fLogOp *string) error {
+	setClauses := []string{"encap_fset_id = NULL"}
+	args := []any{}
+	if fOrder != nil {
+		setClauses = append(setClauses, "f_order = ?")
+		args = append(args, *fOrder)
+	}
+	if fLogOp != nil {
+		setClauses = append(setClauses, "f_log_op = ?")
+		args = append(args, *fLogOp)
+	}
+	query := "UPDATE gen_filtersets_filters SET " + strings.Join(setClauses, ", ") + " WHERE fset_id = ? AND f_id = ?"
+	args = append(args, fsetID, fID)
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("UpdateFiltersetFilter: %w", err)
+	}
+	oDb.SetChange("gen_filtersets_filters")
+	return nil
+}
+
+func (oDb *DB) DetachFilterFromFilterset(ctx context.Context, fsetID, fID int) (int64, error) {
+	res, err := oDb.ExecContext(ctx,
+		"DELETE FROM gen_filtersets_filters WHERE fset_id = ? AND f_id = ?", fsetID, fID)
+	if err != nil {
+		return 0, fmt.Errorf("DetachFilterFromFilterset: %w", err)
+	}
+	oDb.SetChange("gen_filtersets_filters")
+	n, _ := res.RowsAffected()
+	return n, nil
+}
+
 // GetFilter returns a single gen_filters row by id.
 func (oDb *DB) GetFilter(ctx context.Context, id string, p ListParams) ([]map[string]any, error) {
 	if len(p.SelectExprs) == 0 {
