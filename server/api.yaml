@@ -1554,6 +1554,41 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /groups/{group_id}/nodes:
+    get:
+      operationId: GetGroupNodes
+      description: |
+        List the nodes the group is responsible for. Managers can see all groups;
+        other users only see the groups they belong to.
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier (auth_group.id or role)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /logs:
     post:
       operationId: PostLogs

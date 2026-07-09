@@ -117,6 +117,28 @@ func (oDb *DB) GetGroupApps(ctx context.Context, idOrRole string, p ListParams) 
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+func (oDb *DB) GetGroupNodes(ctx context.Context, idOrRole string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getGroupNodes: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM nodes" +
+		" JOIN auth_group ON nodes.team_responsible = auth_group.role" +
+		" WHERE "
+	query, args := groupAuthClause(query, []any{}, idOrRole, p.Groups, p.IsManager)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("nodes.nodename, nodes.node_id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getGroupNodes: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 type OrgGroupErrCode int
 
 const (
