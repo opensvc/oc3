@@ -72,6 +72,51 @@ func (oDb *DB) GetGroup(ctx context.Context, idOrRole string, p ListParams) ([]m
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+func groupAuthClause(query string, args []any, idOrRole string, groups []string, isManager bool) (string, []any) {
+	if isManager {
+		query += "auth_group.id > 0"
+	} else {
+		cleanG := cleanGroups(groups)
+		if len(cleanG) == 0 {
+			query += "1=0"
+		} else {
+			query += "auth_group.role IN (" + Placeholders(len(cleanG)) + ")"
+			args = append(args, stringsToAny(cleanG)...)
+		}
+	}
+	if id, err := strconv.Atoi(idOrRole); err == nil {
+		query += " AND auth_group.id = ?"
+		args = append(args, id)
+	} else {
+		query += " AND auth_group.role = ?"
+		args = append(args, idOrRole)
+	}
+	return query, args
+}
+
+func (oDb *DB) GetGroupApps(ctx context.Context, idOrRole string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getGroupApps: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM apps" +
+		" JOIN apps_responsibles ON apps.id = apps_responsibles.app_id" +
+		" JOIN auth_group ON auth_group.id = apps_responsibles.group_id" +
+		" WHERE "
+	query, args := groupAuthClause(query, []any{}, idOrRole, p.Groups, p.IsManager)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("apps.app, apps.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getGroupApps: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 type OrgGroupErrCode int
 
 const (
