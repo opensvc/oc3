@@ -6,7 +6,71 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
+
+func (oDb *DB) GetGroups(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getGroups: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM auth_group WHERE "
+	args := []any{}
+	if p.IsManager {
+		query += "auth_group.id > 0"
+	} else {
+		cleanG := cleanGroups(p.Groups)
+		if len(cleanG) == 0 {
+			query += "1=0"
+		} else {
+			query += "auth_group.role IN (" + Placeholders(len(cleanG)) + ")"
+			args = append(args, stringsToAny(cleanG)...)
+		}
+	}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("auth_group.role, auth_group.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getGroups: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+func (oDb *DB) GetGroup(ctx context.Context, idOrRole string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getGroup: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM auth_group WHERE "
+	args := []any{}
+	if p.IsManager {
+		query += "auth_group.id > 0"
+	} else {
+		cleanG := cleanGroups(p.Groups)
+		if len(cleanG) == 0 {
+			query += "1=0"
+		} else {
+			query += "auth_group.role IN (" + Placeholders(len(cleanG)) + ")"
+			args = append(args, stringsToAny(cleanG)...)
+		}
+	}
+	if id, err := strconv.Atoi(idOrRole); err == nil {
+		query += " AND auth_group.id = ?"
+		args = append(args, id)
+	} else {
+		query += " AND auth_group.role = ?"
+		args = append(args, idOrRole)
+	}
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getGroup: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
 
 type OrgGroupErrCode int
 
