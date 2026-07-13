@@ -165,6 +165,47 @@ func (oDb *DB) GetGroupServices(ctx context.Context, idOrRole string, p ListPara
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+func groupMembershipClause(query string, args []any, idOrRole string, groups []string) (string, []any) {
+	cleanG := cleanGroups(groups)
+	if len(cleanG) == 0 {
+		query += "1=0"
+	} else {
+		query += "auth_group.role IN (" + Placeholders(len(cleanG)) + ")"
+		args = append(args, stringsToAny(cleanG)...)
+	}
+	if id, err := strconv.Atoi(idOrRole); err == nil {
+		query += " AND auth_group.id = ?"
+		args = append(args, id)
+	} else {
+		query += " AND auth_group.role = ?"
+		args = append(args, idOrRole)
+	}
+	return query, args
+}
+
+func (oDb *DB) GetGroupModulesets(ctx context.Context, idOrRole string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getGroupModulesets: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM comp_moduleset" +
+		" JOIN comp_moduleset_team_publication ON comp_moduleset_team_publication.modset_id = comp_moduleset.id" +
+		" JOIN auth_group ON auth_group.id = comp_moduleset_team_publication.group_id" +
+		" WHERE "
+	query, args := groupMembershipClause(query, []any{}, idOrRole, p.Groups)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("comp_moduleset.modset_name, comp_moduleset.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getGroupModulesets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 type OrgGroupErrCode int
 
 const (

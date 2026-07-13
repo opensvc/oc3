@@ -504,6 +504,12 @@ var propsMapping = map[string]propMapping{
 	},
 	"moduleset": {
 		Available: []string{"id", "modset_name", "modset_author", "modset_updated"},
+		Props: map[string]propDef{
+			"id":             col(schema.CompModulesetID),
+			"modset_name":    colStr(schema.CompModulesetModsetName),
+			"modset_author":  colStr(schema.CompModulesetModsetAuthor),
+			"modset_updated": colStr(schema.CompModulesetModsetUpdated),
+		},
 	},
 	"ruleset": {
 		Available: []string{"id", "ruleset_name", "ruleset_type", "ruleset_public"},
