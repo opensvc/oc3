@@ -139,6 +139,32 @@ func (oDb *DB) GetGroupNodes(ctx context.Context, idOrRole string, p ListParams)
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+func (oDb *DB) GetGroupServices(ctx context.Context, idOrRole string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getGroupServices: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM services" +
+		" JOIN apps ON services.svc_app = apps.app" +
+		" JOIN apps_responsibles ON apps.id = apps_responsibles.app_id" +
+		" JOIN auth_group ON auth_group.id = apps_responsibles.group_id" +
+		" WHERE "
+	query, args := groupAuthClause(query, []any{}, idOrRole, p.Groups, p.IsManager)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	} else {
+		query += " GROUP BY services.id"
+	}
+	query += " " + p.OrderByClause("services.svcname")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getGroupServices: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 type OrgGroupErrCode int
 
 const (
