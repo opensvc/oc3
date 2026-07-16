@@ -229,6 +229,29 @@ func (oDb *DB) GetGroupRulesets(ctx context.Context, idOrRole string, p ListPara
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+func (oDb *DB) GetGroupUsers(ctx context.Context, idOrRole string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getGroupUsers: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM auth_user" +
+		" JOIN auth_membership ON auth_user.id = auth_membership.user_id" +
+		" JOIN auth_group ON auth_group.id = auth_membership.group_id" +
+		" WHERE "
+	query, args := groupAuthClause(query, []any{}, idOrRole, p.Groups, p.IsManager)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("auth_user.email, auth_user.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getGroupUsers: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 type OrgGroupErrCode int
 
 const (
