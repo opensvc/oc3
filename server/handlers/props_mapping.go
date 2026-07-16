@@ -513,6 +513,12 @@ var propsMapping = map[string]propMapping{
 	},
 	"ruleset": {
 		Available: []string{"id", "ruleset_name", "ruleset_type", "ruleset_public"},
+		Props: map[string]propDef{
+			"id":             col(schema.CompRulesetsID),
+			"ruleset_name":   colStr(schema.CompRulesetsRulesetName),
+			"ruleset_type":   colStr(schema.CompRulesetsRulesetType),
+			"ruleset_public": colStr(schema.CompRulesetsRulesetPublic),
+		},
 	},
 	"alert": {
 		Available: []string{

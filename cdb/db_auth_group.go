@@ -206,6 +206,29 @@ func (oDb *DB) GetGroupModulesets(ctx context.Context, idOrRole string, p ListPa
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+func (oDb *DB) GetGroupRulesets(ctx context.Context, idOrRole string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getGroupRulesets: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM comp_rulesets" +
+		" JOIN comp_ruleset_team_publication ON comp_ruleset_team_publication.ruleset_id = comp_rulesets.id" +
+		" JOIN auth_group ON auth_group.id = comp_ruleset_team_publication.group_id" +
+		" WHERE "
+	query, args := groupMembershipClause(query, []any{}, idOrRole, p.Groups)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("comp_rulesets.ruleset_name, comp_rulesets.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getGroupRulesets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 type OrgGroupErrCode int
 
 const (
