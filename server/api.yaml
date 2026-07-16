@@ -1518,6 +1518,40 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteGroup
+      description: |
+        Delete a group and cascade delete its membership, apps/forms/rulesets/modulesets
+        responsibilities and publications. Requires the GroupManager privilege. Managers
+        can delete any group; other users only the non-privilege groups they belong to.
+        The immutable 'Everybody' group cannot be deleted.
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier (auth_group.id or role)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /groups/{group_id}/apps:
     get:

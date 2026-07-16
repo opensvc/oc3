@@ -252,6 +252,76 @@ func (oDb *DB) GetGroupUsers(ctx context.Context, idOrRole string, p ListParams)
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+func (oDb *DB) GroupForDelete(ctx context.Context, idOrRole string, userGroupIDs []int64, isManager bool) (*AuthGroup, error) {
+	query := "SELECT id, role, privilege, COALESCE(description, '') FROM auth_group WHERE "
+	args := []any{}
+	if id, err := strconv.Atoi(idOrRole); err == nil {
+		query += "id = ?"
+		args = append(args, id)
+	} else {
+		query += "role = ?"
+		args = append(args, idOrRole)
+	}
+	if isManager {
+		query += " AND id > 0"
+	} else {
+		if len(userGroupIDs) == 0 {
+			return nil, nil
+		}
+		clause, inArgs := inClause("id", toAnyInt64Slice(userGroupIDs))
+		query += " AND " + clause
+		query += " AND privilege = 'F'"
+		args = append(args, inArgs...)
+	}
+	query += " LIMIT 1"
+
+	var (
+		g         AuthGroup
+		role      sql.NullString
+		privilege sql.NullString
+	)
+	err := oDb.DB.QueryRowContext(ctx, query, args...).Scan(&g.ID, &role, &privilege, &g.Description)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("GroupForDelete: %w", err)
+	}
+	if role.Valid {
+		g.Role = role.String
+	}
+	if privilege.Valid {
+		g.Privilege = privilege.String == "T"
+	}
+	return &g, nil
+}
+
+func (oDb *DB) DeleteGroupCascade(ctx context.Context, groupID int64) error {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM auth_group WHERE id = ?", groupID); err != nil {
+		return fmt.Errorf("DeleteGroupCascade auth_group: %w", err)
+	}
+	oDb.SetChange("auth_group")
+
+	tables := []string{
+		"auth_membership",
+		"apps_responsibles",
+		"forms_team_responsible",
+		"forms_team_publication",
+		"comp_moduleset_team_responsible",
+		"comp_moduleset_team_publication",
+		"comp_ruleset_team_responsible",
+		"comp_ruleset_team_publication",
+	}
+	for _, t := range tables {
+		query := "DELETE FROM " + t + " WHERE group_id = ?"
+		if _, err := oDb.ExecContext(ctx, query, groupID); err != nil {
+			return fmt.Errorf("DeleteGroupCascade %s: %w", t, err)
+		}
+		oDb.SetChange(t)
+	}
+	return nil
+}
+
 type OrgGroupErrCode int
 
 const (
