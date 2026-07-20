@@ -501,6 +501,69 @@ func (oDb *DB) AppResponsibleExists(ctx context.Context, appID, groupID int64) (
 	}
 }
 
+// lists the menu entries hidden for the given group.
+func (oDb *DB) GetGroupHiddenMenuEntries(ctx context.Context, groupID int64, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getGroupHiddenMenuEntries: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM group_hidden_menu_entries WHERE group_hidden_menu_entries.group_id = ?"
+	args := []any{groupID}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("group_hidden_menu_entries.menu_entry, group_hidden_menu_entries.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getGroupHiddenMenuEntries: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// reports whether the menu entry is already hidden for the group.
+func (oDb *DB) GroupHiddenMenuEntryExists(ctx context.Context, groupID int64, menuEntry string) (bool, error) {
+	const query = "SELECT 1 FROM group_hidden_menu_entries WHERE group_id = ? AND menu_entry = ? LIMIT 1"
+	var x int
+	err := oDb.DB.QueryRowContext(ctx, query, groupID, menuEntry).Scan(&x)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("GroupHiddenMenuEntryExists: %w", err)
+	default:
+		return true, nil
+	}
+}
+
+// hides a menu entry for the group.
+func (oDb *DB) InsertGroupHiddenMenuEntry(ctx context.Context, groupID int64, menuEntry string) error {
+	const query = "INSERT INTO group_hidden_menu_entries (group_id, menu_entry) VALUES (?, ?)"
+	if _, err := oDb.DB.ExecContext(ctx, query, groupID, menuEntry); err != nil {
+		return fmt.Errorf("insertGroupHiddenMenuEntry: %w", err)
+	}
+	oDb.SetChange("group_hidden_menu_entries")
+	return nil
+}
+
+// unhides a menu entry for the group and returns the number of deleted rows.
+func (oDb *DB) DeleteGroupHiddenMenuEntry(ctx context.Context, groupID int64, menuEntry string) (int64, error) {
+	const query = "DELETE FROM group_hidden_menu_entries WHERE group_id = ? AND menu_entry = ?"
+	res, err := oDb.DB.ExecContext(ctx, query, groupID, menuEntry)
+	if err != nil {
+		return 0, fmt.Errorf("deleteGroupHiddenMenuEntry: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("deleteGroupHiddenMenuEntry rowsAffected: %w", err)
+	}
+	if n > 0 {
+		oDb.SetChange("group_hidden_menu_entries")
+	}
+	return n, nil
+}
+
 // removes App without publication from dashboard
 func (oDb *DB) DeleteDashboardAppWithoutPublication(ctx context.Context, app string) error {
 	const query = `DELETE FROM dashboard

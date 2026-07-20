@@ -1764,6 +1764,137 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /groups/{group_id}/hidden_menu_entries:
+    get:
+      operationId: GetGroupHiddenMenuEntries
+      description: |
+        List the menu entries hidden from the menu for the group. Managers can
+        see all groups; other users only see the groups they belong to.
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier (auth_group.id or role)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostGroupHiddenMenuEntries
+      description: |
+        Hide a menu entry for the group. The user must hold the GroupManager
+        privilege. The action is logged and a change notification is emitted.
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier (auth_group.id or role)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - menu_entry
+              properties:
+                menu_entry:
+                  type: string
+                  description: Menu entry key to hide
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteGroupHiddenMenuEntries
+      description: |
+        Unhide a menu entry for the group. The user must hold the GroupManager
+        privilege. The action is logged and a change notification is emitted.
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier (auth_group.id or role)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - menu_entry
+              properties:
+                menu_entry:
+                  type: string
+                  description: Menu entry key to unhide
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /logs:
     post:
       operationId: PostLogs

@@ -542,6 +542,14 @@ var propsMapping = map[string]propMapping{
 			"modset_updated": colStr(schema.CompModulesetModsetUpdated),
 		},
 	},
+	"hidden_menu_entry": {
+		Available: []string{"id", "group_id", "menu_entry"},
+		Props: map[string]propDef{
+			"id":         col(schema.GroupHiddenMenuEntriesID),
+			"group_id":   colInt(schema.GroupHiddenMenuEntriesGroupID),
+			"menu_entry": colStr(schema.GroupHiddenMenuEntriesMenuEntry),
+		},
+	},
 	"ruleset": {
 		Available: []string{"id", "ruleset_name", "ruleset_type", "ruleset_public"},
 		Props: map[string]propDef{

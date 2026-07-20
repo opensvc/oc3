@@ -3,12 +3,33 @@ package serverhandlers
 import (
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 
 	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/util/logkey"
+	"github.com/opensvc/oc3/xauth"
 )
+
+// resolveUserGroupIDs returns the group ids the authenticated user belongs to.
+func (a *Api) resolveUserGroupIDs(c echo.Context, log *slog.Logger) ([]int64, error) {
+	ctx := c.Request().Context()
+	user := UserInfoFromContext(c)
+	if user == nil {
+		return nil, JSONProblemf(c, http.StatusUnauthorized, "missing user context")
+	}
+	userID, err := strconv.ParseInt(user.GetExtensions().Get(xauth.XUserID), 10, 64)
+	if err != nil {
+		return nil, JSONProblemf(c, http.StatusBadRequest, "invalid user id")
+	}
+	ids, err := a.ODB.UserGroupIDs(ctx, userID)
+	if err != nil {
+		log.Error("cannot list user groups", logkey.Error, err)
+		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot list user groups")
+	}
+	return ids, nil
+}
 
 // resolveNode looks up a node by ID or name
 func (a *Api) resolveNode(c echo.Context, log *slog.Logger, nodeId string) (*cdb.DBNode, error) {

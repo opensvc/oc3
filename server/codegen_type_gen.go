@@ -664,6 +664,42 @@ type GetGroupAppsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteGroupHiddenMenuEntriesJSONBody defines parameters for DeleteGroupHiddenMenuEntries.
+type DeleteGroupHiddenMenuEntriesJSONBody struct {
+	// MenuEntry Menu entry key to unhide
+	MenuEntry string `json:"menu_entry"`
+}
+
+// GetGroupHiddenMenuEntriesParams defines parameters for GetGroupHiddenMenuEntries.
+type GetGroupHiddenMenuEntriesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostGroupHiddenMenuEntriesJSONBody defines parameters for PostGroupHiddenMenuEntries.
+type PostGroupHiddenMenuEntriesJSONBody struct {
+	// MenuEntry Menu entry key to hide
+	MenuEntry string `json:"menu_entry"`
+}
+
 // GetGroupModulesetsParams defines parameters for GetGroupModulesets.
 type GetGroupModulesetsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2364,6 +2400,12 @@ type PostFiltersetFilterJSONRequestBody PostFiltersetFilterJSONBody
 
 // PostFiltersetFiltersetJSONRequestBody defines body for PostFiltersetFilterset for application/json ContentType.
 type PostFiltersetFiltersetJSONRequestBody PostFiltersetFiltersetJSONBody
+
+// DeleteGroupHiddenMenuEntriesJSONRequestBody defines body for DeleteGroupHiddenMenuEntries for application/json ContentType.
+type DeleteGroupHiddenMenuEntriesJSONRequestBody DeleteGroupHiddenMenuEntriesJSONBody
+
+// PostGroupHiddenMenuEntriesJSONRequestBody defines body for PostGroupHiddenMenuEntries for application/json ContentType.
+type PostGroupHiddenMenuEntriesJSONRequestBody PostGroupHiddenMenuEntriesJSONBody
 
 // PostLogsJSONRequestBody defines body for PostLogs for application/json ContentType.
 type PostLogsJSONRequestBody PostLogsJSONBody
