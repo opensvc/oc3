@@ -1895,6 +1895,37 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /frontend/hidden_menu_entries:
+    get:
+      operationId: GetFrontendHiddenMenuEntries
+      description: |
+        List the menu entries hidden from the menu for every group. Managers
+        see all groups; other users only see the groups they belong to.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /logs:
     post:
       operationId: PostLogs

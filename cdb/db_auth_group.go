@@ -522,6 +522,34 @@ func (oDb *DB) GetGroupHiddenMenuEntries(ctx context.Context, groupID int64, p L
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+func (oDb *DB) GetAllHiddenMenuEntries(ctx context.Context, groupIDs []int64, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getAllHiddenMenuEntries: no select expressions")
+	}
+	if groupIDs != nil && len(groupIDs) == 0 {
+		return []map[string]any{}, nil
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM group_hidden_menu_entries"
+	var args []any
+	if groupIDs != nil {
+		query += " WHERE group_hidden_menu_entries.group_id IN (" + Placeholders(len(groupIDs)) + ")"
+		for _, id := range groupIDs {
+			args = append(args, id)
+		}
+	}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("group_hidden_menu_entries.group_id, group_hidden_menu_entries.menu_entry, group_hidden_menu_entries.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getAllHiddenMenuEntries: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 // reports whether the menu entry is already hidden for the group.
 func (oDb *DB) GroupHiddenMenuEntryExists(ctx context.Context, groupID int64, menuEntry string) (bool, error) {
 	const query = "SELECT 1 FROM group_hidden_menu_entries WHERE group_id = ? AND menu_entry = ? LIMIT 1"
