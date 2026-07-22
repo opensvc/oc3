@@ -102,6 +102,10 @@ func IsGroupManager(c echo.Context) bool {
 	return IsManager(c) || HasGroup(c, "GroupManager")
 }
 
+func IsNodeManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "NodeManager")
+}
+
 // return true if the request is authenticated as a node
 func IsAuthByNode(c echo.Context) bool {
 	authMode, ok := c.Get(XAuthMode).(string)

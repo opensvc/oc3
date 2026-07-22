@@ -1991,6 +1991,42 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteIp
+      description: |
+        Delete a node ip. The user must hold the NodeManager privilege and be
+        responsible for the node the ip belongs to. The action is logged and a
+        change notification is emitted.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Ip identifier (node_ip.id)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /logs:
     post:

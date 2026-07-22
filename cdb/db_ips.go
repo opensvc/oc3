@@ -2,9 +2,46 @@ package cdb
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 )
+
+type NodeIP struct {
+	ID     int64
+	Addr   string
+	NodeID string
+}
+
+func (oDb *DB) GetNodeIPByID(ctx context.Context, id int64) (NodeIP, bool, error) {
+	const query = "SELECT id, COALESCE(addr, ''), COALESCE(node_id, '') FROM node_ip WHERE id = ?"
+	var ip NodeIP
+	err := oDb.DB.QueryRowContext(ctx, query, id).Scan(&ip.ID, &ip.Addr, &ip.NodeID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return NodeIP{}, false, nil
+	case err != nil:
+		return NodeIP{}, false, fmt.Errorf("getNodeIPByID: %w", err)
+	}
+	return ip, true, nil
+}
+
+func (oDb *DB) DeleteNodeIP(ctx context.Context, id int64) (int64, error) {
+	const query = "DELETE FROM node_ip WHERE id = ?"
+	res, err := oDb.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return 0, fmt.Errorf("deleteNodeIP: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("deleteNodeIP rowsAffected: %w", err)
+	}
+	if n > 0 {
+		oDb.SetChange("node_ip")
+	}
+	return n, nil
+}
 
 func buildIpsQuery(p ListParams, idCond string, idArgs []any) (string, []any, error) {
 	if len(p.SelectExprs) == 0 {
