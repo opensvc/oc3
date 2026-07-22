@@ -88,7 +88,7 @@ func fetchAndReturnService(c echo.Context, odb *cdb.DB, ctx context.Context, svc
 	props := defaultProps(mapping)
 	selectExprs, err := buildSelectClause(props, mapping)
 	if err != nil {
-		return JSONProblemf(c, http.StatusInternalServerError, errMsg)
+		return JSONProblemf(c, http.StatusInternalServerError, "%s", errMsg)
 	}
 	rows, err := odb.GetService(ctx, svcID, cdb.ListParams{
 		IsManager:   true,
@@ -96,7 +96,7 @@ func fetchAndReturnService(c echo.Context, odb *cdb.DB, ctx context.Context, svc
 		SelectExprs: selectExprs,
 	})
 	if err != nil || len(rows) == 0 {
-		return JSONProblemf(c, http.StatusInternalServerError, errMsg)
+		return JSONProblemf(c, http.StatusInternalServerError, "%s", errMsg)
 	}
 	return c.JSON(http.StatusOK, map[string]any{
 		"info": info,

@@ -191,7 +191,7 @@ func fetchAndReturnNode(c echo.Context, odb *cdb.DB, ctx context.Context, nodeID
 	props := defaultProps(mapping)
 	selectExprs, err := buildSelectClause(props, mapping)
 	if err != nil {
-		return JSONProblemf(c, http.StatusInternalServerError, errMsg)
+		return JSONProblemf(c, http.StatusInternalServerError, "%s", errMsg)
 	}
 	rows, err := odb.GetNode(ctx, nodeID, cdb.ListParams{
 		IsManager:   true,
@@ -199,7 +199,7 @@ func fetchAndReturnNode(c echo.Context, odb *cdb.DB, ctx context.Context, nodeID
 		SelectExprs: selectExprs,
 	})
 	if err != nil || len(rows) == 0 {
-		return JSONProblemf(c, http.StatusInternalServerError, errMsg)
+		return JSONProblemf(c, http.StatusInternalServerError, "%s", errMsg)
 	}
 	return c.JSON(http.StatusOK, rows[0])
 }
