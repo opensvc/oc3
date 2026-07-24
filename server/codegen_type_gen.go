@@ -138,6 +138,15 @@ type GetActionsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostActionsJSONBody defines parameters for PostActions.
+type PostActionsJSONBody struct {
+	// Id Action queue entry id
+	Id string `json:"id"`
+
+	// Status New status (the only updatable property)
+	Status *string `json:"status,omitempty"`
+}
+
 // GetAppsParams defines parameters for GetApps.
 type GetAppsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2472,6 +2481,9 @@ type GetTagServicesParams struct {
 type PostTagServiceJSONBody struct {
 	TagAttachData *string `json:"tag_attach_data,omitempty"`
 }
+
+// PostActionsJSONRequestBody defines body for PostActions for application/json ContentType.
+type PostActionsJSONRequestBody PostActionsJSONBody
 
 // PostAppsJSONRequestBody defines body for PostApps for application/json ContentType.
 type PostAppsJSONRequestBody PostAppsJSONBody

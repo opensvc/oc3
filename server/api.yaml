@@ -37,6 +37,49 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    post:
+      operationId: PostActions
+      description: |
+        Modify an action_queue entry. The 'id' key is mandatory and selects the
+        target action; only the 'status' property is updatable. Requires the
+        NodeExec or CompExec privilege and responsibility for the target node.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  description: Action queue entry id
+                status:
+                  type: string
+                  description: New status (the only updatable property)
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /apps:
     get:
