@@ -53,6 +53,29 @@ type propMapping struct {
 }
 
 var propsMapping = map[string]propMapping{
+	"action_queue": {
+		Available: []string{
+			"id", "status", "command", "date_queued", "date_dequeued", "ret",
+			"stdout", "stderr", "action_type", "user_id", "form_id", "connect_to",
+			"node_id", "svc_id",
+		},
+		Props: map[string]propDef{
+			"id":            col(schema.ActionQueueID),
+			"status":        colStr(schema.ActionQueueStatus),
+			"command":       colStr(schema.ActionQueueCommand),
+			"date_queued":   colStr(schema.ActionQueueDateQueued),
+			"date_dequeued": colStr(schema.ActionQueueDateDequeued),
+			"ret":           colInt(schema.ActionQueueRet),
+			"stdout":        colStr(schema.ActionQueueStdout),
+			"stderr":        colStr(schema.ActionQueueStderr),
+			"action_type":   colStr(schema.ActionQueueActionType),
+			"user_id":       colInt(schema.ActionQueueUserID),
+			"form_id":       colInt(schema.ActionQueueFormID),
+			"connect_to":    colStr(schema.ActionQueueConnectTo),
+			"node_id":       colStr(schema.ActionQueueNodeID),
+			"svc_id":        colStr(schema.ActionQueueSvcID),
+		},
+	},
 	"node": {
 		Available: []string{
 			"node_id", "nodename", "app", "node_env", "cluster_id",
