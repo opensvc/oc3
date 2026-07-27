@@ -16,7 +16,11 @@ import (
 
 // DeleteIp handles DELETE /ips/{id}
 func (a *Api) DeleteIp(c echo.Context, id string) error {
-	log := echolog.GetLogHandler(c, "DeleteIp")
+	return a.deleteIPByID(c, "DeleteIp", id)
+}
+
+func (a *Api) deleteIPByID(c echo.Context, handlerName, id string) error {
+	log := echolog.GetLogHandler(c, handlerName)
 	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()

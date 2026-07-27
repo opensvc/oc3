@@ -901,6 +901,12 @@ type GetGroupUsersParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteIpsJSONBody defines parameters for DeleteIps.
+type DeleteIpsJSONBody struct {
+	// Id Ip identifier (node_ip.id)
+	Id string `json:"id"`
+}
+
 // GetIpsParams defines parameters for GetIps.
 type GetIpsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2538,6 +2544,9 @@ type DeleteGroupHiddenMenuEntriesJSONRequestBody DeleteGroupHiddenMenuEntriesJSO
 
 // PostGroupHiddenMenuEntriesJSONRequestBody defines body for PostGroupHiddenMenuEntries for application/json ContentType.
 type PostGroupHiddenMenuEntriesJSONRequestBody PostGroupHiddenMenuEntriesJSONBody
+
+// DeleteIpsJSONRequestBody defines body for DeleteIps for application/json ContentType.
+type DeleteIpsJSONRequestBody DeleteIpsJSONBody
 
 // PostLogsJSONRequestBody defines body for PostLogs for application/json ContentType.
 type PostLogsJSONRequestBody PostLogsJSONBody
