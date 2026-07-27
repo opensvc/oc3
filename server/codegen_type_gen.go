@@ -367,6 +367,12 @@ type PostAuthNodeJSONBody struct {
 	Nodename string  `json:"nodename"`
 }
 
+// DeleteDisksJSONBody defines parameters for DeleteDisks.
+type DeleteDisksJSONBody struct {
+	// DiskId Disk identifier
+	DiskId string `json:"disk_id"`
+}
+
 // GetDisksParams defines parameters for GetDisks.
 type GetDisksParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2523,6 +2529,9 @@ type PostAppJSONRequestBody PostAppJSONBody
 
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
+
+// DeleteDisksJSONRequestBody defines body for DeleteDisks for application/json ContentType.
+type DeleteDisksJSONRequestBody DeleteDisksJSONBody
 
 // PostDisksJSONRequestBody defines body for PostDisks for application/json ContentType.
 type PostDisksJSONRequestBody PostDisksJSONBody

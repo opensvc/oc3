@@ -867,6 +867,47 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteDisks
+      description: |
+        Delete a disk (bulk form). The 'disk_id' key is mandatory in the body
+        and selects the target disk; the deletion is then handled as DELETE
+        /disks/{disk_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - disk_id
+              properties:
+                disk_id:
+                  type: string
+                  description: Disk identifier
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /disks/{disk_id}:
     delete:

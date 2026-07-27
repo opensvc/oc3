@@ -12,7 +12,11 @@ import (
 
 // DeleteDisk handles DELETE /disks/{disk_id}
 func (a *Api) DeleteDisk(c echo.Context, diskId string) error {
-	log := echolog.GetLogHandler(c, "DeleteDisk")
+	return a.deleteDiskByID(c, "DeleteDisk", diskId)
+}
+
+func (a *Api) deleteDiskByID(c echo.Context, handlerName, diskId string) error {
+	log := echolog.GetLogHandler(c, handlerName)
 	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
