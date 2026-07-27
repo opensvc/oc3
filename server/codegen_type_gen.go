@@ -1021,6 +1021,12 @@ type GetLogParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteNodesJSONBody defines parameters for DeleteNodes.
+type DeleteNodesJSONBody struct {
+	// NodeId Node identifier (node_id or nodename)
+	NodeId string `json:"node_id"`
+}
+
 // GetNodesParams defines parameters for GetNodes.
 type GetNodesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2559,6 +2565,9 @@ type DeleteIpsJSONRequestBody DeleteIpsJSONBody
 
 // PostLogsJSONRequestBody defines body for PostLogs for application/json ContentType.
 type PostLogsJSONRequestBody PostLogsJSONBody
+
+// DeleteNodesJSONRequestBody defines body for DeleteNodes for application/json ContentType.
+type DeleteNodesJSONRequestBody DeleteNodesJSONBody
 
 // PostNodesJSONRequestBody defines body for PostNodes for application/json ContentType.
 type PostNodesJSONRequestBody PostNodesJSONBody

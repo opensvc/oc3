@@ -16,7 +16,11 @@ import (
 
 // DeleteNode handles DELETE /nodes/{node_id}
 func (a *Api) DeleteNode(c echo.Context, nodeId string) error {
-	log := echolog.GetLogHandler(c, "DeleteNode")
+	return a.deleteNodeByID(c, "DeleteNode", nodeId)
+}
+
+func (a *Api) deleteNodeByID(c echo.Context, handlerName, nodeId string) error {
+	log := echolog.GetLogHandler(c, handlerName)
 	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
