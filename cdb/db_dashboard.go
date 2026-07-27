@@ -32,6 +32,49 @@ type (
 	}
 )
 
+func (oDb *DB) GetAlerts(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	defer logDuration("getAlerts", time.Now())
+
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getAlerts: no select expressions")
+	}
+
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard"
+	var args []any
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("dashboard.id DESC")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getAlerts: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+func (oDb *DB) GetAlert(ctx context.Context, id string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getAlert: no select expressions")
+	}
+
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard WHERE dashboard.id = ?"
+	args := []any{id}
+	query += " " + p.OrderByClause("dashboard.id DESC")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getAlert: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 func (oDb *DB) GetNodeAlerts(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
 	defer logDuration("getNodeAlerts", time.Now())
 
