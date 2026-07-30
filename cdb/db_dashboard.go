@@ -122,6 +122,63 @@ func (oDb *DB) FindAlertIDByCriteria(ctx context.Context, cols []string, vals []
 	return id, true, nil
 }
 
+func (oDb *DB) GetAlertEvents(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	defer logDuration("getAlertEvents", time.Now())
+
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getAlertEvents: no select expressions")
+	}
+
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard_events"
+	var args []any
+
+	if !p.IsManager {
+		clean := cleanGroups(p.Groups)
+		if len(clean) == 0 {
+			query += ` WHERE (
+				dashboard_events.node_id IN (SELECT n.node_id FROM nodes n WHERE n.team_responsible = 'Everybody')
+			)`
+		} else {
+			placeholders := Placeholders(len(clean))
+			query += ` WHERE (
+				dashboard_events.svc_id IN (
+					SELECT s.svc_id FROM services s
+					JOIN apps a ON s.svc_app = a.app
+					JOIN apps_responsibles ar ON ar.app_id = a.id
+					JOIN auth_group ag ON ag.id = ar.group_id
+					WHERE ag.role IN (` + placeholders + `)
+				)
+				OR
+				dashboard_events.node_id IN (
+					SELECT n.node_id FROM nodes n
+					WHERE n.team_responsible = 'Everybody'
+					   OR n.team_responsible IN (` + placeholders + `)
+				)
+			)`
+			for _, g := range clean {
+				args = append(args, g)
+			}
+			for _, g := range clean {
+				args = append(args, g)
+			}
+		}
+	}
+
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("dashboard_events.id DESC")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getAlertEvents: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 func (oDb *DB) GetNodeAlerts(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
 	defer logDuration("getNodeAlerts", time.Now())
 

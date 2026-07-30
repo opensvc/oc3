@@ -300,6 +300,36 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /alert_event:
+    get:
+      operationId: GetAlertEvent
+      description: |
+        Display alert events time ranges (dashboard_events table). A row is
+        visible when its service or its node is visible to the caller; managers
+        see everything.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /apps:
     get:
       operationId: GetApps

@@ -582,6 +582,17 @@ var propsMapping = map[string]propMapping{
 			"ruleset_public": colStr(schema.CompRulesetsRulesetPublic),
 		},
 	},
+	"alert_event": {
+		Available: []string{"id", "svc_id", "node_id", "dash_begin", "dash_end", "dash_md5"},
+		Props: map[string]propDef{
+			"id":         col(schema.DashboardEventsID),
+			"svc_id":     colStr(schema.DashboardEventsSvcID),
+			"node_id":    colStr(schema.DashboardEventsNodeID),
+			"dash_begin": colStr(schema.DashboardEventsDashBegin),
+			"dash_end":   colStr(schema.DashboardEventsDashEnd),
+			"dash_md5":   colStr(schema.DashboardEventsDashMD5),
+		},
+	},
 	"alert": {
 		Available: []string{
 			"id", "dash_type", "svc_id", "node_id",
