@@ -171,6 +171,16 @@ type GetActionParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteAlertsJSONBody defines parameters for DeleteAlerts.
+type DeleteAlertsJSONBody struct {
+	DashInstance *string `json:"dash_instance,omitempty"`
+	DashSeverity *int    `json:"dash_severity,omitempty"`
+	DashType     *string `json:"dash_type,omitempty"`
+	Id           *string `json:"id,omitempty"`
+	NodeId       *string `json:"node_id,omitempty"`
+	SvcId        *string `json:"svc_id,omitempty"`
+}
+
 // GetAlertsParams defines parameters for GetAlerts.
 type GetAlertsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2574,6 +2584,9 @@ type PostTagServiceJSONBody struct {
 
 // PostActionsJSONRequestBody defines body for PostActions for application/json ContentType.
 type PostActionsJSONRequestBody PostActionsJSONBody
+
+// DeleteAlertsJSONRequestBody defines body for DeleteAlerts for application/json ContentType.
+type DeleteAlertsJSONRequestBody DeleteAlertsJSONBody
 
 // PostAppsJSONRequestBody defines body for PostApps for application/json ContentType.
 type PostAppsJSONRequestBody PostAppsJSONBody

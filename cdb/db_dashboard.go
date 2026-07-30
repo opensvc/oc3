@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -73,6 +74,52 @@ func (oDb *DB) GetAlert(ctx context.Context, id string, p ListParams) ([]map[str
 	defer func() { _ = rows.Close() }()
 
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+func (oDb *DB) GetAlertOwner(ctx context.Context, id int64) (svcID, nodeID string, found bool, err error) {
+	const query = "SELECT COALESCE(svc_id, ''), COALESCE(node_id, '') FROM dashboard WHERE id = ?"
+	err = oDb.DB.QueryRowContext(ctx, query, id).Scan(&svcID, &nodeID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", "", false, nil
+	case err != nil:
+		return "", "", false, fmt.Errorf("getAlertOwner: %w", err)
+	}
+	return svcID, nodeID, true, nil
+}
+
+func (oDb *DB) DeleteAlert(ctx context.Context, id int64) (int64, error) {
+	const query = "DELETE FROM dashboard WHERE id = ?"
+	res, err := oDb.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return 0, fmt.Errorf("deleteAlert: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("deleteAlert rowsAffected: %w", err)
+	}
+	if n > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return n, nil
+}
+
+func (oDb *DB) FindAlertIDByCriteria(ctx context.Context, cols []string, vals []any) (int64, bool, error) {
+	query := "SELECT id FROM dashboard WHERE 1=1"
+	for _, c := range cols {
+		query += " AND dashboard." + c + " = ?"
+	}
+	query += " ORDER BY id LIMIT 1"
+
+	var id int64
+	err := oDb.DB.QueryRowContext(ctx, query, vals...).Scan(&id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return 0, false, nil
+	case err != nil:
+		return 0, false, fmt.Errorf("findAlertIDByCriteria: %w", err)
+	}
+	return id, true, nil
 }
 
 func (oDb *DB) GetNodeAlerts(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {

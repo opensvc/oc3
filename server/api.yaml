@@ -181,6 +181,53 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteAlerts
+      description: |
+        Delete an alert (bulk form). The first alert matching all the provided
+        equality criteria (id, dash_type, node_id, svc_id, dash_instance, …) is
+        deleted. A node may only delete its own alerts; other users need the
+        AlertsManager privilege.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                dash_type:
+                  type: string
+                node_id:
+                  type: string
+                svc_id:
+                  type: string
+                dash_instance:
+                  type: string
+                dash_severity:
+                  type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /alerts/{id}:
     get:
@@ -209,6 +256,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListResponse'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteAlert
+      description: |
+        Delete an alert. A node may only delete alerts assigned to it; other
+        users need the AlertsManager privilege. The action is logged and a
+        change notification is emitted.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Alert id (dashboard.id)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
         500:
