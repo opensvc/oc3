@@ -104,7 +104,7 @@ func (w *Worker) Run() error {
 	}(jobC)
 
 	for {
-		unqueuedCmd := w.Redis.BLPop(context.Background(), 5*time.Second, w.Queues...)
+		unqueuedCmd := w.Redis.BRPop(context.Background(), 5*time.Second, w.Queues...)
 		unqueuedResult, err := unqueuedCmd.Result()
 		switch err {
 		case nil:
@@ -122,7 +122,7 @@ func (w *Worker) Run() error {
 func (w *Worker) runJob(unqueuedJob []string) error {
 	begin := time.Now()
 	var j JobRunner
-	slog.Debug(fmt.Sprintf("BLPOP %s -> %s", unqueuedJob[0], unqueuedJob[1]))
+	slog.Debug(fmt.Sprintf("BRPOP %s -> %s", unqueuedJob[0], unqueuedJob[1]))
 	ctx := context.Background()
 	switch unqueuedJob[0] {
 	case cachekeys.FeedDaemonPingQ:
@@ -212,7 +212,7 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 	}
 	feedJobCounter.With(prometheus.Labels{"job_type": jName, "status": status}).Inc()
 	feedJobDuration.With(prometheus.Labels{"job_type": jName, "status": status}).Observe(duration.Seconds())
-	jlog.Debug(fmt.Sprintf("BLPOP %s <- %s: %s", unqueuedJob[0], unqueuedJob[1], duration))
+	jlog.Debug(fmt.Sprintf("BRPOP %s <- %s: %s", unqueuedJob[0], unqueuedJob[1], duration))
 	return nil
 }
 
