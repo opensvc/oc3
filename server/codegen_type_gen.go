@@ -229,6 +229,19 @@ type GetAlertsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostAlertsJSONBody defines parameters for PostAlerts.
+type PostAlertsJSONBody struct {
+	BaseSeverity *int                    `json:"base_severity,omitempty"`
+	DashDict     *map[string]interface{} `json:"dash_dict,omitempty"`
+	DashEnv      *string                 `json:"dash_env,omitempty"`
+	DashFmt      *string                 `json:"dash_fmt,omitempty"`
+	DashInstance *string                 `json:"dash_instance,omitempty"`
+	DashSeverity *int                    `json:"dash_severity,omitempty"`
+	DashType     string                  `json:"dash_type"`
+	NodeId       *string                 `json:"node_id,omitempty"`
+	SvcId        *string                 `json:"svc_id,omitempty"`
+}
+
 // GetAlertParams defines parameters for GetAlert.
 type GetAlertParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -251,6 +264,18 @@ type GetAlertParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostAlertJSONBody defines parameters for PostAlert.
+type PostAlertJSONBody struct {
+	BaseSeverity *int                    `json:"base_severity,omitempty"`
+	DashDict     *map[string]interface{} `json:"dash_dict,omitempty"`
+	DashFmt      *string                 `json:"dash_fmt,omitempty"`
+	DashInstance *string                 `json:"dash_instance,omitempty"`
+	DashSeverity *int                    `json:"dash_severity,omitempty"`
+	DashType     *string                 `json:"dash_type,omitempty"`
+	NodeId       *string                 `json:"node_id,omitempty"`
+	SvcId        *string                 `json:"svc_id,omitempty"`
 }
 
 // GetAppsParams defines parameters for GetApps.
@@ -2611,6 +2636,12 @@ type PostActionsJSONRequestBody PostActionsJSONBody
 
 // DeleteAlertsJSONRequestBody defines body for DeleteAlerts for application/json ContentType.
 type DeleteAlertsJSONRequestBody DeleteAlertsJSONBody
+
+// PostAlertsJSONRequestBody defines body for PostAlerts for application/json ContentType.
+type PostAlertsJSONRequestBody PostAlertsJSONBody
+
+// PostAlertJSONRequestBody defines body for PostAlert for application/json ContentType.
+type PostAlertJSONRequestBody PostAlertJSONBody
 
 // PostAppsJSONRequestBody defines body for PostApps for application/json ContentType.
 type PostAppsJSONRequestBody PostAppsJSONBody

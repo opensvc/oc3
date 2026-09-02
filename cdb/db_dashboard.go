@@ -179,6 +179,125 @@ func (oDb *DB) GetAlertEvents(ctx context.Context, p ListParams) ([]map[string]a
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+var alertWritableColumns = map[string]bool{
+	"dash_type": true, "dash_instance": true, "svc_id": true, "node_id": true,
+	"dash_severity": true, "dash_fmt": true, "dash_dict": true,
+	"dash_env": true, "dash_md5": true,
+}
+
+// AlertSvcEnv returns the environment of a service.
+func (oDb *DB) AlertSvcEnv(ctx context.Context, svcID string) (string, bool, error) {
+	const query = "SELECT COALESCE(svc_env, '') FROM services WHERE svc_id = ?"
+	var env string
+	err := oDb.DB.QueryRowContext(ctx, query, svcID).Scan(&env)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", false, nil
+	case err != nil:
+		return "", false, fmt.Errorf("alertSvcEnv: %w", err)
+	}
+	return env, true, nil
+}
+
+// AlertNodeEnv returns the environment of a node.
+func (oDb *DB) AlertNodeEnv(ctx context.Context, nodeID string) (string, bool, error) {
+	const query = "SELECT COALESCE(node_env, '') FROM nodes WHERE node_id = ?"
+	var env string
+	err := oDb.DB.QueryRowContext(ctx, query, nodeID).Scan(&env)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", false, nil
+	case err != nil:
+		return "", false, fmt.Errorf("alertNodeEnv: %w", err)
+	}
+	return env, true, nil
+}
+
+func (oDb *DB) GetAlertForUpdate(ctx context.Context, id int64) (env, dashFmt, dashDict string, found bool, err error) {
+	const query = "SELECT COALESCE(dash_env, ''), COALESCE(dash_fmt, ''), COALESCE(dash_dict, '') FROM dashboard WHERE id = ?"
+	err = oDb.DB.QueryRowContext(ctx, query, id).Scan(&env, &dashFmt, &dashDict)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", "", "", false, nil
+	case err != nil:
+		return "", "", "", false, fmt.Errorf("getAlertForUpdate: %w", err)
+	}
+	return env, dashFmt, dashDict, true, nil
+}
+
+func (oDb *DB) UpdateAlertFields(ctx context.Context, id int64, fields map[string]any) error {
+	setClauses := []string{"dash_updated = NOW()"}
+	args := []any{}
+	for col, val := range fields {
+		if !alertWritableColumns[col] {
+			continue
+		}
+		setClauses = append(setClauses, col+" = ?")
+		args = append(args, val)
+	}
+	query := "UPDATE dashboard SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
+	args = append(args, id)
+	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("updateAlertFields: %w", err)
+	}
+	oDb.SetChange("dashboard")
+	return nil
+}
+
+func (oDb *DB) FindAlertIDByKey(ctx context.Context, dashType, nodeID, svcID, dashInstance string) (int64, bool, error) {
+	const query = `SELECT id FROM dashboard
+		WHERE dash_type = ?
+		  AND COALESCE(node_id, '') = ?
+		  AND COALESCE(svc_id, '') = ?
+		  AND COALESCE(dash_instance, '') = ?
+		ORDER BY id LIMIT 1`
+	var id int64
+	err := oDb.DB.QueryRowContext(ctx, query, dashType, nodeID, svcID, dashInstance).Scan(&id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return 0, false, nil
+	case err != nil:
+		return 0, false, fmt.Errorf("findAlertIDByKey: %w", err)
+	}
+	return id, true, nil
+}
+
+func (oDb *DB) UpsertUpdateAlert(ctx context.Context, id int64, dashFmt, dashDict, dashEnv string, dashSeverity int) error {
+	const query = `UPDATE dashboard
+		SET dash_updated = NOW(), dash_fmt = ?, dash_dict = ?, dash_env = ?, dash_severity = ?
+		WHERE id = ?`
+	if _, err := oDb.DB.ExecContext(ctx, query, dashFmt, dashDict, dashEnv, dashSeverity, id); err != nil {
+		return fmt.Errorf("upsertUpdateAlert: %w", err)
+	}
+	oDb.SetChange("dashboard")
+	return nil
+}
+
+func (oDb *DB) InsertAlert(ctx context.Context, fields map[string]any) (int64, error) {
+	cols := []string{"dash_created", "dash_updated"}
+	placeholders := []string{"NOW()", "NOW()"}
+	var args []any
+	for col, val := range fields {
+		if !alertWritableColumns[col] {
+			continue
+		}
+		cols = append(cols, col)
+		placeholders = append(placeholders, "?")
+		args = append(args, val)
+	}
+	query := "INSERT INTO dashboard (" + strings.Join(cols, ", ") + ") VALUES (" + strings.Join(placeholders, ", ") + ")"
+	res, err := oDb.DB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("insertAlert: %w", err)
+	}
+	oDb.SetChange("dashboard")
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("insertAlert lastInsertId: %w", err)
+	}
+	return id, nil
+}
+
 func (oDb *DB) GetNodeAlerts(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
 	defer logDuration("getNodeAlerts", time.Now())
 

@@ -228,6 +228,57 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    post:
+      operationId: PostAlerts
+      description: |
+        Create or update an alert.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dash_type
+              properties:
+                dash_type:
+                  type: string
+                dash_instance:
+                  type: string
+                node_id:
+                  type: string
+                svc_id:
+                  type: string
+                dash_fmt:
+                  type: string
+                dash_dict:
+                  type: object
+                dash_severity:
+                  type: integer
+                base_severity:
+                  type: integer
+                dash_env:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /alerts/{id}:
     get:
@@ -288,6 +339,64 @@ paths:
                 properties:
                   info:
                     type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostAlert
+      description: |
+        Update an alert's properties. Requires the AlertsManager privilege. The
+        dash_env is recomputed from svc_id/node_id, dash_dict compatibility with
+        dash_fmt is validated, and the severity is clamped.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Alert id (dashboard.id)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dash_type:
+                  type: string
+                dash_instance:
+                  type: string
+                node_id:
+                  type: string
+                svc_id:
+                  type: string
+                dash_fmt:
+                  type: string
+                dash_dict:
+                  type: object
+                dash_severity:
+                  type: integer
+                base_severity:
+                  type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
         401:
           $ref: '#/components/responses/401'
         403:
