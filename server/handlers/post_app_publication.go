@@ -16,7 +16,11 @@ import (
 
 // PostAppPublication handles POST /apps/{app_id}/publications/{group_id}
 func (a *Api) PostAppPublication(c echo.Context, appId string, groupId string) error {
-	log := echolog.GetLogHandler(c, "PostAppPublication")
+	return a.postAppPublication(c, "PostAppPublication", appId, groupId)
+}
+
+func (a *Api) postAppPublication(c echo.Context, handlerName, appId, groupId string) error {
+	log := echolog.GetLogHandler(c, handlerName)
 	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()

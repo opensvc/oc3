@@ -453,6 +453,24 @@ type GetAppServicesParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteAppsPublicationsJSONBody defines parameters for DeleteAppsPublications.
+type DeleteAppsPublicationsJSONBody struct {
+	// AppId App record id or app code
+	AppId string `json:"app_id"`
+
+	// GroupId Group record id or group role
+	GroupId string `json:"group_id"`
+}
+
+// PostAppsPublicationsJSONBody defines parameters for PostAppsPublications.
+type PostAppsPublicationsJSONBody struct {
+	// AppId App record id or app code
+	AppId string `json:"app_id"`
+
+	// GroupId Group record id or group role
+	GroupId string `json:"group_id"`
+}
+
 // GetArraysParams defines parameters for GetArrays.
 type GetArraysParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2660,6 +2678,12 @@ type PostAppsJSONRequestBody PostAppsJSONBody
 
 // PostAppJSONRequestBody defines body for PostApp for application/json ContentType.
 type PostAppJSONRequestBody PostAppJSONBody
+
+// DeleteAppsPublicationsJSONRequestBody defines body for DeleteAppsPublications for application/json ContentType.
+type DeleteAppsPublicationsJSONRequestBody DeleteAppsPublicationsJSONBody
+
+// PostAppsPublicationsJSONRequestBody defines body for PostAppsPublications for application/json ContentType.
+type PostAppsPublicationsJSONRequestBody PostAppsPublicationsJSONBody
 
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
