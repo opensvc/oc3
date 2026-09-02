@@ -509,6 +509,53 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+    delete:
+      operationId: DeleteApps
+      description: |
+        Delete an application code (bulk form). Either the 'id' or the 'app'
+        key is mandatory in the body and selects the target app; the deletion
+        is then handled as DELETE /apps/{app_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: App record id
+                app:
+                  type: string
+                  description: App code
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /apps/{app_id}:
     post:
       operationId: PostApp
@@ -585,7 +632,7 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
     delete:
-      operationId: DeleteApps
+      operationId: DeleteApp
       description: Delete an application code
       parameters:
         - in: path

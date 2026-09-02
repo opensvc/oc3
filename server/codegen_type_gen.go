@@ -278,6 +278,15 @@ type PostAlertJSONBody struct {
 	SvcId        *string                 `json:"svc_id,omitempty"`
 }
 
+// DeleteAppsJSONBody defines parameters for DeleteApps.
+type DeleteAppsJSONBody struct {
+	// App App code
+	App *string `json:"app,omitempty"`
+
+	// Id App record id
+	Id *string `json:"id,omitempty"`
+}
+
 // GetAppsParams defines parameters for GetApps.
 type GetAppsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2642,6 +2651,9 @@ type PostAlertsJSONRequestBody PostAlertsJSONBody
 
 // PostAlertJSONRequestBody defines body for PostAlert for application/json ContentType.
 type PostAlertJSONRequestBody PostAlertJSONBody
+
+// DeleteAppsJSONRequestBody defines body for DeleteApps for application/json ContentType.
+type DeleteAppsJSONRequestBody DeleteAppsJSONBody
 
 // PostAppsJSONRequestBody defines body for PostApps for application/json ContentType.
 type PostAppsJSONRequestBody PostAppsJSONBody
