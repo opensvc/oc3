@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -16,7 +17,6 @@ import (
 // DeleteService handles DELETE /services/{svc_id}
 func (a *Api) DeleteService(c echo.Context, svcId string) error {
 	log := echolog.GetLogHandler(c, "DeleteService")
-	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 
@@ -26,13 +26,17 @@ func (a *Api) DeleteService(c echo.Context, svcId string) error {
 
 	log.Info("called", "svc_id", svcId)
 
-	svc, err := odb.ServiceBySvcIDOrName(ctx, svcId)
+	return a.deleteServiceByKey(c, log, ctx, svcId)
+}
+
+// deleteServiceByKey deletes the service designated by its svc_id or name,
+// cascading on the service instances and the dashboard entries.
+func (a *Api) deleteServiceByKey(c echo.Context, log *slog.Logger, ctx context.Context, svcId string) error {
+	odb := a.ODB
+
+	svc, err := a.resolveServiceRow(c, log, ctx, svcId)
 	if err != nil {
-		log.Error("cannot lookup service", "svc_id", svcId, logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot lookup service %s", svcId)
-	}
-	if svc == nil {
-		return JSONProblemf(c, http.StatusNotFound, "service %s not found", svcId)
+		return err
 	}
 
 	responsible, err := odb.ServiceResponsible(ctx, svc.SvcID, UserGroupsFromContext(c), IsManager(c))

@@ -4360,6 +4360,49 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+    delete:
+      operationId: DeleteServices
+      description: |
+        Delete a service.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - svc_id
+              properties:
+                svc_id:
+                  type: string
+                  description: Service id or name
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+
   /services/{svc_id}:
     get:
       operationId: GetService
@@ -5478,6 +5521,53 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteServicesInstances
+      description: |
+        Delete a service instance.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                svc_id:
+                  type: string
+                  description: Service id or name, to be used along with node_id
+                node_id:
+                  type: string
+                  description: Node id or name, to be used along with svc_id
+                id:
+                  type: integer
+                  description: Service instance record id, as an alternative to svc_id + node_id
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 
   /services_instances/{svc_id}:
     get:

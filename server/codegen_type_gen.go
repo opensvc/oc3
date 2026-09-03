@@ -1856,6 +1856,12 @@ type GetNodeTagsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteServicesJSONBody defines parameters for DeleteServices.
+type DeleteServicesJSONBody struct {
+	// SvcId Service id or name
+	SvcId string `json:"svc_id"`
+}
+
 // GetServicesParams defines parameters for GetServices.
 type GetServicesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2449,6 +2455,18 @@ type GetServiceTagsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteServicesInstancesJSONBody defines parameters for DeleteServicesInstances.
+type DeleteServicesInstancesJSONBody struct {
+	// Id Service instance record id, as an alternative to svc_id + node_id
+	Id *int `json:"id,omitempty"`
+
+	// NodeId Node id or name, to be used along with svc_id
+	NodeId *string `json:"node_id,omitempty"`
+
+	// SvcId Service id or name, to be used along with node_id
+	SvcId *string `json:"svc_id,omitempty"`
+}
+
 // GetServicesInstancesParams defines parameters for GetServicesInstances.
 type GetServicesInstancesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2818,11 +2836,17 @@ type PostNodeComplianceRulesetJSONRequestBody = PostNodeComplianceRulesetJSONBod
 // PostNodeSnoozeJSONRequestBody defines body for PostNodeSnooze for application/json ContentType.
 type PostNodeSnoozeJSONRequestBody PostNodeSnoozeJSONBody
 
+// DeleteServicesJSONRequestBody defines body for DeleteServices for application/json ContentType.
+type DeleteServicesJSONRequestBody DeleteServicesJSONBody
+
 // PostServicesJSONRequestBody defines body for PostServices for application/json ContentType.
 type PostServicesJSONRequestBody PostServicesJSONBody
 
 // PostServiceJSONRequestBody defines body for PostService for application/json ContentType.
 type PostServiceJSONRequestBody PostServiceJSONBody
+
+// DeleteServicesInstancesJSONRequestBody defines body for DeleteServicesInstances for application/json ContentType.
+type DeleteServicesInstancesJSONRequestBody DeleteServicesInstancesJSONBody
 
 // DeleteTagsJSONRequestBody defines body for DeleteTags for application/json ContentType.
 type DeleteTagsJSONRequestBody DeleteTagsJSONBody

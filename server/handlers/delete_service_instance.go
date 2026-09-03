@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -16,7 +17,6 @@ import (
 // DeleteServiceInstance handles DELETE /services/{svc_id}/instances/{node_id}
 func (a *Api) DeleteServiceInstance(c echo.Context, svcId string, nodeId string) error {
 	log := echolog.GetLogHandler(c, "DeleteServiceInstance")
-	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 
@@ -24,13 +24,18 @@ func (a *Api) DeleteServiceInstance(c echo.Context, svcId string, nodeId string)
 		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
 	}
 
-	svc, err := odb.ServiceBySvcIDOrName(ctx, svcId)
+	log.Info("called", "svc_id", svcId, logkey.NodeID, nodeId)
+
+	return a.deleteServiceInstanceByKeys(c, log, ctx, svcId, nodeId)
+}
+
+// deleteServiceInstanceByKeys deletes the instance of a service
+func (a *Api) deleteServiceInstanceByKeys(c echo.Context, log *slog.Logger, ctx context.Context, svcId, nodeId string) error {
+	odb := a.ODB
+
+	svc, err := a.resolveServiceRow(c, log, ctx, svcId)
 	if err != nil {
-		log.Error("cannot lookup service", "svc_id", svcId, logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot lookup service %s", svcId)
-	}
-	if svc == nil {
-		return JSONProblemf(c, http.StatusNotFound, "service %s not found", svcId)
+		return err
 	}
 
 	node, err := odb.NodeByNodeIDOrNodename(ctx, nodeId)

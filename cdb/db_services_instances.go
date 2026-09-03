@@ -2,6 +2,8 @@ package cdb
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/opensvc/oc3/schema"
@@ -149,4 +151,18 @@ func (oDb *DB) GetServicesInstance(ctx context.Context, svcID string, p ListPara
 	defer func() { _ = rows.Close() }()
 
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// ServiceInstanceByID returns the svc_id and node_id of the service instance
+func (oDb *DB) ServiceInstanceByID(ctx context.Context, id int) (string, string, error) {
+	const query = "SELECT svc_id, node_id FROM svcmon WHERE id = ? LIMIT 1"
+	var svcID, nodeID sql.NullString
+	err := oDb.DB.QueryRowContext(ctx, query, id).Scan(&svcID, &nodeID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", "", nil
+	}
+	if err != nil {
+		return "", "", fmt.Errorf("ServiceInstanceByID: %w", err)
+	}
+	return svcID.String, nodeID.String, nil
 }
