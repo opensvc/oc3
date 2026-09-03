@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -18,28 +19,26 @@ import (
 // attachments to nodes and services.
 func (a *Api) DeleteTag(c echo.Context, tagIdParam int) error {
 	log := echolog.GetLogHandler(c, "DeleteTag")
-	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 
-	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
-	}
-	if !IsManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "TagManager privilege required")
+	if err := requireTagManager(c); err != nil {
+		return err
 	}
 
 	log.Info("called", logkey.TagID, tagIdParam)
 
-	tags, err := odb.GetTags(ctx, &tagIdParam, 0, 0)
+	tag, err := a.resolveTagByRecordID(c, log, ctx, tagIdParam)
 	if err != nil {
-		log.Error("cannot get tag", logkey.TagID, tagIdParam, logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot get tag")
+		return err
 	}
-	if len(tags) == 0 {
-		return JSONProblemf(c, http.StatusNotFound, "tag %d not found", tagIdParam)
-	}
-	tag := tags[0]
+
+	return a.deleteTagCascade(c, log, ctx, tag)
+}
+
+// deleteTagCascade deletes the tag and its node and service attachments.
+func (a *Api) deleteTagCascade(c echo.Context, log *slog.Logger, ctx context.Context, tag *cdb.Tag) error {
+	odb := a.ODB
 
 	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
@@ -48,9 +47,9 @@ func (a *Api) DeleteTag(c echo.Context, tagIdParam int) error {
 	}
 	defer endTx()
 
-	res, err := odb.DeleteTagCascade(ctx, tagIdParam, tag.TagID)
+	res, err := odb.DeleteTagCascade(ctx, tag.ID, tag.TagID)
 	if err != nil {
-		log.Error("cannot delete tag", logkey.TagID, tagIdParam, logkey.Error, err)
+		log.Error("cannot delete tag", logkey.TagID, tag.ID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete tag %s", tag.TagName)
 	}
 
@@ -68,9 +67,7 @@ func (a *Api) DeleteTag(c echo.Context, tagIdParam int) error {
 
 	markSuccess()
 
-	if err := odb.Session.NotifyChanges(ctx); err != nil {
-		log.Error("cannot notify changes", logkey.Error, err)
-	}
+	a.notifyChanges(log, ctx)
 
 	info := []string{
 		fmt.Sprintf("%d node attachments deleted", res.NodeAttachments),
@@ -83,4 +80,14 @@ func (a *Api) DeleteTag(c echo.Context, tagIdParam int) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"info": strings.Join(info, ", ")})
+}
+
+func requireTagManager(c echo.Context) error {
+	if !IsAuthByUser(c) {
+		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
+	}
+	if !IsTagManager(c) {
+		return JSONProblemf(c, http.StatusForbidden, "TagManager privilege required")
+	}
+	return nil
 }

@@ -1,6 +1,7 @@
 package serverhandlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -45,6 +46,22 @@ func (a *Api) resolveNode(c echo.Context, log *slog.Logger, nodeId string) (*cdb
 		return nil, JSONProblemf(c, http.StatusNotFound, "node %s not found", nodeId)
 	}
 	return node, nil
+}
+
+// resolveServiceRow resolves a service by svc_id or name
+func (a *Api) resolveServiceRow(c echo.Context, log *slog.Logger, ctx context.Context, svcId string) (*cdb.DBService, error) {
+	if svcId == "" {
+		return nil, JSONProblemf(c, http.StatusBadRequest, "invalid svc_id: ''")
+	}
+	svc, err := a.ODB.ServiceBySvcIDOrName(ctx, svcId)
+	if err != nil {
+		log.Error("cannot resolve service", "svc_id", svcId, logkey.Error, err)
+		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot resolve service %s", svcId)
+	}
+	if svc == nil {
+		return nil, JSONProblemf(c, http.StatusNotFound, "service %s not found", svcId)
+	}
+	return svc, nil
 }
 
 // resolveService verifies that a service exists and is accessible

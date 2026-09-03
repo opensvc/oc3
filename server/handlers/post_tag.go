@@ -19,11 +19,8 @@ func (a *Api) PostTag(c echo.Context, tagIdParam int) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 
-	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
-	}
-	if !IsManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "TagManager privilege required")
+	if err := requireTagManager(c); err != nil {
+		return err
 	}
 
 	var body server.PostTagJSONRequestBody

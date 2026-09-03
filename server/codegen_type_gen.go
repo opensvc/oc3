@@ -2545,6 +2545,12 @@ type GetServicesStatusLogParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteTagsJSONBody defines parameters for DeleteTags.
+type DeleteTagsJSONBody struct {
+	// TagId Tag tag_id, or tag record id
+	TagId string `json:"tag_id"`
+}
+
 // GetTagsParams defines parameters for GetTags.
 type GetTagsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2567,6 +2573,25 @@ type GetTagsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostTagsJSONBody defines parameters for PostTags.
+type PostTagsJSONBody struct {
+	// TagData Free form JSON data attached to the tag
+	TagData *string `json:"tag_data,omitempty"`
+
+	// TagExclude Regular expression of tag names that can not be attached along with this tag
+	TagExclude *string `json:"tag_exclude,omitempty"`
+	TagName    string  `json:"tag_name"`
+}
+
+// DeleteTagsNodesJSONBody defines parameters for DeleteTagsNodes.
+type DeleteTagsNodesJSONBody struct {
+	// NodeId Node id
+	NodeId string `json:"node_id"`
+
+	// TagId Tag tag_id, or tag record id
+	TagId string `json:"tag_id"`
 }
 
 // GetTagsNodesParams defines parameters for GetTagsNodes.
@@ -2593,6 +2618,27 @@ type GetTagsNodesParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostTagsNodesJSONBody defines parameters for PostTagsNodes.
+type PostTagsNodesJSONBody struct {
+	// NodeId Node id
+	NodeId string `json:"node_id"`
+
+	// TagAttachData Free form JSON data attached to the attachment
+	TagAttachData *string `json:"tag_attach_data,omitempty"`
+
+	// TagId Tag tag_id, or tag record id
+	TagId string `json:"tag_id"`
+}
+
+// DeleteTagsServicesJSONBody defines parameters for DeleteTagsServices.
+type DeleteTagsServicesJSONBody struct {
+	// SvcId Service id or name
+	SvcId string `json:"svc_id"`
+
+	// TagId Tag tag_id, or tag record id
+	TagId string `json:"tag_id"`
+}
+
 // GetTagsServicesParams defines parameters for GetTagsServices.
 type GetTagsServicesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2615,6 +2661,18 @@ type GetTagsServicesParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostTagsServicesJSONBody defines parameters for PostTagsServices.
+type PostTagsServicesJSONBody struct {
+	// SvcId Service id or name
+	SvcId string `json:"svc_id"`
+
+	// TagAttachData Free form JSON data attached to the attachment
+	TagAttachData *string `json:"tag_attach_data,omitempty"`
+
+	// TagId Tag tag_id, or tag record id
+	TagId string `json:"tag_id"`
 }
 
 // GetTagParams defines parameters for GetTag.
@@ -2765,6 +2823,24 @@ type PostServicesJSONRequestBody PostServicesJSONBody
 
 // PostServiceJSONRequestBody defines body for PostService for application/json ContentType.
 type PostServiceJSONRequestBody PostServiceJSONBody
+
+// DeleteTagsJSONRequestBody defines body for DeleteTags for application/json ContentType.
+type DeleteTagsJSONRequestBody DeleteTagsJSONBody
+
+// PostTagsJSONRequestBody defines body for PostTags for application/json ContentType.
+type PostTagsJSONRequestBody PostTagsJSONBody
+
+// DeleteTagsNodesJSONRequestBody defines body for DeleteTagsNodes for application/json ContentType.
+type DeleteTagsNodesJSONRequestBody DeleteTagsNodesJSONBody
+
+// PostTagsNodesJSONRequestBody defines body for PostTagsNodes for application/json ContentType.
+type PostTagsNodesJSONRequestBody PostTagsNodesJSONBody
+
+// DeleteTagsServicesJSONRequestBody defines body for DeleteTagsServices for application/json ContentType.
+type DeleteTagsServicesJSONRequestBody DeleteTagsServicesJSONBody
+
+// PostTagsServicesJSONRequestBody defines body for PostTagsServices for application/json ContentType.
+type PostTagsServicesJSONRequestBody PostTagsServicesJSONBody
 
 // PostTagJSONRequestBody defines body for PostTag for application/json ContentType.
 type PostTagJSONRequestBody PostTagJSONBody

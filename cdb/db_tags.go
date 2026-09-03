@@ -628,3 +628,80 @@ func stringsToAny(ss []string) []any {
 	}
 	return out
 }
+
+func scanTag(row *sql.Row) (*Tag, error) {
+	var tag Tag
+	var tagCreated, tagExclude, tagData, tagID sql.NullString
+	err := row.Scan(&tag.ID, &tag.TagName, &tagCreated, &tagExclude, &tagData, &tagID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	tag.TagCreated = tagCreated.String
+	tag.TagExclude = tagExclude.String
+	tag.TagID = tagID.String
+	if tagData.Valid && tagData.String != "" {
+		var parsed any
+		if err := json.Unmarshal([]byte(tagData.String), &parsed); err == nil {
+			tag.TagData = parsed
+		} else {
+			tag.TagData = tagData.String
+		}
+	}
+	return &tag, nil
+}
+
+const tagSelectColumns = "SELECT id, tag_name, tag_created, tag_exclude, tag_data, tag_id FROM tags"
+
+// TagByName returns the tag having the given tag_name, or nil when no such tag exists.
+func (oDb *DB) TagByName(ctx context.Context, tagName string) (*Tag, error) {
+	tag, err := scanTag(oDb.DB.QueryRowContext(ctx, tagSelectColumns+" WHERE tag_name = ? LIMIT 1", tagName))
+	if err != nil {
+		return nil, fmt.Errorf("TagByName: %w", err)
+	}
+	return tag, nil
+}
+
+// TagByTagID returns the tag having the given tag_id, or nil when no such tag exists.
+func (oDb *DB) TagByTagID(ctx context.Context, tagID string) (*Tag, error) {
+	tag, err := scanTag(oDb.DB.QueryRowContext(ctx, tagSelectColumns+" WHERE tag_id = ? LIMIT 1", tagID))
+	if err != nil {
+		return nil, fmt.Errorf("TagByTagID: %w", err)
+	}
+	return tag, nil
+}
+
+// TagByID returns the tag having the given record id, or nil when no such tag exists.
+func (oDb *DB) TagByID(ctx context.Context, id int) (*Tag, error) {
+	tag, err := scanTag(oDb.DB.QueryRowContext(ctx, tagSelectColumns+" WHERE id = ? LIMIT 1", id))
+	if err != nil {
+		return nil, fmt.Errorf("TagByID: %w", err)
+	}
+	return tag, nil
+}
+
+// InsertTag creates a tag named tagName and returns the created row.
+func (oDb *DB) InsertTag(ctx context.Context, tagName string, tagExclude, tagData *string) (*Tag, error) {
+	const query = "INSERT INTO tags (tag_name, tag_id, tag_exclude, tag_data) VALUES (?, UUID(), ?, ?)"
+	var exclude, data sql.NullString
+	if tagExclude != nil {
+		exclude = sql.NullString{String: *tagExclude, Valid: true}
+	}
+	if tagData != nil {
+		data = sql.NullString{String: *tagData, Valid: true}
+	}
+	if _, err := oDb.ExecContext(ctx, query, tagName, exclude, data); err != nil {
+		return nil, fmt.Errorf("InsertTag: %w", err)
+	}
+	oDb.SetChange("tags")
+	tag, err := oDb.TagByName(ctx, tagName)
+	if err != nil {
+		return nil, fmt.Errorf("InsertTag: %w", err)
+	}
+	if tag == nil {
+		return nil, fmt.Errorf("InsertTag: tag %s not found after insert", tagName)
+	}
+	return tag, nil
+}

@@ -5595,6 +5595,93 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+    post:
+      operationId: PostTags
+      description: |
+        Create a tag.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tag_name
+              properties:
+                tag_name:
+                  type: string
+                tag_exclude:
+                  type: string
+                  description: Regular expression of tag names that can not be attached along with this tag
+                tag_data:
+                  type: string
+                  description: Free form JSON data attached to the tag
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteTags
+      description: |
+        Delete a tag (bulk form).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tag_id
+              properties:
+                tag_id:
+                  type: string
+                  description: Tag tag_id, or tag record id
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+
   /tags/nodes:
     get:
       operationId: GetTagsNodes
@@ -5622,6 +5709,104 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+    post:
+      operationId: PostTagsNodes
+      description: |
+        Attach a tag to a node.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tag_id
+                - node_id
+              properties:
+                tag_id:
+                  type: string
+                  description: Tag tag_id, or tag record id
+                node_id:
+                  type: string
+                  description: Node id
+                tag_attach_data:
+                  type: string
+                  description: Free form JSON data attached to the attachment
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteTagsNodes
+      description: |
+        Detach a tag from a node.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tag_id
+                - node_id
+              properties:
+                tag_id:
+                  type: string
+                  description: Tag tag_id, or tag record id
+                node_id:
+                  type: string
+                  description: Node id
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+
   /tags/services:
     get:
       operationId: GetTagsServices
@@ -5648,6 +5833,104 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+
+    post:
+      operationId: PostTagsServices
+      description: |
+        Attach a tag to a service.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tag_id
+                - svc_id
+              properties:
+                tag_id:
+                  type: string
+                  description: Tag tag_id, or tag record id
+                svc_id:
+                  type: string
+                  description: Service id or name
+                tag_attach_data:
+                  type: string
+                  description: Free form JSON data attached to the attachment
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteTagsServices
+      description: |
+        Detach a tag from a service.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tag_id
+                - svc_id
+              properties:
+                tag_id:
+                  type: string
+                  description: Tag tag_id, or tag record id
+                svc_id:
+                  type: string
+                  description: Service id or name
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 
   /tags/{tag_id}:
     post:
