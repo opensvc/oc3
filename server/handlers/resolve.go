@@ -1,6 +1,8 @@
 package serverhandlers
 
 import (
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -59,4 +61,20 @@ func (a *Api) resolveService(c echo.Context, log *slog.Logger, svcId string) err
 		return JSONProblemf(c, http.StatusNotFound, "service %s not found", svcId)
 	}
 	return nil
+}
+
+func decodeAppGroupKeys(c echo.Context) (string, string, error) {
+	var body map[string]any
+	if err := json.NewDecoder(c.Request().Body).Decode(&body); err != nil {
+		return "", "", JSONProblem(c, http.StatusBadRequest, err.Error())
+	}
+	rawAppID, ok := body["app_id"]
+	if !ok {
+		return "", "", JSONProblemf(c, http.StatusBadRequest, "The 'app_id' key is mandatory")
+	}
+	rawGroupID, ok := body["group_id"]
+	if !ok {
+		return "", "", JSONProblemf(c, http.StatusBadRequest, "The 'group_id' key is mandatory")
+	}
+	return fmt.Sprintf("%v", rawAppID), fmt.Sprintf("%v", rawGroupID), nil
 }

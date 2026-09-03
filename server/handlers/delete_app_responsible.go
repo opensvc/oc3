@@ -14,7 +14,11 @@ import (
 
 // DeleteAppResponsible handles DELETE /apps/{app_id}/responsibles/{group_id}
 func (a *Api) DeleteAppResponsible(c echo.Context, appId string, groupId string) error {
-	log := echolog.GetLogHandler(c, "DeleteAppResponsible")
+	return a.deleteAppResponsible(c, "DeleteAppResponsible", appId, groupId)
+}
+
+func (a *Api) deleteAppResponsible(c echo.Context, handlerName, appId, groupId string) error {
+	log := echolog.GetLogHandler(c, handlerName)
 	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()

@@ -6,7 +6,7 @@ import (
 
 // DeleteAppsPublications handles DELETE /apps_publications (bulk).
 func (a *Api) DeleteAppsPublications(c echo.Context) error {
-	appId, groupId, err := decodeAppPublicationKeys(c)
+	appId, groupId, err := decodeAppGroupKeys(c)
 	if err != nil {
 		return err
 	}

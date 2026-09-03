@@ -471,6 +471,24 @@ type PostAppsPublicationsJSONBody struct {
 	GroupId string `json:"group_id"`
 }
 
+// DeleteAppsResponsiblesJSONBody defines parameters for DeleteAppsResponsibles.
+type DeleteAppsResponsiblesJSONBody struct {
+	// AppId App record id or app code
+	AppId string `json:"app_id"`
+
+	// GroupId Group record id or group role
+	GroupId string `json:"group_id"`
+}
+
+// PostAppsResponsiblesJSONBody defines parameters for PostAppsResponsibles.
+type PostAppsResponsiblesJSONBody struct {
+	// AppId App record id or app code
+	AppId string `json:"app_id"`
+
+	// GroupId Group record id or group role
+	GroupId string `json:"group_id"`
+}
+
 // GetArraysParams defines parameters for GetArrays.
 type GetArraysParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -2684,6 +2702,12 @@ type DeleteAppsPublicationsJSONRequestBody DeleteAppsPublicationsJSONBody
 
 // PostAppsPublicationsJSONRequestBody defines body for PostAppsPublications for application/json ContentType.
 type PostAppsPublicationsJSONRequestBody PostAppsPublicationsJSONBody
+
+// DeleteAppsResponsiblesJSONRequestBody defines body for DeleteAppsResponsibles for application/json ContentType.
+type DeleteAppsResponsiblesJSONRequestBody DeleteAppsResponsiblesJSONBody
+
+// PostAppsResponsiblesJSONRequestBody defines body for PostAppsResponsibles for application/json ContentType.
+type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
 
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody

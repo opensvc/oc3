@@ -16,7 +16,11 @@ import (
 
 // PostAppResponsible handles POST /apps/{app_id}/responsibles/{group_id}
 func (a *Api) PostAppResponsible(c echo.Context, appId string, groupId string) error {
-	log := echolog.GetLogHandler(c, "PostAppResponsible")
+	return a.postAppResponsible(c, "PostAppResponsible", appId, groupId)
+}
+
+func (a *Api) postAppResponsible(c echo.Context, handlerName, appId, groupId string) error {
+	log := echolog.GetLogHandler(c, handlerName)
 	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
