@@ -58,10 +58,10 @@ func (a *Api) PostApp(c echo.Context, appId string) error {
 	}
 
 	fields := cdb.UpdateAppFields{
-		App:        body.App,
+		App:         body.App,
 		Description: body.Description,
-		AppDomain:  body.AppDomain,
-		AppTeamOps: body.AppTeamOps,
+		AppDomain:   body.AppDomain,
+		AppTeamOps:  body.AppTeamOps,
 	}
 
 	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})

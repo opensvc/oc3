@@ -14,6 +14,17 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Defines values for PostFiltersJSONBodyFOp.
+const (
+	Equal            PostFiltersJSONBodyFOp = "="
+	GreaterThan      PostFiltersJSONBodyFOp = ">"
+	GreaterThanEqual PostFiltersJSONBodyFOp = ">="
+	IN               PostFiltersJSONBodyFOp = "IN"
+	LIKE             PostFiltersJSONBodyFOp = "LIKE"
+	LessThan         PostFiltersJSONBodyFOp = "<"
+	LessThanEqual    PostFiltersJSONBodyFOp = "<="
+)
+
 // Defines values for PostNodesJSONBodyActionType.
 const (
 	PostNodesJSONBodyActionTypePull PostNodesJSONBodyActionType = "pull"
@@ -588,6 +599,12 @@ type GetDiskParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteFiltersJSONBody defines parameters for DeleteFilters.
+type DeleteFiltersJSONBody struct {
+	// Id Filter record id, or filter label
+	Id string `json:"id"`
+}
+
 // GetFiltersParams defines parameters for GetFilters.
 type GetFiltersParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -611,6 +628,24 @@ type GetFiltersParams struct {
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
+
+// PostFiltersJSONBody defines parameters for PostFilters.
+type PostFiltersJSONBody struct {
+	// FField Column of f_table the filter applies to
+	FField string `json:"f_field"`
+
+	// FOp Comparison operator
+	FOp PostFiltersJSONBodyFOp `json:"f_op"`
+
+	// FTable Table the filter applies to
+	FTable string `json:"f_table"`
+
+	// FValue Value to compare the column to
+	FValue string `json:"f_value"`
+}
+
+// PostFiltersJSONBodyFOp defines parameters for PostFilters.
+type PostFiltersJSONBodyFOp string
 
 // GetFilterParams defines parameters for GetFilter.
 type GetFilterParams struct {
@@ -645,6 +680,12 @@ type PostFilterJSONBody struct {
 	FValue *string `json:"f_value,omitempty"`
 }
 
+// DeleteFiltersetsJSONBody defines parameters for DeleteFiltersets.
+type DeleteFiltersetsJSONBody struct {
+	// Id Filterset record id, or filterset name
+	Id string `json:"id"`
+}
+
 // GetFiltersetsParams defines parameters for GetFiltersets.
 type GetFiltersetsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -667,6 +708,18 @@ type GetFiltersetsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostFiltersetsJSONBody defines parameters for PostFiltersets.
+type PostFiltersetsJSONBody struct {
+	// FsetName Name of the filterset to create, or of the filterset to update
+	FsetName *string `json:"fset_name,omitempty"`
+
+	// FsetStats Whether the filterset is a stats filterset (T or F)
+	FsetStats *string `json:"fset_stats,omitempty"`
+
+	// Id Filterset record id or name, to update an existing filterset
+	Id *string `json:"id,omitempty"`
 }
 
 // GetFiltersetParams defines parameters for GetFilterset.
@@ -805,6 +858,54 @@ type GetFiltersetServicesParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteFiltersetsFiltersJSONBody defines parameters for DeleteFiltersetsFilters.
+type DeleteFiltersetsFiltersJSONBody struct {
+	// FId Filter record id, or filter label
+	FId string `json:"f_id"`
+
+	// FsetId Filterset record id, or filterset name
+	FsetId string `json:"fset_id"`
+}
+
+// PostFiltersetsFiltersJSONBody defines parameters for PostFiltersetsFilters.
+type PostFiltersetsFiltersJSONBody struct {
+	// FId Filter record id, or filter label
+	FId string `json:"f_id"`
+
+	// FLogOp Logical operator joining this filter to the previous one
+	FLogOp *string `json:"f_log_op,omitempty"`
+
+	// FOrder Position of the filter in the filterset
+	FOrder *int `json:"f_order,omitempty"`
+
+	// FsetId Filterset record id, or filterset name
+	FsetId string `json:"fset_id"`
+}
+
+// DeleteFiltersetsFiltersetsJSONBody defines parameters for DeleteFiltersetsFiltersets.
+type DeleteFiltersetsFiltersetsJSONBody struct {
+	// ChildFsetId Child filterset record id, or name
+	ChildFsetId string `json:"child_fset_id"`
+
+	// ParentFsetId Parent filterset record id, or name
+	ParentFsetId string `json:"parent_fset_id"`
+}
+
+// PostFiltersetsFiltersetsJSONBody defines parameters for PostFiltersetsFiltersets.
+type PostFiltersetsFiltersetsJSONBody struct {
+	// ChildFsetId Child filterset record id, or name
+	ChildFsetId string `json:"child_fset_id"`
+
+	// FLogOp Logical operator joining this filterset to the previous entry
+	FLogOp *string `json:"f_log_op,omitempty"`
+
+	// FOrder Position of the child filterset in the parent filterset
+	FOrder *int `json:"f_order,omitempty"`
+
+	// ParentFsetId Parent filterset record id, or name
+	ParentFsetId string `json:"parent_fset_id"`
 }
 
 // GetFrontendHiddenMenuEntriesParams defines parameters for GetFrontendHiddenMenuEntries.
@@ -2794,8 +2895,20 @@ type DeleteDisksJSONRequestBody DeleteDisksJSONBody
 // PostDisksJSONRequestBody defines body for PostDisks for application/json ContentType.
 type PostDisksJSONRequestBody PostDisksJSONBody
 
+// DeleteFiltersJSONRequestBody defines body for DeleteFilters for application/json ContentType.
+type DeleteFiltersJSONRequestBody DeleteFiltersJSONBody
+
+// PostFiltersJSONRequestBody defines body for PostFilters for application/json ContentType.
+type PostFiltersJSONRequestBody PostFiltersJSONBody
+
 // PostFilterJSONRequestBody defines body for PostFilter for application/json ContentType.
 type PostFilterJSONRequestBody PostFilterJSONBody
+
+// DeleteFiltersetsJSONRequestBody defines body for DeleteFiltersets for application/json ContentType.
+type DeleteFiltersetsJSONRequestBody DeleteFiltersetsJSONBody
+
+// PostFiltersetsJSONRequestBody defines body for PostFiltersets for application/json ContentType.
+type PostFiltersetsJSONRequestBody PostFiltersetsJSONBody
 
 // PostFiltersetJSONRequestBody defines body for PostFilterset for application/json ContentType.
 type PostFiltersetJSONRequestBody PostFiltersetJSONBody
@@ -2805,6 +2918,18 @@ type PostFiltersetFilterJSONRequestBody PostFiltersetFilterJSONBody
 
 // PostFiltersetFiltersetJSONRequestBody defines body for PostFiltersetFilterset for application/json ContentType.
 type PostFiltersetFiltersetJSONRequestBody PostFiltersetFiltersetJSONBody
+
+// DeleteFiltersetsFiltersJSONRequestBody defines body for DeleteFiltersetsFilters for application/json ContentType.
+type DeleteFiltersetsFiltersJSONRequestBody DeleteFiltersetsFiltersJSONBody
+
+// PostFiltersetsFiltersJSONRequestBody defines body for PostFiltersetsFilters for application/json ContentType.
+type PostFiltersetsFiltersJSONRequestBody PostFiltersetsFiltersJSONBody
+
+// DeleteFiltersetsFiltersetsJSONRequestBody defines body for DeleteFiltersetsFiltersets for application/json ContentType.
+type DeleteFiltersetsFiltersetsJSONRequestBody DeleteFiltersetsFiltersetsJSONBody
+
+// PostFiltersetsFiltersetsJSONRequestBody defines body for PostFiltersetsFiltersets for application/json ContentType.
+type PostFiltersetsFiltersetsJSONRequestBody PostFiltersetsFiltersetsJSONBody
 
 // DeleteGroupHiddenMenuEntriesJSONRequestBody defines body for DeleteGroupHiddenMenuEntries for application/json ContentType.
 type DeleteGroupHiddenMenuEntriesJSONRequestBody DeleteGroupHiddenMenuEntriesJSONBody

@@ -23,11 +23,8 @@ func (a *Api) PostFilter(c echo.Context, filterId string) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 
-	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
-	}
-	if !IsManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "CompManager privilege required")
+	if err := requireCompManager(c); err != nil {
+		return err
 	}
 
 	var body server.PostFilterJSONRequestBody

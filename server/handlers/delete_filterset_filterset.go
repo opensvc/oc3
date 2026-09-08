@@ -2,6 +2,7 @@ package serverhandlers
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -15,18 +16,20 @@ import (
 // detach the encapsulated child filterset from the parent filterset.
 func (a *Api) DeleteFiltersetFilterset(c echo.Context, filtersetId string, childId string) error {
 	log := echolog.GetLogHandler(c, "DeleteFiltersetFilterset")
-	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 
-	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
-	}
-	if !IsManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "CompManager privilege required")
+	if err := requireCompManager(c); err != nil {
+		return err
 	}
 
 	log.Info("called", "filterset_id", filtersetId, "child_id", childId)
+
+	return a.deleteFiltersetFilterset(c, log, ctx, filtersetId, childId)
+}
+
+func (a *Api) deleteFiltersetFilterset(c echo.Context, log *slog.Logger, ctx context.Context, filtersetId, childId string) error {
+	odb := a.ODB
 
 	parentID, found, err := odb.FiltersetID(ctx, filtersetId)
 	if err != nil {

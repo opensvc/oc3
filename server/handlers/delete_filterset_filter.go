@@ -3,6 +3,7 @@ package serverhandlers
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -15,18 +16,21 @@ import (
 // DeleteFiltersetFilter handles DELETE /filtersets/{filterset_id}/filters/{f_id}: detach a filter from a filterset.
 func (a *Api) DeleteFiltersetFilter(c echo.Context, filtersetId string, fId string) error {
 	log := echolog.GetLogHandler(c, "DeleteFiltersetFilter")
-	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 
-	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
-	}
-	if !IsManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "CompManager privilege required")
+	if err := requireCompManager(c); err != nil {
+		return err
 	}
 
 	log.Info("called", "filterset_id", filtersetId, "f_id", fId)
+
+	return a.deleteFiltersetFilter(c, log, ctx, filtersetId, fId)
+}
+
+// deleteFiltersetFilter detaches the filter from the filterset.
+func (a *Api) deleteFiltersetFilter(c echo.Context, log *slog.Logger, ctx context.Context, filtersetId, fId string) error {
+	odb := a.ODB
 
 	fsetID, found, err := odb.FiltersetID(ctx, filtersetId)
 	if err != nil {

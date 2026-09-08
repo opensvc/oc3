@@ -905,3 +905,34 @@ func (oDb *DB) GetStatsFiltersets(ctx context.Context) (fsets []Filterset, err e
 	}
 	return
 }
+
+// FiltersetByName returns the id of the filterset having the given name.
+func (oDb *DB) FiltersetByName(ctx context.Context, name string) (int, bool, error) {
+	var id int
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT id FROM gen_filtersets WHERE fset_name = ? LIMIT 1", name).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("FiltersetByName: %w", err)
+	}
+	return id, true, nil
+}
+
+// InsertFilterset creates a filterset and returns its id.
+func (oDb *DB) InsertFilterset(ctx context.Context, fsetName, fsetStats, author string) (int, error) {
+	const query = `INSERT INTO gen_filtersets (fset_name, fset_stats, fset_author, fset_updated)
+		VALUES (?, ?, ?, NOW())`
+	res, err := oDb.ExecContext(ctx, query, fsetName,
+		sql.NullString{String: fsetStats, Valid: true}, author)
+	if err != nil {
+		return 0, fmt.Errorf("InsertFilterset: %w", err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("InsertFilterset lastInsertId: %w", err)
+	}
+	oDb.SetChange("gen_filtersets")
+	return int(id), nil
+}

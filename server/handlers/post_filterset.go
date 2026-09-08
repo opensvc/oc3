@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -19,15 +20,11 @@ import (
 // PostFilterset handles POST /filtersets/{filterset_id}: modify a filterset's properties.
 func (a *Api) PostFilterset(c echo.Context, filtersetId string) error {
 	log := echolog.GetLogHandler(c, "PostFilterset")
-	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 
-	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
-	}
-	if !IsManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "CompManager privilege required")
+	if err := requireCompManager(c); err != nil {
+		return err
 	}
 
 	var body server.PostFiltersetJSONRequestBody
@@ -37,6 +34,12 @@ func (a *Api) PostFilterset(c echo.Context, filtersetId string) error {
 	}
 
 	log.Info("called", "filterset_id", filtersetId)
+
+	return a.postFiltersetUpdate(c, log, ctx, filtersetId, body.FsetName, body.FsetStats)
+}
+
+func (a *Api) postFiltersetUpdate(c echo.Context, log *slog.Logger, ctx context.Context, filtersetId string, fsetName, fsetStats *string) error {
+	odb := a.ODB
 
 	id, found, err := odb.FiltersetID(ctx, filtersetId)
 	if err != nil {
@@ -61,21 +64,21 @@ func (a *Api) PostFilterset(c echo.Context, filtersetId string) error {
 	}
 
 	// No updatable field provided: return the filterset unchanged.
-	if body.FsetName == nil && body.FsetStats == nil {
+	if fsetName == nil && fsetStats == nil {
 		return a.handleItem(c, "PostFilterset", "filterset", "id", strconv.Itoa(id), listEndpointParams{}, getFilterset)
 	}
 
 	fields := cdb.UpdateFiltersetFields{
-		FsetName:  body.FsetName,
-		FsetStats: body.FsetStats,
+		FsetName:  fsetName,
+		FsetStats: fsetStats,
 	}
 
 	changes := []string{}
-	if body.FsetName != nil {
-		changes = append(changes, fmt.Sprintf("fset_name: %s => %s", row.FsetName, *body.FsetName))
+	if fsetName != nil {
+		changes = append(changes, fmt.Sprintf("fset_name: %s => %s", row.FsetName, *fsetName))
 	}
-	if body.FsetStats != nil {
-		changes = append(changes, fmt.Sprintf("fset_stats: %s => %s", row.FsetStats, *body.FsetStats))
+	if fsetStats != nil {
+		changes = append(changes, fmt.Sprintf("fset_stats: %s => %s", row.FsetStats, *fsetStats))
 	}
 
 	userEmail, _ := c.Get(XUserEmail).(string)
@@ -109,4 +112,14 @@ func (a *Api) PostFilterset(c echo.Context, filtersetId string) error {
 	}
 
 	return a.handleItem(c, "PostFilterset", "filterset", "id", strconv.Itoa(id), listEndpointParams{}, getFilterset)
+}
+
+func requireCompManager(c echo.Context) error {
+	if !IsAuthByUser(c) {
+		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
+	}
+	if !IsCompManager(c) {
+		return JSONProblemf(c, http.StatusForbidden, "CompManager privilege required")
+	}
+	return nil
 }

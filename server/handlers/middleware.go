@@ -110,6 +110,10 @@ func IsTagManager(c echo.Context) bool {
 	return IsManager(c) || HasGroup(c, "TagManager")
 }
 
+func IsCompManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "CompManager")
+}
+
 func IsAlertsManager(c echo.Context) bool {
 	return IsManager(c) || HasGroup(c, "AlertsManager")
 }

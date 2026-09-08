@@ -1523,6 +1523,101 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+    post:
+      operationId: PostFilters
+      description: |
+        Create a filter. The filter definition must be unique.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - f_table
+                - f_field
+                - f_op
+                - f_value
+              properties:
+                f_table:
+                  type: string
+                  description: Table the filter applies to
+                f_field:
+                  type: string
+                  description: Column of f_table the filter applies to
+                f_op:
+                  type: string
+                  description: Comparison operator
+                  enum: ['=', 'LIKE', '>', '>=', '<', '<=', 'IN']
+                f_value:
+                  type: string
+                  description: Value to compare the column to
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteFilters
+      description: |
+        Delete a filter.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  description: Filter record id, or filter label
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+
   /filters/{filter_id}:
     post:
       operationId: PostFilter
@@ -1667,6 +1762,94 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+    post:
+      operationId: PostFiltersets
+      description: |
+        Create a filterset.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Filterset record id or name, to update an existing filterset
+                fset_name:
+                  type: string
+                  description: Name of the filterset to create, or of the filterset to update
+                fset_stats:
+                  type: string
+                  description: Whether the filterset is a stats filterset (T or F)
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteFiltersets
+      description: |
+        Delete a filterset.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  description: Filterset record id, or filterset name
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+
   /filtersets/{filterset_id}:
     post:
       operationId: PostFilterset
@@ -1777,6 +1960,7 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+
 
   /filtersets/{filterset_id}/usage:
     get:
@@ -2148,6 +2332,204 @@ paths:
                 properties:
                   info:
                     type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /filtersets_filters:
+    post:
+      operationId: PostFiltersetsFilters
+      description: |
+        Attach a filter to a filterset.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fset_id
+                - f_id
+              properties:
+                fset_id:
+                  type: string
+                  description: Filterset record id, or filterset name
+                f_id:
+                  type: string
+                  description: Filter record id, or filter label
+                f_log_op:
+                  type: string
+                  description: Logical operator joining this filter to the previous one
+                f_order:
+                  type: integer
+                  description: Position of the filter in the filterset
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteFiltersetsFilters
+      description: |
+        Detach a filter from a filterset.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fset_id
+                - f_id
+              properties:
+                fset_id:
+                  type: string
+                  description: Filterset record id, or filterset name
+                f_id:
+                  type: string
+                  description: Filter record id, or filter label
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /filtersets_filtersets:
+    post:
+      operationId: PostFiltersetsFiltersets
+      description: |
+        Encapsulate a filterset into another filterset.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - parent_fset_id
+                - child_fset_id
+              properties:
+                parent_fset_id:
+                  type: string
+                  description: Parent filterset record id, or name
+                child_fset_id:
+                  type: string
+                  description: Child filterset record id, or name
+                f_log_op:
+                  type: string
+                  description: Logical operator joining this filterset to the previous entry
+                f_order:
+                  type: integer
+                  description: Position of the child filterset in the parent filterset
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteFiltersetsFiltersets
+      description: |
+        Remove a filterset encapsulation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - parent_fset_id
+                - child_fset_id
+              properties:
+                parent_fset_id:
+                  type: string
+                  description: Parent filterset record id, or name
+                child_fset_id:
+                  type: string
+                  description: Child filterset record id, or name
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
         401:
           $ref: '#/components/responses/401'
         403:

@@ -3,29 +3,29 @@ package serverhandlers
 import "github.com/opensvc/oc3/server"
 
 type serviceBodyFields struct {
-	Svcname                *string
-	SvcApp                 *string
-	SvcEnv                 *string
-	SvcComment             *string
-	SvcNodes               *string
-	SvcDrpnode             *string
-	SvcDrpnodes            *string
-	SvcAutostart           *string
-	SvcDrptype             *string
-	SvcDrnoaction          *string
-	SvcMetrocluster        *string
-	SvcWave                *int
-	SvcTopology            *string
-	SvcFlexMinNodes        *int
-	SvcFlexMaxNodes        *int
-	SvcFlexCpuLowThresh    *int
-	SvcFlexCpuHighThresh   *int
-	SvcHa                  *string
-	SvcFrozen              *string
-	SvcProvisioned         *string
-	SvcPlacement           *string
-	SvcNotifications       *bool
-	SvcSnoozeTill          *string
+	Svcname              *string
+	SvcApp               *string
+	SvcEnv               *string
+	SvcComment           *string
+	SvcNodes             *string
+	SvcDrpnode           *string
+	SvcDrpnodes          *string
+	SvcAutostart         *string
+	SvcDrptype           *string
+	SvcDrnoaction        *string
+	SvcMetrocluster      *string
+	SvcWave              *int
+	SvcTopology          *string
+	SvcFlexMinNodes      *int
+	SvcFlexMaxNodes      *int
+	SvcFlexCpuLowThresh  *int
+	SvcFlexCpuHighThresh *int
+	SvcHa                *string
+	SvcFrozen            *string
+	SvcProvisioned       *string
+	SvcPlacement         *string
+	SvcNotifications     *bool
+	SvcSnoozeTill        *string
 }
 
 func (f serviceBodyFields) toFields() map[string]any {

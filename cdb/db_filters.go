@@ -232,3 +232,44 @@ func (oDb *DB) GetFilters(ctx context.Context, p ListParams) ([]map[string]any, 
 	defer func() { _ = rows.Close() }()
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
+
+func (oDb *DB) ColumnExists(ctx context.Context, table, column string) (bool, error) {
+	const query = `SELECT COUNT(*) FROM information_schema.COLUMNS
+		WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`
+	var n int
+	if err := oDb.DB.QueryRowContext(ctx, query, table, column).Scan(&n); err != nil {
+		return false, fmt.Errorf("ColumnExists: %w", err)
+	}
+	return n > 0, nil
+}
+
+func (oDb *DB) FilterByDefinition(ctx context.Context, fTable, fField, fOp, fValue string) (int, bool, error) {
+	const query = `SELECT id FROM gen_filters
+		WHERE f_table = ? AND f_field = ? AND f_op = ? AND f_value = ? LIMIT 1`
+	var id int
+	err := oDb.DB.QueryRowContext(ctx, query, fTable, fField, fOp, fValue).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("FilterByDefinition: %w", err)
+	}
+	return id, true, nil
+}
+
+// InsertFilter creates a filter and returns its record id.
+func (oDb *DB) InsertFilter(ctx context.Context, fTable, fField, fOp, fValue, author string) (int, error) {
+	const query = `INSERT INTO gen_filters (f_table, f_field, f_op, f_value, f_author, f_updated)
+		VALUES (?, ?, ?, ?, ?, NOW())`
+	res, err := oDb.ExecContext(ctx, query, fTable, fField, fOp,
+		sql.NullString{String: fValue, Valid: true}, author)
+	if err != nil {
+		return 0, fmt.Errorf("InsertFilter: %w", err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("InsertFilter lastInsertId: %w", err)
+	}
+	oDb.SetChange("gen_filters")
+	return int(id), nil
+}

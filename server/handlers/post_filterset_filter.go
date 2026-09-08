@@ -3,6 +3,7 @@ package serverhandlers
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -16,15 +17,11 @@ import (
 // PostFiltersetFilter handles POST /filtersets/{filterset_id}/filters/{f_id}: attach a filter to a filterset.
 func (a *Api) PostFiltersetFilter(c echo.Context, filtersetId string, fId string) error {
 	log := echolog.GetLogHandler(c, "PostFiltersetFilter")
-	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 
-	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
-	}
-	if !IsManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "CompManager privilege required")
+	if err := requireCompManager(c); err != nil {
+		return err
 	}
 
 	var body server.PostFiltersetFilterJSONRequestBody
@@ -34,6 +31,12 @@ func (a *Api) PostFiltersetFilter(c echo.Context, filtersetId string, fId string
 	}
 
 	log.Info("called", "filterset_id", filtersetId, "f_id", fId)
+
+	return a.postFiltersetFilter(c, log, ctx, filtersetId, fId, body.FLogOp, body.FOrder)
+}
+
+func (a *Api) postFiltersetFilter(c echo.Context, log *slog.Logger, ctx context.Context, filtersetId, fId string, fLogOp *string, fOrder *int) error {
+	odb := a.ODB
 
 	fsetID, found, err := odb.FiltersetID(ctx, filtersetId)
 	if err != nil {
@@ -78,28 +81,28 @@ func (a *Api) PostFiltersetFilter(c echo.Context, filtersetId string, fId string
 	}
 
 	if current != nil &&
-		(body.FOrder == nil || current.FOrder == *body.FOrder) &&
-		(body.FLogOp == nil || current.FLogOp == *body.FLogOp) {
+		(fOrder == nil || current.FOrder == *fOrder) &&
+		(fLogOp == nil || current.FLogOp == *fLogOp) {
 		return c.JSON(http.StatusOK, map[string]string{
 			"info": fmt.Sprintf("filter %d already attached to filterset %d", id, fsetID),
 		})
 	}
 
 	if current != nil {
-		if err := odb.UpdateFiltersetFilter(ctx, fsetID, id, body.FOrder, body.FLogOp); err != nil {
+		if err := odb.UpdateFiltersetFilter(ctx, fsetID, id, fOrder, fLogOp); err != nil {
 			log.Error("cannot update filter attachment", "filterset_id", fsetID, "f_id", id, logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot update filter attachment")
 		}
 	} else {
-		fOrder := 0
-		if body.FOrder != nil {
-			fOrder = *body.FOrder
+		order := 0
+		if fOrder != nil {
+			order = *fOrder
 		}
-		fLogOp := "AND"
-		if body.FLogOp != nil {
-			fLogOp = *body.FLogOp
+		logOp := "AND"
+		if fLogOp != nil {
+			logOp = *fLogOp
 		}
-		if err := odb.InsertFiltersetFilter(ctx, fsetID, id, fOrder, fLogOp); err != nil {
+		if err := odb.InsertFiltersetFilter(ctx, fsetID, id, order, logOp); err != nil {
 			log.Error("cannot attach filter to filterset", "filterset_id", fsetID, "f_id", id, logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot attach filter to filterset")
 		}
