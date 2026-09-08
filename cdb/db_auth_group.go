@@ -322,6 +322,139 @@ func (oDb *DB) DeleteGroupCascade(ctx context.Context, groupID int64) error {
 	return nil
 }
 
+func (oDb *DB) GroupForUpdate(ctx context.Context, idOrRole string, userGroupIDs []int64, isManager bool) (*AuthGroup, error) {
+	query := "SELECT id, role, privilege, COALESCE(description, '') FROM auth_group WHERE "
+	args := []any{}
+	if id, err := strconv.Atoi(idOrRole); err == nil {
+		query += "id = ?"
+		args = append(args, id)
+	} else {
+		query += "role = ?"
+		args = append(args, idOrRole)
+	}
+	if isManager {
+		query += " AND id > 0"
+	} else {
+		if len(userGroupIDs) == 0 {
+			return nil, nil
+		}
+		clause, inArgs := inClause("id", toAnyInt64Slice(userGroupIDs))
+		query += " AND " + clause
+		args = append(args, inArgs...)
+	}
+	query += " LIMIT 1"
+
+	var (
+		g         AuthGroup
+		role      sql.NullString
+		privilege sql.NullString
+	)
+	err := oDb.DB.QueryRowContext(ctx, query, args...).Scan(&g.ID, &role, &privilege, &g.Description)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("GroupForUpdate: %w", err)
+	}
+	if role.Valid {
+		g.Role = role.String
+	}
+	if privilege.Valid {
+		g.Privilege = privilege.String == "T"
+	}
+	return &g, nil
+}
+
+// GroupQuotaExceeded returns true if the user has reached their org group
+// membership quota. A quota of 0 or NULL means unlimited.
+func (oDb *DB) GroupQuotaExceeded(ctx context.Context, userID int64) (bool, error) {
+	var quota sql.NullInt64
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT quota_org_group FROM auth_user WHERE id = ?", userID,
+	).Scan(&quota)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("GroupQuotaExceeded: %w", err)
+	case !quota.Valid || quota.Int64 == 0:
+		return false, nil
+	}
+
+	var count int64
+	err = oDb.DB.QueryRowContext(ctx,
+		`SELECT COUNT(*)
+		 FROM auth_group g
+		 JOIN auth_membership am ON am.group_id = g.id
+		 WHERE am.user_id = ? AND g.privilege = 'F' AND g.role != 'UnaffectedProjects'`, userID,
+	).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("GroupQuotaExceeded count: %w", err)
+	}
+	return count >= quota.Int64, nil
+}
+
+// InsertGroup creates a new auth_group
+func (oDb *DB) InsertGroup(ctx context.Context, role, description, privilege string) (*AuthGroup, error) {
+	const query = `INSERT INTO auth_group (role, description, privilege) VALUES (?, ?, ?)`
+	result, err := oDb.DB.ExecContext(ctx, query, role,
+		sql.NullString{String: description, Valid: description != ""},
+		sql.NullString{String: privilege, Valid: privilege != ""},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("InsertGroup: %w", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, fmt.Errorf("InsertGroup lastInsertId: %w", err)
+	}
+	oDb.SetChange("auth_group")
+	return &AuthGroup{ID: id, Role: role, Description: description, Privilege: privilege == "T"}, nil
+}
+
+// InsertGroupMembership adds a user as a member of a group.
+func (oDb *DB) InsertGroupMembership(ctx context.Context, groupID, userID int64) error {
+	const query = `INSERT INTO auth_membership (group_id, user_id) VALUES (?, ?)`
+	if _, err := oDb.DB.ExecContext(ctx, query, groupID, userID); err != nil {
+		return fmt.Errorf("InsertGroupMembership: %w", err)
+	}
+	oDb.SetChange("auth_membership")
+	return nil
+}
+
+type UpdateGroupFields struct {
+	Role        *string
+	Description *string
+	Privilege   *string
+}
+
+func (oDb *DB) UpdateGroup(ctx context.Context, groupID int64, fields UpdateGroupFields) error {
+	setClauses := []string{}
+	args := []any{}
+	if fields.Role != nil {
+		setClauses = append(setClauses, "role = ?")
+		args = append(args, *fields.Role)
+	}
+	if fields.Description != nil {
+		setClauses = append(setClauses, "description = ?")
+		args = append(args, sql.NullString{String: *fields.Description, Valid: true})
+	}
+	if fields.Privilege != nil {
+		setClauses = append(setClauses, "privilege = ?")
+		args = append(args, sql.NullString{String: *fields.Privilege, Valid: *fields.Privilege != ""})
+	}
+	if len(setClauses) == 0 {
+		return nil
+	}
+	query := "UPDATE auth_group SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
+	args = append(args, groupID)
+	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("UpdateGroup: %w", err)
+	}
+	oDb.SetChange("auth_group")
+	return nil
+}
+
 type OrgGroupErrCode int
 
 const (

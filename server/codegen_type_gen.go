@@ -932,6 +932,15 @@ type GetFrontendHiddenMenuEntriesParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteGroupsJSONBody defines parameters for DeleteGroups.
+type DeleteGroupsJSONBody struct {
+	// Id Group record id
+	Id *string `json:"id,omitempty"`
+
+	// Role Group role/name
+	Role *string `json:"role,omitempty"`
+}
+
 // GetGroupsParams defines parameters for GetGroups.
 type GetGroupsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -956,6 +965,20 @@ type GetGroupsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostGroupsJSONBody defines parameters for PostGroups.
+type PostGroupsJSONBody struct {
+	Description *string `json:"description,omitempty"`
+
+	// Id Existing group id (selects update instead of create)
+	Id *string `json:"id,omitempty"`
+
+	// Privilege 'T' for a privilege group, 'F' otherwise
+	Privilege *string `json:"privilege,omitempty"`
+
+	// Role Group role/name
+	Role *string `json:"role,omitempty"`
+}
+
 // GetGroupParams defines parameters for GetGroup.
 type GetGroupParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -978,6 +1001,15 @@ type GetGroupParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostGroupJSONBody defines parameters for PostGroup.
+type PostGroupJSONBody struct {
+	Description *string `json:"description,omitempty"`
+
+	// Privilege 'T' for a privilege group, 'F' otherwise
+	Privilege *string `json:"privilege,omitempty"`
+	Role      *string `json:"role,omitempty"`
 }
 
 // GetGroupAppsParams defines parameters for GetGroupApps.
@@ -2930,6 +2962,15 @@ type DeleteFiltersetsFiltersetsJSONRequestBody DeleteFiltersetsFiltersetsJSONBod
 
 // PostFiltersetsFiltersetsJSONRequestBody defines body for PostFiltersetsFiltersets for application/json ContentType.
 type PostFiltersetsFiltersetsJSONRequestBody PostFiltersetsFiltersetsJSONBody
+
+// DeleteGroupsJSONRequestBody defines body for DeleteGroups for application/json ContentType.
+type DeleteGroupsJSONRequestBody DeleteGroupsJSONBody
+
+// PostGroupsJSONRequestBody defines body for PostGroups for application/json ContentType.
+type PostGroupsJSONRequestBody PostGroupsJSONBody
+
+// PostGroupJSONRequestBody defines body for PostGroup for application/json ContentType.
+type PostGroupJSONRequestBody PostGroupJSONBody
 
 // DeleteGroupHiddenMenuEntriesJSONRequestBody defines body for DeleteGroupHiddenMenuEntries for application/json ContentType.
 type DeleteGroupHiddenMenuEntriesJSONRequestBody DeleteGroupHiddenMenuEntriesJSONBody

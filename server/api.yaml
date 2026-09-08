@@ -2571,6 +2571,90 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+    post:
+      operationId: PostGroups
+      description: |
+        Create or update a group.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Existing group id (selects update instead of create)
+                role:
+                  type: string
+                  description: Group role/name
+                description:
+                  type: string
+                privilege:
+                  type: string
+                  description: "'T' for a privilege group, 'F' otherwise"
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteGroups
+      description: |
+        Delete a group.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Group record id
+                role:
+                  type: string
+                  description: Group role/name
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /groups/{group_id}:
     get:
       operationId: GetGroup
@@ -2602,6 +2686,51 @@ paths:
                 $ref: '#/components/schemas/ListResponse'
         404:
           $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostGroup
+      description: |
+        Modify a group's properties
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier (auth_group.id or role)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                description:
+                  type: string
+                privilege:
+                  type: string
+                  description: "'T' for a privilege group, 'F' otherwise"
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
         500:
           $ref: '#/components/responses/500'
       security:
