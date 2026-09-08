@@ -335,6 +335,25 @@ var propsMapping = map[string]propMapping{
 			"description":  colStr(schema.AppsDescription),
 		},
 	},
+	"obsolescence": {
+		Available: []string{
+			"id", "obs_type", "obs_name", "obs_warn_date", "obs_alert_date",
+			"obs_warn_date_updated_by", "obs_alert_date_updated_by",
+			"obs_warn_date_updated", "obs_alert_date_updated", "obs_count",
+		},
+		Props: map[string]propDef{
+			"id":                        {SQLExpr: "v_obsolescence.id", Kind: "int64"},
+			"obs_type":                  {SQLExpr: "v_obsolescence.obs_type", Kind: "string"},
+			"obs_name":                  {SQLExpr: "v_obsolescence.obs_name", Kind: "string"},
+			"obs_warn_date":             {SQLExpr: "COALESCE(v_obsolescence.obs_warn_date, '')", Kind: "string"},
+			"obs_alert_date":            {SQLExpr: "COALESCE(v_obsolescence.obs_alert_date, '')", Kind: "string"},
+			"obs_warn_date_updated_by":  {SQLExpr: "v_obsolescence.obs_warn_date_updated_by", Kind: "string"},
+			"obs_alert_date_updated_by": {SQLExpr: "v_obsolescence.obs_alert_date_updated_by", Kind: "string"},
+			"obs_warn_date_updated":     {SQLExpr: "v_obsolescence.obs_warn_date_updated", Kind: "string"},
+			"obs_alert_date_updated":    {SQLExpr: "v_obsolescence.obs_alert_date_updated", Kind: "string"},
+			"obs_count":                 {SQLExpr: "v_obsolescence.obs_count", Kind: "int64"},
+		},
+	},
 	"auth_group": {
 		Available: []string{"id", "role", "privilege", "description"},
 		Props: map[string]propDef{
