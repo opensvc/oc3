@@ -40,21 +40,21 @@ func (a *Api) DeleteTag(c echo.Context, tagIdParam int) error {
 func (a *Api) deleteTagCascade(c echo.Context, log *slog.Logger, ctx context.Context, tag *cdb.Tag) error {
 	odb := a.ODB
 
-	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
 		log.Error("cannot start transaction", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete tag")
 	}
 	defer endTx()
 
-	res, err := odb.DeleteTagCascade(ctx, tag.ID, tag.TagID)
+	res, err := tx.DeleteTagCascade(ctx, tag.ID, tag.TagID)
 	if err != nil {
 		log.Error("cannot delete tag", logkey.TagID, tag.ID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete tag %s", tag.TagName)
 	}
 
 	userEmail, _ := c.Get(XUserEmail).(string)
-	if logErr := odb.Log(ctx, cdb.LogEntry{
+	if logErr := tx.Log(ctx, cdb.LogEntry{
 		Action: "tag.delete",
 		User:   userEmail,
 		Fmt:    "tag '%(tag_name)s' deleted",

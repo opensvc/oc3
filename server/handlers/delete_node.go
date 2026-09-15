@@ -52,14 +52,14 @@ func (a *Api) deleteNodeByID(c echo.Context, handlerName, nodeId string) error {
 		return JSONProblemf(c, http.StatusForbidden, "you are not responsible for node %s", node.Nodename)
 	}
 
-	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
 		log.Error("cannot start transaction", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete node")
 	}
 	defer endTx()
 
-	if err := odb.DeleteNodeCascade(ctx, node.NodeID); err != nil {
+	if err := tx.DeleteNodeCascade(ctx, node.NodeID); err != nil {
 		log.Error("cannot delete node", logkey.NodeID, node.NodeID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete node %s", node.Nodename)
 	}
@@ -76,7 +76,7 @@ func (a *Api) deleteNodeByID(c echo.Context, handlerName, nodeId string) error {
 	if parsed, err := uuid.Parse(node.NodeID); err == nil {
 		logEntry.NodeID = &parsed
 	}
-	if logErr := odb.Log(ctx, logEntry); logErr != nil {
+	if logErr := tx.Log(ctx, logEntry); logErr != nil {
 		log.Error("cannot write audit log", logkey.Error, logErr)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot write audit log")
 	}

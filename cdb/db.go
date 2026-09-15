@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+
+	"github.com/opensvc/oc3/util/logkey"
 )
 
 type (
@@ -75,6 +77,15 @@ func New(dbPool *sql.DB) *DB {
 	}
 }
 
+// CreateTx starts a transaction and installs it in place of the receiver's
+// DBOperater, so that subsequent calls on oDb run inside that transaction.
+//
+// It MUTATES the receiver. Only call it on a *DB owned by a single goroutine
+// (a worker job, a scheduler task). Calling it on a *DB shared between
+// goroutines — an HTTP handler's, for instance — would divert the concurrent
+// callers' statements into this transaction and let its Commit or Rollback
+// decide their fate. Shared instances must use BeginTxWithControl, which
+// returns a separate transaction-scoped *DB instead of mutating the receiver.
 func (oDb *DB) CreateTx(ctx context.Context, opts *sql.TxOptions) error {
 	if oDb.HasTx {
 		return fmt.Errorf("already in a transaction")
@@ -88,30 +99,58 @@ func (oDb *DB) CreateTx(ctx context.Context, opts *sql.TxOptions) error {
 	}
 }
 
-// BeginTxWithControl starts a database transaction with additional control for commit or rollback based on execution flow.
-// It returns a function to mark the transaction for commit, a cleanup function to finalize the transaction, and an error.
-func (oDb *DB) BeginTxWithControl(ctx context.Context, log *slog.Logger, opts *sql.TxOptions) (markSuccess func(), endTx func(), err error) {
+// withTx returns a shallow copy of the receiver bound to tx. The copy shares the
+// pool, the locker, the session and the metrics; only the DBOperater differs.
+func (oDb *DB) withTx(tx *sql.Tx) *DB {
+	return &DB{
+		DB:      tx,
+		DBLck:   oDb.DBLck,
+		Session: oDb.Session,
+		dbPool:  oDb.dbPool,
+		HasTx:   true,
+		Metrics: oDb.Metrics,
+	}
+}
+
+// BeginTxWithControl starts a database transaction and returns a *DB bound to it,
+// a function marking the transaction for commit, and a cleanup function that
+// finalizes it.
+//
+// The returned *DB is a distinct instance: the receiver is left untouched and
+// stays usable by concurrent goroutines. Statements that must run inside the
+// transaction have to be issued on the returned *DB, not on the receiver — this
+// is what makes the call safe on a *DB shared between HTTP requests.
+//
+//	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+//	if err != nil {
+//		return err
+//	}
+//	defer endTx()                                    // rolls back unless marked
+//	if err := tx.DeleteFoo(ctx, id); err != nil {    // note: tx, not odb
+//		return err
+//	}
+//	markSuccess()                                    // endTx will commit
+func (oDb *DB) BeginTxWithControl(ctx context.Context, log *slog.Logger, opts *sql.TxOptions) (txDB *DB, markSuccess func(), endTx func(), err error) {
+	tx, err := oDb.dbPool.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	txDB = oDb.withTx(tx)
+
 	var needCommit bool
 	markSuccess = func() { needCommit = true }
-	if err = oDb.CreateTx(ctx, opts); err != nil {
-		return nil, nil, err
-	}
 	endTx = func() {
 		if needCommit {
-			if err := oDb.Commit(); err != nil {
-				if log != nil {
-					log.Error("Commit failed", "error", err)
-				}
+			if err := txDB.Commit(); err != nil && log != nil {
+				log.Error("commit failed", logkey.Error, err)
 			}
-		} else {
-			if err := oDb.Rollback(); err != nil {
-				if log != nil {
-					log.Error("Commit failed", "error", err)
-				}
-			}
+			return
+		}
+		if err := txDB.Rollback(); err != nil && log != nil {
+			log.Error("rollback failed", logkey.Error, err)
 		}
 	}
-	return
+	return txDB, markSuccess, endTx, nil
 }
 
 func (oDb *DB) CreateSession(ev eventPublisher) {

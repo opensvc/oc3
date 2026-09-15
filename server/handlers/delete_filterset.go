@@ -49,20 +49,20 @@ func (a *Api) deleteFiltersetByKey(c echo.Context, log *slog.Logger, ctx context
 		return JSONProblemf(c, http.StatusNotFound, "filterset %d not found", id)
 	}
 
-	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
 		log.Error("cannot start transaction", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete filterset")
 	}
 	defer endTx()
 
-	if err := odb.DeleteFiltersetCascade(ctx, id); err != nil {
+	if err := tx.DeleteFiltersetCascade(ctx, id); err != nil {
 		log.Error("cannot delete filterset", "filterset_id", id, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete filterset")
 	}
 
 	userEmail, _ := c.Get(XUserEmail).(string)
-	if logErr := odb.Log(ctx, cdb.LogEntry{
+	if logErr := tx.Log(ctx, cdb.LogEntry{
 		Action: "filterset.delete",
 		User:   userEmail,
 		Fmt:    "deleted filterset %(fset_name)s",

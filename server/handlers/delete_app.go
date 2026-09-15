@@ -63,28 +63,28 @@ func (a *Api) deleteAppByID(c echo.Context, handlerName, appId string) error {
 		return JSONProblemf(c, http.StatusConflict, "this app code cannot be deleted. used by %d nodes and %d services", nodesCount, servicesCount)
 	}
 
-	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
 		log.Error("cannot start transaction", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete app")
 	}
 	defer endTx()
 
-	if err := odb.DeleteApp(ctx, app.ID); err != nil {
+	if err := tx.DeleteApp(ctx, app.ID); err != nil {
 		log.Error("cannot delete app", "app_id", appId, "app", app.App, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete app")
 	}
-	if err := odb.DeleteAppResponsibles(ctx, app.ID); err != nil {
+	if err := tx.DeleteAppResponsibles(ctx, app.ID); err != nil {
 		log.Error("cannot delete app responsibles", "app_id", appId, "app", app.App, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete app responsibles")
 	}
-	if err := odb.DeleteAppPublications(ctx, app.ID); err != nil {
+	if err := tx.DeleteAppPublications(ctx, app.ID); err != nil {
 		log.Error("cannot delete app publications", "app_id", appId, "app", app.App, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete app publications")
 	}
 
 	userEmail, _ := c.Get(XUserEmail).(string)
-	if err := odb.Log(ctx, cdb.LogEntry{
+	if err := tx.Log(ctx, cdb.LogEntry{
 		Action: "apps.delete",
 		User:   userEmail,
 		Fmt:    "app %(app)s deleted",

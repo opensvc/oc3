@@ -56,7 +56,7 @@ func (a *Api) deleteServiceInstanceByKeys(c echo.Context, log *slog.Logger, ctx 
 		return JSONProblemf(c, http.StatusForbidden, "you are not responsible for service %s", svc.Svcname)
 	}
 
-	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
 		log.Error("cannot start transaction", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete service instance")
@@ -65,7 +65,7 @@ func (a *Api) deleteServiceInstanceByKeys(c echo.Context, log *slog.Logger, ctx 
 
 	info := fmt.Sprintf("delete service %s instance on node %s", svc.Svcname, node.Nodename)
 	userEmail, _ := c.Get(XUserEmail).(string)
-	if logErr := odb.Log(ctx, cdb.LogEntry{
+	if logErr := tx.Log(ctx, cdb.LogEntry{
 		Action: "service_instance.delete",
 		User:   userEmail,
 		Fmt:    "delete service %(svcname)s instance on node %(nodename)s",
@@ -79,7 +79,7 @@ func (a *Api) deleteServiceInstanceByKeys(c echo.Context, log *slog.Logger, ctx 
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot write audit log")
 	}
 
-	count, err := odb.DeleteServiceInstanceCascade(ctx, svc.SvcID, node.NodeID)
+	count, err := tx.DeleteServiceInstanceCascade(ctx, svc.SvcID, node.NodeID)
 	if err != nil {
 		log.Error("cannot delete service instance", "svc_id", svc.SvcID, logkey.NodeID, node.NodeID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete service instance")

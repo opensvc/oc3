@@ -55,7 +55,7 @@ func (a *Api) deleteServiceByKey(c echo.Context, log *slog.Logger, ctx context.C
 		svcLabel = svc.Svcname + " in no app"
 	}
 
-	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
 		log.Error("cannot start transaction", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete service")
@@ -63,7 +63,7 @@ func (a *Api) deleteServiceByKey(c echo.Context, log *slog.Logger, ctx context.C
 	defer endTx()
 
 	userEmail, _ := c.Get(XUserEmail).(string)
-	if logErr := odb.Log(ctx, cdb.LogEntry{
+	if logErr := tx.Log(ctx, cdb.LogEntry{
 		Action: "service.delete",
 		User:   userEmail,
 		Fmt:    "delete service %(data)s",
@@ -74,7 +74,7 @@ func (a *Api) deleteServiceByKey(c echo.Context, log *slog.Logger, ctx context.C
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot write audit log")
 	}
 
-	if err := odb.DeleteServiceCascade(ctx, svc.SvcID); err != nil {
+	if err := tx.DeleteServiceCascade(ctx, svc.SvcID); err != nil {
 		log.Error("cannot delete service", "svc_id", svc.SvcID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot delete service %s", svc.Svcname)
 	}

@@ -80,19 +80,19 @@ func (a *Api) PostFilter(c echo.Context, filterId string) error {
 
 	userEmail, _ := c.Get(XUserEmail).(string)
 
-	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
 		log.Error("cannot start transaction", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot update filter")
 	}
 	defer endTx()
 
-	if err := odb.UpdateFilter(ctx, id, fields, userEmail); err != nil {
+	if err := tx.UpdateFilter(ctx, id, fields, userEmail); err != nil {
 		log.Error("cannot update filter", "filter_id", id, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot update filter")
 	}
 
-	if logErr := odb.Log(ctx, cdb.LogEntry{
+	if logErr := tx.Log(ctx, cdb.LogEntry{
 		Action: "filter.change",
 		User:   userEmail,
 		Fmt:    "change filter %(data)s",

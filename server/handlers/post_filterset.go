@@ -83,19 +83,19 @@ func (a *Api) postFiltersetUpdate(c echo.Context, log *slog.Logger, ctx context.
 
 	userEmail, _ := c.Get(XUserEmail).(string)
 
-	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
 		log.Error("cannot start transaction", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot update filterset")
 	}
 	defer endTx()
 
-	if err := odb.UpdateFilterset(ctx, id, fields); err != nil {
+	if err := tx.UpdateFilterset(ctx, id, fields); err != nil {
 		log.Error("cannot update filterset", "filterset_id", id, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot update filterset")
 	}
 
-	if logErr := odb.Log(ctx, cdb.LogEntry{
+	if logErr := tx.Log(ctx, cdb.LogEntry{
 		Action: "filterset.change",
 		User:   userEmail,
 		Fmt:    "change filterset %(data)s",
