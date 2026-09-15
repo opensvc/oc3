@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -31,6 +32,373 @@ type (
 		DashType string
 	}
 )
+
+func (oDb *DB) GetAlerts(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	defer logDuration("getAlerts", time.Now())
+
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getAlerts: no select expressions")
+	}
+
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard"
+	var args []any
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("dashboard.id DESC")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getAlerts: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+func (oDb *DB) GetAlert(ctx context.Context, id string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getAlert: no select expressions")
+	}
+
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard WHERE dashboard.id = ?"
+	args := []any{id}
+	query += " " + p.OrderByClause("dashboard.id DESC")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getAlert: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+func (oDb *DB) GetAlertOwner(ctx context.Context, id int64) (svcID, nodeID string, found bool, err error) {
+	const query = "SELECT COALESCE(svc_id, ''), COALESCE(node_id, '') FROM dashboard WHERE id = ?"
+	err = oDb.DB.QueryRowContext(ctx, query, id).Scan(&svcID, &nodeID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", "", false, nil
+	case err != nil:
+		return "", "", false, fmt.Errorf("getAlertOwner: %w", err)
+	}
+	return svcID, nodeID, true, nil
+}
+
+func (oDb *DB) DeleteAlert(ctx context.Context, id int64) (int64, error) {
+	const query = "DELETE FROM dashboard WHERE id = ?"
+	res, err := oDb.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return 0, fmt.Errorf("deleteAlert: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("deleteAlert rowsAffected: %w", err)
+	}
+	if n > 0 {
+		oDb.SetChange("dashboard")
+	}
+	return n, nil
+}
+
+func (oDb *DB) FindAlertIDByCriteria(ctx context.Context, cols []string, vals []any) (int64, bool, error) {
+	query := "SELECT id FROM dashboard WHERE 1=1"
+	for _, c := range cols {
+		query += " AND dashboard." + c + " = ?"
+	}
+	query += " ORDER BY id LIMIT 1"
+
+	var id int64
+	err := oDb.DB.QueryRowContext(ctx, query, vals...).Scan(&id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return 0, false, nil
+	case err != nil:
+		return 0, false, fmt.Errorf("findAlertIDByCriteria: %w", err)
+	}
+	return id, true, nil
+}
+
+func (oDb *DB) GetAlertEvents(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	defer logDuration("getAlertEvents", time.Now())
+
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getAlertEvents: no select expressions")
+	}
+
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard_events"
+	var args []any
+
+	if !p.IsManager {
+		clean := cleanGroups(p.Groups)
+		if len(clean) == 0 {
+			query += ` WHERE (
+				dashboard_events.node_id IN (SELECT n.node_id FROM nodes n WHERE n.team_responsible = 'Everybody')
+			)`
+		} else {
+			placeholders := Placeholders(len(clean))
+			query += ` WHERE (
+				dashboard_events.svc_id IN (
+					SELECT s.svc_id FROM services s
+					JOIN apps a ON s.svc_app = a.app
+					JOIN apps_responsibles ar ON ar.app_id = a.id
+					JOIN auth_group ag ON ag.id = ar.group_id
+					WHERE ag.role IN (` + placeholders + `)
+				)
+				OR
+				dashboard_events.node_id IN (
+					SELECT n.node_id FROM nodes n
+					WHERE n.team_responsible = 'Everybody'
+					   OR n.team_responsible IN (` + placeholders + `)
+				)
+			)`
+			for _, g := range clean {
+				args = append(args, g)
+			}
+			for _, g := range clean {
+				args = append(args, g)
+			}
+		}
+	}
+
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("dashboard_events.id DESC")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getAlertEvents: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+var alertWritableColumns = map[string]bool{
+	"dash_type": true, "dash_instance": true, "svc_id": true, "node_id": true,
+	"dash_severity": true, "dash_fmt": true, "dash_dict": true,
+	"dash_env": true, "dash_md5": true,
+}
+
+// AlertSvcEnv returns the environment of a service.
+func (oDb *DB) AlertSvcEnv(ctx context.Context, svcID string) (string, bool, error) {
+	const query = "SELECT COALESCE(svc_env, '') FROM services WHERE svc_id = ?"
+	var env string
+	err := oDb.DB.QueryRowContext(ctx, query, svcID).Scan(&env)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", false, nil
+	case err != nil:
+		return "", false, fmt.Errorf("alertSvcEnv: %w", err)
+	}
+	return env, true, nil
+}
+
+// AlertNodeEnv returns the environment of a node.
+func (oDb *DB) AlertNodeEnv(ctx context.Context, nodeID string) (string, bool, error) {
+	const query = "SELECT COALESCE(node_env, '') FROM nodes WHERE node_id = ?"
+	var env string
+	err := oDb.DB.QueryRowContext(ctx, query, nodeID).Scan(&env)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", false, nil
+	case err != nil:
+		return "", false, fmt.Errorf("alertNodeEnv: %w", err)
+	}
+	return env, true, nil
+}
+
+func (oDb *DB) GetAlertForUpdate(ctx context.Context, id int64) (env, dashFmt, dashDict string, found bool, err error) {
+	const query = "SELECT COALESCE(dash_env, ''), COALESCE(dash_fmt, ''), COALESCE(dash_dict, '') FROM dashboard WHERE id = ?"
+	err = oDb.DB.QueryRowContext(ctx, query, id).Scan(&env, &dashFmt, &dashDict)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", "", "", false, nil
+	case err != nil:
+		return "", "", "", false, fmt.Errorf("getAlertForUpdate: %w", err)
+	}
+	return env, dashFmt, dashDict, true, nil
+}
+
+func (oDb *DB) UpdateAlertFields(ctx context.Context, id int64, fields map[string]any) error {
+	setClauses := []string{"dash_updated = NOW()"}
+	args := []any{}
+	for col, val := range fields {
+		if !alertWritableColumns[col] {
+			continue
+		}
+		setClauses = append(setClauses, col+" = ?")
+		args = append(args, val)
+	}
+	query := "UPDATE dashboard SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
+	args = append(args, id)
+	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("updateAlertFields: %w", err)
+	}
+	oDb.SetChange("dashboard")
+	return nil
+}
+
+func (oDb *DB) FindAlertIDByKey(ctx context.Context, dashType, nodeID, svcID, dashInstance string) (int64, bool, error) {
+	const query = `SELECT id FROM dashboard
+		WHERE dash_type = ?
+		  AND COALESCE(node_id, '') = ?
+		  AND COALESCE(svc_id, '') = ?
+		  AND COALESCE(dash_instance, '') = ?
+		ORDER BY id LIMIT 1`
+	var id int64
+	err := oDb.DB.QueryRowContext(ctx, query, dashType, nodeID, svcID, dashInstance).Scan(&id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return 0, false, nil
+	case err != nil:
+		return 0, false, fmt.Errorf("findAlertIDByKey: %w", err)
+	}
+	return id, true, nil
+}
+
+func (oDb *DB) UpsertUpdateAlert(ctx context.Context, id int64, dashFmt, dashDict, dashEnv string, dashSeverity int) error {
+	const query = `UPDATE dashboard
+		SET dash_updated = NOW(), dash_fmt = ?, dash_dict = ?, dash_env = ?, dash_severity = ?
+		WHERE id = ?`
+	if _, err := oDb.DB.ExecContext(ctx, query, dashFmt, dashDict, dashEnv, dashSeverity, id); err != nil {
+		return fmt.Errorf("upsertUpdateAlert: %w", err)
+	}
+	oDb.SetChange("dashboard")
+	return nil
+}
+
+func (oDb *DB) InsertAlert(ctx context.Context, fields map[string]any) (int64, error) {
+	cols := []string{"dash_created", "dash_updated"}
+	placeholders := []string{"NOW()", "NOW()"}
+	var args []any
+	for col, val := range fields {
+		if !alertWritableColumns[col] {
+			continue
+		}
+		cols = append(cols, col)
+		placeholders = append(placeholders, "?")
+		args = append(args, val)
+	}
+	query := "INSERT INTO dashboard (" + strings.Join(cols, ", ") + ") VALUES (" + strings.Join(placeholders, ", ") + ")"
+	res, err := oDb.DB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("insertAlert: %w", err)
+	}
+	oDb.SetChange("dashboard")
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("insertAlert lastInsertId: %w", err)
+	}
+	return id, nil
+}
+
+func (oDb *DB) GetNodeAlerts(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
+	defer logDuration("getNodeAlerts", time.Now())
+
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getNodeAlerts: no select expressions")
+	}
+
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard WHERE dashboard.node_id = ?"
+	args := []any{nodeID}
+
+	if !p.IsManager {
+		clean := cleanGroups(p.Groups)
+
+		if len(clean) == 0 {
+			query += ` AND (
+				dashboard.node_id IN (SELECT n.node_id FROM nodes n WHERE n.team_responsible = 'Everybody')
+			)`
+		} else {
+			placeholders := Placeholders(len(clean))
+			query += ` AND (
+				dashboard.svc_id IN (
+					SELECT s.svc_id FROM services s
+					JOIN apps a ON s.svc_app = a.app
+					JOIN apps_responsibles ar ON ar.app_id = a.id
+					JOIN auth_group ag ON ag.id = ar.group_id
+					WHERE ag.role IN (` + placeholders + `)
+				)
+				OR
+				dashboard.node_id IN (
+					SELECT n.node_id FROM nodes n
+					WHERE n.team_responsible = 'Everybody'
+					   OR n.team_responsible IN (` + placeholders + `)
+				)
+			)`
+			for _, g := range clean {
+				args = append(args, g)
+			}
+			for _, g := range clean {
+				args = append(args, g)
+			}
+		}
+	}
+
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("dashboard.id DESC")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getNodeAlerts: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+func (oDb *DB) GetServiceAlerts(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
+	defer logDuration("getServiceAlerts", time.Now())
+
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getServiceAlerts: no select expressions")
+	}
+
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard WHERE dashboard.svc_id = ?"
+	args := []any{svcID}
+
+	if !p.IsManager {
+		clean := cleanGroups(p.Groups)
+		if len(clean) == 0 {
+			query += " AND 1=0"
+		} else {
+			placeholders := Placeholders(len(clean))
+			query += ` AND dashboard.svc_id IN (
+				SELECT s.svc_id FROM services s
+				JOIN apps a ON s.svc_app = a.app
+				JOIN apps_responsibles ar ON ar.app_id = a.id
+				JOIN auth_group ag ON ag.id = ar.group_id
+				WHERE ag.role IN (` + placeholders + `)
+			)`
+			for _, g := range clean {
+				args = append(args, g)
+			}
+		}
+	}
+
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("dashboard.id DESC")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getServiceAlerts: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
 
 // DashboardInstanceFrozenUpdate update or remove the "service frozen" alerts for instance
 func (oDb *DB) DashboardInstanceFrozenUpdate(ctx context.Context, objectID, nodeID string, objectEnv string, frozen bool) error {

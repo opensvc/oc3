@@ -84,14 +84,42 @@ func UserGroupsFromContext(c echo.Context) []string {
 	return nil
 }
 
-func IsManager(c echo.Context) bool {
-	groups := UserGroupsFromContext(c)
-	for _, g := range groups {
-		if g == "Manager" {
+// HasGroup reports whether the authenticated user belongs to the named group.
+func HasGroup(c echo.Context, group string) bool {
+	for _, g := range UserGroupsFromContext(c) {
+		if g == group {
 			return true
 		}
 	}
 	return false
+}
+
+func IsManager(c echo.Context) bool {
+	return HasGroup(c, "Manager")
+}
+
+func IsGroupManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "GroupManager")
+}
+
+func IsNodeManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "NodeManager")
+}
+
+func IsTagManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "TagManager")
+}
+
+func IsCompManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "CompManager")
+}
+
+func IsAlertsManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "AlertsManager")
+}
+
+func IsObsManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "ObsManager")
 }
 
 // return true if the request is authenticated as a node

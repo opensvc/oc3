@@ -21,6 +21,42 @@ import (
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
+	// (GET /actions)
+	GetActions(ctx echo.Context, params GetActionsParams) error
+
+	// (POST /actions)
+	PostActions(ctx echo.Context) error
+
+	// (DELETE /actions/{id})
+	DeleteAction(ctx echo.Context, id string) error
+
+	// (GET /actions/{id})
+	GetAction(ctx echo.Context, id string, params GetActionParams) error
+
+	// (GET /alert_event)
+	GetAlertEvent(ctx echo.Context, params GetAlertEventParams) error
+
+	// (DELETE /alerts)
+	DeleteAlerts(ctx echo.Context) error
+
+	// (GET /alerts)
+	GetAlerts(ctx echo.Context, params GetAlertsParams) error
+
+	// (POST /alerts)
+	PostAlerts(ctx echo.Context) error
+
+	// (DELETE /alerts/{id})
+	DeleteAlert(ctx echo.Context, id string) error
+
+	// (GET /alerts/{id})
+	GetAlert(ctx echo.Context, id string, params GetAlertParams) error
+
+	// (POST /alerts/{id})
+	PostAlert(ctx echo.Context, id string) error
+
+	// (DELETE /apps)
+	DeleteApps(ctx echo.Context) error
+
 	// (GET /apps)
 	GetApps(ctx echo.Context, params GetAppsParams) error
 
@@ -28,7 +64,7 @@ type ServerInterface interface {
 	PostApps(ctx echo.Context) error
 
 	// (DELETE /apps/{app_id})
-	DeleteApps(ctx echo.Context, appId string) error
+	DeleteApp(ctx echo.Context, appId string) error
 
 	// (GET /apps/{app_id})
 	GetApp(ctx echo.Context, appId string, params GetAppParams) error
@@ -39,11 +75,44 @@ type ServerInterface interface {
 	// (GET /apps/{app_id}/am_i_responsible)
 	GetAppAmIResponsible(ctx echo.Context, appId string) error
 
+	// (GET /apps/{app_id}/nodes)
+	GetAppNodes(ctx echo.Context, appId string, params GetAppNodesParams) error
+
 	// (GET /apps/{app_id}/publications)
 	GetAppPublications(ctx echo.Context, appId string, params GetAppPublicationsParams) error
 
+	// (DELETE /apps/{app_id}/publications/{group_id})
+	DeleteAppPublication(ctx echo.Context, appId string, groupId string) error
+
+	// (POST /apps/{app_id}/publications/{group_id})
+	PostAppPublication(ctx echo.Context, appId string, groupId string) error
+
+	// (GET /apps/{app_id}/quotas)
+	GetAppQuotas(ctx echo.Context, appId string, params GetAppQuotasParams) error
+
 	// (GET /apps/{app_id}/responsibles)
 	GetAppResponsibles(ctx echo.Context, appId string, params GetAppResponsiblesParams) error
+
+	// (DELETE /apps/{app_id}/responsibles/{group_id})
+	DeleteAppResponsible(ctx echo.Context, appId string, groupId string) error
+
+	// (POST /apps/{app_id}/responsibles/{group_id})
+	PostAppResponsible(ctx echo.Context, appId string, groupId string) error
+
+	// (GET /apps/{app_id}/services)
+	GetAppServices(ctx echo.Context, appId string, params GetAppServicesParams) error
+
+	// (DELETE /apps_publications)
+	DeleteAppsPublications(ctx echo.Context) error
+
+	// (POST /apps_publications)
+	PostAppsPublications(ctx echo.Context) error
+
+	// (DELETE /apps_responsibles)
+	DeleteAppsResponsibles(ctx echo.Context) error
+
+	// (POST /apps_responsibles)
+	PostAppsResponsibles(ctx echo.Context) error
 
 	// (GET /arrays)
 	GetArrays(ctx echo.Context, params GetArraysParams) error
@@ -51,23 +120,203 @@ type ServerInterface interface {
 	// (POST /auth/node)
 	PostAuthNode(ctx echo.Context) error
 
+	// (DELETE /disks)
+	DeleteDisks(ctx echo.Context) error
+
 	// (GET /disks)
 	GetDisks(ctx echo.Context, params GetDisksParams) error
+
+	// (POST /disks)
+	PostDisks(ctx echo.Context) error
+
+	// (DELETE /disks/{disk_id})
+	DeleteDisk(ctx echo.Context, diskId string) error
 
 	// (GET /disks/{disk_id})
 	GetDisk(ctx echo.Context, diskId string, params GetDiskParams) error
 
+	// (DELETE /filters)
+	DeleteFilters(ctx echo.Context) error
+
+	// (GET /filters)
+	GetFilters(ctx echo.Context, params GetFiltersParams) error
+
+	// (POST /filters)
+	PostFilters(ctx echo.Context) error
+
+	// (DELETE /filters/{filter_id})
+	DeleteFilter(ctx echo.Context, filterId string) error
+
+	// (GET /filters/{filter_id})
+	GetFilter(ctx echo.Context, filterId string, params GetFilterParams) error
+
+	// (POST /filters/{filter_id})
+	PostFilter(ctx echo.Context, filterId string) error
+
+	// (DELETE /filtersets)
+	DeleteFiltersets(ctx echo.Context) error
+
+	// (GET /filtersets)
+	GetFiltersets(ctx echo.Context, params GetFiltersetsParams) error
+
+	// (POST /filtersets)
+	PostFiltersets(ctx echo.Context) error
+
+	// (DELETE /filtersets/{filterset_id})
+	DeleteFilterset(ctx echo.Context, filtersetId string) error
+
+	// (GET /filtersets/{filterset_id})
+	GetFilterset(ctx echo.Context, filtersetId string, params GetFiltersetParams) error
+
+	// (POST /filtersets/{filterset_id})
+	PostFilterset(ctx echo.Context, filtersetId string) error
+
+	// (GET /filtersets/{filterset_id}/export)
+	GetFiltersetExport(ctx echo.Context, filtersetId string) error
+
+	// (GET /filtersets/{filterset_id}/filters)
+	GetFiltersetFilters(ctx echo.Context, filtersetId string, params GetFiltersetFiltersParams) error
+
+	// (DELETE /filtersets/{filterset_id}/filters/{f_id})
+	DeleteFiltersetFilter(ctx echo.Context, filtersetId string, fId string) error
+
+	// (POST /filtersets/{filterset_id}/filters/{f_id})
+	PostFiltersetFilter(ctx echo.Context, filtersetId string, fId string) error
+
+	// (GET /filtersets/{filterset_id}/filtersets)
+	GetFiltersetFiltersets(ctx echo.Context, filtersetId string, params GetFiltersetFiltersetsParams) error
+
+	// (DELETE /filtersets/{filterset_id}/filtersets/{child_id})
+	DeleteFiltersetFilterset(ctx echo.Context, filtersetId string, childId string) error
+
+	// (POST /filtersets/{filterset_id}/filtersets/{child_id})
+	PostFiltersetFilterset(ctx echo.Context, filtersetId string, childId string) error
+
+	// (GET /filtersets/{filterset_id}/nodes)
+	GetFiltersetNodes(ctx echo.Context, filtersetId string, params GetFiltersetNodesParams) error
+
+	// (GET /filtersets/{filterset_id}/services)
+	GetFiltersetServices(ctx echo.Context, filtersetId string, params GetFiltersetServicesParams) error
+
+	// (GET /filtersets/{filterset_id}/usage)
+	GetFiltersetUsage(ctx echo.Context, filtersetId string) error
+
+	// (DELETE /filtersets_filters)
+	DeleteFiltersetsFilters(ctx echo.Context) error
+
+	// (POST /filtersets_filters)
+	PostFiltersetsFilters(ctx echo.Context) error
+
+	// (DELETE /filtersets_filtersets)
+	DeleteFiltersetsFiltersets(ctx echo.Context) error
+
+	// (POST /filtersets_filtersets)
+	PostFiltersetsFiltersets(ctx echo.Context) error
+
+	// (GET /frontend/hidden_menu_entries)
+	GetFrontendHiddenMenuEntries(ctx echo.Context, params GetFrontendHiddenMenuEntriesParams) error
+
+	// (DELETE /groups)
+	DeleteGroups(ctx echo.Context) error
+
+	// (GET /groups)
+	GetGroups(ctx echo.Context, params GetGroupsParams) error
+
+	// (POST /groups)
+	PostGroups(ctx echo.Context) error
+
+	// (DELETE /groups/{group_id})
+	DeleteGroup(ctx echo.Context, groupId string) error
+
+	// (GET /groups/{group_id})
+	GetGroup(ctx echo.Context, groupId string, params GetGroupParams) error
+
+	// (POST /groups/{group_id})
+	PostGroup(ctx echo.Context, groupId string) error
+
+	// (GET /groups/{group_id}/apps)
+	GetGroupApps(ctx echo.Context, groupId string, params GetGroupAppsParams) error
+
+	// (DELETE /groups/{group_id}/hidden_menu_entries)
+	DeleteGroupHiddenMenuEntries(ctx echo.Context, groupId string) error
+
+	// (GET /groups/{group_id}/hidden_menu_entries)
+	GetGroupHiddenMenuEntries(ctx echo.Context, groupId string, params GetGroupHiddenMenuEntriesParams) error
+
+	// (POST /groups/{group_id}/hidden_menu_entries)
+	PostGroupHiddenMenuEntries(ctx echo.Context, groupId string) error
+
+	// (GET /groups/{group_id}/modulesets)
+	GetGroupModulesets(ctx echo.Context, groupId string, params GetGroupModulesetsParams) error
+
+	// (GET /groups/{group_id}/nodes)
+	GetGroupNodes(ctx echo.Context, groupId string, params GetGroupNodesParams) error
+
+	// (GET /groups/{group_id}/rulesets)
+	GetGroupRulesets(ctx echo.Context, groupId string, params GetGroupRulesetsParams) error
+
+	// (GET /groups/{group_id}/services)
+	GetGroupServices(ctx echo.Context, groupId string, params GetGroupServicesParams) error
+
+	// (GET /groups/{group_id}/users)
+	GetGroupUsers(ctx echo.Context, groupId string, params GetGroupUsersParams) error
+
+	// (DELETE /ips)
+	DeleteIps(ctx echo.Context) error
+
+	// (GET /ips)
+	GetIps(ctx echo.Context, params GetIpsParams) error
+
+	// (DELETE /ips/{id})
+	DeleteIp(ctx echo.Context, id string) error
+
+	// (GET /ips/{id})
+	GetIp(ctx echo.Context, id string, params GetIpParams) error
+
+	// (GET /logs)
+	GetLogs(ctx echo.Context, params GetLogsParams) error
+
+	// (POST /logs)
+	PostLogs(ctx echo.Context) error
+
+	// (GET /logs/{log_id})
+	GetLog(ctx echo.Context, logId string, params GetLogParams) error
+
+	// (DELETE /nodes)
+	DeleteNodes(ctx echo.Context) error
+
 	// (GET /nodes)
 	GetNodes(ctx echo.Context, params GetNodesParams) error
+
+	// (POST /nodes)
+	PostNodes(ctx echo.Context) error
+
+	// (GET /nodes/hardware)
+	GetNodesHardware(ctx echo.Context, params GetNodesHardwareParams) error
 
 	// (GET /nodes/hbas)
 	GetNodesHbas(ctx echo.Context, params GetNodesHbasParams) error
 
+	// (DELETE /nodes/{node_id})
+	DeleteNode(ctx echo.Context, nodeId string) error
+
 	// (GET /nodes/{node_id})
 	GetNode(ctx echo.Context, nodeId string, params GetNodeParams) error
 
+	// (POST /nodes/{node_id})
+	PostNode(ctx echo.Context, nodeId string) error
+
+	// (GET /nodes/{node_id}/alerts)
+	GetNodeAlerts(ctx echo.Context, nodeId string, params GetNodeAlertsParams) error
+
+	// (GET /nodes/{node_id}/am_i_responsible)
+	GetNodeAmIResponsible(ctx echo.Context, nodeId string) error
+
 	// (GET /nodes/{node_id}/candidate_tags)
 	GetNodeCandidateTags(ctx echo.Context, nodeId string, params GetNodeCandidateTagsParams) error
+
+	// (GET /nodes/{node_id}/checks)
+	GetNodeChecks(ctx echo.Context, nodeId string, params GetNodeChecksParams) error
 
 	// (GET /nodes/{node_id}/compliance/candidate_modulesets)
 	GetNodeComplianceCandidateModulesets(ctx echo.Context, nodeId InPathNodeId, params GetNodeComplianceCandidateModulesetsParams) error
@@ -96,8 +345,14 @@ type ServerInterface interface {
 	// (POST /nodes/{node_id}/compliance/rulesets/{rset_id})
 	PostNodeComplianceRuleset(ctx echo.Context, nodeId InPathNodeId, rsetId InPathRsetId) error
 
+	// (GET /nodes/{node_id}/compliance/status)
+	GetNodeComplianceStatus(ctx echo.Context, nodeId InPathNodeId, params GetNodeComplianceStatusParams) error
+
 	// (GET /nodes/{node_id}/disks)
 	GetNodeDisks(ctx echo.Context, nodeId string, params GetNodeDisksParams) error
+
+	// (GET /nodes/{node_id}/hardware)
+	GetNodeHardware(ctx echo.Context, nodeId string, params GetNodeHardwareParams) error
 
 	// (GET /nodes/{node_id}/hbas)
 	GetNodeHbas(ctx echo.Context, nodeId string, params GetNodeHbasParams) error
@@ -105,26 +360,143 @@ type ServerInterface interface {
 	// (GET /nodes/{node_id}/interfaces)
 	GetNodeInterfaces(ctx echo.Context, nodeId string, params GetNodeInterfacesParams) error
 
+	// (GET /nodes/{node_id}/ips)
+	GetNodeIps(ctx echo.Context, nodeId string, params GetNodeIpsParams) error
+
+	// (GET /nodes/{node_id}/services)
+	GetNodeServices(ctx echo.Context, nodeId string, params GetNodeServicesParams) error
+
+	// (GET /nodes/{node_id}/services/{svc_id})
+	GetNodeService(ctx echo.Context, nodeId string, svcId string, params GetNodeServiceParams) error
+
+	// (POST /nodes/{node_id}/snooze)
+	PostNodeSnooze(ctx echo.Context, nodeId InPathNodeId) error
+
 	// (GET /nodes/{node_id}/tags)
 	GetNodeTags(ctx echo.Context, nodeId string, params GetNodeTagsParams) error
 
 	// (GET /nodes/{node_id}/uuid)
 	GetNodeUUID(ctx echo.Context, nodeId string) error
 
+	// (PUT /obsolescence/refresh)
+	PutObsolescenceRefresh(ctx echo.Context) error
+
+	// (DELETE /obsolescence/settings)
+	DeleteObsolescenceSettings(ctx echo.Context) error
+
+	// (GET /obsolescence/settings)
+	GetObsolescenceSettings(ctx echo.Context, params GetObsolescenceSettingsParams) error
+
+	// (POST /obsolescence/settings)
+	PostObsolescenceSettings(ctx echo.Context) error
+
+	// (DELETE /obsolescence/settings/{id})
+	DeleteObsolescenceSetting(ctx echo.Context, id string) error
+
+	// (GET /obsolescence/settings/{id})
+	GetObsolescenceSetting(ctx echo.Context, id string, params GetObsolescenceSettingParams) error
+
+	// (POST /obsolescence/settings/{id})
+	PostObsolescenceSetting(ctx echo.Context, id string) error
+
 	// (GET /openapi.json)
 	GetSwagger(ctx echo.Context) error
+
+	// (DELETE /services)
+	DeleteServices(ctx echo.Context) error
 
 	// (GET /services)
 	GetServices(ctx echo.Context, params GetServicesParams) error
 
+	// (POST /services)
+	PostServices(ctx echo.Context) error
+
+	// (DELETE /services/{svc_id})
+	DeleteService(ctx echo.Context, svcId string) error
+
 	// (GET /services/{svc_id})
 	GetService(ctx echo.Context, svcId string, params GetServiceParams) error
+
+	// (POST /services/{svc_id})
+	PostService(ctx echo.Context, svcId string) error
+
+	// (GET /services/{svc_id}/alerts)
+	GetServiceAlerts(ctx echo.Context, svcId string, params GetServiceAlertsParams) error
+
+	// (GET /services/{svc_id}/am_i_responsible)
+	GetServiceAmIResponsible(ctx echo.Context, svcId string) error
 
 	// (GET /services/{svc_id}/candidate_tags)
 	GetServiceCandidateTags(ctx echo.Context, svcId string, params GetServiceCandidateTagsParams) error
 
+	// (GET /services/{svc_id}/checks)
+	GetServiceChecks(ctx echo.Context, svcId string, params GetServiceChecksParams) error
+
+	// (GET /services/{svc_id}/compliance/candidate_modulesets)
+	GetServiceComplianceCandidateModulesets(ctx echo.Context, svcId string, params GetServiceComplianceCandidateModulesetsParams) error
+
+	// (GET /services/{svc_id}/compliance/candidate_rulesets)
+	GetServiceComplianceCandidateRulesets(ctx echo.Context, svcId string, params GetServiceComplianceCandidateRulesetsParams) error
+
+	// (GET /services/{svc_id}/compliance/logs)
+	GetServiceComplianceLogs(ctx echo.Context, svcId string, params GetServiceComplianceLogsParams) error
+
+	// (GET /services/{svc_id}/compliance/modulesets)
+	GetServiceComplianceModulesets(ctx echo.Context, svcId string, params GetServiceComplianceModulesetsParams) error
+
+	// (DELETE /services/{svc_id}/compliance/modulesets/{mset_id})
+	DeleteServiceComplianceModuleset(ctx echo.Context, svcId string, msetId InPathMsetId, params DeleteServiceComplianceModulesetParams) error
+
+	// (POST /services/{svc_id}/compliance/modulesets/{mset_id})
+	PostServiceComplianceModuleset(ctx echo.Context, svcId string, msetId InPathMsetId, params PostServiceComplianceModulesetParams) error
+
+	// (GET /services/{svc_id}/compliance/rulesets)
+	GetServiceComplianceRulesets(ctx echo.Context, svcId string, params GetServiceComplianceRulesetsParams) error
+
+	// (DELETE /services/{svc_id}/compliance/rulesets/{rset_id})
+	DeleteServiceComplianceRuleset(ctx echo.Context, svcId string, rsetId InPathRsetId, params DeleteServiceComplianceRulesetParams) error
+
+	// (POST /services/{svc_id}/compliance/rulesets/{rset_id})
+	PostServiceComplianceRuleset(ctx echo.Context, svcId string, rsetId InPathRsetId, params PostServiceComplianceRulesetParams) error
+
+	// (GET /services/{svc_id}/compliance/status)
+	GetServiceComplianceStatus(ctx echo.Context, svcId string, params GetServiceComplianceStatusParams) error
+
+	// (GET /services/{svc_id}/disks)
+	GetServiceDisks(ctx echo.Context, svcId string, params GetServiceDisksParams) error
+
+	// (DELETE /services/{svc_id}/instances/{node_id})
+	DeleteServiceInstance(ctx echo.Context, svcId string, nodeId string) error
+
+	// (GET /services/{svc_id}/instances/{node_id})
+	GetServiceInstance(ctx echo.Context, svcId string, nodeId string, params GetServiceInstanceParams) error
+
+	// (GET /services/{svc_id}/nodes)
+	GetServiceNodes(ctx echo.Context, svcId string, params GetServiceNodesParams) error
+
+	// (GET /services/{svc_id}/nodes/{node_id})
+	GetServiceNode(ctx echo.Context, svcId string, nodeId string, params GetServiceNodeParams) error
+
+	// (GET /services/{svc_id}/nodes/{node_id}/resources)
+	GetServiceNodeResources(ctx echo.Context, svcId string, nodeId string, params GetServiceNodeResourcesParams) error
+
+	// (GET /services/{svc_id}/nodes/{node_id}/resources/logs)
+	GetServiceNodeResourceLogs(ctx echo.Context, svcId string, nodeId string, params GetServiceNodeResourceLogsParams) error
+
+	// (GET /services/{svc_id}/resinfo)
+	GetServiceResinfo(ctx echo.Context, svcId string, params GetServiceResinfoParams) error
+
+	// (GET /services/{svc_id}/resources)
+	GetServiceResources(ctx echo.Context, svcId string, params GetServiceResourcesParams) error
+
+	// (GET /services/{svc_id}/resources/logs)
+	GetServiceResourceLogs(ctx echo.Context, svcId string, params GetServiceResourceLogsParams) error
+
 	// (GET /services/{svc_id}/tags)
 	GetServiceTags(ctx echo.Context, svcId string, params GetServiceTagsParams) error
+
+	// (DELETE /services_instances)
+	DeleteServicesInstances(ctx echo.Context) error
 
 	// (GET /services_instances)
 	GetServicesInstances(ctx echo.Context, params GetServicesInstancesParams) error
@@ -135,23 +507,62 @@ type ServerInterface interface {
 	// (GET /services_instances_status_log)
 	GetServicesInstancesStatusLog(ctx echo.Context, params GetServicesInstancesStatusLogParams) error
 
+	// (GET /services_status_log)
+	GetServicesStatusLog(ctx echo.Context, params GetServicesStatusLogParams) error
+
+	// (DELETE /tags)
+	DeleteTags(ctx echo.Context) error
+
 	// (GET /tags)
 	GetTags(ctx echo.Context, params GetTagsParams) error
+
+	// (POST /tags)
+	PostTags(ctx echo.Context) error
+
+	// (DELETE /tags/nodes)
+	DeleteTagsNodes(ctx echo.Context) error
 
 	// (GET /tags/nodes)
 	GetTagsNodes(ctx echo.Context, params GetTagsNodesParams) error
 
+	// (POST /tags/nodes)
+	PostTagsNodes(ctx echo.Context) error
+
+	// (DELETE /tags/services)
+	DeleteTagsServices(ctx echo.Context) error
+
 	// (GET /tags/services)
 	GetTagsServices(ctx echo.Context, params GetTagsServicesParams) error
+
+	// (POST /tags/services)
+	PostTagsServices(ctx echo.Context) error
+
+	// (DELETE /tags/{tag_id})
+	DeleteTag(ctx echo.Context, tagId int) error
 
 	// (GET /tags/{tag_id})
 	GetTag(ctx echo.Context, tagId int, params GetTagParams) error
 
+	// (POST /tags/{tag_id})
+	PostTag(ctx echo.Context, tagId int) error
+
 	// (GET /tags/{tag_id}/nodes)
 	GetTagNodes(ctx echo.Context, tagId int, params GetTagNodesParams) error
 
+	// (DELETE /tags/{tag_id}/nodes/{node_id})
+	DeleteTagNode(ctx echo.Context, tagId int, nodeId string) error
+
+	// (POST /tags/{tag_id}/nodes/{node_id})
+	PostTagNode(ctx echo.Context, tagId int, nodeId string) error
+
 	// (GET /tags/{tag_id}/services)
 	GetTagServices(ctx echo.Context, tagId int, params GetTagServicesParams) error
+
+	// (DELETE /tags/{tag_id}/services/{svc_id})
+	DeleteTagService(ctx echo.Context, tagId int, svcId string) error
+
+	// (POST /tags/{tag_id}/services/{svc_id})
+	PostTagService(ctx echo.Context, tagId int, svcId string) error
 
 	// (GET /version)
 	GetVersion(ctx echo.Context) error
@@ -160,6 +571,452 @@ type ServerInterface interface {
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+}
+
+// GetActions converts echo context to params.
+func (w *ServerInterfaceWrapper) GetActions(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetActionsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetActions(ctx, params)
+	return err
+}
+
+// PostActions converts echo context to params.
+func (w *ServerInterfaceWrapper) PostActions(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostActions(ctx)
+	return err
+}
+
+// DeleteAction converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteAction(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteAction(ctx, id)
+	return err
+}
+
+// GetAction converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAction(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetActionParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetAction(ctx, id, params)
+	return err
+}
+
+// GetAlertEvent converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAlertEvent(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAlertEventParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetAlertEvent(ctx, params)
+	return err
+}
+
+// DeleteAlerts converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteAlerts(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteAlerts(ctx)
+	return err
+}
+
+// GetAlerts converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAlerts(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAlertsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetAlerts(ctx, params)
+	return err
+}
+
+// PostAlerts converts echo context to params.
+func (w *ServerInterfaceWrapper) PostAlerts(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostAlerts(ctx)
+	return err
+}
+
+// DeleteAlert converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteAlert(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteAlert(ctx, id)
+	return err
+}
+
+// GetAlert converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAlert(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAlertParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetAlert(ctx, id, params)
+	return err
+}
+
+// PostAlert converts echo context to params.
+func (w *ServerInterfaceWrapper) PostAlert(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostAlert(ctx, id)
+	return err
+}
+
+// DeleteApps converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteApps(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteApps(ctx)
+	return err
 }
 
 // GetApps converts echo context to params.
@@ -239,8 +1096,8 @@ func (w *ServerInterfaceWrapper) PostApps(ctx echo.Context) error {
 	return err
 }
 
-// DeleteApps converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteApps(ctx echo.Context) error {
+// DeleteApp converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteApp(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "app_id" -------------
 	var appId string
@@ -255,7 +1112,7 @@ func (w *ServerInterfaceWrapper) DeleteApps(ctx echo.Context) error {
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.DeleteApps(ctx, appId)
+	err = w.Handler.DeleteApp(ctx, appId)
 	return err
 }
 
@@ -325,6 +1182,77 @@ func (w *ServerInterfaceWrapper) GetAppAmIResponsible(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetAppAmIResponsible(ctx, appId)
+	return err
+}
+
+// GetAppNodes converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAppNodes(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "app_id" -------------
+	var appId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "app_id", ctx.Param("app_id"), &appId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter app_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAppNodesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetAppNodes(ctx, appId, params)
 	return err
 }
 
@@ -399,6 +1327,133 @@ func (w *ServerInterfaceWrapper) GetAppPublications(ctx echo.Context) error {
 	return err
 }
 
+// DeleteAppPublication converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteAppPublication(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "app_id" -------------
+	var appId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "app_id", ctx.Param("app_id"), &appId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter app_id: %s", err))
+	}
+
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteAppPublication(ctx, appId, groupId)
+	return err
+}
+
+// PostAppPublication converts echo context to params.
+func (w *ServerInterfaceWrapper) PostAppPublication(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "app_id" -------------
+	var appId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "app_id", ctx.Param("app_id"), &appId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter app_id: %s", err))
+	}
+
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostAppPublication(ctx, appId, groupId)
+	return err
+}
+
+// GetAppQuotas converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAppQuotas(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "app_id" -------------
+	var appId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "app_id", ctx.Param("app_id"), &appId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter app_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAppQuotasParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetAppQuotas(ctx, appId, params)
+	return err
+}
+
 // GetAppResponsibles converts echo context to params.
 func (w *ServerInterfaceWrapper) GetAppResponsibles(ctx echo.Context) error {
 	var err error
@@ -467,6 +1522,185 @@ func (w *ServerInterfaceWrapper) GetAppResponsibles(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetAppResponsibles(ctx, appId, params)
+	return err
+}
+
+// DeleteAppResponsible converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteAppResponsible(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "app_id" -------------
+	var appId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "app_id", ctx.Param("app_id"), &appId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter app_id: %s", err))
+	}
+
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteAppResponsible(ctx, appId, groupId)
+	return err
+}
+
+// PostAppResponsible converts echo context to params.
+func (w *ServerInterfaceWrapper) PostAppResponsible(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "app_id" -------------
+	var appId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "app_id", ctx.Param("app_id"), &appId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter app_id: %s", err))
+	}
+
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostAppResponsible(ctx, appId, groupId)
+	return err
+}
+
+// GetAppServices converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAppServices(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "app_id" -------------
+	var appId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "app_id", ctx.Param("app_id"), &appId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter app_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAppServicesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetAppServices(ctx, appId, params)
+	return err
+}
+
+// DeleteAppsPublications converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteAppsPublications(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteAppsPublications(ctx)
+	return err
+}
+
+// PostAppsPublications converts echo context to params.
+func (w *ServerInterfaceWrapper) PostAppsPublications(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostAppsPublications(ctx)
+	return err
+}
+
+// DeleteAppsResponsibles converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteAppsResponsibles(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteAppsResponsibles(ctx)
+	return err
+}
+
+// PostAppsResponsibles converts echo context to params.
+func (w *ServerInterfaceWrapper) PostAppsResponsibles(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostAppsResponsibles(ctx)
 	return err
 }
 
@@ -547,6 +1781,19 @@ func (w *ServerInterfaceWrapper) PostAuthNode(ctx echo.Context) error {
 	return err
 }
 
+// DeleteDisks converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteDisks(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteDisks(ctx)
+	return err
+}
+
 // GetDisks converts echo context to params.
 func (w *ServerInterfaceWrapper) GetDisks(ctx echo.Context) error {
 	var err error
@@ -608,6 +1855,39 @@ func (w *ServerInterfaceWrapper) GetDisks(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetDisks(ctx, params)
+	return err
+}
+
+// PostDisks converts echo context to params.
+func (w *ServerInterfaceWrapper) PostDisks(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostDisks(ctx)
+	return err
+}
+
+// DeleteDisk converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteDisk(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "disk_id" -------------
+	var diskId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "disk_id", ctx.Param("disk_id"), &diskId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter disk_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteDisk(ctx, diskId)
 	return err
 }
 
@@ -682,6 +1962,2034 @@ func (w *ServerInterfaceWrapper) GetDisk(ctx echo.Context) error {
 	return err
 }
 
+// DeleteFilters converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteFilters(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteFilters(ctx)
+	return err
+}
+
+// GetFilters converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFilters(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFiltersParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFilters(ctx, params)
+	return err
+}
+
+// PostFilters converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFilters(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostFilters(ctx)
+	return err
+}
+
+// DeleteFilter converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteFilter(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filter_id" -------------
+	var filterId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filter_id", ctx.Param("filter_id"), &filterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filter_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteFilter(ctx, filterId)
+	return err
+}
+
+// GetFilter converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFilter(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filter_id" -------------
+	var filterId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filter_id", ctx.Param("filter_id"), &filterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filter_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFilterParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFilter(ctx, filterId, params)
+	return err
+}
+
+// PostFilter converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFilter(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filter_id" -------------
+	var filterId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filter_id", ctx.Param("filter_id"), &filterId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filter_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostFilter(ctx, filterId)
+	return err
+}
+
+// DeleteFiltersets converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteFiltersets(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteFiltersets(ctx)
+	return err
+}
+
+// GetFiltersets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFiltersets(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFiltersetsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFiltersets(ctx, params)
+	return err
+}
+
+// PostFiltersets converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFiltersets(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostFiltersets(ctx)
+	return err
+}
+
+// DeleteFilterset converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteFilterset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteFilterset(ctx, filtersetId)
+	return err
+}
+
+// GetFilterset converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFilterset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFiltersetParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFilterset(ctx, filtersetId, params)
+	return err
+}
+
+// PostFilterset converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFilterset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostFilterset(ctx, filtersetId)
+	return err
+}
+
+// GetFiltersetExport converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFiltersetExport(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFiltersetExport(ctx, filtersetId)
+	return err
+}
+
+// GetFiltersetFilters converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFiltersetFilters(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFiltersetFiltersParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFiltersetFilters(ctx, filtersetId, params)
+	return err
+}
+
+// DeleteFiltersetFilter converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteFiltersetFilter(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	// ------------- Path parameter "f_id" -------------
+	var fId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "f_id", ctx.Param("f_id"), &fId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter f_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteFiltersetFilter(ctx, filtersetId, fId)
+	return err
+}
+
+// PostFiltersetFilter converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFiltersetFilter(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	// ------------- Path parameter "f_id" -------------
+	var fId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "f_id", ctx.Param("f_id"), &fId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter f_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostFiltersetFilter(ctx, filtersetId, fId)
+	return err
+}
+
+// GetFiltersetFiltersets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFiltersetFiltersets(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFiltersetFiltersetsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFiltersetFiltersets(ctx, filtersetId, params)
+	return err
+}
+
+// DeleteFiltersetFilterset converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteFiltersetFilterset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	// ------------- Path parameter "child_id" -------------
+	var childId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "child_id", ctx.Param("child_id"), &childId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter child_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteFiltersetFilterset(ctx, filtersetId, childId)
+	return err
+}
+
+// PostFiltersetFilterset converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFiltersetFilterset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	// ------------- Path parameter "child_id" -------------
+	var childId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "child_id", ctx.Param("child_id"), &childId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter child_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostFiltersetFilterset(ctx, filtersetId, childId)
+	return err
+}
+
+// GetFiltersetNodes converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFiltersetNodes(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFiltersetNodesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFiltersetNodes(ctx, filtersetId, params)
+	return err
+}
+
+// GetFiltersetServices converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFiltersetServices(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFiltersetServicesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFiltersetServices(ctx, filtersetId, params)
+	return err
+}
+
+// GetFiltersetUsage converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFiltersetUsage(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "filterset_id" -------------
+	var filtersetId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "filterset_id", ctx.Param("filterset_id"), &filtersetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filterset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFiltersetUsage(ctx, filtersetId)
+	return err
+}
+
+// DeleteFiltersetsFilters converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteFiltersetsFilters(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteFiltersetsFilters(ctx)
+	return err
+}
+
+// PostFiltersetsFilters converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFiltersetsFilters(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostFiltersetsFilters(ctx)
+	return err
+}
+
+// DeleteFiltersetsFiltersets converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteFiltersetsFiltersets(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteFiltersetsFiltersets(ctx)
+	return err
+}
+
+// PostFiltersetsFiltersets converts echo context to params.
+func (w *ServerInterfaceWrapper) PostFiltersetsFiltersets(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostFiltersetsFiltersets(ctx)
+	return err
+}
+
+// GetFrontendHiddenMenuEntries converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFrontendHiddenMenuEntries(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetFrontendHiddenMenuEntriesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetFrontendHiddenMenuEntries(ctx, params)
+	return err
+}
+
+// DeleteGroups converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteGroups(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteGroups(ctx)
+	return err
+}
+
+// GetGroups converts echo context to params.
+func (w *ServerInterfaceWrapper) GetGroups(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetGroupsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetGroups(ctx, params)
+	return err
+}
+
+// PostGroups converts echo context to params.
+func (w *ServerInterfaceWrapper) PostGroups(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostGroups(ctx)
+	return err
+}
+
+// DeleteGroup converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteGroup(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteGroup(ctx, groupId)
+	return err
+}
+
+// GetGroup converts echo context to params.
+func (w *ServerInterfaceWrapper) GetGroup(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetGroupParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetGroup(ctx, groupId, params)
+	return err
+}
+
+// PostGroup converts echo context to params.
+func (w *ServerInterfaceWrapper) PostGroup(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostGroup(ctx, groupId)
+	return err
+}
+
+// GetGroupApps converts echo context to params.
+func (w *ServerInterfaceWrapper) GetGroupApps(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetGroupAppsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetGroupApps(ctx, groupId, params)
+	return err
+}
+
+// DeleteGroupHiddenMenuEntries converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteGroupHiddenMenuEntries(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteGroupHiddenMenuEntries(ctx, groupId)
+	return err
+}
+
+// GetGroupHiddenMenuEntries converts echo context to params.
+func (w *ServerInterfaceWrapper) GetGroupHiddenMenuEntries(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetGroupHiddenMenuEntriesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetGroupHiddenMenuEntries(ctx, groupId, params)
+	return err
+}
+
+// PostGroupHiddenMenuEntries converts echo context to params.
+func (w *ServerInterfaceWrapper) PostGroupHiddenMenuEntries(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostGroupHiddenMenuEntries(ctx, groupId)
+	return err
+}
+
+// GetGroupModulesets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetGroupModulesets(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetGroupModulesetsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetGroupModulesets(ctx, groupId, params)
+	return err
+}
+
+// GetGroupNodes converts echo context to params.
+func (w *ServerInterfaceWrapper) GetGroupNodes(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetGroupNodesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetGroupNodes(ctx, groupId, params)
+	return err
+}
+
+// GetGroupRulesets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetGroupRulesets(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetGroupRulesetsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetGroupRulesets(ctx, groupId, params)
+	return err
+}
+
+// GetGroupServices converts echo context to params.
+func (w *ServerInterfaceWrapper) GetGroupServices(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetGroupServicesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetGroupServices(ctx, groupId, params)
+	return err
+}
+
+// GetGroupUsers converts echo context to params.
+func (w *ServerInterfaceWrapper) GetGroupUsers(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "group_id" -------------
+	var groupId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "group_id", ctx.Param("group_id"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter group_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetGroupUsersParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetGroupUsers(ctx, groupId, params)
+	return err
+}
+
+// DeleteIps converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteIps(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteIps(ctx)
+	return err
+}
+
+// GetIps converts echo context to params.
+func (w *ServerInterfaceWrapper) GetIps(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetIpsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetIps(ctx, params)
+	return err
+}
+
+// DeleteIp converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteIp(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteIp(ctx, id)
+	return err
+}
+
+// GetIp converts echo context to params.
+func (w *ServerInterfaceWrapper) GetIp(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetIpParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetIp(ctx, id, params)
+	return err
+}
+
+// GetLogs converts echo context to params.
+func (w *ServerInterfaceWrapper) GetLogs(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetLogsParams
+	// ------------- Optional query parameter "fset_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "fset_id", ctx.QueryParams(), &params.FsetId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter fset_id: %s", err))
+	}
+
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetLogs(ctx, params)
+	return err
+}
+
+// PostLogs converts echo context to params.
+func (w *ServerInterfaceWrapper) PostLogs(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostLogs(ctx)
+	return err
+}
+
+// GetLog converts echo context to params.
+func (w *ServerInterfaceWrapper) GetLog(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "log_id" -------------
+	var logId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "log_id", ctx.Param("log_id"), &logId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter log_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetLogParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetLog(ctx, logId, params)
+	return err
+}
+
+// DeleteNodes converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteNodes(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteNodes(ctx)
+	return err
+}
+
 // GetNodes converts echo context to params.
 func (w *ServerInterfaceWrapper) GetNodes(ctx echo.Context) error {
 	var err error
@@ -746,6 +4054,83 @@ func (w *ServerInterfaceWrapper) GetNodes(ctx echo.Context) error {
 	return err
 }
 
+// PostNodes converts echo context to params.
+func (w *ServerInterfaceWrapper) PostNodes(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostNodes(ctx)
+	return err
+}
+
+// GetNodesHardware converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodesHardware(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodesHardwareParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodesHardware(ctx, params)
+	return err
+}
+
 // GetNodesHbas converts echo context to params.
 func (w *ServerInterfaceWrapper) GetNodesHbas(ctx echo.Context) error {
 	var err error
@@ -807,6 +4192,26 @@ func (w *ServerInterfaceWrapper) GetNodesHbas(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetNodesHbas(ctx, params)
+	return err
+}
+
+// DeleteNode converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteNode(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteNode(ctx, nodeId)
 	return err
 }
 
@@ -881,6 +4286,117 @@ func (w *ServerInterfaceWrapper) GetNode(ctx echo.Context) error {
 	return err
 }
 
+// PostNode converts echo context to params.
+func (w *ServerInterfaceWrapper) PostNode(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostNode(ctx, nodeId)
+	return err
+}
+
+// GetNodeAlerts converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeAlerts(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeAlertsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeAlerts(ctx, nodeId, params)
+	return err
+}
+
+// GetNodeAmIResponsible converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeAmIResponsible(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeAmIResponsible(ctx, nodeId)
+	return err
+}
+
 // GetNodeCandidateTags converts echo context to params.
 func (w *ServerInterfaceWrapper) GetNodeCandidateTags(ctx echo.Context) error {
 	var err error
@@ -949,6 +4465,77 @@ func (w *ServerInterfaceWrapper) GetNodeCandidateTags(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetNodeCandidateTags(ctx, nodeId, params)
+	return err
+}
+
+// GetNodeChecks converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeChecks(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeChecksParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeChecks(ctx, nodeId, params)
 	return err
 }
 
@@ -1116,6 +4703,48 @@ func (w *ServerInterfaceWrapper) GetNodeComplianceLogs(ctx echo.Context) error {
 	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -1377,6 +5006,77 @@ func (w *ServerInterfaceWrapper) PostNodeComplianceRuleset(ctx echo.Context) err
 	return err
 }
 
+// GetNodeComplianceStatus converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeComplianceStatus(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId InPathNodeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeComplianceStatusParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeComplianceStatus(ctx, nodeId, params)
+	return err
+}
+
 // GetNodeDisks converts echo context to params.
 func (w *ServerInterfaceWrapper) GetNodeDisks(ctx echo.Context) error {
 	var err error
@@ -1445,6 +5145,77 @@ func (w *ServerInterfaceWrapper) GetNodeDisks(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetNodeDisks(ctx, nodeId, params)
+	return err
+}
+
+// GetNodeHardware converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeHardware(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeHardwareParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeHardware(ctx, nodeId, params)
 	return err
 }
 
@@ -1590,6 +5361,247 @@ func (w *ServerInterfaceWrapper) GetNodeInterfaces(ctx echo.Context) error {
 	return err
 }
 
+// GetNodeIps converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeIps(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeIpsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeIps(ctx, nodeId, params)
+	return err
+}
+
+// GetNodeServices converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeServices(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeServicesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeServices(ctx, nodeId, params)
+	return err
+}
+
+// GetNodeService converts echo context to params.
+func (w *ServerInterfaceWrapper) GetNodeService(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeServiceParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetNodeService(ctx, nodeId, svcId, params)
+	return err
+}
+
+// PostNodeSnooze converts echo context to params.
+func (w *ServerInterfaceWrapper) PostNodeSnooze(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "node_id" -------------
+	var nodeId InPathNodeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostNodeSnooze(ctx, nodeId)
+	return err
+}
+
 // GetNodeTags converts echo context to params.
 func (w *ServerInterfaceWrapper) GetNodeTags(ctx echo.Context) error {
 	var err error
@@ -1681,12 +5693,239 @@ func (w *ServerInterfaceWrapper) GetNodeUUID(ctx echo.Context) error {
 	return err
 }
 
+// PutObsolescenceRefresh converts echo context to params.
+func (w *ServerInterfaceWrapper) PutObsolescenceRefresh(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PutObsolescenceRefresh(ctx)
+	return err
+}
+
+// DeleteObsolescenceSettings converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteObsolescenceSettings(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteObsolescenceSettings(ctx)
+	return err
+}
+
+// GetObsolescenceSettings converts echo context to params.
+func (w *ServerInterfaceWrapper) GetObsolescenceSettings(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetObsolescenceSettingsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetObsolescenceSettings(ctx, params)
+	return err
+}
+
+// PostObsolescenceSettings converts echo context to params.
+func (w *ServerInterfaceWrapper) PostObsolescenceSettings(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostObsolescenceSettings(ctx)
+	return err
+}
+
+// DeleteObsolescenceSetting converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteObsolescenceSetting(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteObsolescenceSetting(ctx, id)
+	return err
+}
+
+// GetObsolescenceSetting converts echo context to params.
+func (w *ServerInterfaceWrapper) GetObsolescenceSetting(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetObsolescenceSettingParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetObsolescenceSetting(ctx, id, params)
+	return err
+}
+
+// PostObsolescenceSetting converts echo context to params.
+func (w *ServerInterfaceWrapper) PostObsolescenceSetting(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostObsolescenceSetting(ctx, id)
+	return err
+}
+
 // GetSwagger converts echo context to params.
 func (w *ServerInterfaceWrapper) GetSwagger(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetSwagger(ctx)
+	return err
+}
+
+// DeleteServices converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteServices(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteServices(ctx)
 	return err
 }
 
@@ -1751,6 +5990,39 @@ func (w *ServerInterfaceWrapper) GetServices(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetServices(ctx, params)
+	return err
+}
+
+// PostServices converts echo context to params.
+func (w *ServerInterfaceWrapper) PostServices(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostServices(ctx)
+	return err
+}
+
+// DeleteService converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteService(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteService(ctx, svcId)
 	return err
 }
 
@@ -1825,6 +6097,117 @@ func (w *ServerInterfaceWrapper) GetService(ctx echo.Context) error {
 	return err
 }
 
+// PostService converts echo context to params.
+func (w *ServerInterfaceWrapper) PostService(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostService(ctx, svcId)
+	return err
+}
+
+// GetServiceAlerts converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceAlerts(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceAlertsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceAlerts(ctx, svcId, params)
+	return err
+}
+
+// GetServiceAmIResponsible converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceAmIResponsible(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceAmIResponsible(ctx, svcId)
+	return err
+}
+
 // GetServiceCandidateTags converts echo context to params.
 func (w *ServerInterfaceWrapper) GetServiceCandidateTags(ctx echo.Context) error {
 	var err error
@@ -1896,6 +6279,1371 @@ func (w *ServerInterfaceWrapper) GetServiceCandidateTags(ctx echo.Context) error
 	return err
 }
 
+// GetServiceChecks converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceChecks(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceChecksParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceChecks(ctx, svcId, params)
+	return err
+}
+
+// GetServiceComplianceCandidateModulesets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceComplianceCandidateModulesets(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceComplianceCandidateModulesetsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceComplianceCandidateModulesets(ctx, svcId, params)
+	return err
+}
+
+// GetServiceComplianceCandidateRulesets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceComplianceCandidateRulesets(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceComplianceCandidateRulesetsParams
+	// ------------- Optional query parameter "slave" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "slave", ctx.QueryParams(), &params.Slave)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter slave: %s", err))
+	}
+
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceComplianceCandidateRulesets(ctx, svcId, params)
+	return err
+}
+
+// GetServiceComplianceLogs converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceComplianceLogs(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceComplianceLogsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceComplianceLogs(ctx, svcId, params)
+	return err
+}
+
+// GetServiceComplianceModulesets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceComplianceModulesets(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceComplianceModulesetsParams
+	// ------------- Optional query parameter "slave" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "slave", ctx.QueryParams(), &params.Slave)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter slave: %s", err))
+	}
+
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceComplianceModulesets(ctx, svcId, params)
+	return err
+}
+
+// DeleteServiceComplianceModuleset converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteServiceComplianceModuleset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "mset_id" -------------
+	var msetId InPathMsetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "mset_id", ctx.Param("mset_id"), &msetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter mset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteServiceComplianceModulesetParams
+	// ------------- Optional query parameter "slave" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "slave", ctx.QueryParams(), &params.Slave)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter slave: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteServiceComplianceModuleset(ctx, svcId, msetId, params)
+	return err
+}
+
+// PostServiceComplianceModuleset converts echo context to params.
+func (w *ServerInterfaceWrapper) PostServiceComplianceModuleset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "mset_id" -------------
+	var msetId InPathMsetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "mset_id", ctx.Param("mset_id"), &msetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter mset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostServiceComplianceModulesetParams
+	// ------------- Optional query parameter "slave" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "slave", ctx.QueryParams(), &params.Slave)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter slave: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostServiceComplianceModuleset(ctx, svcId, msetId, params)
+	return err
+}
+
+// GetServiceComplianceRulesets converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceComplianceRulesets(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceComplianceRulesetsParams
+	// ------------- Optional query parameter "slave" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "slave", ctx.QueryParams(), &params.Slave)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter slave: %s", err))
+	}
+
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceComplianceRulesets(ctx, svcId, params)
+	return err
+}
+
+// DeleteServiceComplianceRuleset converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteServiceComplianceRuleset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "rset_id" -------------
+	var rsetId InPathRsetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "rset_id", ctx.Param("rset_id"), &rsetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter rset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteServiceComplianceRulesetParams
+	// ------------- Optional query parameter "slave" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "slave", ctx.QueryParams(), &params.Slave)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter slave: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteServiceComplianceRuleset(ctx, svcId, rsetId, params)
+	return err
+}
+
+// PostServiceComplianceRuleset converts echo context to params.
+func (w *ServerInterfaceWrapper) PostServiceComplianceRuleset(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "rset_id" -------------
+	var rsetId InPathRsetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "rset_id", ctx.Param("rset_id"), &rsetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter rset_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostServiceComplianceRulesetParams
+	// ------------- Optional query parameter "slave" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "slave", ctx.QueryParams(), &params.Slave)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter slave: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostServiceComplianceRuleset(ctx, svcId, rsetId, params)
+	return err
+}
+
+// GetServiceComplianceStatus converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceComplianceStatus(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceComplianceStatusParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceComplianceStatus(ctx, svcId, params)
+	return err
+}
+
+// GetServiceDisks converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceDisks(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceDisksParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceDisks(ctx, svcId, params)
+	return err
+}
+
+// DeleteServiceInstance converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteServiceInstance(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteServiceInstance(ctx, svcId, nodeId)
+	return err
+}
+
+// GetServiceInstance converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceInstance(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceInstanceParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceInstance(ctx, svcId, nodeId, params)
+	return err
+}
+
+// GetServiceNodes converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceNodes(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceNodesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceNodes(ctx, svcId, params)
+	return err
+}
+
+// GetServiceNode converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceNode(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceNodeParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceNode(ctx, svcId, nodeId, params)
+	return err
+}
+
+// GetServiceNodeResources converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceNodeResources(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceNodeResourcesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceNodeResources(ctx, svcId, nodeId, params)
+	return err
+}
+
+// GetServiceNodeResourceLogs converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceNodeResourceLogs(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceNodeResourceLogsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceNodeResourceLogs(ctx, svcId, nodeId, params)
+	return err
+}
+
+// GetServiceResinfo converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceResinfo(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceResinfoParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceResinfo(ctx, svcId, params)
+	return err
+}
+
+// GetServiceResources converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceResources(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceResourcesParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceResources(ctx, svcId, params)
+	return err
+}
+
+// GetServiceResourceLogs converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceResourceLogs(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceResourceLogsParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServiceResourceLogs(ctx, svcId, params)
+	return err
+}
+
 // GetServiceTags converts echo context to params.
 func (w *ServerInterfaceWrapper) GetServiceTags(ctx echo.Context) error {
 	var err error
@@ -1964,6 +7712,19 @@ func (w *ServerInterfaceWrapper) GetServiceTags(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetServiceTags(ctx, svcId, params)
+	return err
+}
+
+// DeleteServicesInstances converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteServicesInstances(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteServicesInstances(ctx)
 	return err
 }
 
@@ -2166,6 +7927,83 @@ func (w *ServerInterfaceWrapper) GetServicesInstancesStatusLog(ctx echo.Context)
 	return err
 }
 
+// GetServicesStatusLog converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServicesStatusLog(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServicesStatusLogParams
+	// ------------- Optional query parameter "props" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "props", ctx.QueryParams(), &params.Props)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter props: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// ------------- Optional query parameter "meta" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "meta", ctx.QueryParams(), &params.Meta)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter meta: %s", err))
+	}
+
+	// ------------- Optional query parameter "stats" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "stats", ctx.QueryParams(), &params.Stats)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter stats: %s", err))
+	}
+
+	// ------------- Optional query parameter "orderby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "orderby", ctx.QueryParams(), &params.Orderby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter orderby: %s", err))
+	}
+
+	// ------------- Optional query parameter "groupby" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "groupby", ctx.QueryParams(), &params.Groupby)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupby: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetServicesStatusLog(ctx, params)
+	return err
+}
+
+// DeleteTags converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTags(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteTags(ctx)
+	return err
+}
+
 // GetTags converts echo context to params.
 func (w *ServerInterfaceWrapper) GetTags(ctx echo.Context) error {
 	var err error
@@ -2227,6 +8065,32 @@ func (w *ServerInterfaceWrapper) GetTags(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetTags(ctx, params)
+	return err
+}
+
+// PostTags converts echo context to params.
+func (w *ServerInterfaceWrapper) PostTags(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostTags(ctx)
+	return err
+}
+
+// DeleteTagsNodes converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTagsNodes(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteTagsNodes(ctx)
 	return err
 }
 
@@ -2294,6 +8158,32 @@ func (w *ServerInterfaceWrapper) GetTagsNodes(ctx echo.Context) error {
 	return err
 }
 
+// PostTagsNodes converts echo context to params.
+func (w *ServerInterfaceWrapper) PostTagsNodes(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostTagsNodes(ctx)
+	return err
+}
+
+// DeleteTagsServices converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTagsServices(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteTagsServices(ctx)
+	return err
+}
+
 // GetTagsServices converts echo context to params.
 func (w *ServerInterfaceWrapper) GetTagsServices(ctx echo.Context) error {
 	var err error
@@ -2358,6 +8248,39 @@ func (w *ServerInterfaceWrapper) GetTagsServices(ctx echo.Context) error {
 	return err
 }
 
+// PostTagsServices converts echo context to params.
+func (w *ServerInterfaceWrapper) PostTagsServices(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostTagsServices(ctx)
+	return err
+}
+
+// DeleteTag converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTag(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "tag_id" -------------
+	var tagId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tag_id", ctx.Param("tag_id"), &tagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tag_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteTag(ctx, tagId)
+	return err
+}
+
 // GetTag converts echo context to params.
 func (w *ServerInterfaceWrapper) GetTag(ctx echo.Context) error {
 	var err error
@@ -2384,6 +8307,26 @@ func (w *ServerInterfaceWrapper) GetTag(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetTag(ctx, tagId, params)
+	return err
+}
+
+// PostTag converts echo context to params.
+func (w *ServerInterfaceWrapper) PostTag(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "tag_id" -------------
+	var tagId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tag_id", ctx.Param("tag_id"), &tagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tag_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostTag(ctx, tagId)
 	return err
 }
 
@@ -2427,6 +8370,62 @@ func (w *ServerInterfaceWrapper) GetTagNodes(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetTagNodes(ctx, tagId, params)
+	return err
+}
+
+// DeleteTagNode converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTagNode(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "tag_id" -------------
+	var tagId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tag_id", ctx.Param("tag_id"), &tagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tag_id: %s", err))
+	}
+
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteTagNode(ctx, tagId, nodeId)
+	return err
+}
+
+// PostTagNode converts echo context to params.
+func (w *ServerInterfaceWrapper) PostTagNode(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "tag_id" -------------
+	var tagId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tag_id", ctx.Param("tag_id"), &tagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tag_id: %s", err))
+	}
+
+	// ------------- Path parameter "node_id" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "node_id", ctx.Param("node_id"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter node_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostTagNode(ctx, tagId, nodeId)
 	return err
 }
 
@@ -2501,6 +8500,62 @@ func (w *ServerInterfaceWrapper) GetTagServices(ctx echo.Context) error {
 	return err
 }
 
+// DeleteTagService converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteTagService(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "tag_id" -------------
+	var tagId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tag_id", ctx.Param("tag_id"), &tagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tag_id: %s", err))
+	}
+
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteTagService(ctx, tagId, svcId)
+	return err
+}
+
+// PostTagService converts echo context to params.
+func (w *ServerInterfaceWrapper) PostTagService(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "tag_id" -------------
+	var tagId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tag_id", ctx.Param("tag_id"), &tagId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tag_id: %s", err))
+	}
+
+	// ------------- Path parameter "svc_id" -------------
+	var svcId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "svc_id", ctx.Param("svc_id"), &svcId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter svc_id: %s", err))
+	}
+
+	ctx.Set(BasicAuthScopes, []string{})
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostTagService(ctx, tagId, svcId)
+	return err
+}
+
 // GetVersion converts echo context to params.
 func (w *ServerInterfaceWrapper) GetVersion(ctx echo.Context) error {
 	var err error
@@ -2538,22 +8593,105 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
+	router.GET(baseURL+"/actions", wrapper.GetActions)
+	router.POST(baseURL+"/actions", wrapper.PostActions)
+	router.DELETE(baseURL+"/actions/:id", wrapper.DeleteAction)
+	router.GET(baseURL+"/actions/:id", wrapper.GetAction)
+	router.GET(baseURL+"/alert_event", wrapper.GetAlertEvent)
+	router.DELETE(baseURL+"/alerts", wrapper.DeleteAlerts)
+	router.GET(baseURL+"/alerts", wrapper.GetAlerts)
+	router.POST(baseURL+"/alerts", wrapper.PostAlerts)
+	router.DELETE(baseURL+"/alerts/:id", wrapper.DeleteAlert)
+	router.GET(baseURL+"/alerts/:id", wrapper.GetAlert)
+	router.POST(baseURL+"/alerts/:id", wrapper.PostAlert)
+	router.DELETE(baseURL+"/apps", wrapper.DeleteApps)
 	router.GET(baseURL+"/apps", wrapper.GetApps)
 	router.POST(baseURL+"/apps", wrapper.PostApps)
-	router.DELETE(baseURL+"/apps/:app_id", wrapper.DeleteApps)
+	router.DELETE(baseURL+"/apps/:app_id", wrapper.DeleteApp)
 	router.GET(baseURL+"/apps/:app_id", wrapper.GetApp)
 	router.POST(baseURL+"/apps/:app_id", wrapper.PostApp)
 	router.GET(baseURL+"/apps/:app_id/am_i_responsible", wrapper.GetAppAmIResponsible)
+	router.GET(baseURL+"/apps/:app_id/nodes", wrapper.GetAppNodes)
 	router.GET(baseURL+"/apps/:app_id/publications", wrapper.GetAppPublications)
+	router.DELETE(baseURL+"/apps/:app_id/publications/:group_id", wrapper.DeleteAppPublication)
+	router.POST(baseURL+"/apps/:app_id/publications/:group_id", wrapper.PostAppPublication)
+	router.GET(baseURL+"/apps/:app_id/quotas", wrapper.GetAppQuotas)
 	router.GET(baseURL+"/apps/:app_id/responsibles", wrapper.GetAppResponsibles)
+	router.DELETE(baseURL+"/apps/:app_id/responsibles/:group_id", wrapper.DeleteAppResponsible)
+	router.POST(baseURL+"/apps/:app_id/responsibles/:group_id", wrapper.PostAppResponsible)
+	router.GET(baseURL+"/apps/:app_id/services", wrapper.GetAppServices)
+	router.DELETE(baseURL+"/apps_publications", wrapper.DeleteAppsPublications)
+	router.POST(baseURL+"/apps_publications", wrapper.PostAppsPublications)
+	router.DELETE(baseURL+"/apps_responsibles", wrapper.DeleteAppsResponsibles)
+	router.POST(baseURL+"/apps_responsibles", wrapper.PostAppsResponsibles)
 	router.GET(baseURL+"/arrays", wrapper.GetArrays)
 	router.POST(baseURL+"/auth/node", wrapper.PostAuthNode)
+	router.DELETE(baseURL+"/disks", wrapper.DeleteDisks)
 	router.GET(baseURL+"/disks", wrapper.GetDisks)
+	router.POST(baseURL+"/disks", wrapper.PostDisks)
+	router.DELETE(baseURL+"/disks/:disk_id", wrapper.DeleteDisk)
 	router.GET(baseURL+"/disks/:disk_id", wrapper.GetDisk)
+	router.DELETE(baseURL+"/filters", wrapper.DeleteFilters)
+	router.GET(baseURL+"/filters", wrapper.GetFilters)
+	router.POST(baseURL+"/filters", wrapper.PostFilters)
+	router.DELETE(baseURL+"/filters/:filter_id", wrapper.DeleteFilter)
+	router.GET(baseURL+"/filters/:filter_id", wrapper.GetFilter)
+	router.POST(baseURL+"/filters/:filter_id", wrapper.PostFilter)
+	router.DELETE(baseURL+"/filtersets", wrapper.DeleteFiltersets)
+	router.GET(baseURL+"/filtersets", wrapper.GetFiltersets)
+	router.POST(baseURL+"/filtersets", wrapper.PostFiltersets)
+	router.DELETE(baseURL+"/filtersets/:filterset_id", wrapper.DeleteFilterset)
+	router.GET(baseURL+"/filtersets/:filterset_id", wrapper.GetFilterset)
+	router.POST(baseURL+"/filtersets/:filterset_id", wrapper.PostFilterset)
+	router.GET(baseURL+"/filtersets/:filterset_id/export", wrapper.GetFiltersetExport)
+	router.GET(baseURL+"/filtersets/:filterset_id/filters", wrapper.GetFiltersetFilters)
+	router.DELETE(baseURL+"/filtersets/:filterset_id/filters/:f_id", wrapper.DeleteFiltersetFilter)
+	router.POST(baseURL+"/filtersets/:filterset_id/filters/:f_id", wrapper.PostFiltersetFilter)
+	router.GET(baseURL+"/filtersets/:filterset_id/filtersets", wrapper.GetFiltersetFiltersets)
+	router.DELETE(baseURL+"/filtersets/:filterset_id/filtersets/:child_id", wrapper.DeleteFiltersetFilterset)
+	router.POST(baseURL+"/filtersets/:filterset_id/filtersets/:child_id", wrapper.PostFiltersetFilterset)
+	router.GET(baseURL+"/filtersets/:filterset_id/nodes", wrapper.GetFiltersetNodes)
+	router.GET(baseURL+"/filtersets/:filterset_id/services", wrapper.GetFiltersetServices)
+	router.GET(baseURL+"/filtersets/:filterset_id/usage", wrapper.GetFiltersetUsage)
+	router.DELETE(baseURL+"/filtersets_filters", wrapper.DeleteFiltersetsFilters)
+	router.POST(baseURL+"/filtersets_filters", wrapper.PostFiltersetsFilters)
+	router.DELETE(baseURL+"/filtersets_filtersets", wrapper.DeleteFiltersetsFiltersets)
+	router.POST(baseURL+"/filtersets_filtersets", wrapper.PostFiltersetsFiltersets)
+	router.GET(baseURL+"/frontend/hidden_menu_entries", wrapper.GetFrontendHiddenMenuEntries)
+	router.DELETE(baseURL+"/groups", wrapper.DeleteGroups)
+	router.GET(baseURL+"/groups", wrapper.GetGroups)
+	router.POST(baseURL+"/groups", wrapper.PostGroups)
+	router.DELETE(baseURL+"/groups/:group_id", wrapper.DeleteGroup)
+	router.GET(baseURL+"/groups/:group_id", wrapper.GetGroup)
+	router.POST(baseURL+"/groups/:group_id", wrapper.PostGroup)
+	router.GET(baseURL+"/groups/:group_id/apps", wrapper.GetGroupApps)
+	router.DELETE(baseURL+"/groups/:group_id/hidden_menu_entries", wrapper.DeleteGroupHiddenMenuEntries)
+	router.GET(baseURL+"/groups/:group_id/hidden_menu_entries", wrapper.GetGroupHiddenMenuEntries)
+	router.POST(baseURL+"/groups/:group_id/hidden_menu_entries", wrapper.PostGroupHiddenMenuEntries)
+	router.GET(baseURL+"/groups/:group_id/modulesets", wrapper.GetGroupModulesets)
+	router.GET(baseURL+"/groups/:group_id/nodes", wrapper.GetGroupNodes)
+	router.GET(baseURL+"/groups/:group_id/rulesets", wrapper.GetGroupRulesets)
+	router.GET(baseURL+"/groups/:group_id/services", wrapper.GetGroupServices)
+	router.GET(baseURL+"/groups/:group_id/users", wrapper.GetGroupUsers)
+	router.DELETE(baseURL+"/ips", wrapper.DeleteIps)
+	router.GET(baseURL+"/ips", wrapper.GetIps)
+	router.DELETE(baseURL+"/ips/:id", wrapper.DeleteIp)
+	router.GET(baseURL+"/ips/:id", wrapper.GetIp)
+	router.GET(baseURL+"/logs", wrapper.GetLogs)
+	router.POST(baseURL+"/logs", wrapper.PostLogs)
+	router.GET(baseURL+"/logs/:log_id", wrapper.GetLog)
+	router.DELETE(baseURL+"/nodes", wrapper.DeleteNodes)
 	router.GET(baseURL+"/nodes", wrapper.GetNodes)
+	router.POST(baseURL+"/nodes", wrapper.PostNodes)
+	router.GET(baseURL+"/nodes/hardware", wrapper.GetNodesHardware)
 	router.GET(baseURL+"/nodes/hbas", wrapper.GetNodesHbas)
+	router.DELETE(baseURL+"/nodes/:node_id", wrapper.DeleteNode)
 	router.GET(baseURL+"/nodes/:node_id", wrapper.GetNode)
+	router.POST(baseURL+"/nodes/:node_id", wrapper.PostNode)
+	router.GET(baseURL+"/nodes/:node_id/alerts", wrapper.GetNodeAlerts)
+	router.GET(baseURL+"/nodes/:node_id/am_i_responsible", wrapper.GetNodeAmIResponsible)
 	router.GET(baseURL+"/nodes/:node_id/candidate_tags", wrapper.GetNodeCandidateTags)
+	router.GET(baseURL+"/nodes/:node_id/checks", wrapper.GetNodeChecks)
 	router.GET(baseURL+"/nodes/:node_id/compliance/candidate_modulesets", wrapper.GetNodeComplianceCandidateModulesets)
 	router.GET(baseURL+"/nodes/:node_id/compliance/candidate_rulesets", wrapper.GetNodeComplianceCandidateRulesets)
 	router.GET(baseURL+"/nodes/:node_id/compliance/logs", wrapper.GetNodeComplianceLogs)
@@ -2563,25 +8701,79 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/nodes/:node_id/compliance/rulesets", wrapper.GetNodeComplianceRulesets)
 	router.DELETE(baseURL+"/nodes/:node_id/compliance/rulesets/:rset_id", wrapper.DeleteNodeComplianceRuleset)
 	router.POST(baseURL+"/nodes/:node_id/compliance/rulesets/:rset_id", wrapper.PostNodeComplianceRuleset)
+	router.GET(baseURL+"/nodes/:node_id/compliance/status", wrapper.GetNodeComplianceStatus)
 	router.GET(baseURL+"/nodes/:node_id/disks", wrapper.GetNodeDisks)
+	router.GET(baseURL+"/nodes/:node_id/hardware", wrapper.GetNodeHardware)
 	router.GET(baseURL+"/nodes/:node_id/hbas", wrapper.GetNodeHbas)
 	router.GET(baseURL+"/nodes/:node_id/interfaces", wrapper.GetNodeInterfaces)
+	router.GET(baseURL+"/nodes/:node_id/ips", wrapper.GetNodeIps)
+	router.GET(baseURL+"/nodes/:node_id/services", wrapper.GetNodeServices)
+	router.GET(baseURL+"/nodes/:node_id/services/:svc_id", wrapper.GetNodeService)
+	router.POST(baseURL+"/nodes/:node_id/snooze", wrapper.PostNodeSnooze)
 	router.GET(baseURL+"/nodes/:node_id/tags", wrapper.GetNodeTags)
 	router.GET(baseURL+"/nodes/:node_id/uuid", wrapper.GetNodeUUID)
+	router.PUT(baseURL+"/obsolescence/refresh", wrapper.PutObsolescenceRefresh)
+	router.DELETE(baseURL+"/obsolescence/settings", wrapper.DeleteObsolescenceSettings)
+	router.GET(baseURL+"/obsolescence/settings", wrapper.GetObsolescenceSettings)
+	router.POST(baseURL+"/obsolescence/settings", wrapper.PostObsolescenceSettings)
+	router.DELETE(baseURL+"/obsolescence/settings/:id", wrapper.DeleteObsolescenceSetting)
+	router.GET(baseURL+"/obsolescence/settings/:id", wrapper.GetObsolescenceSetting)
+	router.POST(baseURL+"/obsolescence/settings/:id", wrapper.PostObsolescenceSetting)
 	router.GET(baseURL+"/openapi.json", wrapper.GetSwagger)
+	router.DELETE(baseURL+"/services", wrapper.DeleteServices)
 	router.GET(baseURL+"/services", wrapper.GetServices)
+	router.POST(baseURL+"/services", wrapper.PostServices)
+	router.DELETE(baseURL+"/services/:svc_id", wrapper.DeleteService)
 	router.GET(baseURL+"/services/:svc_id", wrapper.GetService)
+	router.POST(baseURL+"/services/:svc_id", wrapper.PostService)
+	router.GET(baseURL+"/services/:svc_id/alerts", wrapper.GetServiceAlerts)
+	router.GET(baseURL+"/services/:svc_id/am_i_responsible", wrapper.GetServiceAmIResponsible)
 	router.GET(baseURL+"/services/:svc_id/candidate_tags", wrapper.GetServiceCandidateTags)
+	router.GET(baseURL+"/services/:svc_id/checks", wrapper.GetServiceChecks)
+	router.GET(baseURL+"/services/:svc_id/compliance/candidate_modulesets", wrapper.GetServiceComplianceCandidateModulesets)
+	router.GET(baseURL+"/services/:svc_id/compliance/candidate_rulesets", wrapper.GetServiceComplianceCandidateRulesets)
+	router.GET(baseURL+"/services/:svc_id/compliance/logs", wrapper.GetServiceComplianceLogs)
+	router.GET(baseURL+"/services/:svc_id/compliance/modulesets", wrapper.GetServiceComplianceModulesets)
+	router.DELETE(baseURL+"/services/:svc_id/compliance/modulesets/:mset_id", wrapper.DeleteServiceComplianceModuleset)
+	router.POST(baseURL+"/services/:svc_id/compliance/modulesets/:mset_id", wrapper.PostServiceComplianceModuleset)
+	router.GET(baseURL+"/services/:svc_id/compliance/rulesets", wrapper.GetServiceComplianceRulesets)
+	router.DELETE(baseURL+"/services/:svc_id/compliance/rulesets/:rset_id", wrapper.DeleteServiceComplianceRuleset)
+	router.POST(baseURL+"/services/:svc_id/compliance/rulesets/:rset_id", wrapper.PostServiceComplianceRuleset)
+	router.GET(baseURL+"/services/:svc_id/compliance/status", wrapper.GetServiceComplianceStatus)
+	router.GET(baseURL+"/services/:svc_id/disks", wrapper.GetServiceDisks)
+	router.DELETE(baseURL+"/services/:svc_id/instances/:node_id", wrapper.DeleteServiceInstance)
+	router.GET(baseURL+"/services/:svc_id/instances/:node_id", wrapper.GetServiceInstance)
+	router.GET(baseURL+"/services/:svc_id/nodes", wrapper.GetServiceNodes)
+	router.GET(baseURL+"/services/:svc_id/nodes/:node_id", wrapper.GetServiceNode)
+	router.GET(baseURL+"/services/:svc_id/nodes/:node_id/resources", wrapper.GetServiceNodeResources)
+	router.GET(baseURL+"/services/:svc_id/nodes/:node_id/resources/logs", wrapper.GetServiceNodeResourceLogs)
+	router.GET(baseURL+"/services/:svc_id/resinfo", wrapper.GetServiceResinfo)
+	router.GET(baseURL+"/services/:svc_id/resources", wrapper.GetServiceResources)
+	router.GET(baseURL+"/services/:svc_id/resources/logs", wrapper.GetServiceResourceLogs)
 	router.GET(baseURL+"/services/:svc_id/tags", wrapper.GetServiceTags)
+	router.DELETE(baseURL+"/services_instances", wrapper.DeleteServicesInstances)
 	router.GET(baseURL+"/services_instances", wrapper.GetServicesInstances)
 	router.GET(baseURL+"/services_instances/:svc_id", wrapper.GetServicesInstance)
 	router.GET(baseURL+"/services_instances_status_log", wrapper.GetServicesInstancesStatusLog)
+	router.GET(baseURL+"/services_status_log", wrapper.GetServicesStatusLog)
+	router.DELETE(baseURL+"/tags", wrapper.DeleteTags)
 	router.GET(baseURL+"/tags", wrapper.GetTags)
+	router.POST(baseURL+"/tags", wrapper.PostTags)
+	router.DELETE(baseURL+"/tags/nodes", wrapper.DeleteTagsNodes)
 	router.GET(baseURL+"/tags/nodes", wrapper.GetTagsNodes)
+	router.POST(baseURL+"/tags/nodes", wrapper.PostTagsNodes)
+	router.DELETE(baseURL+"/tags/services", wrapper.DeleteTagsServices)
 	router.GET(baseURL+"/tags/services", wrapper.GetTagsServices)
+	router.POST(baseURL+"/tags/services", wrapper.PostTagsServices)
+	router.DELETE(baseURL+"/tags/:tag_id", wrapper.DeleteTag)
 	router.GET(baseURL+"/tags/:tag_id", wrapper.GetTag)
+	router.POST(baseURL+"/tags/:tag_id", wrapper.PostTag)
 	router.GET(baseURL+"/tags/:tag_id/nodes", wrapper.GetTagNodes)
+	router.DELETE(baseURL+"/tags/:tag_id/nodes/:node_id", wrapper.DeleteTagNode)
+	router.POST(baseURL+"/tags/:tag_id/nodes/:node_id", wrapper.PostTagNode)
 	router.GET(baseURL+"/tags/:tag_id/services", wrapper.GetTagServices)
+	router.DELETE(baseURL+"/tags/:tag_id/services/:svc_id", wrapper.DeleteTagService)
+	router.POST(baseURL+"/tags/:tag_id/services/:svc_id", wrapper.PostTagService)
 	router.GET(baseURL+"/version", wrapper.GetVersion)
 
 }
@@ -2589,54 +8781,171 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xdzXLbOBJ+lS7uHpIqRVImnsO4ag4ZZ5L1bn68crJ7SFwuiGxJmJAAA4C2tS69+xYA",
-	"gqItUKTkWJYTnFwWm+gG8H39AwLkdRTzLOcMmZLR4XWUE0EyVCjMf5SdEDV7J1EdJ/r/BGUsaK4oZ9Fh",
-	"dPwK+ATUDCHjSZGiRBX1Iqov5UTNol7ESIbRYZRJVOc0iXqRwG8FFZhEh0oU2ItkPMOM6KbVPNeiUgnK",
-	"ptFi0SuVv+cJrlfOeIJ+vfrKtnpHrZ0W67ostuzyvwsU8zeCF/l4vqr8iGcZeSZRz5LCBFIqlTYnFzxH",
-	"oShKUBym+nZrIsoiVTCewxPsT/v2ynj+O8nznryIta1P+64D37TqZQ9K2aiTxW9pRtWqvR81NsgVzYoM",
-	"WJGNUWhrkSlRmipQFYL1YQgZEiaBcUh1U01GmYs3TEpwQopURYe/DntRRpnWFR0Oe85WyhROUdSNfYeK",
-	"eCaWxWmRIGSoSEIUAcrcGOacSezDn4yMU0z0cJZa+/BJIkxIKhG4gKHuEs+osqRARWBCMU2aeqMluo3v",
-	"h8lEQ23F6NOv1M70hAqpqpEtEWq6ERdCctFkArcNe0e084B+EAmK7fEqudAY7cOJwAm9AuKuz+GSqhk8",
-	"gwkXoFtGllA2Ba71lZDmVvfvmuu6T71nJM8bQV1Kdxv0E8Fzudqplw3doCWAKAMk8cyOfkJjfRsjYt5k",
-	"U27UdLLoVBElfcPMlOCpNJNuzJCUsyWANccwqduirSfwJZK6wS8RfMV5D2LOFKFMj7C+T2KKsZ61WjcT",
-	"KhVlsYILkhYoIeYFU7KpZ6b1tT1baP9o+WX6dTAc6j/aEmQG7yTPUxoTbfjgL6m7e11r7+8CJ9Fh9LfB",
-	"MooN7FU5OBF8nGJmtdwcsD9IAiP8VqBU0aIXHQyf70LrJ0YKNeOC/g8Tq/bFLtS+5mJMkwSZ1XmwC53v",
-	"uYLXvGBlP3/bhc4jziYpjc2M/robHB0zhYKRFE5RXKCAP4Xg1jOWN+u231KpXMhZUsnYdEFoqmPKee5c",
-	"DVWYSQ9TKvdLhCBz/b+hXk2y8su9yLHU6EgSqq0l6ckN3at3lb/w8V9oB7F0aMk21qUuIVjVw6tY5rGB",
-	"K5L6Lvns0wM7Kr3H6uBq96v/coYfJtHh51Xrly3dsr551O4wmrd+OFv0bPxvQV+FHusrXS752fbvzKPI",
-	"4XVlRBReKV84mxUZYc8EkkRjEfAqTwkzTAGZY0wnNNbxTc2oBB7HhRDIYiyTjC8st/r6X1jU84Suus3G",
-	"Ap/NFygktaS8aXPtAl6RLE/1fcP+sP+8VZm7dVWf5ifGhaBqfqqH2aoaE0njl4WaVa5B32N+XeqaKZVr",
-	"g8dIBAonbf97zUVGVHQY/fO/H13UM02Yq7fbsGF9ws3MUGU6xnNk8iKGmKc69nIBJKdRbXii5/1h/4Vh",
-	"UY5MXzyMXvSH/WHUMwWI6ciA5JauU1/KqAEFlecBI2uaE2bKdc0TvUH10v5erwc/+5G6FBncSJw0j7rJ",
-	"2+qhu3yZDXe/wRKos7hNszawp8wqu9/hKrzF2a0E6JfvGLhu+EdP9Prwr1qo9DVUWTbQQnXaGDDUCPP5",
-	"TPe9TorPZ7pvikw1cKIK0JH2ezmXHmAeCSQKgTCodRliW93fxOcJlw6gwqZxf/BkvtHA3YrEee4NayTP",
-	"zxOeEcoaLysk2XkZH1cEbvTwusVhaSM8zmpxew1hcUfMeBT4gHHQBRhaaJlBt8k+r6W9bbIvaqljm+xv",
-	"DwLkRc+62sG1xgFNFhbTKSpcRfcr83sndFtRvwO+FbvzHATGXCRAEzDhIndtehalrJkbrUmd7Qpr94Wf",
-	"gy6yB3uPtZ4/mL+iMk/J3Mx7zaP54/nDo6m3YQaxM/R1R8n+hMsZYVOvQ1mHhDJy7oljedShO8Tp7fzs",
-	"w8fpAcnO6XmpjI5TbCyWRmbtFPRsAi0f+1jUogAqodaGWaQ2NXJrgLfu+GV2PKqZ8KOE+jHnKRK237F+",
-	"DzCYF2M3mG3Fus/FL++2T/Wagv5JXc2jSwDCEsJjWEJ4ZMyrOe0tmFd3+WuZN6qrCcwLzPspmScEmbew",
-	"TCouiC5lrKyPTe5KWI4Oy9H3gdJCzQZmH5kuL73l9gin1GT9xGw4A30LMlUOhXn25am0C7uB7d7Xqd3u",
-	"l/ZF5krSt9J814r1prHV063b1hYFTdotNVLlMzL/svitGBrHmKsbWyv2Z43Z4LE7QDW6SmwmVH5tcaBW",
-	"xOM3X5UXgtsMbvMe3KbB3eBa/3GPP5pB6vYmTnR2u9xYoG9ugm5b1qxlgCbaDU+oecLuyZVL60KyHJLl",
-	"fU+WdWxucfVWxMOX9+WF4OqDq78vaA5mY9K2YpKmFqPw+ggIS4CeHp0ew4xLBeNCAklIbsDZBOF/aBUB",
-	"xgHG9wjj6/Jg0HYZC2t4pFMWemszFi1Ty1jgSWkJfPp0/Aq4AFeePf2OJ5oCfUIy8+BUG8SEJTQhCs/t",
-	"HeuYpyWAKEXimdmkqrhbdnnCuII5qvIqJibI6B/xyu5Wf9rEzSNnwEetPxA1EDUQ1UtUnuUpJSzGGmer",
-	"E77NzH2DCqoblkeCXfzU7XuWSR05K6UVTd8tVW6eD9aODgde/WC8elsev/SBrcY4j0PXcWLijqWVZGs4",
-	"0SXtiS5cnujaJd3EZmQTd6TaKBAtEK0L0cSPQLOUT1uIVcmClt2QVW/5dNdEuitIup6M9B26XR2q6qUc",
-	"jxkkHROeWppTVSRVtdIFLSHLCc53rfOtYPWDJDnLbgyuyxcDtRyc0v0Hsuw/TATPmilmj081sGwHJKu9",
-	"MskDIM+sVcaBLOIYpZwUaTqHBO3Er59tLmoD89BT33RW5aVamcN1TvKES7VH87fdxp0tjof8sg4bzg/s",
-	"y5GPfVur6FQyibsF61AnhVDdJVT/EGWSqMK02CRMi62D9GinLn60SYge3SlAi8cSnsVWwfkB5+0hQ/Mo",
-	"BOZmP9J116p9EV2nZ+sNm1nDc7sQzsNzu2TRZXOWfYbuztt03pTl35MViBeIF4iXLAZUJ20TEmM3+jFU",
-	"l1x8hdptDbw7rksE9gX2Bfatsm+j3WT1BZ8m1oXtYYFvgW+NfHOHN9e+j8wEOi3Zhw8sLf+vv3fBbNvM",
-	"CCNTFBKIQCBpyi/RvCvfS0vNrH2k5U/0hrwHwV/5otu+G7kSdysYOb0k06k5BPjgjN6DdR03mvY9QeVQ",
-	"ShQXtDVNraQ8RDxdXgsndMIJnXugu0Pf4FpexFuf0SlbWQPhtlBSit2IJtaiKpi4L+j4Y4kVDhleyPD2",
-	"PcKuUO7uZ3XKJrc9rlOSb6MTO4GwgbA/LWG3WgRpD5KBd4F3gXcrvDunTCrCOldSsJRfU1Md14RCcRWK",
-	"q50AuGOZVck3FFrwpHrxx9MuGA9BJfAsBJUGTp5LRVQhz1M+3TS+gL0VUj7tw58knpkFkjlQCQQUzRCE",
-	"+WrE5QwF1uo014C7/5KYpsYp9juFrFNz21s+DbErxK774Ul7iYNX5ruXU1Pr+GDrL2cCQANAvxdAu7zC",
-	"T2dKikyf2dcIm4o8M5/fb0BseLNfgO19w7bbk0GHXJc1dABveGAY8LsD/F4rMl1bxbqNKYpM3efR5g2Y",
-	"batNdflpPwWljLCn+rTWdKk+ax+4Dt/Gu/v8t8TfN1i+QbcsgMpJNOWRO8XjB0VDEN5LZNy7s3y41424",
-	"k5blJFI1s59c0+PddArvI5l6T949JEw324mzMVqbo+7PCdgQ3X+GlbTqK/kNnBL2Y44kp+BEPfT5T3Xp",
-	"3sbbaf8+iVQ1HCQnY5pS8/mVs4UdWXHhmF+INDqM+oNocbb4fwAAAP//b3zgBvaNAAA=",
+	"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",
+	"//ZvAcAFcQIA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

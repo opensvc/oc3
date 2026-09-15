@@ -50,7 +50,7 @@ func (n *DBNode) String() string {
 	return fmt.Sprintf("node: {nodename: %s, node_id: %s, cluster_id: %s, app: %s}", n.Nodename, n.NodeID, n.ClusterID, n.App)
 }
 
-func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (string, []any) {
+func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
 	q := From(schema.TNodes).
 		RawSelect(selectExprs...)
 
@@ -79,13 +79,16 @@ func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (str
 
 	query, args, err := q.Build()
 	if err != nil {
-		panic(fmt.Sprintf("buildNodesQuery: %v", err))
+		return "", nil, fmt.Errorf("buildNodesQuery: %w", err)
 	}
-	return query, args
+	return query, args, nil
 }
 
 func (oDb *DB) GetNodes(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if err != nil {
+		return nil, err
+	}
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}
@@ -101,9 +104,41 @@ func (oDb *DB) GetNodes(ctx context.Context, p ListParams) ([]map[string]any, er
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+// GetNodesByIDs fetches nodes whose node_id is in the given list.
+func (oDb *DB) GetNodesByIDs(ctx context.Context, ids []string, p ListParams) ([]map[string]any, error) {
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		query += " AND 1=0"
+	} else {
+		query += " AND nodes.node_id IN (" + Placeholders(len(ids)) + ")"
+		for _, id := range ids {
+			args = append(args, id)
+		}
+	}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("nodes.nodename")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getNodesByIDs: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
 // GetNode fetches a single node by node_id or nodename.
 func (oDb *DB) GetNode(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
-	query, args := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if err != nil {
+		return nil, err
+	}
 	query += " AND (nodes.node_id = ? OR nodes.nodename = ?)"
 	args = append(args, nodeID, nodeID)
 	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
@@ -609,7 +644,7 @@ func (oDb *DB) NodeByNodeIDOrNodename(ctx context.Context, nodeIdOrName string) 
 
 	switch len(nodeIDs) {
 	case 0:
-		return nil, fmt.Errorf("node %s not found", nodeIdOrName)
+		return nil, nil
 	case 1:
 		n, err := oDb.NodeByNodeID(ctx, nodeIDs[0])
 		if err != nil {
@@ -688,6 +723,88 @@ func (oDb *DB) InsertNode(ctx context.Context, nodename, teamResponsible, app, n
 	oDb.Metrics.NodeConfigInsert.Inc()
 	if err := oDb.Session.NotifyChanges(ctx); err != nil {
 		slog.Debug("insert node can't notify changes", logkey.Error, err, logkey.Nodename, nodename, logkey.NodeID, nodeID)
+	}
+	return nil
+}
+
+func (oDb *DB) UpdateNodeFields(ctx context.Context, nodeID string, fields map[string]any) error {
+	defer logDuration("UpdateNodeFields", time.Now())
+	allowed := map[string]bool{
+		"nodename": true, "team_responsible": true, "app": true, "cluster_id": true,
+		"warranty_end": true, "maintenance_end": true, "status": true, "role": true,
+		"listener_port": true, "version": true, "collector": true, "connect_to": true,
+		"tz": true, "asset_env": true, "type": true, "fqdn": true, "manufacturer": true,
+		"loc_addr": true, "loc_city": true, "loc_zip": true, "loc_rack": true,
+		"loc_floor": true, "loc_country": true, "loc_building": true, "loc_room": true,
+		"power_supply_nb": true, "power_cabinet1": true, "power_cabinet2": true,
+		"power_protect": true, "power_protect_breaker": true,
+		"power_breaker1": true, "power_breaker2": true,
+		"enclosure": true, "enclosureslot": true, "assetname": true, "sec_zone": true,
+		"action_type": true, "hvpool": true, "hvvdc": true, "hv": true,
+		"hw_obs_warn_date": true, "hw_obs_alert_date": true,
+		"os_obs_warn_date": true, "os_obs_alert_date": true,
+		"notifications": true, "snooze_till": true, "node_frozen": true, "node_frozen_at": true,
+		"bios_version": true, "cpu_cores": true, "cpu_dies": true, "cpu_freq": true,
+		"cpu_model": true, "cpu_threads": true, "cpu_vendor": true,
+		"last_boot": true, "last_comm": true,
+		"mem_banks": true, "mem_bytes": true, "mem_slots": true,
+		"model": true, "node_env": true,
+		"os_arch": true, "os_concat": true, "os_kernel": true, "os_name": true,
+		"os_release": true, "os_vendor": true,
+		"serial": true, "sp_version": true, "team_integ": true, "team_support": true,
+		"updated": true,
+	}
+	setClauses := []string{"updated = NOW()"}
+	args := []any{}
+	for col, val := range fields {
+		if !allowed[col] {
+			continue
+		}
+		setClauses = append(setClauses, col+" = ?")
+		args = append(args, val)
+	}
+	if len(setClauses) == 1 {
+		return nil
+	}
+	query := "UPDATE nodes SET " + strings.Join(setClauses, ", ") + " WHERE node_id = ?"
+	args = append(args, nodeID)
+	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("UpdateNodeFields: %w", err)
+	}
+	oDb.SetChange("nodes")
+	return nil
+}
+
+// DeleteNodeCascade deletes a node and all its related data in other tables
+func (oDb *DB) DeleteNodeCascade(ctx context.Context, nodeID string) error {
+	defer logDuration("DeleteNodeCascade", time.Now())
+	if nodeID == "" {
+		return fmt.Errorf("DeleteNodeCascade: empty node_id")
+	}
+	tables := []string{
+		"nodes",
+		"svcmon",
+		"dashboard",
+		"checks_live",
+		"packages",
+		"patches",
+		"node_tags",
+		"node_ip",
+		"node_hba",
+		"stor_zone",
+		"stor_array_proxy",
+		"auth_node",
+		"resmon_log",
+		"resmon_log_last",
+		"svcmon_log",
+		"svcmon_log_last",
+	}
+	for _, t := range tables {
+		query := "DELETE FROM " + t + " WHERE node_id = ?"
+		if _, err := oDb.ExecContext(ctx, query, nodeID); err != nil {
+			return fmt.Errorf("DeleteNodeCascade %s: %w", t, err)
+		}
+		oDb.SetChange(t)
 	}
 	return nil
 }

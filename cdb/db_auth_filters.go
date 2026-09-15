@@ -100,6 +100,43 @@ func (oDb *DB) PublishedNodeIDsForGroups(ctx context.Context, groups []string) (
 	return ids, nil
 }
 
+// PublishedSvcIDsForGroups returns svc ids accessible by the provided groups
+func (oDb *DB) PublishedSvcIDsForGroups(ctx context.Context, groups []string) ([]string, error) {
+	clean := cleanGroups(groups)
+	if len(clean) == 0 {
+		return []string{}, nil
+	}
+
+	query := "SELECT DISTINCT services.svc_id FROM services " +
+		"JOIN apps ON services.svc_app = apps.app " +
+		"JOIN apps_responsibles ON apps_responsibles.app_id = apps.id " +
+		"JOIN auth_group ON auth_group.id = apps_responsibles.group_id " +
+		"WHERE auth_group.role IN (" + Placeholders(len(clean)) + ")"
+	args := []any{}
+	for _, g := range clean {
+		args = append(args, g)
+	}
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	ids := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
 // AppsForGroups returns app accessible by the provided groups.
 func (oDb *DB) AppsForGroups(ctx context.Context, groups []string) ([]string, error) {
 	grps := cleanGroups(groups)

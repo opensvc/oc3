@@ -14,6 +14,29 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Defines values for PostFiltersJSONBodyFOp.
+const (
+	Equal            PostFiltersJSONBodyFOp = "="
+	GreaterThan      PostFiltersJSONBodyFOp = ">"
+	GreaterThanEqual PostFiltersJSONBodyFOp = ">="
+	IN               PostFiltersJSONBodyFOp = "IN"
+	LIKE             PostFiltersJSONBodyFOp = "LIKE"
+	LessThan         PostFiltersJSONBodyFOp = "<"
+	LessThanEqual    PostFiltersJSONBodyFOp = "<="
+)
+
+// Defines values for PostNodesJSONBodyActionType.
+const (
+	PostNodesJSONBodyActionTypePull PostNodesJSONBodyActionType = "pull"
+	PostNodesJSONBodyActionTypePush PostNodesJSONBodyActionType = "push"
+)
+
+// Defines values for PostNodeJSONBodyActionType.
+const (
+	PostNodeJSONBodyActionTypePull PostNodeJSONBodyActionType = "pull"
+	PostNodeJSONBodyActionTypePush PostNodeJSONBodyActionType = "push"
+)
+
 // ListMeta defines model for ListMeta.
 type ListMeta struct {
 	AvailableProps *[]string       `json:"available_props,omitempty"`
@@ -102,6 +125,179 @@ type N409 = Problem
 // N500 defines model for 500.
 type N500 = Problem
 
+// GetActionsParams defines parameters for GetActions.
+type GetActionsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostActionsJSONBody defines parameters for PostActions.
+type PostActionsJSONBody struct {
+	// Id Action queue entry id
+	Id string `json:"id"`
+
+	// Status New status (the only updatable property)
+	Status *string `json:"status,omitempty"`
+}
+
+// GetActionParams defines parameters for GetAction.
+type GetActionParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetAlertEventParams defines parameters for GetAlertEvent.
+type GetAlertEventParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteAlertsJSONBody defines parameters for DeleteAlerts.
+type DeleteAlertsJSONBody struct {
+	DashInstance *string `json:"dash_instance,omitempty"`
+	DashSeverity *int    `json:"dash_severity,omitempty"`
+	DashType     *string `json:"dash_type,omitempty"`
+	Id           *string `json:"id,omitempty"`
+	NodeId       *string `json:"node_id,omitempty"`
+	SvcId        *string `json:"svc_id,omitempty"`
+}
+
+// GetAlertsParams defines parameters for GetAlerts.
+type GetAlertsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostAlertsJSONBody defines parameters for PostAlerts.
+type PostAlertsJSONBody struct {
+	BaseSeverity *int                    `json:"base_severity,omitempty"`
+	DashDict     *map[string]interface{} `json:"dash_dict,omitempty"`
+	DashEnv      *string                 `json:"dash_env,omitempty"`
+	DashFmt      *string                 `json:"dash_fmt,omitempty"`
+	DashInstance *string                 `json:"dash_instance,omitempty"`
+	DashSeverity *int                    `json:"dash_severity,omitempty"`
+	DashType     string                  `json:"dash_type"`
+	NodeId       *string                 `json:"node_id,omitempty"`
+	SvcId        *string                 `json:"svc_id,omitempty"`
+}
+
+// GetAlertParams defines parameters for GetAlert.
+type GetAlertParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostAlertJSONBody defines parameters for PostAlert.
+type PostAlertJSONBody struct {
+	BaseSeverity *int                    `json:"base_severity,omitempty"`
+	DashDict     *map[string]interface{} `json:"dash_dict,omitempty"`
+	DashFmt      *string                 `json:"dash_fmt,omitempty"`
+	DashInstance *string                 `json:"dash_instance,omitempty"`
+	DashSeverity *int                    `json:"dash_severity,omitempty"`
+	DashType     *string                 `json:"dash_type,omitempty"`
+	NodeId       *string                 `json:"node_id,omitempty"`
+	SvcId        *string                 `json:"svc_id,omitempty"`
+}
+
+// DeleteAppsJSONBody defines parameters for DeleteApps.
+type DeleteAppsJSONBody struct {
+	// App App code
+	App *string `json:"app,omitempty"`
+
+	// Id App record id
+	Id *string `json:"id,omitempty"`
+}
+
 // GetAppsParams defines parameters for GetApps.
 type GetAppsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -148,8 +344,56 @@ type PostAppJSONBody struct {
 	Description *string `json:"description,omitempty"`
 }
 
+// GetAppNodesParams defines parameters for GetAppNodes.
+type GetAppNodesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
 // GetAppPublicationsParams defines parameters for GetAppPublications.
 type GetAppPublicationsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetAppQuotasParams defines parameters for GetAppQuotas.
+type GetAppQuotasParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 
@@ -196,6 +440,66 @@ type GetAppResponsiblesParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetAppServicesParams defines parameters for GetAppServices.
+type GetAppServicesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteAppsPublicationsJSONBody defines parameters for DeleteAppsPublications.
+type DeleteAppsPublicationsJSONBody struct {
+	// AppId App record id or app code
+	AppId string `json:"app_id"`
+
+	// GroupId Group record id or group role
+	GroupId string `json:"group_id"`
+}
+
+// PostAppsPublicationsJSONBody defines parameters for PostAppsPublications.
+type PostAppsPublicationsJSONBody struct {
+	// AppId App record id or app code
+	AppId string `json:"app_id"`
+
+	// GroupId Group record id or group role
+	GroupId string `json:"group_id"`
+}
+
+// DeleteAppsResponsiblesJSONBody defines parameters for DeleteAppsResponsibles.
+type DeleteAppsResponsiblesJSONBody struct {
+	// AppId App record id or app code
+	AppId string `json:"app_id"`
+
+	// GroupId Group record id or group role
+	GroupId string `json:"group_id"`
+}
+
+// PostAppsResponsiblesJSONBody defines parameters for PostAppsResponsibles.
+type PostAppsResponsiblesJSONBody struct {
+	// AppId App record id or app code
+	AppId string `json:"app_id"`
+
+	// GroupId Group record id or group role
+	GroupId string `json:"group_id"`
+}
+
 // GetArraysParams defines parameters for GetArrays.
 type GetArraysParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -226,6 +530,12 @@ type PostAuthNodeJSONBody struct {
 	Nodename string  `json:"nodename"`
 }
 
+// DeleteDisksJSONBody defines parameters for DeleteDisks.
+type DeleteDisksJSONBody struct {
+	// DiskId Disk identifier
+	DiskId string `json:"disk_id"`
+}
+
 // GetDisksParams defines parameters for GetDisks.
 type GetDisksParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -248,6 +558,21 @@ type GetDisksParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostDisksJSONBody defines parameters for PostDisks.
+type PostDisksJSONBody struct {
+	DiskAlloc      *int64  `json:"disk_alloc,omitempty"`
+	DiskArrayid    string  `json:"disk_arrayid"`
+	DiskController *string `json:"disk_controller,omitempty"`
+	DiskDevid      *string `json:"disk_devid,omitempty"`
+	DiskGroup      *string `json:"disk_group,omitempty"`
+	DiskId         string  `json:"disk_id"`
+	DiskLevel      *int    `json:"disk_level,omitempty"`
+	DiskName       *string `json:"disk_name,omitempty"`
+	DiskRaid       *string `json:"disk_raid,omitempty"`
+	DiskSize       *int64  `json:"disk_size,omitempty"`
+	DiskUpdated    *string `json:"disk_updated,omitempty"`
 }
 
 // GetDiskParams defines parameters for GetDisk.
@@ -274,8 +599,826 @@ type GetDiskParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteFiltersJSONBody defines parameters for DeleteFilters.
+type DeleteFiltersJSONBody struct {
+	// Id Filter record id, or filter label
+	Id string `json:"id"`
+}
+
+// GetFiltersParams defines parameters for GetFilters.
+type GetFiltersParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostFiltersJSONBody defines parameters for PostFilters.
+type PostFiltersJSONBody struct {
+	// FField Column of f_table the filter applies to
+	FField string `json:"f_field"`
+
+	// FOp Comparison operator
+	FOp PostFiltersJSONBodyFOp `json:"f_op"`
+
+	// FTable Table the filter applies to
+	FTable string `json:"f_table"`
+
+	// FValue Value to compare the column to
+	FValue string `json:"f_value"`
+}
+
+// PostFiltersJSONBodyFOp defines parameters for PostFilters.
+type PostFiltersJSONBodyFOp string
+
+// GetFilterParams defines parameters for GetFilter.
+type GetFilterParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostFilterJSONBody defines parameters for PostFilter.
+type PostFilterJSONBody struct {
+	FField *string `json:"f_field,omitempty"`
+	FLabel *string `json:"f_label,omitempty"`
+	FOp    *string `json:"f_op,omitempty"`
+	FTable *string `json:"f_table,omitempty"`
+	FValue *string `json:"f_value,omitempty"`
+}
+
+// DeleteFiltersetsJSONBody defines parameters for DeleteFiltersets.
+type DeleteFiltersetsJSONBody struct {
+	// Id Filterset record id, or filterset name
+	Id string `json:"id"`
+}
+
+// GetFiltersetsParams defines parameters for GetFiltersets.
+type GetFiltersetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostFiltersetsJSONBody defines parameters for PostFiltersets.
+type PostFiltersetsJSONBody struct {
+	// FsetName Name of the filterset to create, or of the filterset to update
+	FsetName *string `json:"fset_name,omitempty"`
+
+	// FsetStats Whether the filterset is a stats filterset (T or F)
+	FsetStats *string `json:"fset_stats,omitempty"`
+
+	// Id Filterset record id or name, to update an existing filterset
+	Id *string `json:"id,omitempty"`
+}
+
+// GetFiltersetParams defines parameters for GetFilterset.
+type GetFiltersetParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostFiltersetJSONBody defines parameters for PostFilterset.
+type PostFiltersetJSONBody struct {
+	FsetName  *string `json:"fset_name,omitempty"`
+	FsetStats *string `json:"fset_stats,omitempty"`
+}
+
+// GetFiltersetFiltersParams defines parameters for GetFiltersetFilters.
+type GetFiltersetFiltersParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostFiltersetFilterJSONBody defines parameters for PostFiltersetFilter.
+type PostFiltersetFilterJSONBody struct {
+	FLogOp *string `json:"f_log_op,omitempty"`
+	FOrder *int    `json:"f_order,omitempty"`
+}
+
+// GetFiltersetFiltersetsParams defines parameters for GetFiltersetFiltersets.
+type GetFiltersetFiltersetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostFiltersetFiltersetJSONBody defines parameters for PostFiltersetFilterset.
+type PostFiltersetFiltersetJSONBody struct {
+	FLogOp *string `json:"f_log_op,omitempty"`
+	FOrder *int    `json:"f_order,omitempty"`
+}
+
+// GetFiltersetNodesParams defines parameters for GetFiltersetNodes.
+type GetFiltersetNodesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetFiltersetServicesParams defines parameters for GetFiltersetServices.
+type GetFiltersetServicesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteFiltersetsFiltersJSONBody defines parameters for DeleteFiltersetsFilters.
+type DeleteFiltersetsFiltersJSONBody struct {
+	// FId Filter record id, or filter label
+	FId string `json:"f_id"`
+
+	// FsetId Filterset record id, or filterset name
+	FsetId string `json:"fset_id"`
+}
+
+// PostFiltersetsFiltersJSONBody defines parameters for PostFiltersetsFilters.
+type PostFiltersetsFiltersJSONBody struct {
+	// FId Filter record id, or filter label
+	FId string `json:"f_id"`
+
+	// FLogOp Logical operator joining this filter to the previous one
+	FLogOp *string `json:"f_log_op,omitempty"`
+
+	// FOrder Position of the filter in the filterset
+	FOrder *int `json:"f_order,omitempty"`
+
+	// FsetId Filterset record id, or filterset name
+	FsetId string `json:"fset_id"`
+}
+
+// DeleteFiltersetsFiltersetsJSONBody defines parameters for DeleteFiltersetsFiltersets.
+type DeleteFiltersetsFiltersetsJSONBody struct {
+	// ChildFsetId Child filterset record id, or name
+	ChildFsetId string `json:"child_fset_id"`
+
+	// ParentFsetId Parent filterset record id, or name
+	ParentFsetId string `json:"parent_fset_id"`
+}
+
+// PostFiltersetsFiltersetsJSONBody defines parameters for PostFiltersetsFiltersets.
+type PostFiltersetsFiltersetsJSONBody struct {
+	// ChildFsetId Child filterset record id, or name
+	ChildFsetId string `json:"child_fset_id"`
+
+	// FLogOp Logical operator joining this filterset to the previous entry
+	FLogOp *string `json:"f_log_op,omitempty"`
+
+	// FOrder Position of the child filterset in the parent filterset
+	FOrder *int `json:"f_order,omitempty"`
+
+	// ParentFsetId Parent filterset record id, or name
+	ParentFsetId string `json:"parent_fset_id"`
+}
+
+// GetFrontendHiddenMenuEntriesParams defines parameters for GetFrontendHiddenMenuEntries.
+type GetFrontendHiddenMenuEntriesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteGroupsJSONBody defines parameters for DeleteGroups.
+type DeleteGroupsJSONBody struct {
+	// Id Group record id
+	Id *string `json:"id,omitempty"`
+
+	// Role Group role/name
+	Role *string `json:"role,omitempty"`
+}
+
+// GetGroupsParams defines parameters for GetGroups.
+type GetGroupsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostGroupsJSONBody defines parameters for PostGroups.
+type PostGroupsJSONBody struct {
+	Description *string `json:"description,omitempty"`
+
+	// Id Existing group id (selects update instead of create)
+	Id *string `json:"id,omitempty"`
+
+	// Privilege 'T' for a privilege group, 'F' otherwise
+	Privilege *string `json:"privilege,omitempty"`
+
+	// Role Group role/name
+	Role *string `json:"role,omitempty"`
+}
+
+// GetGroupParams defines parameters for GetGroup.
+type GetGroupParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostGroupJSONBody defines parameters for PostGroup.
+type PostGroupJSONBody struct {
+	Description *string `json:"description,omitempty"`
+
+	// Privilege 'T' for a privilege group, 'F' otherwise
+	Privilege *string `json:"privilege,omitempty"`
+	Role      *string `json:"role,omitempty"`
+}
+
+// GetGroupAppsParams defines parameters for GetGroupApps.
+type GetGroupAppsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteGroupHiddenMenuEntriesJSONBody defines parameters for DeleteGroupHiddenMenuEntries.
+type DeleteGroupHiddenMenuEntriesJSONBody struct {
+	// MenuEntry Menu entry key to unhide
+	MenuEntry string `json:"menu_entry"`
+}
+
+// GetGroupHiddenMenuEntriesParams defines parameters for GetGroupHiddenMenuEntries.
+type GetGroupHiddenMenuEntriesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostGroupHiddenMenuEntriesJSONBody defines parameters for PostGroupHiddenMenuEntries.
+type PostGroupHiddenMenuEntriesJSONBody struct {
+	// MenuEntry Menu entry key to hide
+	MenuEntry string `json:"menu_entry"`
+}
+
+// GetGroupModulesetsParams defines parameters for GetGroupModulesets.
+type GetGroupModulesetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetGroupNodesParams defines parameters for GetGroupNodes.
+type GetGroupNodesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetGroupRulesetsParams defines parameters for GetGroupRulesets.
+type GetGroupRulesetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetGroupServicesParams defines parameters for GetGroupServices.
+type GetGroupServicesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetGroupUsersParams defines parameters for GetGroupUsers.
+type GetGroupUsersParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteIpsJSONBody defines parameters for DeleteIps.
+type DeleteIpsJSONBody struct {
+	// Id Ip identifier (node_ip.id)
+	Id string `json:"id"`
+}
+
+// GetIpsParams defines parameters for GetIps.
+type GetIpsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetIpParams defines parameters for GetIp.
+type GetIpParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetLogsParams defines parameters for GetLogs.
+type GetLogsParams struct {
+	// FsetId Restrict to log events matching this filterset (gen_filtersets.id or fset_name)
+	FsetId *string `form:"fset_id,omitempty" json:"fset_id,omitempty"`
+
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostLogsJSONBody defines parameters for PostLogs.
+type PostLogsJSONBody struct {
+	LogDict  *map[string]interface{} `json:"log_dict,omitempty"`
+	LogFmt   string                  `json:"log_fmt"`
+	LogLevel *string                 `json:"log_level,omitempty"`
+	NodeId   *string                 `json:"node_id,omitempty"`
+	SvcId    *string                 `json:"svc_id,omitempty"`
+}
+
+// GetLogParams defines parameters for GetLog.
+type GetLogParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteNodesJSONBody defines parameters for DeleteNodes.
+type DeleteNodesJSONBody struct {
+	// NodeId Node identifier (node_id or nodename)
+	NodeId string `json:"node_id"`
+}
+
 // GetNodesParams defines parameters for GetNodes.
 type GetNodesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostNodesJSONBody defines parameters for PostNodes.
+type PostNodesJSONBody struct {
+	ActionType          *PostNodesJSONBodyActionType `json:"action_type,omitempty"`
+	App                 *string                      `json:"app,omitempty"`
+	AssetEnv            *string                      `json:"asset_env,omitempty"`
+	Assetname           *string                      `json:"assetname,omitempty"`
+	BiosVersion         *string                      `json:"bios_version,omitempty"`
+	ClusterId           *string                      `json:"cluster_id,omitempty"`
+	Collector           *string                      `json:"collector,omitempty"`
+	ConnectTo           *string                      `json:"connect_to,omitempty"`
+	CpuCores            *int                         `json:"cpu_cores,omitempty"`
+	CpuDies             *int                         `json:"cpu_dies,omitempty"`
+	CpuFreq             *string                      `json:"cpu_freq,omitempty"`
+	CpuModel            *string                      `json:"cpu_model,omitempty"`
+	CpuThreads          *int                         `json:"cpu_threads,omitempty"`
+	CpuVendor           *string                      `json:"cpu_vendor,omitempty"`
+	Enclosure           *string                      `json:"enclosure,omitempty"`
+	Enclosureslot       *string                      `json:"enclosureslot,omitempty"`
+	Fqdn                *string                      `json:"fqdn,omitempty"`
+	Hv                  *string                      `json:"hv,omitempty"`
+	Hvpool              *string                      `json:"hvpool,omitempty"`
+	Hvvdc               *string                      `json:"hvvdc,omitempty"`
+	HwObsAlertDate      *string                      `json:"hw_obs_alert_date,omitempty"`
+	HwObsWarnDate       *string                      `json:"hw_obs_warn_date,omitempty"`
+	LastBoot            *string                      `json:"last_boot,omitempty"`
+	LastComm            *string                      `json:"last_comm,omitempty"`
+	ListenerPort        *int                         `json:"listener_port,omitempty"`
+	LocAddr             *string                      `json:"loc_addr,omitempty"`
+	LocBuilding         *string                      `json:"loc_building,omitempty"`
+	LocCity             *string                      `json:"loc_city,omitempty"`
+	LocCountry          *string                      `json:"loc_country,omitempty"`
+	LocFloor            *string                      `json:"loc_floor,omitempty"`
+	LocRack             *string                      `json:"loc_rack,omitempty"`
+	LocRoom             *string                      `json:"loc_room,omitempty"`
+	LocZip              *string                      `json:"loc_zip,omitempty"`
+	MaintenanceEnd      *string                      `json:"maintenance_end,omitempty"`
+	Manufacturer        *string                      `json:"manufacturer,omitempty"`
+	MemBanks            *int                         `json:"mem_banks,omitempty"`
+	MemBytes            *int                         `json:"mem_bytes,omitempty"`
+	MemSlots            *int                         `json:"mem_slots,omitempty"`
+	Model               *string                      `json:"model,omitempty"`
+	NodeEnv             *string                      `json:"node_env,omitempty"`
+	NodeFrozen          *bool                        `json:"node_frozen,omitempty"`
+	NodeFrozenAt        *string                      `json:"node_frozen_at,omitempty"`
+	NodeId              *string                      `json:"node_id,omitempty"`
+	Nodename            *string                      `json:"nodename,omitempty"`
+	Notifications       *bool                        `json:"notifications,omitempty"`
+	OsArch              *string                      `json:"os_arch,omitempty"`
+	OsConcat            *string                      `json:"os_concat,omitempty"`
+	OsKernel            *string                      `json:"os_kernel,omitempty"`
+	OsName              *string                      `json:"os_name,omitempty"`
+	OsObsAlertDate      *string                      `json:"os_obs_alert_date,omitempty"`
+	OsObsWarnDate       *string                      `json:"os_obs_warn_date,omitempty"`
+	OsRelease           *string                      `json:"os_release,omitempty"`
+	OsVendor            *string                      `json:"os_vendor,omitempty"`
+	PowerBreaker1       *string                      `json:"power_breaker1,omitempty"`
+	PowerBreaker2       *string                      `json:"power_breaker2,omitempty"`
+	PowerCabinet1       *string                      `json:"power_cabinet1,omitempty"`
+	PowerCabinet2       *string                      `json:"power_cabinet2,omitempty"`
+	PowerProtect        *string                      `json:"power_protect,omitempty"`
+	PowerProtectBreaker *string                      `json:"power_protect_breaker,omitempty"`
+	PowerSupplyNb       *int                         `json:"power_supply_nb,omitempty"`
+	Role                *string                      `json:"role,omitempty"`
+	SecZone             *string                      `json:"sec_zone,omitempty"`
+	Serial              *string                      `json:"serial,omitempty"`
+	SnoozeTill          *string                      `json:"snooze_till,omitempty"`
+	SpVersion           *string                      `json:"sp_version,omitempty"`
+	Status              *string                      `json:"status,omitempty"`
+	TeamInteg           *string                      `json:"team_integ,omitempty"`
+	TeamResponsible     *string                      `json:"team_responsible,omitempty"`
+	TeamSupport         *string                      `json:"team_support,omitempty"`
+	Type                *string                      `json:"type,omitempty"`
+	Tz                  *string                      `json:"tz,omitempty"`
+	Updated             *string                      `json:"updated,omitempty"`
+	Version             *string                      `json:"version,omitempty"`
+	WarrantyEnd         *string                      `json:"warranty_end,omitempty"`
+}
+
+// PostNodesJSONBodyActionType defines parameters for PostNodes.
+type PostNodesJSONBodyActionType string
+
+// GetNodesHardwareParams defines parameters for GetNodesHardware.
+type GetNodesHardwareParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 
@@ -346,8 +1489,136 @@ type GetNodeParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostNodeJSONBody defines parameters for PostNode.
+type PostNodeJSONBody struct {
+	ActionType          *PostNodeJSONBodyActionType `json:"action_type,omitempty"`
+	App                 *string                     `json:"app,omitempty"`
+	AssetEnv            *string                     `json:"asset_env,omitempty"`
+	Assetname           *string                     `json:"assetname,omitempty"`
+	BiosVersion         *string                     `json:"bios_version,omitempty"`
+	ClusterId           *string                     `json:"cluster_id,omitempty"`
+	Collector           *string                     `json:"collector,omitempty"`
+	ConnectTo           *string                     `json:"connect_to,omitempty"`
+	CpuCores            *int                        `json:"cpu_cores,omitempty"`
+	CpuDies             *int                        `json:"cpu_dies,omitempty"`
+	CpuFreq             *string                     `json:"cpu_freq,omitempty"`
+	CpuModel            *string                     `json:"cpu_model,omitempty"`
+	CpuThreads          *int                        `json:"cpu_threads,omitempty"`
+	CpuVendor           *string                     `json:"cpu_vendor,omitempty"`
+	Enclosure           *string                     `json:"enclosure,omitempty"`
+	Enclosureslot       *string                     `json:"enclosureslot,omitempty"`
+	Fqdn                *string                     `json:"fqdn,omitempty"`
+	Hv                  *string                     `json:"hv,omitempty"`
+	Hvpool              *string                     `json:"hvpool,omitempty"`
+	Hvvdc               *string                     `json:"hvvdc,omitempty"`
+	HwObsAlertDate      *string                     `json:"hw_obs_alert_date,omitempty"`
+	HwObsWarnDate       *string                     `json:"hw_obs_warn_date,omitempty"`
+	LastBoot            *string                     `json:"last_boot,omitempty"`
+	LastComm            *string                     `json:"last_comm,omitempty"`
+	ListenerPort        *int                        `json:"listener_port,omitempty"`
+	LocAddr             *string                     `json:"loc_addr,omitempty"`
+	LocBuilding         *string                     `json:"loc_building,omitempty"`
+	LocCity             *string                     `json:"loc_city,omitempty"`
+	LocCountry          *string                     `json:"loc_country,omitempty"`
+	LocFloor            *string                     `json:"loc_floor,omitempty"`
+	LocRack             *string                     `json:"loc_rack,omitempty"`
+	LocRoom             *string                     `json:"loc_room,omitempty"`
+	LocZip              *string                     `json:"loc_zip,omitempty"`
+	MaintenanceEnd      *string                     `json:"maintenance_end,omitempty"`
+	Manufacturer        *string                     `json:"manufacturer,omitempty"`
+	MemBanks            *int                        `json:"mem_banks,omitempty"`
+	MemBytes            *int                        `json:"mem_bytes,omitempty"`
+	MemSlots            *int                        `json:"mem_slots,omitempty"`
+	Model               *string                     `json:"model,omitempty"`
+	NodeEnv             *string                     `json:"node_env,omitempty"`
+	NodeFrozen          *bool                       `json:"node_frozen,omitempty"`
+	NodeFrozenAt        *string                     `json:"node_frozen_at,omitempty"`
+	Nodename            *string                     `json:"nodename,omitempty"`
+	Notifications       *bool                       `json:"notifications,omitempty"`
+	OsArch              *string                     `json:"os_arch,omitempty"`
+	OsConcat            *string                     `json:"os_concat,omitempty"`
+	OsKernel            *string                     `json:"os_kernel,omitempty"`
+	OsName              *string                     `json:"os_name,omitempty"`
+	OsObsAlertDate      *string                     `json:"os_obs_alert_date,omitempty"`
+	OsObsWarnDate       *string                     `json:"os_obs_warn_date,omitempty"`
+	OsRelease           *string                     `json:"os_release,omitempty"`
+	OsVendor            *string                     `json:"os_vendor,omitempty"`
+	PowerBreaker1       *string                     `json:"power_breaker1,omitempty"`
+	PowerBreaker2       *string                     `json:"power_breaker2,omitempty"`
+	PowerCabinet1       *string                     `json:"power_cabinet1,omitempty"`
+	PowerCabinet2       *string                     `json:"power_cabinet2,omitempty"`
+	PowerProtect        *string                     `json:"power_protect,omitempty"`
+	PowerProtectBreaker *string                     `json:"power_protect_breaker,omitempty"`
+	PowerSupplyNb       *int                        `json:"power_supply_nb,omitempty"`
+	Role                *string                     `json:"role,omitempty"`
+	SecZone             *string                     `json:"sec_zone,omitempty"`
+	Serial              *string                     `json:"serial,omitempty"`
+	SnoozeTill          *string                     `json:"snooze_till,omitempty"`
+	SpVersion           *string                     `json:"sp_version,omitempty"`
+	Status              *string                     `json:"status,omitempty"`
+	TeamInteg           *string                     `json:"team_integ,omitempty"`
+	TeamResponsible     *string                     `json:"team_responsible,omitempty"`
+	TeamSupport         *string                     `json:"team_support,omitempty"`
+	Type                *string                     `json:"type,omitempty"`
+	Tz                  *string                     `json:"tz,omitempty"`
+	Updated             *string                     `json:"updated,omitempty"`
+	Version             *string                     `json:"version,omitempty"`
+	WarrantyEnd         *string                     `json:"warranty_end,omitempty"`
+}
+
+// PostNodeJSONBodyActionType defines parameters for PostNode.
+type PostNodeJSONBodyActionType string
+
+// GetNodeAlertsParams defines parameters for GetNodeAlerts.
+type GetNodeAlertsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
 // GetNodeCandidateTagsParams defines parameters for GetNodeCandidateTags.
 type GetNodeCandidateTagsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetNodeChecksParams defines parameters for GetNodeChecks.
+type GetNodeChecksParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 
@@ -422,6 +1693,24 @@ type GetNodeComplianceCandidateRulesetsParams struct {
 type GetNodeComplianceLogsParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
 // GetNodeComplianceModulesetsParams defines parameters for GetNodeComplianceModulesets.
@@ -478,8 +1767,56 @@ type GetNodeComplianceRulesetsParams struct {
 // PostNodeComplianceRulesetJSONBody defines parameters for PostNodeComplianceRuleset.
 type PostNodeComplianceRulesetJSONBody = map[string]interface{}
 
+// GetNodeComplianceStatusParams defines parameters for GetNodeComplianceStatus.
+type GetNodeComplianceStatusParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
 // GetNodeDisksParams defines parameters for GetNodeDisks.
 type GetNodeDisksParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetNodeHardwareParams defines parameters for GetNodeHardware.
+type GetNodeHardwareParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 
@@ -550,6 +1887,84 @@ type GetNodeInterfacesParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetNodeIpsParams defines parameters for GetNodeIps.
+type GetNodeIpsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetNodeServicesParams defines parameters for GetNodeServices.
+type GetNodeServicesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetNodeServiceParams defines parameters for GetNodeService.
+type GetNodeServiceParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostNodeSnoozeJSONBody defines parameters for PostNodeSnooze.
+type PostNodeSnoozeJSONBody struct {
+	// Duration Duration string (e.g. "1h", "30m", "2d"). Omit to unsnooze.
+	Duration *string `json:"duration,omitempty"`
+}
+
 // GetNodeTagsParams defines parameters for GetNodeTags.
 type GetNodeTagsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -572,6 +1987,87 @@ type GetNodeTagsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteObsolescenceSettingsJSONBody defines parameters for DeleteObsolescenceSettings.
+type DeleteObsolescenceSettingsJSONBody struct {
+	// Id Obsolescence setting record id
+	Id string `json:"id"`
+}
+
+// GetObsolescenceSettingsParams defines parameters for GetObsolescenceSettings.
+type GetObsolescenceSettingsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostObsolescenceSettingsJSONBody defines parameters for PostObsolescenceSettings.
+type PostObsolescenceSettingsJSONBody struct {
+	// Id Obsolescence setting record id
+	Id string `json:"id"`
+
+	// ObsAlertDate Date from which nodes matching this setting are flagged as obsolete
+	ObsAlertDate *string `json:"obs_alert_date,omitempty"`
+
+	// ObsWarnDate Date from which nodes matching this setting are flagged as a warning
+	ObsWarnDate *string `json:"obs_warn_date,omitempty"`
+}
+
+// GetObsolescenceSettingParams defines parameters for GetObsolescenceSetting.
+type GetObsolescenceSettingParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostObsolescenceSettingJSONBody defines parameters for PostObsolescenceSetting.
+type PostObsolescenceSettingJSONBody struct {
+	// ObsAlertDate Date from which nodes matching this setting are flagged as obsolete
+	ObsAlertDate *string `json:"obs_alert_date,omitempty"`
+
+	// ObsWarnDate Date from which nodes matching this setting are flagged as a warning
+	ObsWarnDate *string `json:"obs_warn_date,omitempty"`
+}
+
+// DeleteServicesJSONBody defines parameters for DeleteServices.
+type DeleteServicesJSONBody struct {
+	// SvcId Service id or name
+	SvcId string `json:"svc_id"`
 }
 
 // GetServicesParams defines parameters for GetServices.
@@ -598,8 +2094,88 @@ type GetServicesParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostServicesJSONBody defines parameters for PostServices.
+type PostServicesJSONBody struct {
+	ClusterId               *string `json:"cluster_id,omitempty"`
+	SvcApp                  *string `json:"svc_app,omitempty"`
+	SvcAutostart            *string `json:"svc_autostart,omitempty"`
+	SvcComment              *string `json:"svc_comment,omitempty"`
+	SvcDrnoaction           *string `json:"svc_drnoaction,omitempty"`
+	SvcDrpnode              *string `json:"svc_drpnode,omitempty"`
+	SvcDrpnodes             *string `json:"svc_drpnodes,omitempty"`
+	SvcDrptype              *string `json:"svc_drptype,omitempty"`
+	SvcEnv                  *string `json:"svc_env,omitempty"`
+	SvcFlexCpuHighThreshold *int    `json:"svc_flex_cpu_high_threshold,omitempty"`
+	SvcFlexCpuLowThreshold  *int    `json:"svc_flex_cpu_low_threshold,omitempty"`
+	SvcFlexMaxNodes         *int    `json:"svc_flex_max_nodes,omitempty"`
+	SvcFlexMinNodes         *int    `json:"svc_flex_min_nodes,omitempty"`
+	SvcFrozen               *string `json:"svc_frozen,omitempty"`
+	SvcHa                   *string `json:"svc_ha,omitempty"`
+	SvcId                   *string `json:"svc_id,omitempty"`
+	SvcMetrocluster         *string `json:"svc_metrocluster,omitempty"`
+	SvcNodes                *string `json:"svc_nodes,omitempty"`
+	SvcNotifications        *bool   `json:"svc_notifications,omitempty"`
+	SvcPlacement            *string `json:"svc_placement,omitempty"`
+	SvcProvisioned          *string `json:"svc_provisioned,omitempty"`
+	SvcSnoozeTill           *string `json:"svc_snooze_till,omitempty"`
+	SvcTopology             *string `json:"svc_topology,omitempty"`
+	SvcWave                 *int    `json:"svc_wave,omitempty"`
+	Svcname                 *string `json:"svcname,omitempty"`
+}
+
 // GetServiceParams defines parameters for GetService.
 type GetServiceParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostServiceJSONBody defines parameters for PostService.
+type PostServiceJSONBody struct {
+	SvcApp                  *string `json:"svc_app,omitempty"`
+	SvcAutostart            *string `json:"svc_autostart,omitempty"`
+	SvcComment              *string `json:"svc_comment,omitempty"`
+	SvcDrnoaction           *string `json:"svc_drnoaction,omitempty"`
+	SvcDrpnode              *string `json:"svc_drpnode,omitempty"`
+	SvcDrpnodes             *string `json:"svc_drpnodes,omitempty"`
+	SvcDrptype              *string `json:"svc_drptype,omitempty"`
+	SvcEnv                  *string `json:"svc_env,omitempty"`
+	SvcFlexCpuHighThreshold *int    `json:"svc_flex_cpu_high_threshold,omitempty"`
+	SvcFlexCpuLowThreshold  *int    `json:"svc_flex_cpu_low_threshold,omitempty"`
+	SvcFlexMaxNodes         *int    `json:"svc_flex_max_nodes,omitempty"`
+	SvcFlexMinNodes         *int    `json:"svc_flex_min_nodes,omitempty"`
+	SvcFrozen               *string `json:"svc_frozen,omitempty"`
+	SvcHa                   *string `json:"svc_ha,omitempty"`
+	SvcMetrocluster         *string `json:"svc_metrocluster,omitempty"`
+	SvcNodes                *string `json:"svc_nodes,omitempty"`
+	SvcNotifications        *bool   `json:"svc_notifications,omitempty"`
+	SvcPlacement            *string `json:"svc_placement,omitempty"`
+	SvcProvisioned          *string `json:"svc_provisioned,omitempty"`
+	SvcSnoozeTill           *string `json:"svc_snooze_till,omitempty"`
+	SvcTopology             *string `json:"svc_topology,omitempty"`
+	SvcWave                 *int    `json:"svc_wave,omitempty"`
+	Svcname                 *string `json:"svcname,omitempty"`
+}
+
+// GetServiceAlertsParams defines parameters for GetServiceAlerts.
+type GetServiceAlertsParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 
@@ -646,6 +2222,423 @@ type GetServiceCandidateTagsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetServiceChecksParams defines parameters for GetServiceChecks.
+type GetServiceChecksParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceComplianceCandidateModulesetsParams defines parameters for GetServiceComplianceCandidateModulesets.
+type GetServiceComplianceCandidateModulesetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceComplianceCandidateRulesetsParams defines parameters for GetServiceComplianceCandidateRulesets.
+type GetServiceComplianceCandidateRulesetsParams struct {
+	// Slave If true, list rulesets attachable to the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceComplianceLogsParams defines parameters for GetServiceComplianceLogs.
+type GetServiceComplianceLogsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceComplianceModulesetsParams defines parameters for GetServiceComplianceModulesets.
+type GetServiceComplianceModulesetsParams struct {
+	// Slave If true, list modulesets attached to the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteServiceComplianceModulesetParams defines parameters for DeleteServiceComplianceModuleset.
+type DeleteServiceComplianceModulesetParams struct {
+	// Slave If true, detach from the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+}
+
+// PostServiceComplianceModulesetParams defines parameters for PostServiceComplianceModuleset.
+type PostServiceComplianceModulesetParams struct {
+	// Slave If true, attach to the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+}
+
+// GetServiceComplianceRulesetsParams defines parameters for GetServiceComplianceRulesets.
+type GetServiceComplianceRulesetsParams struct {
+	// Slave If true, list rulesets attached to the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteServiceComplianceRulesetParams defines parameters for DeleteServiceComplianceRuleset.
+type DeleteServiceComplianceRulesetParams struct {
+	// Slave If true, detach from the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+}
+
+// PostServiceComplianceRulesetParams defines parameters for PostServiceComplianceRuleset.
+type PostServiceComplianceRulesetParams struct {
+	// Slave If true, attach to the encapsulated service
+	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
+}
+
+// GetServiceComplianceStatusParams defines parameters for GetServiceComplianceStatus.
+type GetServiceComplianceStatusParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceDisksParams defines parameters for GetServiceDisks.
+type GetServiceDisksParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceInstanceParams defines parameters for GetServiceInstance.
+type GetServiceInstanceParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceNodesParams defines parameters for GetServiceNodes.
+type GetServiceNodesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceNodeParams defines parameters for GetServiceNode.
+type GetServiceNodeParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceNodeResourcesParams defines parameters for GetServiceNodeResources.
+type GetServiceNodeResourcesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceNodeResourceLogsParams defines parameters for GetServiceNodeResourceLogs.
+type GetServiceNodeResourceLogsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceResinfoParams defines parameters for GetServiceResinfo.
+type GetServiceResinfoParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceResourcesParams defines parameters for GetServiceResources.
+type GetServiceResourcesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceResourceLogsParams defines parameters for GetServiceResourceLogs.
+type GetServiceResourceLogsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
 // GetServiceTagsParams defines parameters for GetServiceTags.
 type GetServiceTagsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -668,6 +2661,18 @@ type GetServiceTagsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteServicesInstancesJSONBody defines parameters for DeleteServicesInstances.
+type DeleteServicesInstancesJSONBody struct {
+	// Id Service instance record id, as an alternative to svc_id + node_id
+	Id *int `json:"id,omitempty"`
+
+	// NodeId Node id or name, to be used along with svc_id
+	NodeId *string `json:"node_id,omitempty"`
+
+	// SvcId Service id or name, to be used along with node_id
+	SvcId *string `json:"svc_id,omitempty"`
 }
 
 // GetServicesInstancesParams defines parameters for GetServicesInstances.
@@ -742,6 +2747,36 @@ type GetServicesInstancesStatusLogParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetServicesStatusLogParams defines parameters for GetServicesStatusLog.
+type GetServicesStatusLogParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteTagsJSONBody defines parameters for DeleteTags.
+type DeleteTagsJSONBody struct {
+	// TagId Tag tag_id, or tag record id
+	TagId string `json:"tag_id"`
+}
+
 // GetTagsParams defines parameters for GetTags.
 type GetTagsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -764,6 +2799,25 @@ type GetTagsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostTagsJSONBody defines parameters for PostTags.
+type PostTagsJSONBody struct {
+	// TagData Free form JSON data attached to the tag
+	TagData *string `json:"tag_data,omitempty"`
+
+	// TagExclude Regular expression of tag names that can not be attached along with this tag
+	TagExclude *string `json:"tag_exclude,omitempty"`
+	TagName    string  `json:"tag_name"`
+}
+
+// DeleteTagsNodesJSONBody defines parameters for DeleteTagsNodes.
+type DeleteTagsNodesJSONBody struct {
+	// NodeId Node id
+	NodeId string `json:"node_id"`
+
+	// TagId Tag tag_id, or tag record id
+	TagId string `json:"tag_id"`
 }
 
 // GetTagsNodesParams defines parameters for GetTagsNodes.
@@ -790,6 +2844,27 @@ type GetTagsNodesParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostTagsNodesJSONBody defines parameters for PostTagsNodes.
+type PostTagsNodesJSONBody struct {
+	// NodeId Node id
+	NodeId string `json:"node_id"`
+
+	// TagAttachData Free form JSON data attached to the attachment
+	TagAttachData *string `json:"tag_attach_data,omitempty"`
+
+	// TagId Tag tag_id, or tag record id
+	TagId string `json:"tag_id"`
+}
+
+// DeleteTagsServicesJSONBody defines parameters for DeleteTagsServices.
+type DeleteTagsServicesJSONBody struct {
+	// SvcId Service id or name
+	SvcId string `json:"svc_id"`
+
+	// TagId Tag tag_id, or tag record id
+	TagId string `json:"tag_id"`
+}
+
 // GetTagsServicesParams defines parameters for GetTagsServices.
 type GetTagsServicesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -814,10 +2889,29 @@ type GetTagsServicesParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostTagsServicesJSONBody defines parameters for PostTagsServices.
+type PostTagsServicesJSONBody struct {
+	// SvcId Service id or name
+	SvcId string `json:"svc_id"`
+
+	// TagAttachData Free form JSON data attached to the attachment
+	TagAttachData *string `json:"tag_attach_data,omitempty"`
+
+	// TagId Tag tag_id, or tag record id
+	TagId string `json:"tag_id"`
+}
+
 // GetTagParams defines parameters for GetTag.
 type GetTagParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// PostTagJSONBody defines parameters for PostTag.
+type PostTagJSONBody struct {
+	TagData    *string `json:"tag_data,omitempty"`
+	TagExclude *string `json:"tag_exclude,omitempty"`
+	TagName    *string `json:"tag_name,omitempty"`
 }
 
 // GetTagNodesParams defines parameters for GetTagNodes.
@@ -830,6 +2924,11 @@ type GetTagNodesParams struct {
 
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// PostTagNodeJSONBody defines parameters for PostTagNode.
+type PostTagNodeJSONBody struct {
+	TagAttachData *string `json:"tag_attach_data,omitempty"`
 }
 
 // GetTagServicesParams defines parameters for GetTagServices.
@@ -856,20 +2955,175 @@ type GetTagServicesParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostTagServiceJSONBody defines parameters for PostTagService.
+type PostTagServiceJSONBody struct {
+	TagAttachData *string `json:"tag_attach_data,omitempty"`
+}
+
+// PostActionsJSONRequestBody defines body for PostActions for application/json ContentType.
+type PostActionsJSONRequestBody PostActionsJSONBody
+
+// DeleteAlertsJSONRequestBody defines body for DeleteAlerts for application/json ContentType.
+type DeleteAlertsJSONRequestBody DeleteAlertsJSONBody
+
+// PostAlertsJSONRequestBody defines body for PostAlerts for application/json ContentType.
+type PostAlertsJSONRequestBody PostAlertsJSONBody
+
+// PostAlertJSONRequestBody defines body for PostAlert for application/json ContentType.
+type PostAlertJSONRequestBody PostAlertJSONBody
+
+// DeleteAppsJSONRequestBody defines body for DeleteApps for application/json ContentType.
+type DeleteAppsJSONRequestBody DeleteAppsJSONBody
+
 // PostAppsJSONRequestBody defines body for PostApps for application/json ContentType.
 type PostAppsJSONRequestBody PostAppsJSONBody
 
 // PostAppJSONRequestBody defines body for PostApp for application/json ContentType.
 type PostAppJSONRequestBody PostAppJSONBody
 
+// DeleteAppsPublicationsJSONRequestBody defines body for DeleteAppsPublications for application/json ContentType.
+type DeleteAppsPublicationsJSONRequestBody DeleteAppsPublicationsJSONBody
+
+// PostAppsPublicationsJSONRequestBody defines body for PostAppsPublications for application/json ContentType.
+type PostAppsPublicationsJSONRequestBody PostAppsPublicationsJSONBody
+
+// DeleteAppsResponsiblesJSONRequestBody defines body for DeleteAppsResponsibles for application/json ContentType.
+type DeleteAppsResponsiblesJSONRequestBody DeleteAppsResponsiblesJSONBody
+
+// PostAppsResponsiblesJSONRequestBody defines body for PostAppsResponsibles for application/json ContentType.
+type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
+
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
+
+// DeleteDisksJSONRequestBody defines body for DeleteDisks for application/json ContentType.
+type DeleteDisksJSONRequestBody DeleteDisksJSONBody
+
+// PostDisksJSONRequestBody defines body for PostDisks for application/json ContentType.
+type PostDisksJSONRequestBody PostDisksJSONBody
+
+// DeleteFiltersJSONRequestBody defines body for DeleteFilters for application/json ContentType.
+type DeleteFiltersJSONRequestBody DeleteFiltersJSONBody
+
+// PostFiltersJSONRequestBody defines body for PostFilters for application/json ContentType.
+type PostFiltersJSONRequestBody PostFiltersJSONBody
+
+// PostFilterJSONRequestBody defines body for PostFilter for application/json ContentType.
+type PostFilterJSONRequestBody PostFilterJSONBody
+
+// DeleteFiltersetsJSONRequestBody defines body for DeleteFiltersets for application/json ContentType.
+type DeleteFiltersetsJSONRequestBody DeleteFiltersetsJSONBody
+
+// PostFiltersetsJSONRequestBody defines body for PostFiltersets for application/json ContentType.
+type PostFiltersetsJSONRequestBody PostFiltersetsJSONBody
+
+// PostFiltersetJSONRequestBody defines body for PostFilterset for application/json ContentType.
+type PostFiltersetJSONRequestBody PostFiltersetJSONBody
+
+// PostFiltersetFilterJSONRequestBody defines body for PostFiltersetFilter for application/json ContentType.
+type PostFiltersetFilterJSONRequestBody PostFiltersetFilterJSONBody
+
+// PostFiltersetFiltersetJSONRequestBody defines body for PostFiltersetFilterset for application/json ContentType.
+type PostFiltersetFiltersetJSONRequestBody PostFiltersetFiltersetJSONBody
+
+// DeleteFiltersetsFiltersJSONRequestBody defines body for DeleteFiltersetsFilters for application/json ContentType.
+type DeleteFiltersetsFiltersJSONRequestBody DeleteFiltersetsFiltersJSONBody
+
+// PostFiltersetsFiltersJSONRequestBody defines body for PostFiltersetsFilters for application/json ContentType.
+type PostFiltersetsFiltersJSONRequestBody PostFiltersetsFiltersJSONBody
+
+// DeleteFiltersetsFiltersetsJSONRequestBody defines body for DeleteFiltersetsFiltersets for application/json ContentType.
+type DeleteFiltersetsFiltersetsJSONRequestBody DeleteFiltersetsFiltersetsJSONBody
+
+// PostFiltersetsFiltersetsJSONRequestBody defines body for PostFiltersetsFiltersets for application/json ContentType.
+type PostFiltersetsFiltersetsJSONRequestBody PostFiltersetsFiltersetsJSONBody
+
+// DeleteGroupsJSONRequestBody defines body for DeleteGroups for application/json ContentType.
+type DeleteGroupsJSONRequestBody DeleteGroupsJSONBody
+
+// PostGroupsJSONRequestBody defines body for PostGroups for application/json ContentType.
+type PostGroupsJSONRequestBody PostGroupsJSONBody
+
+// PostGroupJSONRequestBody defines body for PostGroup for application/json ContentType.
+type PostGroupJSONRequestBody PostGroupJSONBody
+
+// DeleteGroupHiddenMenuEntriesJSONRequestBody defines body for DeleteGroupHiddenMenuEntries for application/json ContentType.
+type DeleteGroupHiddenMenuEntriesJSONRequestBody DeleteGroupHiddenMenuEntriesJSONBody
+
+// PostGroupHiddenMenuEntriesJSONRequestBody defines body for PostGroupHiddenMenuEntries for application/json ContentType.
+type PostGroupHiddenMenuEntriesJSONRequestBody PostGroupHiddenMenuEntriesJSONBody
+
+// DeleteIpsJSONRequestBody defines body for DeleteIps for application/json ContentType.
+type DeleteIpsJSONRequestBody DeleteIpsJSONBody
+
+// PostLogsJSONRequestBody defines body for PostLogs for application/json ContentType.
+type PostLogsJSONRequestBody PostLogsJSONBody
+
+// DeleteNodesJSONRequestBody defines body for DeleteNodes for application/json ContentType.
+type DeleteNodesJSONRequestBody DeleteNodesJSONBody
+
+// PostNodesJSONRequestBody defines body for PostNodes for application/json ContentType.
+type PostNodesJSONRequestBody PostNodesJSONBody
+
+// PostNodeJSONRequestBody defines body for PostNode for application/json ContentType.
+type PostNodeJSONRequestBody PostNodeJSONBody
 
 // PostNodeComplianceModulesetJSONRequestBody defines body for PostNodeComplianceModuleset for application/json ContentType.
 type PostNodeComplianceModulesetJSONRequestBody = PostNodeComplianceModulesetJSONBody
 
 // PostNodeComplianceRulesetJSONRequestBody defines body for PostNodeComplianceRuleset for application/json ContentType.
 type PostNodeComplianceRulesetJSONRequestBody = PostNodeComplianceRulesetJSONBody
+
+// PostNodeSnoozeJSONRequestBody defines body for PostNodeSnooze for application/json ContentType.
+type PostNodeSnoozeJSONRequestBody PostNodeSnoozeJSONBody
+
+// DeleteObsolescenceSettingsJSONRequestBody defines body for DeleteObsolescenceSettings for application/json ContentType.
+type DeleteObsolescenceSettingsJSONRequestBody DeleteObsolescenceSettingsJSONBody
+
+// PostObsolescenceSettingsJSONRequestBody defines body for PostObsolescenceSettings for application/json ContentType.
+type PostObsolescenceSettingsJSONRequestBody PostObsolescenceSettingsJSONBody
+
+// PostObsolescenceSettingJSONRequestBody defines body for PostObsolescenceSetting for application/json ContentType.
+type PostObsolescenceSettingJSONRequestBody PostObsolescenceSettingJSONBody
+
+// DeleteServicesJSONRequestBody defines body for DeleteServices for application/json ContentType.
+type DeleteServicesJSONRequestBody DeleteServicesJSONBody
+
+// PostServicesJSONRequestBody defines body for PostServices for application/json ContentType.
+type PostServicesJSONRequestBody PostServicesJSONBody
+
+// PostServiceJSONRequestBody defines body for PostService for application/json ContentType.
+type PostServiceJSONRequestBody PostServiceJSONBody
+
+// DeleteServicesInstancesJSONRequestBody defines body for DeleteServicesInstances for application/json ContentType.
+type DeleteServicesInstancesJSONRequestBody DeleteServicesInstancesJSONBody
+
+// DeleteTagsJSONRequestBody defines body for DeleteTags for application/json ContentType.
+type DeleteTagsJSONRequestBody DeleteTagsJSONBody
+
+// PostTagsJSONRequestBody defines body for PostTags for application/json ContentType.
+type PostTagsJSONRequestBody PostTagsJSONBody
+
+// DeleteTagsNodesJSONRequestBody defines body for DeleteTagsNodes for application/json ContentType.
+type DeleteTagsNodesJSONRequestBody DeleteTagsNodesJSONBody
+
+// PostTagsNodesJSONRequestBody defines body for PostTagsNodes for application/json ContentType.
+type PostTagsNodesJSONRequestBody PostTagsNodesJSONBody
+
+// DeleteTagsServicesJSONRequestBody defines body for DeleteTagsServices for application/json ContentType.
+type DeleteTagsServicesJSONRequestBody DeleteTagsServicesJSONBody
+
+// PostTagsServicesJSONRequestBody defines body for PostTagsServices for application/json ContentType.
+type PostTagsServicesJSONRequestBody PostTagsServicesJSONBody
+
+// PostTagJSONRequestBody defines body for PostTag for application/json ContentType.
+type PostTagJSONRequestBody PostTagJSONBody
+
+// PostTagNodeJSONRequestBody defines body for PostTagNode for application/json ContentType.
+type PostTagNodeJSONRequestBody PostTagNodeJSONBody
+
+// PostTagServiceJSONRequestBody defines body for PostTagService for application/json ContentType.
+type PostTagServiceJSONRequestBody PostTagServiceJSONBody
 
 // AsListResponseData0 returns the union data inside the ListResponse_Data as a ListResponseData0
 func (t ListResponse_Data) AsListResponseData0() (ListResponseData0, error) {

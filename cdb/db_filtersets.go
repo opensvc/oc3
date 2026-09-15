@@ -2,8 +2,11 @@ package cdb
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -39,6 +42,593 @@ type (
 		SvcIDs  string
 	}
 )
+
+type FiltersetRef struct {
+	ID   int    `json:"id"`
+	Name string `json:"fset_name,omitempty"`
+}
+
+type FiltersetThreshold struct {
+	ChkType     string
+	ChkInstance string
+	ChkLow      string
+	ChkHigh     string
+}
+
+// FiltersetByIDOrName returns the (id, fset_name) of a filterset
+func (oDb *DB) FiltersetByIDOrName(ctx context.Context, idOrName string) (int, string, error) {
+	var (
+		query string
+		args  []any
+	)
+	if _, err := strconv.Atoi(idOrName); err == nil {
+		query = "SELECT id, fset_name FROM gen_filtersets WHERE id = ?"
+		args = []any{idOrName}
+	} else {
+		query = "SELECT id, fset_name FROM gen_filtersets WHERE fset_name = ?"
+		args = []any{idOrName}
+	}
+	row := oDb.DB.QueryRowContext(ctx, query, args...)
+	var (
+		id   int
+		name sql.NullString
+	)
+	if err := row.Scan(&id, &name); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, "", nil
+		}
+		return 0, "", fmt.Errorf("FiltersetByIDOrName: %w", err)
+	}
+	return id, name.String, nil
+}
+
+// FiltersetUsageEncapFiltersets lists the filtersets encapsulating the given fsetID.
+func (oDb *DB) FiltersetUsageEncapFiltersets(ctx context.Context, fsetID int) ([]FiltersetRef, error) {
+	const query = `SELECT gen_filtersets.fset_name, gen_filtersets.id
+		FROM gen_filtersets_filters
+		JOIN gen_filtersets ON gen_filtersets.id = gen_filtersets_filters.fset_id
+		WHERE gen_filtersets_filters.encap_fset_id = ?
+		GROUP BY gen_filtersets.fset_name
+		ORDER BY gen_filtersets.fset_name`
+	rows, err := oDb.DB.QueryContext(ctx, query, fsetID)
+	if err != nil {
+		return nil, fmt.Errorf("FiltersetUsageEncapFiltersets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]FiltersetRef, 0)
+	for rows.Next() {
+		var (
+			name sql.NullString
+			id   int
+		)
+		if err := rows.Scan(&name, &id); err != nil {
+			return nil, fmt.Errorf("FiltersetUsageEncapFiltersets scan: %w", err)
+		}
+		out = append(out, FiltersetRef{ID: id, Name: name.String})
+	}
+	return out, nil
+}
+
+// FiltersetUsageRulesets lists the comp_rulesets attached to the given filterset.
+func (oDb *DB) FiltersetUsageRulesets(ctx context.Context, fsetID int) ([]FiltersetRef, error) {
+	const query = `SELECT comp_rulesets.ruleset_name, comp_rulesets.id
+		FROM comp_rulesets_filtersets
+		JOIN comp_rulesets ON comp_rulesets.id = comp_rulesets_filtersets.ruleset_id
+		WHERE comp_rulesets_filtersets.fset_id = ?
+		ORDER BY comp_rulesets.ruleset_name`
+	rows, err := oDb.DB.QueryContext(ctx, query, fsetID)
+	if err != nil {
+		return nil, fmt.Errorf("FiltersetUsageRulesets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]FiltersetRef, 0)
+	for rows.Next() {
+		var (
+			name sql.NullString
+			id   int
+		)
+		if err := rows.Scan(&name, &id); err != nil {
+			return nil, fmt.Errorf("FiltersetUsageRulesets scan: %w", err)
+		}
+		out = append(out, FiltersetRef{ID: id, Name: name.String})
+	}
+	return out, nil
+}
+
+// FiltersetUsageThresholds returns the gen_filterset_check_threshold rows for the given filterset.
+func (oDb *DB) FiltersetUsageThresholds(ctx context.Context, fsetID int) ([]FiltersetThreshold, error) {
+	const query = `SELECT chk_type, chk_instance, chk_low, chk_high
+		FROM gen_filterset_check_threshold
+		WHERE fset_id = ?`
+	rows, err := oDb.DB.QueryContext(ctx, query, fsetID)
+	if err != nil {
+		return nil, fmt.Errorf("FiltersetUsageThresholds: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := make([]FiltersetThreshold, 0)
+	for rows.Next() {
+		var t FiltersetThreshold
+		if err := rows.Scan(&t.ChkType, &t.ChkInstance, &t.ChkLow, &t.ChkHigh); err != nil {
+			return nil, fmt.Errorf("FiltersetUsageThresholds scan: %w", err)
+		}
+		out = append(out, t)
+	}
+	return out, nil
+}
+
+type FiltersetExportFilter struct {
+	ID     int    `json:"id"`
+	FTable string `json:"f_table"`
+	FField string `json:"f_field"`
+	FOp    string `json:"f_op"`
+	FValue string `json:"f_value"`
+}
+
+type FiltersetExportFilterEntry struct {
+	FLogOp    string                 `json:"f_log_op"`
+	FOrder    int                    `json:"f_order"`
+	Filter    *FiltersetExportFilter `json:"filter"`
+	Filterset *string                `json:"filterset"`
+}
+
+type FiltersetExport struct {
+	ID        int                          `json:"id"`
+	FsetName  string                       `json:"fset_name"`
+	FsetStats *string                      `json:"fset_stats"`
+	Filters   []FiltersetExportFilterEntry `json:"filters"`
+}
+
+type FiltersetExportData struct {
+	Filtersets []FiltersetExport `json:"filtersets"`
+}
+
+func (oDb *DB) ExportFiltersets(ctx context.Context, rootFsetIDs []int) (FiltersetExportData, error) {
+	out := FiltersetExportData{Filtersets: []FiltersetExport{}}
+	if len(rootFsetIDs) == 0 {
+		return out, nil
+	}
+
+	relations := make(map[int][]int)
+	relRows, err := oDb.DB.QueryContext(ctx,
+		"SELECT fset_id, encap_fset_id FROM gen_filtersets_filters WHERE encap_fset_id > 0")
+	if err != nil {
+		return out, fmt.Errorf("ExportFiltersets relations: %w", err)
+	}
+	for relRows.Next() {
+		var parent, child int
+		if err := relRows.Scan(&parent, &child); err != nil {
+			_ = relRows.Close()
+			return out, fmt.Errorf("ExportFiltersets relations scan: %w", err)
+		}
+		relations[parent] = append(relations[parent], child)
+	}
+	_ = relRows.Close()
+
+	all := make(map[int]bool)
+	for _, id := range rootFsetIDs {
+		all[id] = true
+	}
+	queue := append([]int{}, rootFsetIDs...)
+	for len(queue) > 0 {
+		head := queue[0]
+		queue = queue[1:]
+		for _, child := range relations[head] {
+			if !all[child] {
+				all[child] = true
+				queue = append(queue, child)
+			}
+		}
+	}
+
+	allIDs := make([]int, 0, len(all))
+	for id := range all {
+		allIDs = append(allIDs, id)
+	}
+
+	fsetByID := make(map[int]*FiltersetExport, len(allIDs))
+	nameByID := make(map[int]string, len(allIDs))
+	{
+		placeholders := Placeholders(len(allIDs))
+		args := make([]any, len(allIDs))
+		for i, id := range allIDs {
+			args[i] = id
+		}
+		query := "SELECT id, fset_name, fset_stats FROM gen_filtersets WHERE id IN (" + placeholders + ")"
+		rows, err := oDb.DB.QueryContext(ctx, query, args...)
+		if err != nil {
+			return out, fmt.Errorf("ExportFiltersets gen_filtersets: %w", err)
+		}
+		for rows.Next() {
+			var (
+				id    int
+				name  sql.NullString
+				stats sql.NullString
+			)
+			if err := rows.Scan(&id, &name, &stats); err != nil {
+				_ = rows.Close()
+				return out, fmt.Errorf("ExportFiltersets gen_filtersets scan: %w", err)
+			}
+			fs := &FiltersetExport{
+				ID:       id,
+				FsetName: name.String,
+				Filters:  []FiltersetExportFilterEntry{},
+			}
+			if stats.Valid {
+				s := stats.String
+				fs.FsetStats = &s
+			}
+			fsetByID[id] = fs
+			nameByID[id] = name.String
+		}
+		_ = rows.Close()
+	}
+
+	type fsetFilterRow struct {
+		fsetID      int
+		fID         sql.NullInt64
+		fLogOp      string
+		fOrder      sql.NullInt64
+		encapFsetID sql.NullInt64
+	}
+	var filterRows []fsetFilterRow
+	fIDs := make(map[int64]bool)
+	{
+		placeholders := Placeholders(len(allIDs))
+		args := make([]any, len(allIDs))
+		for i, id := range allIDs {
+			args[i] = id
+		}
+		query := "SELECT fset_id, f_id, f_log_op, f_order, encap_fset_id" +
+			" FROM gen_filtersets_filters WHERE fset_id IN (" + placeholders + ")" +
+			" ORDER BY f_order, id"
+		rows, err := oDb.DB.QueryContext(ctx, query, args...)
+		if err != nil {
+			return out, fmt.Errorf("ExportFiltersets gen_filtersets_filters: %w", err)
+		}
+		for rows.Next() {
+			var r fsetFilterRow
+			if err := rows.Scan(&r.fsetID, &r.fID, &r.fLogOp, &r.fOrder, &r.encapFsetID); err != nil {
+				_ = rows.Close()
+				return out, fmt.Errorf("ExportFiltersets gen_filtersets_filters scan: %w", err)
+			}
+			filterRows = append(filterRows, r)
+			if r.fID.Valid && r.fID.Int64 > 0 {
+				fIDs[r.fID.Int64] = true
+			}
+		}
+		_ = rows.Close()
+	}
+
+	filters := make(map[int64]FiltersetExportFilter, len(fIDs))
+	if len(fIDs) > 0 {
+		ids := make([]any, 0, len(fIDs))
+		for id := range fIDs {
+			ids = append(ids, id)
+		}
+		placeholders := Placeholders(len(ids))
+		query := "SELECT id, f_table, f_field, f_op, f_value FROM gen_filters WHERE id IN (" + placeholders + ")"
+		rows, err := oDb.DB.QueryContext(ctx, query, ids...)
+		if err != nil {
+			return out, fmt.Errorf("ExportFiltersets gen_filters: %w", err)
+		}
+		for rows.Next() {
+			var (
+				id     int64
+				fTable sql.NullString
+				fField sql.NullString
+				fOp    sql.NullString
+				fValue sql.NullString
+			)
+			if err := rows.Scan(&id, &fTable, &fField, &fOp, &fValue); err != nil {
+				_ = rows.Close()
+				return out, fmt.Errorf("ExportFiltersets gen_filters scan: %w", err)
+			}
+			filters[id] = FiltersetExportFilter{
+				ID:     int(id),
+				FTable: fTable.String,
+				FField: fField.String,
+				FOp:    fOp.String,
+				FValue: fValue.String,
+			}
+		}
+		_ = rows.Close()
+	}
+
+	for _, r := range filterRows {
+		fs, ok := fsetByID[r.fsetID]
+		if !ok {
+			continue
+		}
+		entry := FiltersetExportFilterEntry{FLogOp: r.fLogOp}
+		if r.fOrder.Valid {
+			entry.FOrder = int(r.fOrder.Int64)
+		}
+		if r.fID.Valid && r.fID.Int64 > 0 {
+			if f, ok := filters[r.fID.Int64]; ok {
+				fcopy := f
+				entry.Filter = &fcopy
+			}
+		}
+		if r.encapFsetID.Valid {
+			if name, ok := nameByID[int(r.encapFsetID.Int64)]; ok {
+				n := name
+				entry.Filterset = &n
+			}
+		}
+		fs.Filters = append(fs.Filters, entry)
+	}
+
+	for _, id := range allIDs {
+		if fs, ok := fsetByID[id]; ok {
+			out.Filtersets = append(out.Filtersets, *fs)
+		}
+	}
+	return out, nil
+}
+
+// GetFiltersetEncapFiltersets returns the gen_filtersets rows encapsulated by fsetID.
+func (oDb *DB) GetFiltersetEncapFiltersets(ctx context.Context, fsetID int, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getFiltersetEncapFiltersets: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM gen_filtersets" +
+		" JOIN gen_filtersets_filters ON gen_filtersets.id = gen_filtersets_filters.encap_fset_id" +
+		" WHERE gen_filtersets_filters.fset_id = ?"
+	args := []any{fsetID}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("gen_filtersets.fset_name, gen_filtersets.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getFiltersetEncapFiltersets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// GetFilterset returns a single gen_filtersets row by id or fset_name.
+func (oDb *DB) GetFilterset(ctx context.Context, idOrName string, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getFilterset: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM gen_filtersets WHERE "
+	args := []any{}
+	if _, err := strconv.Atoi(idOrName); err == nil {
+		query += "gen_filtersets.id = ?"
+		args = append(args, idOrName)
+	} else {
+		query += "gen_filtersets.fset_name = ?"
+		args = append(args, idOrName)
+	}
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getFilterset: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+func (oDb *DB) FiltersetID(ctx context.Context, idOrName string) (int, bool, error) {
+	if id, err := strconv.Atoi(idOrName); err == nil {
+		return id, true, nil
+	}
+	var id int
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT id FROM gen_filtersets WHERE fset_name = ? LIMIT 1", idOrName).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("FiltersetID: %w", err)
+	}
+	return id, true, nil
+}
+
+type FiltersetRow struct {
+	ID        int
+	FsetName  string
+	FsetStats string
+}
+
+// GetFiltersetRow returns the gen_filtersets row for the given id, or nil when absent.
+func (oDb *DB) GetFiltersetRow(ctx context.Context, id int) (*FiltersetRow, error) {
+	const query = "SELECT id, fset_name, fset_stats FROM gen_filtersets WHERE id = ? LIMIT 1"
+	var (
+		row                 FiltersetRow
+		fsetName, fsetStats sql.NullString
+	)
+	err := oDb.DB.QueryRowContext(ctx, query, id).Scan(&row.ID, &fsetName, &fsetStats)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("GetFiltersetRow: %w", err)
+	}
+	row.FsetName = fsetName.String
+	row.FsetStats = fsetStats.String
+	return &row, nil
+}
+
+type UpdateFiltersetFields struct {
+	FsetName  *string
+	FsetStats *string
+}
+
+func (oDb *DB) UpdateFilterset(ctx context.Context, id int, fields UpdateFiltersetFields) error {
+	setClauses := []string{}
+	args := []any{}
+	if fields.FsetName != nil {
+		setClauses = append(setClauses, "fset_name = ?")
+		args = append(args, sql.NullString{String: *fields.FsetName, Valid: true})
+	}
+	if fields.FsetStats != nil {
+		setClauses = append(setClauses, "fset_stats = ?")
+		args = append(args, sql.NullString{String: *fields.FsetStats, Valid: true})
+	}
+	if len(setClauses) == 0 {
+		return nil
+	}
+	query := "UPDATE gen_filtersets SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
+	args = append(args, id)
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("UpdateFilterset: %w", err)
+	}
+	oDb.SetChange("gen_filtersets")
+	return nil
+}
+
+func (oDb *DB) DeleteFiltersetCascade(ctx context.Context, id int) error {
+	stmts := []struct {
+		table string
+		query string
+	}{
+		{"gen_filtersets_filters", "DELETE FROM gen_filtersets_filters WHERE fset_id = ?"},
+		{"gen_filtersets_filters", "DELETE FROM gen_filtersets_filters WHERE encap_fset_id = ?"},
+		{"comp_rulesets_filtersets", "DELETE FROM comp_rulesets_filtersets WHERE fset_id = ?"},
+		{"gen_filterset_team_responsible", "DELETE FROM gen_filterset_team_responsible WHERE fset_id = ?"},
+		{"gen_filterset_check_threshold", "DELETE FROM gen_filterset_check_threshold WHERE fset_id = ?"},
+		{"gen_filterset_user", "DELETE FROM gen_filterset_user WHERE fset_id = ?"},
+		{"stats_compare_fset", "DELETE FROM stats_compare_fset WHERE fset_id = ?"},
+		{"gen_filtersets", "DELETE FROM gen_filtersets WHERE id = ?"},
+	}
+	for _, s := range stmts {
+		if _, err := oDb.ExecContext(ctx, s.query, id); err != nil {
+			return fmt.Errorf("DeleteFiltersetCascade %s: %w", s.table, err)
+		}
+		oDb.SetChange(s.table)
+	}
+	return nil
+}
+
+func (oDb *DB) GetFiltersetEncapAttachment(ctx context.Context, parentID, childID int) (*FiltersetFilterAttachment, error) {
+	const query = "SELECT f_order, f_log_op FROM gen_filtersets_filters WHERE fset_id = ? AND encap_fset_id = ? LIMIT 1"
+	var (
+		fOrder sql.NullInt64
+		fLogOp sql.NullString
+	)
+	err := oDb.DB.QueryRowContext(ctx, query, parentID, childID).Scan(&fOrder, &fLogOp)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("GetFiltersetEncapAttachment: %w", err)
+	}
+	return &FiltersetFilterAttachment{FOrder: int(fOrder.Int64), FLogOp: fLogOp.String}, nil
+}
+
+func (oDb *DB) InsertFiltersetEncap(ctx context.Context, parentID, childID, fOrder int, fLogOp string) error {
+	if _, err := oDb.ExecContext(ctx,
+		"INSERT INTO gen_filtersets_filters (f_id, fset_id, encap_fset_id, f_order, f_log_op) VALUES (0, ?, ?, ?, ?)",
+		parentID, childID, fOrder, fLogOp); err != nil {
+		return fmt.Errorf("InsertFiltersetEncap: %w", err)
+	}
+	oDb.SetChange("gen_filtersets_filters")
+	return nil
+}
+
+func (oDb *DB) UpdateFiltersetEncap(ctx context.Context, parentID, childID int, fOrder *int, fLogOp *string) error {
+	setClauses := []string{}
+	args := []any{}
+	if fOrder != nil {
+		setClauses = append(setClauses, "f_order = ?")
+		args = append(args, *fOrder)
+	}
+	if fLogOp != nil {
+		setClauses = append(setClauses, "f_log_op = ?")
+		args = append(args, *fLogOp)
+	}
+	if len(setClauses) == 0 {
+		return nil
+	}
+	query := "UPDATE gen_filtersets_filters SET " + strings.Join(setClauses, ", ") + " WHERE fset_id = ? AND encap_fset_id = ?"
+	args = append(args, parentID, childID)
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("UpdateFiltersetEncap: %w", err)
+	}
+	oDb.SetChange("gen_filtersets_filters")
+	return nil
+}
+
+func (oDb *DB) DetachFiltersetFromFilterset(ctx context.Context, parentID, childID int) (int64, error) {
+	res, err := oDb.ExecContext(ctx,
+		"DELETE FROM gen_filtersets_filters WHERE fset_id = ? AND encap_fset_id = ?", parentID, childID)
+	if err != nil {
+		return 0, fmt.Errorf("DetachFiltersetFromFilterset: %w", err)
+	}
+	oDb.SetChange("gen_filtersets_filters")
+	n, _ := res.RowsAffected()
+	return n, nil
+}
+
+func (oDb *DB) FiltersetEncapWouldLoop(ctx context.Context, childID, parentID int) (bool, error) {
+	if childID == parentID {
+		return true, nil
+	}
+	rows, err := oDb.DB.QueryContext(ctx,
+		"SELECT encap_fset_id, fset_id FROM gen_filtersets_filters WHERE f_id = 0")
+	if err != nil {
+		return false, fmt.Errorf("FiltersetEncapWouldLoop: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	ancestors := make(map[int][]int)
+	for rows.Next() {
+		var encap, fset sql.NullInt64
+		if err := rows.Scan(&encap, &fset); err != nil {
+			return false, fmt.Errorf("FiltersetEncapWouldLoop scan: %w", err)
+		}
+		if !encap.Valid {
+			continue
+		}
+		ancestors[int(encap.Int64)] = append(ancestors[int(encap.Int64)], int(fset.Int64))
+	}
+	if err := rows.Err(); err != nil {
+		return false, fmt.Errorf("FiltersetEncapWouldLoop rows: %w", err)
+	}
+
+	visited := make(map[int]bool)
+	var recurse func(node int) bool
+	recurse = func(node int) bool {
+		if visited[node] {
+			return false
+		}
+		visited[node] = true
+		for _, parent := range ancestors[node] {
+			if parent == childID {
+				return true
+			}
+			if recurse(parent) {
+				return true
+			}
+		}
+		return false
+	}
+	return recurse(parentID), nil
+}
+
+// GetFiltersets returns rows from the gen_filtersets table.
+func (oDb *DB) GetFiltersets(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getFiltersets: no select expressions")
+	}
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+		" FROM gen_filtersets WHERE gen_filtersets.id > 0"
+	args := []any{}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("gen_filtersets.fset_name, gen_filtersets.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getFiltersets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
 
 func (oDb *DB) GetVFiltersetsWithEncap(ctx context.Context, fsetID int) (l []VFilterset, err error) {
 	l, err = oDb.GetVFiltersets(ctx, fsetID)
@@ -314,4 +904,35 @@ func (oDb *DB) GetStatsFiltersets(ctx context.Context) (fsets []Filterset, err e
 		return
 	}
 	return
+}
+
+// FiltersetByName returns the id of the filterset having the given name.
+func (oDb *DB) FiltersetByName(ctx context.Context, name string) (int, bool, error) {
+	var id int
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT id FROM gen_filtersets WHERE fset_name = ? LIMIT 1", name).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("FiltersetByName: %w", err)
+	}
+	return id, true, nil
+}
+
+// InsertFilterset creates a filterset and returns its id.
+func (oDb *DB) InsertFilterset(ctx context.Context, fsetName, fsetStats, author string) (int, error) {
+	const query = `INSERT INTO gen_filtersets (fset_name, fset_stats, fset_author, fset_updated)
+		VALUES (?, ?, ?, NOW())`
+	res, err := oDb.ExecContext(ctx, query, fsetName,
+		sql.NullString{String: fsetStats, Valid: true}, author)
+	if err != nil {
+		return 0, fmt.Errorf("InsertFilterset: %w", err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("InsertFilterset lastInsertId: %w", err)
+	}
+	oDb.SetChange("gen_filtersets")
+	return int(id), nil
 }

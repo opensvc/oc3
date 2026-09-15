@@ -23,7 +23,8 @@ func (a *Api) PostApp(c echo.Context, appId string) error {
 		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
 	}
 
-	if !IsManager(c) {
+	isManager := IsManager(c)
+	if !isManager {
 		return JSONProblemf(c, http.StatusForbidden, "AppManager privilege required")
 	}
 
@@ -37,8 +38,6 @@ func (a *Api) PostApp(c echo.Context, appId string) error {
 
 	odb := cdb.New(a.DB)
 	odb.CreateSession(a.Ev)
-
-	isManager := IsManager(c)
 
 	app, err := odb.GetApp(ctx, appId, nil, true)
 	if err != nil {
@@ -59,38 +58,38 @@ func (a *Api) PostApp(c echo.Context, appId string) error {
 	}
 
 	fields := cdb.UpdateAppFields{
-		App:        body.App,
+		App:         body.App,
 		Description: body.Description,
-		AppDomain:  body.AppDomain,
-		AppTeamOps: body.AppTeamOps,
+		AppDomain:   body.AppDomain,
+		AppTeamOps:  body.AppTeamOps,
 	}
 
-	markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
 		log.Error("cannot start transaction", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot update app")
 	}
 	defer endTx()
 
-	if err := odb.UpdateApp(ctx, app.ID, fields); err != nil {
+	if err := tx.UpdateApp(ctx, app.ID, fields); err != nil {
 		log.Error("cannot update app", "app_id", appId, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot update app")
 	}
 
 	// If the app code is renamed, update nodes and services references
 	if body.App != nil && *body.App != app.App {
-		if err := odb.UpdateNodesApp(ctx, app.App, *body.App); err != nil {
+		if err := tx.UpdateNodesApp(ctx, app.App, *body.App); err != nil {
 			log.Error("cannot update nodes app", logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot update nodes app reference")
 		}
-		if err := odb.UpdateServicesApp(ctx, app.App, *body.App); err != nil {
+		if err := tx.UpdateServicesApp(ctx, app.App, *body.App); err != nil {
 			log.Error("cannot update services app", logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot update services app reference")
 		}
 	}
 
 	userEmail, _ := c.Get(XUserEmail).(string)
-	if err := odb.Log(ctx, cdb.LogEntry{
+	if err := tx.Log(ctx, cdb.LogEntry{
 		Action: "apps.change",
 		User:   userEmail,
 		Fmt:    "app %(app)s changed",

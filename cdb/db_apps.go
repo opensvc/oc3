@@ -62,7 +62,7 @@ func scanApps(rows *sql.Rows) ([]App, error) {
 	return apps, nil
 }
 
-func buildAppsQuery(groups []string, isManager bool, selectExprs []string) (string, []any) {
+func buildAppsQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
 	q := From(schema.TApps).
 		Distinct().
 		RawSelect(selectExprs...)
@@ -77,12 +77,12 @@ func buildAppsQuery(groups []string, isManager bool, selectExprs []string) (stri
 
 	query, args, err := q.Build()
 	if err != nil {
-		panic(fmt.Sprintf("buildAppsQuery: %v", err))
+		return "", nil, fmt.Errorf("buildAppsQuery: %w", err)
 	}
-	return query, args
+	return query, args, nil
 }
 
-func buildAppsQueryAll(groups []string, isManager bool) (string, []any) {
+func buildAppsQueryAll(groups []string, isManager bool) (string, []any, error) {
 	return buildAppsQuery(groups, isManager, []string{
 		"apps.id", "apps.app",
 		"COALESCE(apps.updated, '')", "COALESCE(apps.app_domain, '')",
@@ -91,7 +91,10 @@ func buildAppsQueryAll(groups []string, isManager bool) (string, []any) {
 }
 
 func (oDb *DB) GetApps(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args := buildAppsQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildAppsQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if err != nil {
+		return nil, err
+	}
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}
@@ -108,7 +111,10 @@ func (oDb *DB) GetApps(ctx context.Context, p ListParams) ([]map[string]any, err
 }
 
 func (oDb *DB) GetApp(ctx context.Context, appIDOrName string, groups []string, isManager bool) (*App, error) {
-	query, args := buildAppsQueryAll(groups, isManager)
+	query, args, err := buildAppsQueryAll(groups, isManager)
+	if err != nil {
+		return nil, err
+	}
 
 	if id, err := strconv.ParseInt(appIDOrName, 10, 64); err == nil {
 		query += " AND apps.id = ?"
@@ -338,6 +344,128 @@ func (oDb *DB) GetAppResponsibles(ctx context.Context, appIDOrName string, group
 	}
 
 	return items, nil
+}
+
+// GetAppNodes returns nodes belonging to the app name or id
+func (oDb *DB) GetAppNodes(ctx context.Context, appIDOrName string, p ListParams) ([]map[string]any, error) {
+	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("GetAppNodes: %w", err)
+	}
+	if targetApp == nil {
+		return nil, nil
+	}
+
+	if !p.IsManager {
+		visibleApp, err := oDb.GetApp(ctx, appIDOrName, p.Groups, false)
+		if err != nil {
+			return nil, fmt.Errorf("GetAppNodes: %w", err)
+		}
+		if visibleApp == nil {
+			return []map[string]any{}, nil
+		}
+	}
+
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if err != nil {
+		return nil, err
+	}
+	query += " AND nodes.app = ?"
+	args = append(args, targetApp.App)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("nodes.nodename")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("GetAppNodes: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// GetAppServices returns services belonging to App name or id
+func (oDb *DB) GetAppServices(ctx context.Context, appIDOrName string, p ListParams) ([]map[string]any, error) {
+	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("GetAppServices: %w", err)
+	}
+	if targetApp == nil {
+		return nil, nil
+	}
+
+	if !p.IsManager {
+		visibleApp, err := oDb.GetApp(ctx, appIDOrName, p.Groups, false)
+		if err != nil {
+			return nil, fmt.Errorf("GetAppServices: %w", err)
+		}
+		if visibleApp == nil {
+			return []map[string]any{}, nil
+		}
+	}
+
+	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	if err != nil {
+		return nil, err
+	}
+	query += " AND services.svc_app = ?"
+	args = append(args, targetApp.App)
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("services.svcname")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("GetAppServices: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// GetAppQuotas returns rows from v_disk_quota for an App
+func (oDb *DB) GetAppQuotas(ctx context.Context, appIDOrName string, p ListParams) ([]map[string]any, error) {
+	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("GetAppQuotas: %w", err)
+	}
+	if targetApp == nil {
+		return nil, nil
+	}
+
+	if !p.IsManager {
+		visibleApp, err := oDb.GetApp(ctx, appIDOrName, p.Groups, false)
+		if err != nil {
+			return nil, fmt.Errorf("GetAppQuotas: %w", err)
+		}
+		if visibleApp == nil {
+			return []map[string]any{}, nil
+		}
+	}
+
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("GetAppQuotas: no columns selected")
+	}
+	query := fmt.Sprintf("SELECT %s FROM v_disk_quota WHERE app = ?", strings.Join(p.SelectExprs, ", "))
+	args := []any{targetApp.App}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("array_name, dg_name")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("GetAppQuotas: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
 func (oDb *DB) GetAppPublications(ctx context.Context, appIDOrName string, groups []string, isManager bool, limit, offset int) ([]AuthGroup, error) {
@@ -625,6 +753,40 @@ func (oDb *DB) InsertAppPublication(ctx context.Context, appID, groupID int64) e
 	}
 	oDb.SetChange("apps_publications")
 	return nil
+}
+
+// DeleteAppResponsible removes the (app_id, group_id) row from apps_responsibles.
+func (oDb *DB) DeleteAppResponsible(ctx context.Context, appID, groupID int64) (int64, error) {
+	const query = `DELETE FROM apps_responsibles WHERE app_id = ? AND group_id = ?`
+	res, err := oDb.DB.ExecContext(ctx, query, appID, groupID)
+	if err != nil {
+		return 0, fmt.Errorf("deleteAppResponsible: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("deleteAppResponsible rowsAffected: %w", err)
+	}
+	if n > 0 {
+		oDb.SetChange("apps_responsibles")
+	}
+	return n, nil
+}
+
+// DeleteAppPublication removes the (app_id, group_id) row from apps_publications
+func (oDb *DB) DeleteAppPublication(ctx context.Context, appID, groupID int64) (int64, error) {
+	const query = `DELETE FROM apps_publications WHERE app_id = ? AND group_id = ?`
+	res, err := oDb.DB.ExecContext(ctx, query, appID, groupID)
+	if err != nil {
+		return 0, fmt.Errorf("deleteAppPublication: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("deleteAppPublication rowsAffected: %w", err)
+	}
+	if n > 0 {
+		oDb.SetChange("apps_publications")
+	}
+	return n, nil
 }
 
 func (oDb *DB) AppUsageCounts(ctx context.Context, app string) (nodesCount, servicesCount int64, err error) {

@@ -1,0 +1,35 @@
+package serverhandlers
+
+import (
+	"context"
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+
+	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/server"
+	"github.com/opensvc/oc3/util/echolog"
+	"github.com/opensvc/oc3/util/logkey"
+)
+
+// GetServiceComplianceLogs handles GET /services/{svc_id}/compliance/logs
+func (a *Api) GetServiceComplianceLogs(c echo.Context, svcId string, params server.GetServiceComplianceLogsParams) error {
+	log := echolog.GetLogHandler(c, "GetServiceComplianceLogs")
+	ctx := c.Request().Context()
+
+	svc, err := a.ODB.ServiceBySvcIDOrName(ctx, svcId)
+	if err != nil {
+		log.Error("cannot resolve service", "svc_id", svcId, logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot resolve service %s", svcId)
+	}
+	if svc == nil {
+		return JSONProblemf(c, http.StatusNotFound, "service %s not found", svcId)
+	}
+
+	return a.handleList(c, "GetServiceComplianceLogs", "comp_log", listEndpointParams{
+		props: params.Props, limit: params.Limit, offset: params.Offset,
+		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
+	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
+		return a.ODB.GetServiceComplianceLogs(ctx, svc.SvcID, p)
+	})
+}
