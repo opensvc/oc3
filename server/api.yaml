@@ -3413,6 +3413,73 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /networks:
+    post:
+      operationId: PostNetworks
+      description: |
+        Declare a network. Requires the NetworkManager privilege. `network` must be
+        the IPv4 network address for `netmask`; `begin`, `end` and `broadcast` are
+        computed by the database. `team_responsible` defaults to the caller's primary
+        group. A name or an address already declared is refused with a 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - network
+                - netmask
+              properties:
+                name:
+                  type: string
+                network:
+                  type: string
+                  description: IPv4 network address, for example 192.168.10.0
+                netmask:
+                  type: integer
+                  minimum: 0
+                  maximum: 32
+                  description: Prefix length
+                gateway:
+                  type: string
+                  description: IPv4 address inside the network
+                comment:
+                  type: string
+                pvid:
+                  type: integer
+                  description: VLAN id
+                prio:
+                  type: integer
+                  minimum: 0
+                  maximum: 99
+                  description: Priority among overlapping networks
+                team_responsible:
+                  type: string
+                  description: Organisational group responsible for the network
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /nodes:
     post:
       operationId: PostNodes
@@ -8261,6 +8328,51 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    NetworkRow:
+      type: object
+      description: |
+        A declared network. `begin`, `end` and `broadcast` are computed from
+        `network` and `netmask`.
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        network:
+          type: string
+        netmask:
+          type: integer
+        broadcast:
+          type: string
+        gateway:
+          type: string
+        begin:
+          type: string
+        end:
+          type: string
+        pvid:
+          type: integer
+        prio:
+          type: integer
+        team_responsible:
+          type: string
+        comment:
+          type: string
+        updated:
+          type: string
+
+    NetworkListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetworkRow'
+        info:
+          type: string
 
     AlertListResponse:
       type: object

@@ -759,6 +759,30 @@ type LogRow struct {
 	SvcId           *string `json:"svc_id,omitempty"`
 }
 
+// NetworkListResponse defines model for NetworkListResponse.
+type NetworkListResponse struct {
+	Data []NetworkRow `json:"data"`
+	Info *string      `json:"info,omitempty"`
+}
+
+// NetworkRow A declared network. `begin`, `end` and `broadcast` are computed from
+// `network` and `netmask`.
+type NetworkRow struct {
+	Begin           *string `json:"begin,omitempty"`
+	Broadcast       *string `json:"broadcast,omitempty"`
+	Comment         *string `json:"comment,omitempty"`
+	End             *string `json:"end,omitempty"`
+	Gateway         *string `json:"gateway,omitempty"`
+	Id              *int    `json:"id,omitempty"`
+	Name            *string `json:"name,omitempty"`
+	Netmask         *int    `json:"netmask,omitempty"`
+	Network         *string `json:"network,omitempty"`
+	Prio            *int    `json:"prio,omitempty"`
+	Pvid            *int    `json:"pvid,omitempty"`
+	TeamResponsible *string `json:"team_responsible,omitempty"`
+	Updated         *string `json:"updated,omitempty"`
+}
+
 // NodeHardwareListResponse defines model for NodeHardwareListResponse.
 type NodeHardwareListResponse struct {
 	Data NodeHardwareListResponse_Data `json:"data"`
@@ -2312,6 +2336,30 @@ type GetLogParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostNetworksJSONBody defines parameters for PostNetworks.
+type PostNetworksJSONBody struct {
+	Comment *string `json:"comment,omitempty"`
+
+	// Gateway IPv4 address inside the network
+	Gateway *string `json:"gateway,omitempty"`
+	Name    *string `json:"name,omitempty"`
+
+	// Netmask Prefix length
+	Netmask int `json:"netmask"`
+
+	// Network IPv4 network address, for example 192.168.10.0
+	Network string `json:"network"`
+
+	// Prio Priority among overlapping networks
+	Prio *int `json:"prio,omitempty"`
+
+	// Pvid VLAN id
+	Pvid *int `json:"pvid,omitempty"`
+
+	// TeamResponsible Organisational group responsible for the network
+	TeamResponsible *string `json:"team_responsible,omitempty"`
 }
 
 // DeleteNodesJSONBody defines parameters for DeleteNodes.
@@ -4124,6 +4172,9 @@ type DeleteIpsJSONRequestBody DeleteIpsJSONBody
 
 // PostLogsJSONRequestBody defines body for PostLogs for application/json ContentType.
 type PostLogsJSONRequestBody PostLogsJSONBody
+
+// PostNetworksJSONRequestBody defines body for PostNetworks for application/json ContentType.
+type PostNetworksJSONRequestBody PostNetworksJSONBody
 
 // DeleteNodesJSONRequestBody defines body for DeleteNodes for application/json ContentType.
 type DeleteNodesJSONRequestBody DeleteNodesJSONBody
