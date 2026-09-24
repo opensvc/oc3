@@ -382,6 +382,88 @@ var propsMapping = map[string]propMapping{
 			"description": colStr(schema.AuthGroupDescription),
 		},
 	},
+	// Forms, as the historical collector lists them: form_definition is not a
+	// column but form_yaml parsed, computed by the forms handlers.
+	"form": {
+		Available: []string{
+			"id", "form_name", "form_yaml", "form_author", "form_created",
+			"form_type", "form_folder", "form_definition",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.FormsID),
+			"form_name":    colStr(schema.FormsFormName),
+			"form_yaml":    colStr(schema.FormsFormYaml),
+			"form_author":  colStr(schema.FormsFormAuthor),
+			"form_created": colStr(schema.FormsFormCreated),
+			"form_type":    colStr(schema.FormsFormType),
+			"form_folder":  colStr(schema.FormsFormFolder),
+		},
+	},
+	// Form revisions: the definition of a form as submitted, kept by md5.
+	"form_revision": {
+		Available: []string{
+			"id", "form_yaml", "form_md5", "form_date", "form_id",
+			"form_folder", "form_name", "form_definition",
+		},
+		Props: map[string]propDef{
+			"id":          col(schema.FormsRevisionsID),
+			"form_yaml":   colStr(schema.FormsRevisionsFormYaml),
+			"form_md5":    colStr(schema.FormsRevisionsFormMD5),
+			"form_date":   colStr(schema.FormsRevisionsFormDate),
+			"form_id":     col(schema.FormsRevisionsFormID),
+			"form_folder": colStr(schema.FormsRevisionsFormFolder),
+			"form_name":   colStr(schema.FormsRevisionsFormName),
+		},
+	},
+	// Forms stored by workflows, joined to the revision they were submitted with,
+	// as the historical collector's v_forms_store view does: the revision columns
+	// keep their own name, flat.
+	"form_store": {
+		Available: []string{
+			"id", "results_id", "form_submitter", "form_submit_date", "form_data",
+			"form_next_id", "form_prev_id", "form_assignee", "form_head_id",
+			"form_md5", "form_var_id", "form_yaml", "form_date", "form_id",
+			"form_folder", "form_name", "form_definition",
+		},
+		Props: map[string]propDef{
+			"id":               col(schema.FormsStoreID),
+			"results_id":       col(schema.FormsStoreResultsID),
+			"form_submitter":   colStr(schema.FormsStoreFormSubmitter),
+			"form_submit_date": colStr(schema.FormsStoreFormSubmitDate),
+			"form_data":        colStr(schema.FormsStoreFormData),
+			"form_next_id":     col(schema.FormsStoreFormNextID),
+			"form_prev_id":     col(schema.FormsStoreFormPrevID),
+			"form_assignee":    colStr(schema.FormsStoreFormAssignee),
+			"form_head_id":     col(schema.FormsStoreFormHeadID),
+			"form_md5":         colStr(schema.FormsStoreFormMD5),
+			"form_var_id":      col(schema.FormsStoreFormVarID),
+			"form_yaml":        colStr(schema.FormsRevisionsFormYaml),
+			"form_date":        colStr(schema.FormsRevisionsFormDate),
+			"form_id":          col(schema.FormsRevisionsFormID),
+			"form_folder":      colStr(schema.FormsRevisionsFormFolder),
+			"form_name":        colStr(schema.FormsRevisionsFormName),
+		},
+	},
+	// Workflows chaining stored forms.
+	"workflow": {
+		Available: []string{
+			"id", "form_head_id", "status", "steps", "creator", "create_date",
+			"last_assignee", "last_update", "form_md5", "last_form_id", "last_form_name",
+		},
+		Props: map[string]propDef{
+			"id":             col(schema.WorkflowsID),
+			"form_head_id":   col(schema.WorkflowsFormHeadID),
+			"status":         colStr(schema.WorkflowsStatus),
+			"steps":          col(schema.WorkflowsSteps),
+			"creator":        colStr(schema.WorkflowsCreator),
+			"create_date":    colStr(schema.WorkflowsCreateDate),
+			"last_assignee":  colStr(schema.WorkflowsLastAssignee),
+			"last_update":    colStr(schema.WorkflowsLastUpdate),
+			"form_md5":       colStr(schema.WorkflowsFormMD5),
+			"last_form_id":   col(schema.WorkflowsLastFormID),
+			"last_form_name": colStr(schema.WorkflowsLastFormName),
+		},
+	},
 	"user": {
 		Available: []string{
 			"id", "username", "email", "first_name", "last_name", "phone_work",

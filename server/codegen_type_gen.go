@@ -550,6 +550,45 @@ type FiltersetUsageResponse struct {
 	} `json:"data"`
 }
 
+// FormListResponse defines model for FormListResponse.
+type FormListResponse struct {
+	Data FormListResponse_Data `json:"data"`
+
+	// Info The change made, on a modification
+	Info *string   `json:"info,omitempty"`
+	Meta *ListMeta `json:"meta,omitempty"`
+}
+
+// FormListResponseData0 defines model for .
+type FormListResponseData0 = []FormRow
+
+// FormListResponseData1 defines model for .
+type FormListResponseData1 map[string]map[string]int
+
+// FormListResponse_Data defines model for FormListResponse.Data.
+type FormListResponse_Data struct {
+	union json.RawMessage
+}
+
+// FormRow A form: its definition, form_yaml, drives the inputs a submission expects
+// and the outputs it runs. form_definition is form_yaml parsed. Every
+// property is optional: the `props` query parameter selects which columns
+// the server returns.
+type FormRow struct {
+	FormAuthor  *string `json:"form_author,omitempty"`
+	FormCreated *string `json:"form_created,omitempty"`
+
+	// FormDefinition form_yaml parsed, absent when it does not parse
+	FormDefinition interface{} `json:"form_definition,omitempty"`
+	FormFolder     *string     `json:"form_folder,omitempty"`
+	FormName       *string     `json:"form_name,omitempty"`
+
+	// FormType obj, custo, folder or generic
+	FormType *string `json:"form_type,omitempty"`
+	FormYaml *string `json:"form_yaml,omitempty"`
+	Id       *int    `json:"id,omitempty"`
+}
+
 // GroupListResponse defines model for GroupListResponse.
 type GroupListResponse struct {
 	Data GroupListResponse_Data `json:"data"`
@@ -2077,6 +2116,422 @@ type PostFiltersetsFiltersetsJSONBody struct {
 
 // PostFiltersetsFiltersetsJSONBodyFLogOp defines parameters for PostFiltersetsFiltersets.
 type PostFiltersetsFiltersetsJSONBodyFLogOp string
+
+// PutFormOutputResultsJSONBody defines parameters for PutFormOutputResults.
+type PutFormOutputResultsJSONBody struct {
+	// Log The log lines to append to output_id logs, [[lvl, fmt, data], ...], lvl 0 for info, 1 for error
+	Log interface{} `json:"log,omitempty"`
+
+	// OutputId The id of the form output for which to store the result
+	OutputId *string `json:"output_id,omitempty"`
+
+	// Result The result to add for output_id, a JSON document or its string form
+	Result interface{} `json:"result,omitempty"`
+}
+
+// DeleteFormsJSONBody defines parameters for DeleteForms.
+type DeleteFormsJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteFormsJSONBody0 defines parameters for DeleteForms.
+type DeleteFormsJSONBody0 map[string]interface{}
+
+// DeleteFormsJSONBody1 defines parameters for DeleteForms.
+type DeleteFormsJSONBody1 = []map[string]interface{}
+
+// GetFormsParams defines parameters for GetForms.
+type GetFormsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// PostFormsJSONBody defines parameters for PostForms.
+type PostFormsJSONBody struct {
+	union json.RawMessage
+}
+
+// PostFormsJSONBody0 defines parameters for PostForms.
+type PostFormsJSONBody0 map[string]interface{}
+
+// PostFormsJSONBody1 defines parameters for PostForms.
+type PostFormsJSONBody1 = []map[string]interface{}
+
+// GetFormParams defines parameters for GetForm.
+type GetFormParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// PostFormJSONBody defines parameters for PostForm.
+type PostFormJSONBody map[string]interface{}
+
+// PutFormJSONBody defines parameters for PutForm.
+type PutFormJSONBody struct {
+	// Data The information the form expects, as an object, a list of objects or their JSON string form.
+	Data interface{} `json:"data,omitempty"`
+
+	// PrevWfid The previous step id in an existing workflow.
+	PrevWfid interface{} `json:"prev_wfid,omitempty"`
+}
+
+// GetFormDiffParams defines parameters for GetFormDiff.
+type GetFormDiffParams struct {
+	// Other Another revision to compare cid with
+	Other *string `form:"other,omitempty" json:"other,omitempty"`
+}
+
+// GetFormPublicationsParams defines parameters for GetFormPublications.
+type GetFormPublicationsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetFormResponsiblesParams defines parameters for GetFormResponsibles.
+type GetFormResponsiblesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// DeleteFormsPublicationsJSONBody defines parameters for DeleteFormsPublications.
+type DeleteFormsPublicationsJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteFormsPublicationsJSONBody0 defines parameters for DeleteFormsPublications.
+type DeleteFormsPublicationsJSONBody0 map[string]interface{}
+
+// DeleteFormsPublicationsJSONBody1 defines parameters for DeleteFormsPublications.
+type DeleteFormsPublicationsJSONBody1 = []map[string]interface{}
+
+// PostFormsPublicationsJSONBody defines parameters for PostFormsPublications.
+type PostFormsPublicationsJSONBody struct {
+	union json.RawMessage
+}
+
+// PostFormsPublicationsJSONBody0 defines parameters for PostFormsPublications.
+type PostFormsPublicationsJSONBody0 map[string]interface{}
+
+// PostFormsPublicationsJSONBody1 defines parameters for PostFormsPublications.
+type PostFormsPublicationsJSONBody1 = []map[string]interface{}
+
+// DeleteFormsResponsiblesJSONBody defines parameters for DeleteFormsResponsibles.
+type DeleteFormsResponsiblesJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteFormsResponsiblesJSONBody0 defines parameters for DeleteFormsResponsibles.
+type DeleteFormsResponsiblesJSONBody0 map[string]interface{}
+
+// DeleteFormsResponsiblesJSONBody1 defines parameters for DeleteFormsResponsibles.
+type DeleteFormsResponsiblesJSONBody1 = []map[string]interface{}
+
+// PostFormsResponsiblesJSONBody defines parameters for PostFormsResponsibles.
+type PostFormsResponsiblesJSONBody struct {
+	union json.RawMessage
+}
+
+// PostFormsResponsiblesJSONBody0 defines parameters for PostFormsResponsibles.
+type PostFormsResponsiblesJSONBody0 map[string]interface{}
+
+// PostFormsResponsiblesJSONBody1 defines parameters for PostFormsResponsibles.
+type PostFormsResponsiblesJSONBody1 = []map[string]interface{}
+
+// GetFormsRevisionsParams defines parameters for GetFormsRevisions.
+type GetFormsRevisionsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetFormsRevisionParams defines parameters for GetFormsRevision.
+type GetFormsRevisionParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetFormsStoreParams defines parameters for GetFormsStore.
+type GetFormsStoreParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetFormStoreParams defines parameters for GetFormStore.
+type GetFormStoreParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
 
 // GetFrontendHiddenMenuEntriesParams defines parameters for GetFrontendHiddenMenuEntries.
 type GetFrontendHiddenMenuEntriesParams struct {
@@ -4548,6 +5003,33 @@ type DeleteFiltersetsFiltersetsJSONRequestBody DeleteFiltersetsFiltersetsJSONBod
 // PostFiltersetsFiltersetsJSONRequestBody defines body for PostFiltersetsFiltersets for application/json ContentType.
 type PostFiltersetsFiltersetsJSONRequestBody PostFiltersetsFiltersetsJSONBody
 
+// PutFormOutputResultsJSONRequestBody defines body for PutFormOutputResults for application/json ContentType.
+type PutFormOutputResultsJSONRequestBody PutFormOutputResultsJSONBody
+
+// DeleteFormsJSONRequestBody defines body for DeleteForms for application/json ContentType.
+type DeleteFormsJSONRequestBody DeleteFormsJSONBody
+
+// PostFormsJSONRequestBody defines body for PostForms for application/json ContentType.
+type PostFormsJSONRequestBody PostFormsJSONBody
+
+// PostFormJSONRequestBody defines body for PostForm for application/json ContentType.
+type PostFormJSONRequestBody PostFormJSONBody
+
+// PutFormJSONRequestBody defines body for PutForm for application/json ContentType.
+type PutFormJSONRequestBody PutFormJSONBody
+
+// DeleteFormsPublicationsJSONRequestBody defines body for DeleteFormsPublications for application/json ContentType.
+type DeleteFormsPublicationsJSONRequestBody DeleteFormsPublicationsJSONBody
+
+// PostFormsPublicationsJSONRequestBody defines body for PostFormsPublications for application/json ContentType.
+type PostFormsPublicationsJSONRequestBody PostFormsPublicationsJSONBody
+
+// DeleteFormsResponsiblesJSONRequestBody defines body for DeleteFormsResponsibles for application/json ContentType.
+type DeleteFormsResponsiblesJSONRequestBody DeleteFormsResponsiblesJSONBody
+
+// PostFormsResponsiblesJSONRequestBody defines body for PostFormsResponsibles for application/json ContentType.
+type PostFormsResponsiblesJSONRequestBody PostFormsResponsiblesJSONBody
+
 // DeleteGroupsJSONRequestBody defines body for DeleteGroups for application/json ContentType.
 type DeleteGroupsJSONRequestBody DeleteGroupsJSONBody
 
@@ -5012,6 +5494,68 @@ func (t FiltersetListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *FiltersetListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsFormListResponseData0 returns the union data inside the FormListResponse_Data as a FormListResponseData0
+func (t FormListResponse_Data) AsFormListResponseData0() (FormListResponseData0, error) {
+	var body FormListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFormListResponseData0 overwrites any union data inside the FormListResponse_Data as the provided FormListResponseData0
+func (t *FormListResponse_Data) FromFormListResponseData0(v FormListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFormListResponseData0 performs a merge with any union data inside the FormListResponse_Data, using the provided FormListResponseData0
+func (t *FormListResponse_Data) MergeFormListResponseData0(v FormListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFormListResponseData1 returns the union data inside the FormListResponse_Data as a FormListResponseData1
+func (t FormListResponse_Data) AsFormListResponseData1() (FormListResponseData1, error) {
+	var body FormListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFormListResponseData1 overwrites any union data inside the FormListResponse_Data as the provided FormListResponseData1
+func (t *FormListResponse_Data) FromFormListResponseData1(v FormListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFormListResponseData1 performs a merge with any union data inside the FormListResponse_Data, using the provided FormListResponseData1
+func (t *FormListResponse_Data) MergeFormListResponseData1(v FormListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t FormListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *FormListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -5756,6 +6300,378 @@ func (t PutActionsJSONBody) MarshalJSON() ([]byte, error) {
 }
 
 func (t *PutActionsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteFormsJSONBody0 returns the union data inside the DeleteFormsJSONBody as a DeleteFormsJSONBody0
+func (t DeleteFormsJSONBody) AsDeleteFormsJSONBody0() (DeleteFormsJSONBody0, error) {
+	var body DeleteFormsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteFormsJSONBody0 overwrites any union data inside the DeleteFormsJSONBody as the provided DeleteFormsJSONBody0
+func (t *DeleteFormsJSONBody) FromDeleteFormsJSONBody0(v DeleteFormsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteFormsJSONBody0 performs a merge with any union data inside the DeleteFormsJSONBody, using the provided DeleteFormsJSONBody0
+func (t *DeleteFormsJSONBody) MergeDeleteFormsJSONBody0(v DeleteFormsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteFormsJSONBody1 returns the union data inside the DeleteFormsJSONBody as a DeleteFormsJSONBody1
+func (t DeleteFormsJSONBody) AsDeleteFormsJSONBody1() (DeleteFormsJSONBody1, error) {
+	var body DeleteFormsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteFormsJSONBody1 overwrites any union data inside the DeleteFormsJSONBody as the provided DeleteFormsJSONBody1
+func (t *DeleteFormsJSONBody) FromDeleteFormsJSONBody1(v DeleteFormsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteFormsJSONBody1 performs a merge with any union data inside the DeleteFormsJSONBody, using the provided DeleteFormsJSONBody1
+func (t *DeleteFormsJSONBody) MergeDeleteFormsJSONBody1(v DeleteFormsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteFormsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteFormsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPostFormsJSONBody0 returns the union data inside the PostFormsJSONBody as a PostFormsJSONBody0
+func (t PostFormsJSONBody) AsPostFormsJSONBody0() (PostFormsJSONBody0, error) {
+	var body PostFormsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostFormsJSONBody0 overwrites any union data inside the PostFormsJSONBody as the provided PostFormsJSONBody0
+func (t *PostFormsJSONBody) FromPostFormsJSONBody0(v PostFormsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostFormsJSONBody0 performs a merge with any union data inside the PostFormsJSONBody, using the provided PostFormsJSONBody0
+func (t *PostFormsJSONBody) MergePostFormsJSONBody0(v PostFormsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPostFormsJSONBody1 returns the union data inside the PostFormsJSONBody as a PostFormsJSONBody1
+func (t PostFormsJSONBody) AsPostFormsJSONBody1() (PostFormsJSONBody1, error) {
+	var body PostFormsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostFormsJSONBody1 overwrites any union data inside the PostFormsJSONBody as the provided PostFormsJSONBody1
+func (t *PostFormsJSONBody) FromPostFormsJSONBody1(v PostFormsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostFormsJSONBody1 performs a merge with any union data inside the PostFormsJSONBody, using the provided PostFormsJSONBody1
+func (t *PostFormsJSONBody) MergePostFormsJSONBody1(v PostFormsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PostFormsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PostFormsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteFormsPublicationsJSONBody0 returns the union data inside the DeleteFormsPublicationsJSONBody as a DeleteFormsPublicationsJSONBody0
+func (t DeleteFormsPublicationsJSONBody) AsDeleteFormsPublicationsJSONBody0() (DeleteFormsPublicationsJSONBody0, error) {
+	var body DeleteFormsPublicationsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteFormsPublicationsJSONBody0 overwrites any union data inside the DeleteFormsPublicationsJSONBody as the provided DeleteFormsPublicationsJSONBody0
+func (t *DeleteFormsPublicationsJSONBody) FromDeleteFormsPublicationsJSONBody0(v DeleteFormsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteFormsPublicationsJSONBody0 performs a merge with any union data inside the DeleteFormsPublicationsJSONBody, using the provided DeleteFormsPublicationsJSONBody0
+func (t *DeleteFormsPublicationsJSONBody) MergeDeleteFormsPublicationsJSONBody0(v DeleteFormsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteFormsPublicationsJSONBody1 returns the union data inside the DeleteFormsPublicationsJSONBody as a DeleteFormsPublicationsJSONBody1
+func (t DeleteFormsPublicationsJSONBody) AsDeleteFormsPublicationsJSONBody1() (DeleteFormsPublicationsJSONBody1, error) {
+	var body DeleteFormsPublicationsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteFormsPublicationsJSONBody1 overwrites any union data inside the DeleteFormsPublicationsJSONBody as the provided DeleteFormsPublicationsJSONBody1
+func (t *DeleteFormsPublicationsJSONBody) FromDeleteFormsPublicationsJSONBody1(v DeleteFormsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteFormsPublicationsJSONBody1 performs a merge with any union data inside the DeleteFormsPublicationsJSONBody, using the provided DeleteFormsPublicationsJSONBody1
+func (t *DeleteFormsPublicationsJSONBody) MergeDeleteFormsPublicationsJSONBody1(v DeleteFormsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteFormsPublicationsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteFormsPublicationsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPostFormsPublicationsJSONBody0 returns the union data inside the PostFormsPublicationsJSONBody as a PostFormsPublicationsJSONBody0
+func (t PostFormsPublicationsJSONBody) AsPostFormsPublicationsJSONBody0() (PostFormsPublicationsJSONBody0, error) {
+	var body PostFormsPublicationsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostFormsPublicationsJSONBody0 overwrites any union data inside the PostFormsPublicationsJSONBody as the provided PostFormsPublicationsJSONBody0
+func (t *PostFormsPublicationsJSONBody) FromPostFormsPublicationsJSONBody0(v PostFormsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostFormsPublicationsJSONBody0 performs a merge with any union data inside the PostFormsPublicationsJSONBody, using the provided PostFormsPublicationsJSONBody0
+func (t *PostFormsPublicationsJSONBody) MergePostFormsPublicationsJSONBody0(v PostFormsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPostFormsPublicationsJSONBody1 returns the union data inside the PostFormsPublicationsJSONBody as a PostFormsPublicationsJSONBody1
+func (t PostFormsPublicationsJSONBody) AsPostFormsPublicationsJSONBody1() (PostFormsPublicationsJSONBody1, error) {
+	var body PostFormsPublicationsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostFormsPublicationsJSONBody1 overwrites any union data inside the PostFormsPublicationsJSONBody as the provided PostFormsPublicationsJSONBody1
+func (t *PostFormsPublicationsJSONBody) FromPostFormsPublicationsJSONBody1(v PostFormsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostFormsPublicationsJSONBody1 performs a merge with any union data inside the PostFormsPublicationsJSONBody, using the provided PostFormsPublicationsJSONBody1
+func (t *PostFormsPublicationsJSONBody) MergePostFormsPublicationsJSONBody1(v PostFormsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PostFormsPublicationsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PostFormsPublicationsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteFormsResponsiblesJSONBody0 returns the union data inside the DeleteFormsResponsiblesJSONBody as a DeleteFormsResponsiblesJSONBody0
+func (t DeleteFormsResponsiblesJSONBody) AsDeleteFormsResponsiblesJSONBody0() (DeleteFormsResponsiblesJSONBody0, error) {
+	var body DeleteFormsResponsiblesJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteFormsResponsiblesJSONBody0 overwrites any union data inside the DeleteFormsResponsiblesJSONBody as the provided DeleteFormsResponsiblesJSONBody0
+func (t *DeleteFormsResponsiblesJSONBody) FromDeleteFormsResponsiblesJSONBody0(v DeleteFormsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteFormsResponsiblesJSONBody0 performs a merge with any union data inside the DeleteFormsResponsiblesJSONBody, using the provided DeleteFormsResponsiblesJSONBody0
+func (t *DeleteFormsResponsiblesJSONBody) MergeDeleteFormsResponsiblesJSONBody0(v DeleteFormsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteFormsResponsiblesJSONBody1 returns the union data inside the DeleteFormsResponsiblesJSONBody as a DeleteFormsResponsiblesJSONBody1
+func (t DeleteFormsResponsiblesJSONBody) AsDeleteFormsResponsiblesJSONBody1() (DeleteFormsResponsiblesJSONBody1, error) {
+	var body DeleteFormsResponsiblesJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteFormsResponsiblesJSONBody1 overwrites any union data inside the DeleteFormsResponsiblesJSONBody as the provided DeleteFormsResponsiblesJSONBody1
+func (t *DeleteFormsResponsiblesJSONBody) FromDeleteFormsResponsiblesJSONBody1(v DeleteFormsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteFormsResponsiblesJSONBody1 performs a merge with any union data inside the DeleteFormsResponsiblesJSONBody, using the provided DeleteFormsResponsiblesJSONBody1
+func (t *DeleteFormsResponsiblesJSONBody) MergeDeleteFormsResponsiblesJSONBody1(v DeleteFormsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteFormsResponsiblesJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteFormsResponsiblesJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPostFormsResponsiblesJSONBody0 returns the union data inside the PostFormsResponsiblesJSONBody as a PostFormsResponsiblesJSONBody0
+func (t PostFormsResponsiblesJSONBody) AsPostFormsResponsiblesJSONBody0() (PostFormsResponsiblesJSONBody0, error) {
+	var body PostFormsResponsiblesJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostFormsResponsiblesJSONBody0 overwrites any union data inside the PostFormsResponsiblesJSONBody as the provided PostFormsResponsiblesJSONBody0
+func (t *PostFormsResponsiblesJSONBody) FromPostFormsResponsiblesJSONBody0(v PostFormsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostFormsResponsiblesJSONBody0 performs a merge with any union data inside the PostFormsResponsiblesJSONBody, using the provided PostFormsResponsiblesJSONBody0
+func (t *PostFormsResponsiblesJSONBody) MergePostFormsResponsiblesJSONBody0(v PostFormsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPostFormsResponsiblesJSONBody1 returns the union data inside the PostFormsResponsiblesJSONBody as a PostFormsResponsiblesJSONBody1
+func (t PostFormsResponsiblesJSONBody) AsPostFormsResponsiblesJSONBody1() (PostFormsResponsiblesJSONBody1, error) {
+	var body PostFormsResponsiblesJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostFormsResponsiblesJSONBody1 overwrites any union data inside the PostFormsResponsiblesJSONBody as the provided PostFormsResponsiblesJSONBody1
+func (t *PostFormsResponsiblesJSONBody) FromPostFormsResponsiblesJSONBody1(v PostFormsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostFormsResponsiblesJSONBody1 performs a merge with any union data inside the PostFormsResponsiblesJSONBody, using the provided PostFormsResponsiblesJSONBody1
+func (t *PostFormsResponsiblesJSONBody) MergePostFormsResponsiblesJSONBody1(v PostFormsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PostFormsResponsiblesJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PostFormsResponsiblesJSONBody) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

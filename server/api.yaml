@@ -2618,6 +2618,1142 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /form_output_results/{results_id}:
+    get:
+      operationId: GetFormOutputResults
+      description: |
+        Show the results structure of a form submission.
+      parameters:
+        - in: path
+          name: results_id
+          required: true
+          description: Results id
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutFormOutputResults
+      description: |
+        Add a result or log lines to an output of a form submission results.
+      parameters:
+        - in: path
+          name: results_id
+          required: true
+          description: Results id
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+                type: object
+                properties:
+                  output_id:
+                    type: string
+                    description: The id of the form output for which to store the result
+                  result:
+                    description: The result to add for output_id, a JSON document or its string form
+                  log:
+                    description: The log lines to append to output_id logs, [[lvl, fmt, data], ...], lvl 0 for info, 1 for error
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms:
+    get:
+      operationId: GetForms
+      description: |
+        List the forms. A manager sees every form, others the forms published to
+        one of their groups. form_definition is form_yaml parsed.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostForms
+      description: |
+        Create forms, as the historical collector's POST /forms: one entry or a list.
+        form_name is mandatory, the other keys are forms columns (form_yaml,
+        form_type, form_folder...). The author and the creation date are set, and
+        the form is published to and made the responsibility of the creator's
+        default group. Requires the FormsManager privilege.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteForms
+      description: |
+        Delete forms: an entry with the 'id' key, or a list of them. Same
+        requirements as DELETE /forms/{form_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms/{form_id}:
+    get:
+      operationId: GetForm
+      description: |
+        Show a form, as GET /forms restricted to one id: empty when the form does
+        not exist or is not published to the caller.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostForm
+      description: |
+        Modify a form. The keys are forms columns; form_definition, a JSON document
+        or its string form, is stored as form_yaml. A new form_yaml is recorded in
+        the form's revision history. Requires the FormsManager privilege.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+                type: object
+                additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutForm
+      description: |
+        Submit a form: validate the data against the form inputs and run its
+        outputs (db, rest, script, mail, workflow). The body may also be
+        form-encoded, data given as its JSON string, as in the historical examples. The answer is the results
+        structure, also stored and readable with GET /form_output_results/{id}. A
+        negative id designates an internal form. The form must be published to the
+        caller, unless a manager.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+                type: object
+                properties:
+                  data:
+                    description: The information the form expects, as an object, a list of objects or their JSON string form.
+                  prev_wfid:
+                    description: The previous step id in an existing workflow.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteForm
+      description: |
+        Delete a form, with its publications and responsibles. Requires the
+        FormsManager privilege and responsibility for the form.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms/{form_id}/am_i_responsible:
+    get:
+      operationId: GetFormAmIResponsible
+      description: |
+        Tell whether the caller is responsible for the form, as {"data": true} or
+        {"data": false}.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms/{form_id}/diff/{cid}:
+    get:
+      operationId: GetFormDiff
+      description: |
+        Show the change made by a revision, or the differences between cid and
+        other when set, as git prints them.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a form revision
+          schema:
+            type: string
+        - in: query
+          name: other
+          required: false
+          description: Another revision to compare cid with
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms/{form_id}/publications:
+    get:
+      operationId: GetFormPublications
+      description: |
+        List the groups the form is published to. Requires the form to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms/{form_id}/publications/{group_id}:
+    post:
+      operationId: PostFormPublication
+      description: |
+        Publish the form to a group. Requires the FormsManager privilege and
+        responsibility for the form. An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteFormPublication
+      description: |
+        Unpublish the form from a group. Requires the FormsManager privilege
+        and responsibility for the form. A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms/{form_id}/responsibles:
+    get:
+      operationId: GetFormResponsibles
+      description: |
+        List the groups the form is the responsibility of. Requires the form to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms/{form_id}/responsibles/{group_id}:
+    post:
+      operationId: PostFormResponsible
+      description: |
+        Make a group responsible for the form. Requires the FormsManager privilege and
+        responsibility for the form. An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteFormResponsible
+      description: |
+        Remove a responsible group from the form. Requires the FormsManager privilege
+        and responsibility for the form. A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms/{form_id}/revisions:
+    get:
+      operationId: GetFormRevisions
+      description: |
+        List the revisions of the form definition, from its git history: an empty
+        list when the form is not published to the caller.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms/{form_id}/revisions/{cid}:
+    get:
+      operationId: GetFormRevision
+      description: |
+        Show the form definition at a revision, as {"data": {"oid", "content"}}.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a form revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms/{form_id}/rollback/{cid}:
+    post:
+      operationId: PostFormRollback
+      description: |
+        Restore the form definition of a revision, recorded as a new revision.
+        Requires the FormsManager privilege and responsibility for the form.
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          description: Form id
+          schema:
+            type: integer
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a form revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms_publications:
+    post:
+      operationId: PostFormsPublications
+      description: |
+        Same as POST /forms/{form_id}/publications/{group_id}, the form_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteFormsPublications
+      description: |
+        Same as DELETE /forms/{form_id}/publications/{group_id}, the form_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms_responsibles:
+    post:
+      operationId: PostFormsResponsibles
+      description: |
+        Same as POST /forms/{form_id}/responsibles/{group_id}, the form_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteFormsResponsibles
+      description: |
+        Same as DELETE /forms/{form_id}/responsibles/{group_id}, the form_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms_revisions:
+    get:
+      operationId: GetFormsRevisions
+      description: |
+        List the form revisions stored for workflows.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms_revisions/{revision_id}:
+    get:
+      operationId: GetFormsRevision
+      description: |
+        Show a form revision, by id or by md5.
+      parameters:
+        - in: path
+          name: revision_id
+          required: true
+          description: Revision id or md5
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms_store:
+    get:
+      operationId: GetFormsStore
+      description: |
+        List the forms stored by workflows, with the revision they were submitted
+        with.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms_store/{store_id}:
+    get:
+      operationId: GetFormStore
+      description: |
+        Show a form stored by a workflow.
+      parameters:
+        - in: path
+          name: store_id
+          required: true
+          description: Stored form id
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /forms_store/{store_id}/dump:
+    get:
+      operationId: GetFormStoreDump
+      description: |
+        Show a form stored by a workflow, with its workflow, the workflow head and
+        tail stored forms.
+      parameters:
+        - in: path
+          name: store_id
+          required: true
+          description: Stored form id
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /groups:
     get:
       operationId: GetGroups
@@ -8184,6 +9320,54 @@ components:
           type: string
         f_updated:
           type: string
+
+    FormRow:
+      type: object
+      description: |
+        A form: its definition, form_yaml, drives the inputs a submission expects
+        and the outputs it runs. form_definition is form_yaml parsed. Every
+        property is optional: the `props` query parameter selects which columns
+        the server returns.
+      properties:
+        id:
+          type: integer
+        form_name:
+          type: string
+        form_yaml:
+          type: string
+        form_definition:
+          nullable: true
+          description: form_yaml parsed, absent when it does not parse
+        form_author:
+          type: string
+        form_created:
+          type: string
+        form_type:
+          type: string
+          description: obj, custo, folder or generic
+        form_folder:
+          type: string
+
+    FormListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/FormRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+        info:
+          type: string
+          description: The change made, on a modification
 
     FilterListResponse:
       type: object

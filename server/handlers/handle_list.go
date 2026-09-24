@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"slices"
 
 	"github.com/labstack/echo/v4"
 
@@ -31,6 +32,68 @@ type listEndpointParams struct {
 	// cdb.ListParams. Set it only on the endpoints whose access control
 	// references the caller's identity and not just its groups.
 	withUserID bool
+
+	// virtual are the props computed from other props rather than read from a
+	// column, as the historical collector's vprops, e.g. form_definition parsed
+	// from form_yaml. They are listed in the mapping's Available props, without a
+	// SQL expression.
+	virtual map[string]virtualProp
+}
+
+// virtualProp is a prop computed after the fetch, from the props it requires.
+// The required props are fetched even when not asked for, then dropped.
+type virtualProp struct {
+	requires []string
+	// compute returns the value, or false to leave the prop out of the row.
+	compute func(item map[string]any) (any, bool)
+}
+
+// fetchPropsFor replaces the virtual props of a selection by the props they
+// require, keeping the order and without duplicates.
+func fetchPropsFor(props []string, virtual map[string]virtualProp) []string {
+	if len(virtual) == 0 {
+		return props
+	}
+	out := make([]string, 0, len(props))
+	for _, prop := range props {
+		if v, ok := virtual[prop]; ok {
+			out = ensureProps(out, v.requires...)
+			continue
+		}
+		out = ensureProps(out, prop)
+	}
+	return out
+}
+
+// computeVirtualProps fills the virtual props asked for, then removes the props
+// fetched only to compute them.
+func computeVirtualProps(items []map[string]any, props []string, virtual map[string]virtualProp) {
+	if len(virtual) == 0 {
+		return
+	}
+	var wanted []string
+	for _, prop := range props {
+		if _, ok := virtual[prop]; ok {
+			wanted = append(wanted, prop)
+		}
+	}
+	if len(wanted) == 0 {
+		return
+	}
+	for _, item := range items {
+		for _, prop := range wanted {
+			if value, ok := virtual[prop].compute(item); ok {
+				item[prop] = value
+			}
+		}
+		for _, prop := range wanted {
+			for _, required := range virtual[prop].requires {
+				if !slices.Contains(props, required) {
+					delete(item, required)
+				}
+			}
+		}
+	}
 }
 
 // handleList implements the common pipeline for all list endpoints:
@@ -74,7 +137,8 @@ func (a *Api) handleList(
 		"is_manager", isManager,
 	)
 
-	selectExprs, err := buildSelectClause(query.Props, mapping)
+	fetchProps := fetchPropsFor(query.Props, p.virtual)
+	selectExprs, err := buildSelectClause(fetchProps, mapping)
 	if err != nil {
 		log.Error("cannot build select clause", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot build select clause")
@@ -85,9 +149,9 @@ func (a *Api) handleList(
 		IsManager:   isManager,
 		Limit:       query.Page.Limit,
 		Offset:      query.Page.Offset,
-		Props:       query.Props,
+		Props:       fetchProps,
 		SelectExprs: selectExprs,
-		TypeHints:   buildTypeHints(query.Props, mapping),
+		TypeHints:   buildTypeHints(fetchProps, mapping),
 		OrderBy:     query.OrderBy,
 		GroupBy:     query.GroupBy,
 		Filters:     filters,
@@ -101,6 +165,7 @@ func (a *Api) handleList(
 		log.Error("cannot fetch items", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get %s", mappingKey)
 	}
+	computeVirtualProps(items, query.Props, p.virtual)
 
 	response := newListResponse(items, mapping, query)
 	if query.WithMeta && !query.WithStats {
