@@ -21,7 +21,9 @@ RUN echo "Cache busted at $(date): oc3 version: $(./dist/oc3 version)"
 FROM alpine:3.22.4
 ARG BUILDTIME
 
-RUN apk add --no-cache bash
+# git keeps the history of the form definitions (forms revisions) and of
+# the sysreports.
+RUN apk add --no-cache bash git
 
 COPY --from=builder /opt/oc3/dist/oc3 /usr/bin/oc3
 
