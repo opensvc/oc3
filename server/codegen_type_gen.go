@@ -14,6 +14,24 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for ObsolescenceSettingRowObsType.
+const (
+	Hw ObsolescenceSettingRowObsType = "hw"
+	Os ObsolescenceSettingRowObsType = "os"
+)
+
+// Valid indicates whether the value is a known member of the ObsolescenceSettingRowObsType enum.
+func (e ObsolescenceSettingRowObsType) Valid() bool {
+	switch e {
+	case Hw:
+		return true
+	case Os:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PostFiltersJSONBodyFOp.
 const (
 	Equal            PostFiltersJSONBodyFOp = "="
@@ -496,6 +514,45 @@ type NodeRow struct {
 	Version             *string `json:"version,omitempty"`
 	WarrantyEnd         *string `json:"warranty_end,omitempty"`
 }
+
+// ObsolescenceSettingListResponse defines model for ObsolescenceSettingListResponse.
+type ObsolescenceSettingListResponse struct {
+	Data ObsolescenceSettingListResponse_Data `json:"data"`
+	Meta *ListMeta                            `json:"meta,omitempty"`
+}
+
+// ObsolescenceSettingListResponseData0 defines model for .
+type ObsolescenceSettingListResponseData0 = []ObsolescenceSettingRow
+
+// ObsolescenceSettingListResponseData1 defines model for .
+type ObsolescenceSettingListResponseData1 map[string]map[string]int
+
+// ObsolescenceSettingListResponse_Data defines model for ObsolescenceSettingListResponse.Data.
+type ObsolescenceSettingListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ObsolescenceSettingRow An obsolescence setting: the warning and alert dates applied to the nodes
+// running a hardware model (`obs_type` "hw") or an OS release (`obs_type` "os").
+// Every property is optional: the `props` query parameter selects which columns
+// the server returns. Unset dates are returned as empty strings. `obs_count` is
+// the number of nodes the setting applies to; hardware models whose name contains
+// "virt" or "cluster" are not counted.
+type ObsolescenceSettingRow struct {
+	Id                    *int                           `json:"id,omitempty"`
+	ObsAlertDate          *string                        `json:"obs_alert_date,omitempty"`
+	ObsAlertDateUpdated   *string                        `json:"obs_alert_date_updated,omitempty"`
+	ObsAlertDateUpdatedBy *string                        `json:"obs_alert_date_updated_by,omitempty"`
+	ObsCount              *int                           `json:"obs_count,omitempty"`
+	ObsName               *string                        `json:"obs_name,omitempty"`
+	ObsType               *ObsolescenceSettingRowObsType `json:"obs_type,omitempty"`
+	ObsWarnDate           *string                        `json:"obs_warn_date,omitempty"`
+	ObsWarnDateUpdated    *string                        `json:"obs_warn_date_updated,omitempty"`
+	ObsWarnDateUpdatedBy  *string                        `json:"obs_warn_date_updated_by,omitempty"`
+}
+
+// ObsolescenceSettingRowObsType defines model for ObsolescenceSettingRow.ObsType.
+type ObsolescenceSettingRowObsType string
 
 // Problem defines model for Problem.
 type Problem struct {
@@ -2573,10 +2630,10 @@ type PostObsolescenceSettingsJSONBody struct {
 	// Id Obsolescence setting record id
 	Id string `json:"id"`
 
-	// ObsAlertDate Date from which nodes matching this setting are flagged as obsolete
+	// ObsAlertDate Date from which nodes matching this setting are flagged as obsolete. "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"; an empty string clears the date.
 	ObsAlertDate *string `json:"obs_alert_date,omitempty"`
 
-	// ObsWarnDate Date from which nodes matching this setting are flagged as a warning
+	// ObsWarnDate Date from which nodes matching this setting are flagged as a warning. "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"; an empty string clears the date.
 	ObsWarnDate *string `json:"obs_warn_date,omitempty"`
 }
 
@@ -2606,10 +2663,10 @@ type GetObsolescenceSettingParams struct {
 
 // PostObsolescenceSettingJSONBody defines parameters for PostObsolescenceSetting.
 type PostObsolescenceSettingJSONBody struct {
-	// ObsAlertDate Date from which nodes matching this setting are flagged as obsolete
+	// ObsAlertDate Date from which nodes matching this setting are flagged as obsolete. "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"; an empty string clears the date.
 	ObsAlertDate *string `json:"obs_alert_date,omitempty"`
 
-	// ObsWarnDate Date from which nodes matching this setting are flagged as a warning
+	// ObsWarnDate Date from which nodes matching this setting are flagged as a warning. "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"; an empty string clears the date.
 	ObsWarnDate *string `json:"obs_warn_date,omitempty"`
 }
 
@@ -4289,6 +4346,68 @@ func (t NodeListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *NodeListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsObsolescenceSettingListResponseData0 returns the union data inside the ObsolescenceSettingListResponse_Data as a ObsolescenceSettingListResponseData0
+func (t ObsolescenceSettingListResponse_Data) AsObsolescenceSettingListResponseData0() (ObsolescenceSettingListResponseData0, error) {
+	var body ObsolescenceSettingListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromObsolescenceSettingListResponseData0 overwrites any union data inside the ObsolescenceSettingListResponse_Data as the provided ObsolescenceSettingListResponseData0
+func (t *ObsolescenceSettingListResponse_Data) FromObsolescenceSettingListResponseData0(v ObsolescenceSettingListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeObsolescenceSettingListResponseData0 performs a merge with any union data inside the ObsolescenceSettingListResponse_Data, using the provided ObsolescenceSettingListResponseData0
+func (t *ObsolescenceSettingListResponse_Data) MergeObsolescenceSettingListResponseData0(v ObsolescenceSettingListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsObsolescenceSettingListResponseData1 returns the union data inside the ObsolescenceSettingListResponse_Data as a ObsolescenceSettingListResponseData1
+func (t ObsolescenceSettingListResponse_Data) AsObsolescenceSettingListResponseData1() (ObsolescenceSettingListResponseData1, error) {
+	var body ObsolescenceSettingListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromObsolescenceSettingListResponseData1 overwrites any union data inside the ObsolescenceSettingListResponse_Data as the provided ObsolescenceSettingListResponseData1
+func (t *ObsolescenceSettingListResponse_Data) FromObsolescenceSettingListResponseData1(v ObsolescenceSettingListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeObsolescenceSettingListResponseData1 performs a merge with any union data inside the ObsolescenceSettingListResponse_Data, using the provided ObsolescenceSettingListResponseData1
+func (t *ObsolescenceSettingListResponse_Data) MergeObsolescenceSettingListResponseData1(v ObsolescenceSettingListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ObsolescenceSettingListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ObsolescenceSettingListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

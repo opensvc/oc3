@@ -4764,7 +4764,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/ObsolescenceSettingListResponse'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -4789,10 +4789,10 @@ paths:
                   description: Obsolescence setting record id
                 obs_warn_date:
                   type: string
-                  description: Date from which nodes matching this setting are flagged as a warning
+                  description: Date from which nodes matching this setting are flagged as a warning. "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"; an empty string clears the date.
                 obs_alert_date:
                   type: string
-                  description: Date from which nodes matching this setting are flagged as obsolete
+                  description: Date from which nodes matching this setting are flagged as obsolete. "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"; an empty string clears the date.
       tags:
         - collector
       responses:
@@ -4801,7 +4801,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/ObsolescenceSettingListResponse'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -4884,7 +4884,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/ObsolescenceSettingListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -4913,10 +4913,10 @@ paths:
               properties:
                 obs_warn_date:
                   type: string
-                  description: Date from which nodes matching this setting are flagged as a warning
+                  description: Date from which nodes matching this setting are flagged as a warning. "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"; an empty string clears the date.
                 obs_alert_date:
                   type: string
-                  description: Date from which nodes matching this setting are flagged as obsolete
+                  description: Date from which nodes matching this setting are flagged as obsolete. "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"; an empty string clears the date.
       tags:
         - collector
       responses:
@@ -4925,7 +4925,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/ObsolescenceSettingListResponse'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -7811,6 +7811,56 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/InstanceRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    ObsolescenceSettingRow:
+      type: object
+      description: |
+        An obsolescence setting: the warning and alert dates applied to the nodes
+        running a hardware model (`obs_type` "hw") or an OS release (`obs_type` "os").
+        Every property is optional: the `props` query parameter selects which columns
+        the server returns. Unset dates are returned as empty strings. `obs_count` is
+        the number of nodes the setting applies to; hardware models whose name contains
+        "virt" or "cluster" are not counted.
+      properties:
+        id:
+          type: integer
+        obs_type:
+          type: string
+          enum: [hw, os]
+        obs_name:
+          type: string
+        obs_warn_date:
+          type: string
+        obs_alert_date:
+          type: string
+        obs_warn_date_updated_by:
+          type: string
+        obs_alert_date_updated_by:
+          type: string
+        obs_warn_date_updated:
+          type: string
+        obs_alert_date_updated:
+          type: string
+        obs_count:
+          type: integer
+
+    ObsolescenceSettingListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ObsolescenceSettingRow'
             - type: object
               additionalProperties:
                 type: object
