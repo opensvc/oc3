@@ -4684,6 +4684,72 @@ paths:
       tags:
         - collector
 
+  /nodes/{node_id}/actions:
+    post:
+      operationId: PostNodeAction
+      description: |
+        Queue an agent action on a node, as the historical collector action menu
+        did. The command is built from the node action_type: queued bare for a
+        pull or feed node, wrapped in a ssh call to nodemgr for a push node.
+        Requires the NodeExec privilege and responsibility for the node.
+      parameters:
+        - $ref: '#/components/parameters/inPathNodeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  type: string
+                  description: Action to queue
+                  enum:
+                    - pushasset
+                    - pushdisks
+                    - pushpkg
+                    - pushpatch
+                    - pushstats
+                    - checks
+                    - sysreport
+                    - scanscsi
+                    - freeze
+                    - thaw
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    format: int64
+                    description: Action queue entry id
+                  command:
+                    type: string
+                    description: Command queued for the agent
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
   /nodes/{node_id}/am_i_responsible:
     get:
       operationId: GetNodeAmIResponsible

@@ -266,6 +266,48 @@ func (e PostNodeJSONBodyActionType) Valid() bool {
 	}
 }
 
+// Defines values for PostNodeActionJSONBodyAction.
+const (
+	Checks    PostNodeActionJSONBodyAction = "checks"
+	Freeze    PostNodeActionJSONBodyAction = "freeze"
+	Pushasset PostNodeActionJSONBodyAction = "pushasset"
+	Pushdisks PostNodeActionJSONBodyAction = "pushdisks"
+	Pushpatch PostNodeActionJSONBodyAction = "pushpatch"
+	Pushpkg   PostNodeActionJSONBodyAction = "pushpkg"
+	Pushstats PostNodeActionJSONBodyAction = "pushstats"
+	Scanscsi  PostNodeActionJSONBodyAction = "scanscsi"
+	Sysreport PostNodeActionJSONBodyAction = "sysreport"
+	Thaw      PostNodeActionJSONBodyAction = "thaw"
+)
+
+// Valid indicates whether the value is a known member of the PostNodeActionJSONBodyAction enum.
+func (e PostNodeActionJSONBodyAction) Valid() bool {
+	switch e {
+	case Checks:
+		return true
+	case Freeze:
+		return true
+	case Pushasset:
+		return true
+	case Pushdisks:
+		return true
+	case Pushpatch:
+		return true
+	case Pushpkg:
+		return true
+	case Pushstats:
+		return true
+	case Scanscsi:
+		return true
+	case Sysreport:
+		return true
+	case Thaw:
+		return true
+	default:
+		return false
+	}
+}
+
 // AlertListResponse defines model for AlertListResponse.
 type AlertListResponse struct {
 	Data AlertListResponse_Data `json:"data"`
@@ -2625,6 +2667,15 @@ type PostNodeJSONBody struct {
 // PostNodeJSONBodyActionType defines parameters for PostNode.
 type PostNodeJSONBodyActionType string
 
+// PostNodeActionJSONBody defines parameters for PostNodeAction.
+type PostNodeActionJSONBody struct {
+	// Action Action to queue
+	Action PostNodeActionJSONBodyAction `json:"action"`
+}
+
+// PostNodeActionJSONBodyAction defines parameters for PostNodeAction.
+type PostNodeActionJSONBodyAction string
+
 // GetNodeAlertsParams defines parameters for GetNodeAlerts.
 type GetNodeAlertsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -4196,6 +4247,9 @@ type PostNodesJSONRequestBody PostNodesJSONBody
 
 // PostNodeJSONRequestBody defines body for PostNode for application/json ContentType.
 type PostNodeJSONRequestBody PostNodeJSONBody
+
+// PostNodeActionJSONRequestBody defines body for PostNodeAction for application/json ContentType.
+type PostNodeActionJSONRequestBody PostNodeActionJSONBody
 
 // PostNodeComplianceModulesetJSONRequestBody defines body for PostNodeComplianceModuleset for application/json ContentType.
 type PostNodeComplianceModulesetJSONRequestBody = PostNodeComplianceModulesetJSONBody

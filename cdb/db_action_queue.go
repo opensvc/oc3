@@ -153,3 +153,67 @@ func (oDb *DB) GetActionOne(ctx context.Context, id string, p ListParams) ([]map
 
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
+
+// NodeActionTarget is what building an agent action command needs from a node.
+type NodeActionTarget struct {
+	NodeID     string
+	Nodename   string
+	OSName     string
+	ActionType string
+	Collector  string
+	ConnectTo  string
+}
+
+// NodeActionTargetByID returns the node fields the action queue entry is built from.
+func (oDb *DB) NodeActionTargetByID(ctx context.Context, nodeID string) (*NodeActionTarget, error) {
+	const query = "SELECT node_id, COALESCE(nodename, ''), COALESCE(os_name, ''), COALESCE(action_type, '')," +
+		" COALESCE(collector, ''), COALESCE(connect_to, '') FROM nodes WHERE node_id = ?"
+	var t NodeActionTarget
+	err := oDb.DB.QueryRowContext(ctx, query, nodeID).
+		Scan(&t.NodeID, &t.Nodename, &t.OSName, &t.ActionType, &t.Collector, &t.ConnectTo)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("nodeActionTargetByID: %w", err)
+	}
+	return &t, nil
+}
+
+// NodeReachableAddress returns the address an action should connect to, mirroring
+// get_reachable_name() of the python collector: the explicit connect_to, else the
+// best routable address of the node, else its name.
+func (oDb *DB) NodeReachableAddress(ctx context.Context, t *NodeActionTarget) (string, error) {
+	if t.ConnectTo != "" {
+		return t.ConnectTo, nil
+	}
+	const query = "SELECT addr FROM v_nodenetworks WHERE node_id = ?" +
+		" AND mask IS NOT NULL AND mask != '' AND flag_deprecated = 0" +
+		" AND net_gateway IS NOT NULL AND net_gateway != '' AND net_gateway != '0.0.0.0'" +
+		" ORDER BY prio DESC, type LIMIT 1"
+	var addr string
+	err := oDb.DB.QueryRowContext(ctx, query, t.NodeID).Scan(&addr)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return t.Nodename, nil
+	case err != nil:
+		return "", fmt.Errorf("nodeReachableAddress: %w", err)
+	}
+	return addr, nil
+}
+
+// EnqueueNodeAction posts a node action to the action queue and returns its id.
+func (oDb *DB) EnqueueNodeAction(ctx context.Context, nodeID, actionType, command, connectTo string, userID *int64) (int64, error) {
+	const query = "INSERT INTO action_queue (node_id, svc_id, action_type, command, user_id, connect_to)" +
+		" VALUES (?, '', ?, ?, ?, ?)"
+	res, err := oDb.ExecContext(ctx, query, nodeID, actionType, command, userID, connectTo)
+	if err != nil {
+		return 0, fmt.Errorf("enqueueNodeAction: %w", err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("enqueueNodeAction lastInsertId: %w", err)
+	}
+	oDb.SetChange("action_queue")
+	return id, nil
+}
