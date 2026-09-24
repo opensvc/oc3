@@ -52,6 +52,9 @@ func (n *DBNode) String() string {
 
 func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
 	q := From(schema.TNodes).
+		// A node may name no cluster, or one the collector does not know: a plain join
+		// would then drop the row.
+		LeftJoin(schema.TClusters).
 		RawSelect(selectExprs...)
 
 	if !isManager {

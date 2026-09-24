@@ -76,6 +76,14 @@ var propsMapping = map[string]propMapping{
 			"svc_id":        colStr(schema.ActionQueueSvcID),
 		},
 	},
+	"cluster": {
+		Available: []string{"id", "cluster_id", "cluster_name"},
+		Props: map[string]propDef{
+			"id":           col(schema.ClustersID),
+			"cluster_id":   colStr(schema.ClustersClusterID),
+			"cluster_name": colStr(schema.ClustersClusterName),
+		},
+	},
 	"node": {
 		Available: []string{
 			"node_id", "nodename", "app", "node_env", "cluster_id",
@@ -175,6 +183,11 @@ var propsMapping = map[string]propMapping{
 			"os_obs_warn_date":      colStr(schema.NodesOSObsWarnDate),
 			"os_obs_alert_date":     colStr(schema.NodesOSObsAlertDate),
 			"updated":               colStr(schema.NodesUpdated),
+		},
+		// A node names its cluster by id only: the name lives in the joined table, as
+		// for the node and service names of an instance.
+		Joins: map[string]JoinDef{
+			"clusters": {MappingKey: "cluster"},
 		},
 	},
 	"disk": {

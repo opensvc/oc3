@@ -14,6 +14,8 @@ func init() {
 
 	NodeIPNodeID.Ref = NodesNodeID
 
+	NodesClusterID.Ref = ClustersClusterID
+
 	SvcmonSvcID.Ref = ServicesSvcID
 	SvcmonNodeID.Ref = NodesNodeID
 	SvcmonLogSvcID.Ref = ServicesSvcID

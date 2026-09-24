@@ -415,13 +415,16 @@ type NodeListResponse_Data struct {
 // query parameter selects which columns the server returns, so a row
 // carries only the requested subset.
 type NodeRow struct {
-	ActionType          *string `json:"action_type,omitempty"`
-	App                 *string `json:"app,omitempty"`
-	AssetEnv            *string `json:"asset_env,omitempty"`
-	Assetname           *string `json:"assetname,omitempty"`
-	BiosVersion         *string `json:"bios_version,omitempty"`
-	BladeCabinet        *string `json:"blade_cabinet,omitempty"`
-	ClusterId           *string `json:"cluster_id,omitempty"`
+	ActionType   *string `json:"action_type,omitempty"`
+	App          *string `json:"app,omitempty"`
+	AssetEnv     *string `json:"asset_env,omitempty"`
+	Assetname    *string `json:"assetname,omitempty"`
+	BiosVersion  *string `json:"bios_version,omitempty"`
+	BladeCabinet *string `json:"blade_cabinet,omitempty"`
+	ClusterId    *string `json:"cluster_id,omitempty"`
+
+	// ClustersClusterName Name of the node's cluster, from the joined clusters table.
+	ClustersClusterName *string `json:"clusters.cluster_name,omitempty"`
 	Collector           *string `json:"collector,omitempty"`
 	ConnectTo           *string `json:"connect_to,omitempty"`
 	CpuCores            *int    `json:"cpu_cores,omitempty"`

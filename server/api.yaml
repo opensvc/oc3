@@ -7425,6 +7425,10 @@ components:
           type: string
         cluster_id:
           type: string
+        clusters.cluster_name:
+          type: string
+          nullable: true
+          description: Name of the node's cluster, from the joined clusters table.
         loc_country:
           type: string
         loc_city:
