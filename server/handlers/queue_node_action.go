@@ -2,6 +2,9 @@ package serverhandlers
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -9,8 +12,6 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/opensvc/oc3/cdb"
-	"github.com/opensvc/oc3/server"
-	"github.com/opensvc/oc3/util/echolog"
 	"github.com/opensvc/oc3/util/logkey"
 )
 
@@ -56,78 +57,104 @@ func nodeActionCommand(action, actionType, connectTo string) string {
 	return strings.Join(cmd, " ")
 }
 
-// PostNodeAction handles POST /nodes/{node_id}/actions: queue an agent action.
-func (a *Api) PostNodeAction(c echo.Context, nodeId server.InPathNodeId) error {
-	log := echolog.GetLogHandler(c, "PostNodeAction")
+// queuedAction is an action posted to the action queue.
+type queuedAction struct {
+	ID      int64
+	Command string
+	NodeID  string
+	Info    string
+}
+
+// actionRefusal is a queueing request that did not go through, with the HTTP
+// status that says why. Internal failures are logged where they happen and
+// refused with a 500 and a generic message.
+type actionRefusal struct {
+	status int
+	msg    string
+}
+
+func (e *actionRefusal) Error() string { return e.msg }
+
+func refuseAction(status int, format string, args ...any) error {
+	return &actionRefusal{status: status, msg: fmt.Sprintf(format, args...)}
+}
+
+// actionProblem writes the problem response of a refused queueing request.
+func actionProblem(c echo.Context, err error) error {
+	var refusal *actionRefusal
+	if errors.As(err, &refusal) {
+		return JSONProblem(c, refusal.status, refusal.msg)
+	}
+	return JSONProblem(c, http.StatusInternalServerError, err.Error())
+}
+
+// actionTypeOf returns how the node reads its queue; an unset action_type means
+// pull, as get_action_type() does.
+func actionTypeOf(target *cdb.NodeActionTarget) string {
+	if target.ActionType == "" {
+		return "pull"
+	}
+	return target.ActionType
+}
+
+// queueNodeAction queues an agent action on a node, as do_node_action() does:
+// NodeExec privilege, responsibility for the node, and a command run by nodemgr.
+func (a *Api) queueNodeAction(c echo.Context, log *slog.Logger, ctx context.Context, nodeID, action string) (*queuedAction, error) {
 	odb := a.ODB
-	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
-	defer cancel()
-
-	var body server.PostNodeActionJSONRequestBody
-	if err := c.Bind(&body); err != nil {
-		log.Error("invalid request body", logkey.Error, err)
-		return JSONProblem(c, http.StatusBadRequest, err.Error())
-	}
-	action := string(body.Action)
 	if !nodeActions[action] {
-		return JSONProblemf(c, http.StatusBadRequest, "unsupported action %q", action)
+		return nil, refuseAction(http.StatusBadRequest, "unsupported action %q", action)
 	}
-
 	if !IsManager(c) && !HasGroup(c, "NodeExec") {
-		return JSONProblemf(c, http.StatusForbidden, "user has no NodeExec privilege")
+		return nil, refuseAction(http.StatusForbidden, "user has no NodeExec privilege")
 	}
 
-	node, err := odb.NodeByNodeIDOrNodename(ctx, string(nodeId))
+	node, err := odb.NodeByNodeIDOrNodename(ctx, nodeID)
 	if err != nil {
 		log.Error("cannot lookup node", logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot lookup node")
+		return nil, refuseAction(http.StatusInternalServerError, "cannot lookup node")
 	}
 	if node == nil {
-		return JSONProblemf(c, http.StatusNotFound, "node %s not found", nodeId)
+		return nil, refuseAction(http.StatusNotFound, "node %s not found", nodeID)
 	}
 
 	responsible, err := odb.NodeResponsible(ctx, node.NodeID, UserGroupsFromContext(c), IsManager(c))
 	if err != nil {
 		log.Error("cannot check node responsibility", logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot check node responsibility")
+		return nil, refuseAction(http.StatusInternalServerError, "cannot check node responsibility")
 	}
 	if !responsible {
-		return JSONProblemf(c, http.StatusForbidden, "user is not responsible for node %s", nodeId)
+		return nil, refuseAction(http.StatusForbidden, "user is not responsible for node %s", nodeID)
 	}
 
 	target, err := odb.NodeActionTargetByID(ctx, node.NodeID)
 	if err != nil {
 		log.Error("cannot read node action fields", logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot read node %s", nodeId)
+		return nil, refuseAction(http.StatusInternalServerError, "cannot read node %s", nodeID)
 	}
 	if target == nil {
-		return JSONProblemf(c, http.StatusNotFound, "node %s not found", nodeId)
+		return nil, refuseAction(http.StatusNotFound, "node %s not found", nodeID)
 	}
 	// A node feeding another collector queues its actions there; oc3 has no such
 	// push channel, so the caller is told rather than left with a dead entry.
 	if target.Collector != "" {
-		return JSONProblemf(c, http.StatusBadRequest,
+		return nil, refuseAction(http.StatusBadRequest,
 			"node %s is attached to collector %s: queue the action there", target.Nodename, target.Collector)
 	}
 
 	connectTo, err := odb.NodeReachableAddress(ctx, target)
 	if err != nil {
 		log.Error("cannot find a reachable address", logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot find an address for node %s", nodeId)
+		return nil, refuseAction(http.StatusInternalServerError, "cannot find an address for node %s", nodeID)
 	}
 
-	// An unset action_type means pull, as get_action_type() does.
-	actionType := target.ActionType
-	if actionType == "" {
-		actionType = "pull"
-	}
+	actionType := actionTypeOf(target)
 	command := nodeActionCommand(action, actionType, connectTo)
 
 	// Who asked, as the python collector records it: the queue keeps the caller.
 	id, err := odb.EnqueueNodeAction(ctx, node.NodeID, actionType, command, connectTo, authUserID(c))
 	if err != nil {
 		log.Error("cannot queue the action", logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot queue action %s", action)
+		return nil, refuseAction(http.StatusInternalServerError, "cannot queue action %s", action)
 	}
 
 	log.Info("action queued", logkey.NodeID, node.NodeID, "action", action, "action_id", id)
@@ -147,13 +174,10 @@ func (a *Api) PostNodeAction(c echo.Context, nodeId server.InPathNodeId) error {
 		log.Error("cannot write audit log", logkey.Error, logErr)
 	}
 
-	if err := odb.Session.NotifyChanges(ctx); err != nil {
-		log.Error("cannot notify changes", logkey.Error, err)
-	}
-
-	return c.JSON(http.StatusOK, map[string]any{
-		"id":      id,
-		"command": command,
-		"info":    "action " + action + " queued on node " + target.Nodename,
-	})
+	return &queuedAction{
+		ID:      id,
+		Command: command,
+		NodeID:  node.NodeID,
+		Info:    "action " + action + " queued on node " + target.Nodename,
+	}, nil
 }

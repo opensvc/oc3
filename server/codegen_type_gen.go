@@ -266,94 +266,22 @@ func (e PostNodeJSONBodyActionType) Valid() bool {
 	}
 }
 
-// Defines values for PostNodeActionJSONBodyAction.
-const (
-	PostNodeActionJSONBodyActionChecks    PostNodeActionJSONBodyAction = "checks"
-	PostNodeActionJSONBodyActionFreeze    PostNodeActionJSONBodyAction = "freeze"
-	PostNodeActionJSONBodyActionPushasset PostNodeActionJSONBodyAction = "pushasset"
-	PostNodeActionJSONBodyActionPushdisks PostNodeActionJSONBodyAction = "pushdisks"
-	PostNodeActionJSONBodyActionPushpatch PostNodeActionJSONBodyAction = "pushpatch"
-	PostNodeActionJSONBodyActionPushpkg   PostNodeActionJSONBodyAction = "pushpkg"
-	PostNodeActionJSONBodyActionPushstats PostNodeActionJSONBodyAction = "pushstats"
-	PostNodeActionJSONBodyActionScanscsi  PostNodeActionJSONBodyAction = "scanscsi"
-	PostNodeActionJSONBodyActionSysreport PostNodeActionJSONBodyAction = "sysreport"
-	PostNodeActionJSONBodyActionThaw      PostNodeActionJSONBodyAction = "thaw"
-)
+// ActionEnqueue One action to enqueue with PUT /actions.
+type ActionEnqueue struct {
+	// Action Agent action to run
+	Action string `json:"action"`
 
-// Valid indicates whether the value is a known member of the PostNodeActionJSONBodyAction enum.
-func (e PostNodeActionJSONBodyAction) Valid() bool {
-	switch e {
-	case PostNodeActionJSONBodyActionChecks:
-		return true
-	case PostNodeActionJSONBodyActionFreeze:
-		return true
-	case PostNodeActionJSONBodyActionPushasset:
-		return true
-	case PostNodeActionJSONBodyActionPushdisks:
-		return true
-	case PostNodeActionJSONBodyActionPushpatch:
-		return true
-	case PostNodeActionJSONBodyActionPushpkg:
-		return true
-	case PostNodeActionJSONBodyActionPushstats:
-		return true
-	case PostNodeActionJSONBodyActionScanscsi:
-		return true
-	case PostNodeActionJSONBodyActionSysreport:
-		return true
-	case PostNodeActionJSONBodyActionThaw:
-		return true
-	default:
-		return false
-	}
-}
+	// NodeId Target node (node_id or nodename)
+	NodeId *string `json:"node_id,omitempty"`
 
-// Defines values for PostServiceActionJSONBodyAction.
-const (
-	PostServiceActionJSONBodyActionFreeze      PostServiceActionJSONBodyAction = "freeze"
-	PostServiceActionJSONBodyActionPushConfig  PostServiceActionJSONBodyAction = "push config"
-	PostServiceActionJSONBodyActionPushResinfo PostServiceActionJSONBodyAction = "push resinfo"
-	PostServiceActionJSONBodyActionThaw        PostServiceActionJSONBodyAction = "thaw"
-)
+	// Rid Resource ids to limit an instance action to, comma separated
+	Rid *string `json:"rid,omitempty"`
 
-// Valid indicates whether the value is a known member of the PostServiceActionJSONBodyAction enum.
-func (e PostServiceActionJSONBodyAction) Valid() bool {
-	switch e {
-	case PostServiceActionJSONBodyActionFreeze:
-		return true
-	case PostServiceActionJSONBodyActionPushConfig:
-		return true
-	case PostServiceActionJSONBodyActionPushResinfo:
-		return true
-	case PostServiceActionJSONBodyActionThaw:
-		return true
-	default:
-		return false
-	}
-}
+	// SvcId Target service (svc_id or svcname)
+	SvcId *string `json:"svc_id,omitempty"`
 
-// Defines values for PostServiceInstanceActionJSONBodyAction.
-const (
-	Freeze      PostServiceInstanceActionJSONBodyAction = "freeze"
-	PushConfig  PostServiceInstanceActionJSONBodyAction = "push config"
-	PushResinfo PostServiceInstanceActionJSONBodyAction = "push resinfo"
-	Thaw        PostServiceInstanceActionJSONBodyAction = "thaw"
-)
-
-// Valid indicates whether the value is a known member of the PostServiceInstanceActionJSONBodyAction enum.
-func (e PostServiceInstanceActionJSONBodyAction) Valid() bool {
-	switch e {
-	case Freeze:
-		return true
-	case PushConfig:
-		return true
-	case PushResinfo:
-		return true
-	case Thaw:
-		return true
-	default:
-		return false
-	}
+	// Vmname Target node by name, in place of node_id, for an encapsulated node
+	Vmname *string `json:"vmname,omitempty"`
 }
 
 // AlertListResponse defines model for AlertListResponse.
@@ -1272,6 +1200,14 @@ type PostActionsJSONBody struct {
 	// Status New status (the only updatable property)
 	Status *string `json:"status,omitempty"`
 }
+
+// PutActionsJSONBody defines parameters for PutActions.
+type PutActionsJSONBody struct {
+	union json.RawMessage
+}
+
+// PutActionsJSONBody1 defines parameters for PutActions.
+type PutActionsJSONBody1 = []ActionEnqueue
 
 // GetActionParams defines parameters for GetAction.
 type GetActionParams struct {
@@ -2770,15 +2706,6 @@ type PostNodeJSONBody struct {
 // PostNodeJSONBodyActionType defines parameters for PostNode.
 type PostNodeJSONBodyActionType string
 
-// PostNodeActionJSONBody defines parameters for PostNodeAction.
-type PostNodeActionJSONBody struct {
-	// Action Action to queue
-	Action PostNodeActionJSONBodyAction `json:"action"`
-}
-
-// PostNodeActionJSONBodyAction defines parameters for PostNodeAction.
-type PostNodeActionJSONBodyAction string
-
 // GetNodeAlertsParams defines parameters for GetNodeAlerts.
 type GetNodeAlertsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -3397,15 +3324,6 @@ type PostServiceJSONBody struct {
 	Svcname                 *string `json:"svcname,omitempty"`
 }
 
-// PostServiceActionJSONBody defines parameters for PostServiceAction.
-type PostServiceActionJSONBody struct {
-	// Action Action to queue
-	Action PostServiceActionJSONBodyAction `json:"action"`
-}
-
-// PostServiceActionJSONBodyAction defines parameters for PostServiceAction.
-type PostServiceActionJSONBodyAction string
-
 // GetServiceAlertsParams defines parameters for GetServiceAlerts.
 type GetServiceAlertsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -3702,15 +3620,6 @@ type GetServiceInstanceParams struct {
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
-
-// PostServiceInstanceActionJSONBody defines parameters for PostServiceInstanceAction.
-type PostServiceInstanceActionJSONBody struct {
-	// Action Action to queue
-	Action PostServiceInstanceActionJSONBodyAction `json:"action"`
-}
-
-// PostServiceInstanceActionJSONBodyAction defines parameters for PostServiceInstanceAction.
-type PostServiceInstanceActionJSONBodyAction string
 
 // GetServiceNodesParams defines parameters for GetServiceNodes.
 type GetServiceNodesParams struct {
@@ -4287,6 +4196,9 @@ type PostUserPrefsJSONBody struct {
 // PostActionsJSONRequestBody defines body for PostActions for application/json ContentType.
 type PostActionsJSONRequestBody PostActionsJSONBody
 
+// PutActionsJSONRequestBody defines body for PutActions for application/json ContentType.
+type PutActionsJSONRequestBody PutActionsJSONBody
+
 // DeleteAlertsJSONRequestBody defines body for DeleteAlerts for application/json ContentType.
 type DeleteAlertsJSONRequestBody DeleteAlertsJSONBody
 
@@ -4395,9 +4307,6 @@ type PostNodesJSONRequestBody PostNodesJSONBody
 // PostNodeJSONRequestBody defines body for PostNode for application/json ContentType.
 type PostNodeJSONRequestBody PostNodeJSONBody
 
-// PostNodeActionJSONRequestBody defines body for PostNodeAction for application/json ContentType.
-type PostNodeActionJSONRequestBody PostNodeActionJSONBody
-
 // PostNodeComplianceModulesetJSONRequestBody defines body for PostNodeComplianceModuleset for application/json ContentType.
 type PostNodeComplianceModulesetJSONRequestBody = PostNodeComplianceModulesetJSONBody
 
@@ -4424,12 +4333,6 @@ type PostServicesJSONRequestBody PostServicesJSONBody
 
 // PostServiceJSONRequestBody defines body for PostService for application/json ContentType.
 type PostServiceJSONRequestBody PostServiceJSONBody
-
-// PostServiceActionJSONRequestBody defines body for PostServiceAction for application/json ContentType.
-type PostServiceActionJSONRequestBody PostServiceActionJSONBody
-
-// PostServiceInstanceActionJSONRequestBody defines body for PostServiceInstanceAction for application/json ContentType.
-type PostServiceInstanceActionJSONRequestBody PostServiceInstanceActionJSONBody
 
 // DeleteServicesInstancesJSONRequestBody defines body for DeleteServicesInstances for application/json ContentType.
 type DeleteServicesInstancesJSONRequestBody DeleteServicesInstancesJSONBody
@@ -5517,6 +5420,68 @@ func (t UserListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *UserListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsActionEnqueue returns the union data inside the PutActionsJSONBody as a ActionEnqueue
+func (t PutActionsJSONBody) AsActionEnqueue() (ActionEnqueue, error) {
+	var body ActionEnqueue
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromActionEnqueue overwrites any union data inside the PutActionsJSONBody as the provided ActionEnqueue
+func (t *PutActionsJSONBody) FromActionEnqueue(v ActionEnqueue) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeActionEnqueue performs a merge with any union data inside the PutActionsJSONBody, using the provided ActionEnqueue
+func (t *PutActionsJSONBody) MergeActionEnqueue(v ActionEnqueue) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPutActionsJSONBody1 returns the union data inside the PutActionsJSONBody as a PutActionsJSONBody1
+func (t PutActionsJSONBody) AsPutActionsJSONBody1() (PutActionsJSONBody1, error) {
+	var body PutActionsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPutActionsJSONBody1 overwrites any union data inside the PutActionsJSONBody as the provided PutActionsJSONBody1
+func (t *PutActionsJSONBody) FromPutActionsJSONBody1(v PutActionsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePutActionsJSONBody1 performs a merge with any union data inside the PutActionsJSONBody, using the provided PutActionsJSONBody1
+func (t *PutActionsJSONBody) MergePutActionsJSONBody1(v PutActionsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PutActionsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PutActionsJSONBody) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
