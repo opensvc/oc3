@@ -19,12 +19,12 @@ import (
 func requireGroupPrivilege(c echo.Context, privilege *string) error {
 	if privilege != nil && (*privilege == "T" || *privilege == "true") {
 		if !IsManager(c) {
-			return JSONProblemf(c, http.StatusForbidden, "Manager privilege required")
+			return denyRequest(c, http.StatusForbidden, "Manager privilege required")
 		}
 		return nil
 	}
 	if !IsGroupManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "GroupManager privilege required")
+		return denyRequest(c, http.StatusForbidden, "GroupManager privilege required")
 	}
 	return nil
 }

@@ -116,10 +116,10 @@ func (a *Api) postFiltersetUpdate(c echo.Context, log *slog.Logger, ctx context.
 
 func requireCompManager(c echo.Context) error {
 	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
+		return denyRequest(c, http.StatusUnauthorized, "user authentication required")
 	}
 	if !IsCompManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "CompManager privilege required")
+		return denyRequest(c, http.StatusForbidden, "CompManager privilege required")
 	}
 	return nil
 }

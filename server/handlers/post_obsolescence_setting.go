@@ -19,10 +19,10 @@ import (
 
 func requireObsManager(c echo.Context) error {
 	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
+		return denyRequest(c, http.StatusUnauthorized, "user authentication required")
 	}
 	if !IsObsManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "ObsManager privilege required")
+		return denyRequest(c, http.StatusForbidden, "ObsManager privilege required")
 	}
 	return nil
 }
