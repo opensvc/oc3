@@ -1516,7 +1516,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/FilterListResponse'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -1560,7 +1560,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/FilterListResponse'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -1621,7 +1621,10 @@ paths:
   /filters/{filter_id}:
     post:
       operationId: PostFilter
-      description: Modify a filter properties
+      description: |
+        Modify a filter definition. The resulting definition is validated as on
+        creation: known table and operator, existing column, no other filter with
+        the same definition. `f_label` is computed from the definition.
       parameters:
         - in: path
           name: filter_id
@@ -1642,10 +1645,12 @@ paths:
                   type: string
                 f_op:
                   type: string
+                  enum: ['=', 'LIKE', '>', '>=', '<', '<=', 'IN']
                 f_value:
                   type: string
                 f_label:
                   type: string
+                  description: Rejected with a 400; the label is computed from the definition.
       tags:
         - collector
       responses:
@@ -1654,7 +1659,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/FilterListResponse'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -1663,6 +1668,8 @@ paths:
           $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -1726,7 +1733,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/FilterListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -7927,6 +7934,52 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/LogRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    FilterRow:
+      type: object
+      description: |
+        A filter: one condition on a column of a collector table, which filtersets
+        combine. Every property is optional: the `props` query parameter selects which
+        columns the server returns. `f_label` and `f_cksum` are computed by the
+        database from the definition.
+      properties:
+        id:
+          type: integer
+        f_table:
+          type: string
+        f_field:
+          type: string
+        f_op:
+          type: string
+        f_value:
+          type: string
+          nullable: true
+        f_label:
+          type: string
+        f_cksum:
+          type: string
+        f_author:
+          type: string
+        f_updated:
+          type: string
+
+    FilterListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/FilterRow'
             - type: object
               additionalProperties:
                 type: object

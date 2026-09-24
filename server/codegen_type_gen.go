@@ -34,31 +34,64 @@ func (e ObsolescenceSettingRowObsType) Valid() bool {
 
 // Defines values for PostFiltersJSONBodyFOp.
 const (
-	Equal            PostFiltersJSONBodyFOp = "="
-	GreaterThan      PostFiltersJSONBodyFOp = ">"
-	GreaterThanEqual PostFiltersJSONBodyFOp = ">="
-	IN               PostFiltersJSONBodyFOp = "IN"
-	LIKE             PostFiltersJSONBodyFOp = "LIKE"
-	LessThan         PostFiltersJSONBodyFOp = "<"
-	LessThanEqual    PostFiltersJSONBodyFOp = "<="
+	PostFiltersJSONBodyFOpEqual            PostFiltersJSONBodyFOp = "="
+	PostFiltersJSONBodyFOpGreaterThan      PostFiltersJSONBodyFOp = ">"
+	PostFiltersJSONBodyFOpGreaterThanEqual PostFiltersJSONBodyFOp = ">="
+	PostFiltersJSONBodyFOpIN               PostFiltersJSONBodyFOp = "IN"
+	PostFiltersJSONBodyFOpLIKE             PostFiltersJSONBodyFOp = "LIKE"
+	PostFiltersJSONBodyFOpLessThan         PostFiltersJSONBodyFOp = "<"
+	PostFiltersJSONBodyFOpLessThanEqual    PostFiltersJSONBodyFOp = "<="
 )
 
 // Valid indicates whether the value is a known member of the PostFiltersJSONBodyFOp enum.
 func (e PostFiltersJSONBodyFOp) Valid() bool {
 	switch e {
-	case Equal:
+	case PostFiltersJSONBodyFOpEqual:
 		return true
-	case GreaterThan:
+	case PostFiltersJSONBodyFOpGreaterThan:
 		return true
-	case GreaterThanEqual:
+	case PostFiltersJSONBodyFOpGreaterThanEqual:
 		return true
-	case IN:
+	case PostFiltersJSONBodyFOpIN:
 		return true
-	case LIKE:
+	case PostFiltersJSONBodyFOpLIKE:
 		return true
-	case LessThan:
+	case PostFiltersJSONBodyFOpLessThan:
 		return true
-	case LessThanEqual:
+	case PostFiltersJSONBodyFOpLessThanEqual:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostFilterJSONBodyFOp.
+const (
+	PostFilterJSONBodyFOpEqual            PostFilterJSONBodyFOp = "="
+	PostFilterJSONBodyFOpGreaterThan      PostFilterJSONBodyFOp = ">"
+	PostFilterJSONBodyFOpGreaterThanEqual PostFilterJSONBodyFOp = ">="
+	PostFilterJSONBodyFOpIN               PostFilterJSONBodyFOp = "IN"
+	PostFilterJSONBodyFOpLIKE             PostFilterJSONBodyFOp = "LIKE"
+	PostFilterJSONBodyFOpLessThan         PostFilterJSONBodyFOp = "<"
+	PostFilterJSONBodyFOpLessThanEqual    PostFilterJSONBodyFOp = "<="
+)
+
+// Valid indicates whether the value is a known member of the PostFilterJSONBodyFOp enum.
+func (e PostFilterJSONBodyFOp) Valid() bool {
+	switch e {
+	case PostFilterJSONBodyFOpEqual:
+		return true
+	case PostFilterJSONBodyFOpGreaterThan:
+		return true
+	case PostFilterJSONBodyFOpGreaterThanEqual:
+		return true
+	case PostFilterJSONBodyFOpIN:
+		return true
+	case PostFilterJSONBodyFOpLIKE:
+		return true
+	case PostFilterJSONBodyFOpLessThan:
+		return true
+	case PostFilterJSONBodyFOpLessThanEqual:
 		return true
 	default:
 		return false
@@ -212,6 +245,39 @@ type DiskRow struct {
 	SvcId       *string `json:"svc_id,omitempty"`
 	Svcname     *string `json:"svcname,omitempty"`
 	Updated     *string `json:"updated,omitempty"`
+}
+
+// FilterListResponse defines model for FilterListResponse.
+type FilterListResponse struct {
+	Data FilterListResponse_Data `json:"data"`
+	Meta *ListMeta               `json:"meta,omitempty"`
+}
+
+// FilterListResponseData0 defines model for .
+type FilterListResponseData0 = []FilterRow
+
+// FilterListResponseData1 defines model for .
+type FilterListResponseData1 map[string]map[string]int
+
+// FilterListResponse_Data defines model for FilterListResponse.Data.
+type FilterListResponse_Data struct {
+	union json.RawMessage
+}
+
+// FilterRow A filter: one condition on a column of a collector table, which filtersets
+// combine. Every property is optional: the `props` query parameter selects which
+// columns the server returns. `f_label` and `f_cksum` are computed by the
+// database from the definition.
+type FilterRow struct {
+	FAuthor  *string `json:"f_author,omitempty"`
+	FCksum   *string `json:"f_cksum,omitempty"`
+	FField   *string `json:"f_field,omitempty"`
+	FLabel   *string `json:"f_label,omitempty"`
+	FOp      *string `json:"f_op,omitempty"`
+	FTable   *string `json:"f_table,omitempty"`
+	FUpdated *string `json:"f_updated,omitempty"`
+	FValue   *string `json:"f_value,omitempty"`
+	Id       *int    `json:"id,omitempty"`
 }
 
 // GroupListResponse defines model for GroupListResponse.
@@ -1280,11 +1346,16 @@ type GetFilterParams struct {
 // PostFilterJSONBody defines parameters for PostFilter.
 type PostFilterJSONBody struct {
 	FField *string `json:"f_field,omitempty"`
-	FLabel *string `json:"f_label,omitempty"`
-	FOp    *string `json:"f_op,omitempty"`
-	FTable *string `json:"f_table,omitempty"`
-	FValue *string `json:"f_value,omitempty"`
+
+	// FLabel Rejected with a 400; the label is computed from the definition.
+	FLabel *string                `json:"f_label,omitempty"`
+	FOp    *PostFilterJSONBodyFOp `json:"f_op,omitempty"`
+	FTable *string                `json:"f_table,omitempty"`
+	FValue *string                `json:"f_value,omitempty"`
 }
+
+// PostFilterJSONBodyFOp defines parameters for PostFilter.
+type PostFilterJSONBodyFOp string
 
 // DeleteFiltersetsJSONBody defines parameters for DeleteFiltersets.
 type DeleteFiltersetsJSONBody struct {
@@ -3974,6 +4045,68 @@ func (t DiskListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *DiskListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsFilterListResponseData0 returns the union data inside the FilterListResponse_Data as a FilterListResponseData0
+func (t FilterListResponse_Data) AsFilterListResponseData0() (FilterListResponseData0, error) {
+	var body FilterListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFilterListResponseData0 overwrites any union data inside the FilterListResponse_Data as the provided FilterListResponseData0
+func (t *FilterListResponse_Data) FromFilterListResponseData0(v FilterListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFilterListResponseData0 performs a merge with any union data inside the FilterListResponse_Data, using the provided FilterListResponseData0
+func (t *FilterListResponse_Data) MergeFilterListResponseData0(v FilterListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFilterListResponseData1 returns the union data inside the FilterListResponse_Data as a FilterListResponseData1
+func (t FilterListResponse_Data) AsFilterListResponseData1() (FilterListResponseData1, error) {
+	var body FilterListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFilterListResponseData1 overwrites any union data inside the FilterListResponse_Data as the provided FilterListResponseData1
+func (t *FilterListResponse_Data) FromFilterListResponseData1(v FilterListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFilterListResponseData1 performs a merge with any union data inside the FilterListResponse_Data, using the provided FilterListResponseData1
+func (t *FilterListResponse_Data) MergeFilterListResponseData1(v FilterListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t FilterListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *FilterListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

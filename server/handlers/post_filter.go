@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -53,12 +54,67 @@ func (a *Api) PostFilter(c echo.Context, filterId string) error {
 		return JSONProblemf(c, http.StatusNotFound, "filter %d not found", id)
 	}
 
+	// f_label and f_cksum are generated columns, computed from the definition.
+	if body.FLabel != nil {
+		return JSONProblemf(c, http.StatusBadRequest, "f_label is computed from the filter definition and cannot be set")
+	}
+
+	// Validate the definition the filter will have once modified, with the same
+	// rules as POST /filters: a filter on an unknown table, column or operator would
+	// break the filtersets it is attached to.
+	fTable, fField, fOp, fValue := row.FTable, row.FField, row.FOp, row.FValue
+	if body.FTable != nil {
+		fTable = *body.FTable
+	}
+	if body.FField != nil {
+		fField = *body.FField
+	}
+	if body.FOp != nil {
+		fOp = strings.ToUpper(string(*body.FOp))
+	}
+	if body.FValue != nil {
+		fValue = *body.FValue
+	}
+	switch {
+	case fTable == "":
+		return JSONProblemf(c, http.StatusBadRequest, "f_table is mandatory")
+	case fField == "":
+		return JSONProblemf(c, http.StatusBadRequest, "f_field is mandatory")
+	case fOp == "":
+		return JSONProblemf(c, http.StatusBadRequest, "f_op is mandatory")
+	case fValue == "":
+		return JSONProblemf(c, http.StatusBadRequest, "f_value is mandatory")
+	}
+	if !slices.Contains(filterTables, fTable) {
+		return JSONProblemf(c, http.StatusBadRequest, "f_table must be one of %s", strings.Join(filterTables, ", "))
+	}
+	if !slices.Contains(filterOperators, fOp) {
+		return JSONProblemf(c, http.StatusBadRequest, "f_op must be one of %s", strings.Join(filterOperators, ", "))
+	}
+	columnFound, err := odb.ColumnExists(ctx, fTable, fField)
+	if err != nil {
+		log.Error("cannot check filter field", "f_table", fTable, "f_field", fField, logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot check filter field")
+	}
+	if !columnFound {
+		return JSONProblemf(c, http.StatusBadRequest, "field not found in model's table")
+	}
+	existingID, exists, err := odb.FilterByDefinition(ctx, fTable, fField, fOp, fValue)
+	if err != nil {
+		log.Error("cannot check filter existence", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot check filter existence")
+	}
+	if exists && existingID != id {
+		return JSONProblemf(c, http.StatusConflict, "a filter with the same definition already exists: %d", existingID)
+	}
+
 	fields := cdb.UpdateFilterFields{
 		FTable: body.FTable,
 		FField: body.FField,
-		FOp:    body.FOp,
 		FValue: body.FValue,
-		FLabel: body.FLabel,
+	}
+	if body.FOp != nil {
+		fields.FOp = &fOp
 	}
 
 	changes := []string{}
@@ -69,40 +125,40 @@ func (a *Api) PostFilter(c echo.Context, filterId string) error {
 		changes = append(changes, fmt.Sprintf("f_field: %s => %s", row.FField, *body.FField))
 	}
 	if body.FOp != nil {
-		changes = append(changes, fmt.Sprintf("f_op: %s => %s", row.FOp, *body.FOp))
+		changes = append(changes, fmt.Sprintf("f_op: %s => %s", row.FOp, fOp))
 	}
 	if body.FValue != nil {
 		changes = append(changes, fmt.Sprintf("f_value: %s => %s", row.FValue, *body.FValue))
 	}
-	if body.FLabel != nil {
-		changes = append(changes, fmt.Sprintf("f_label: %s => %s", row.FLabel, *body.FLabel))
-	}
 
 	userEmail, _ := c.Get(XUserEmail).(string)
 
-	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
-	if err != nil {
-		log.Error("cannot start transaction", logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot update filter")
-	}
-	defer endTx()
-
-	if err := tx.UpdateFilter(ctx, id, fields, userEmail); err != nil {
+	// The transaction ends before the modified filter is read back: a read done
+	// while it is still open, on another connection, returns the previous values.
+	if err := func() error {
+		tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+		if err != nil {
+			return fmt.Errorf("cannot start transaction: %w", err)
+		}
+		defer endTx()
+		if err := tx.UpdateFilter(ctx, id, fields, userEmail); err != nil {
+			return err
+		}
+		if logErr := tx.Log(ctx, cdb.LogEntry{
+			Action: "filter.change",
+			User:   userEmail,
+			Fmt:    "change filter %(data)s",
+			Dict:   map[string]any{"data": strings.Join(changes, ", ")},
+			Level:  "info",
+		}); logErr != nil {
+			log.Error("cannot write audit log", logkey.Error, logErr)
+		}
+		markSuccess()
+		return nil
+	}(); err != nil {
 		log.Error("cannot update filter", "filter_id", id, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot update filter")
 	}
-
-	if logErr := tx.Log(ctx, cdb.LogEntry{
-		Action: "filter.change",
-		User:   userEmail,
-		Fmt:    "change filter %(data)s",
-		Dict:   map[string]any{"data": strings.Join(changes, ", ")},
-		Level:  "info",
-	}); logErr != nil {
-		log.Error("cannot write audit log", logkey.Error, logErr)
-	}
-
-	markSuccess()
 
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
 		log.Error("cannot notify changes", logkey.Error, err)
