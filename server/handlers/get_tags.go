@@ -41,7 +41,19 @@ func (a *Api) handleGetTags(c echo.Context, tagID *int, query ListQueryParameter
 		log.Error("cannot project tag props", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot project tag props")
 	}
-	return c.JSON(http.StatusOK, newListResponse(filteredItems, propsMapping["tag"], query))
+	response := newListResponse(filteredItems, propsMapping["tag"], query)
+	if query.WithMeta && !query.WithStats {
+		total, known := totalFromPage(query.Page.Limit, query.Page.Offset, len(tags))
+		if !known {
+			if total, err = odb.CountTags(ctx); err != nil {
+				log.Error("cannot count tags", logkey.Error, err)
+			}
+		}
+		if err == nil {
+			response = response.withTotal(&total)
+		}
+	}
+	return c.JSON(http.StatusOK, response)
 }
 
 // GetTags handles GET /tags

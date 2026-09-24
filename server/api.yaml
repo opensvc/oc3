@@ -7604,6 +7604,10 @@ components:
             type: integer
         total:
           type: integer
+          description: |
+            Number of rows of the list without pagination, the filters applied; for
+            a grouped list, the number of groups. With stats, the number of rows the
+            statistics are computed from.
 
     NodeRow:
       type: object
@@ -8917,7 +8921,11 @@ components:
       in: query
       name: meta
       required: false
-      description: Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+      description: |
+        Include metadata in the response. Enabled by default. Use false or 0 to omit
+        the meta field. The metadata of a list carries its total number of rows
+        without pagination (total), as well as the rows returned (count), the offset
+        and the limit.
       schema:
         type: string
 

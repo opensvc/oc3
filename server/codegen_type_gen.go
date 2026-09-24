@@ -716,7 +716,11 @@ type ListMeta struct {
 	IncludedProps  *[]string       `json:"included_props,omitempty"`
 	Limit          *int            `json:"limit,omitempty"`
 	Offset         *int            `json:"offset,omitempty"`
-	Total          *int            `json:"total,omitempty"`
+
+	// Total Number of rows of the list without pagination, the filters applied; for
+	// a grouped list, the number of groups. With stats, the number of rows the
+	// statistics are computed from.
+	Total *int `json:"total,omitempty"`
 }
 
 // ListResponse defines model for ListResponse.
@@ -1166,7 +1170,10 @@ type GetActionsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1220,7 +1227,10 @@ type GetActionParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1244,7 +1254,10 @@ type GetAlertEventParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1278,7 +1291,10 @@ type GetAlertsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1315,7 +1331,10 @@ type GetAlertParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1360,7 +1379,10 @@ type GetAppsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1406,7 +1428,10 @@ type GetAppNodesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1430,7 +1455,10 @@ type GetAppPublicationsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1454,7 +1482,10 @@ type GetAppQuotasParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1478,7 +1509,10 @@ type GetAppResponsiblesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1502,7 +1536,10 @@ type GetAppServicesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1562,7 +1599,10 @@ type GetArraysParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1598,7 +1638,10 @@ type GetDisksParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1637,7 +1680,10 @@ type GetDiskParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1667,7 +1713,10 @@ type GetFiltersParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1709,7 +1758,10 @@ type GetFilterParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1753,7 +1805,10 @@ type GetFiltersetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1792,7 +1847,10 @@ type GetFiltersetParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1825,7 +1883,10 @@ type GetFiltersetFiltersParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1858,7 +1919,10 @@ type GetFiltersetFiltersetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1891,7 +1955,10 @@ type GetFiltersetNodesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -1928,7 +1995,10 @@ type GetFiltersetServicesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2019,7 +2089,10 @@ type GetFrontendHiddenMenuEntriesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2052,7 +2125,10 @@ type GetGroupsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2090,7 +2166,10 @@ type GetGroupParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2123,7 +2202,10 @@ type GetGroupAppsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2153,7 +2235,10 @@ type GetGroupHiddenMenuEntriesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2183,7 +2268,10 @@ type GetGroupModulesetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2207,7 +2295,10 @@ type GetGroupNodesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2231,7 +2322,10 @@ type GetGroupRulesetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2255,7 +2349,10 @@ type GetGroupServicesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2279,7 +2376,10 @@ type GetGroupUsersParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2309,7 +2409,10 @@ type GetIpsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2333,7 +2436,10 @@ type GetIpParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2360,7 +2466,10 @@ type GetLogsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2393,7 +2502,10 @@ type GetLogParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2447,7 +2559,10 @@ type GetNodesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2565,7 +2680,10 @@ type GetNodesHardwareParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2589,7 +2707,10 @@ type GetNodesHbasParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2613,7 +2734,10 @@ type GetNodeParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2717,7 +2841,10 @@ type GetNodeAlertsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2741,7 +2868,10 @@ type GetNodeCandidateTagsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2765,7 +2895,10 @@ type GetNodeChecksParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2789,7 +2922,10 @@ type GetNodeComplianceCandidateModulesetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2813,7 +2949,10 @@ type GetNodeComplianceCandidateRulesetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2837,7 +2976,10 @@ type GetNodeComplianceLogsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2861,7 +3003,10 @@ type GetNodeComplianceModulesetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2888,7 +3033,10 @@ type GetNodeComplianceRulesetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2915,7 +3063,10 @@ type GetNodeComplianceStatusParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2939,7 +3090,10 @@ type GetNodeDisksParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2963,7 +3117,10 @@ type GetNodeHardwareParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -2987,7 +3144,10 @@ type GetNodeHbasParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3011,7 +3171,10 @@ type GetNodeInterfacesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3035,7 +3198,10 @@ type GetNodeIpsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3059,7 +3225,10 @@ type GetNodeServicesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3083,7 +3252,10 @@ type GetNodeServiceParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3113,7 +3285,10 @@ type GetNodeTagsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3143,7 +3318,10 @@ type GetObsolescenceSettingsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3179,7 +3357,10 @@ type GetObsolescenceSettingParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3218,7 +3399,10 @@ type GetServicesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3284,7 +3468,10 @@ type GetServiceParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3335,7 +3522,10 @@ type GetServiceAlertsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3359,7 +3549,10 @@ type GetServiceCandidateTagsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3383,7 +3576,10 @@ type GetServiceChecksParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3407,7 +3603,10 @@ type GetServiceComplianceCandidateModulesetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3434,7 +3633,10 @@ type GetServiceComplianceCandidateRulesetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3458,7 +3660,10 @@ type GetServiceComplianceLogsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3485,7 +3690,10 @@ type GetServiceComplianceModulesetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3524,7 +3732,10 @@ type GetServiceComplianceRulesetsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3560,7 +3771,10 @@ type GetServiceComplianceStatusParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3584,7 +3798,10 @@ type GetServiceDisksParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3608,7 +3825,10 @@ type GetServiceInstanceParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3632,7 +3852,10 @@ type GetServiceNodesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3656,7 +3879,10 @@ type GetServiceNodeParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3680,7 +3906,10 @@ type GetServiceNodeResourcesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3704,7 +3933,10 @@ type GetServiceNodeResourceLogsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3728,7 +3960,10 @@ type GetServiceResinfoParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3752,7 +3987,10 @@ type GetServiceResourcesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3776,7 +4014,10 @@ type GetServiceResourceLogsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3800,7 +4041,10 @@ type GetServiceTagsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3836,7 +4080,10 @@ type GetServicesInstancesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3873,7 +4120,10 @@ type GetServicesInstanceParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3897,7 +4147,10 @@ type GetServicesInstancesStatusLogParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3921,7 +4174,10 @@ type GetServicesStatusLogParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3951,7 +4207,10 @@ type GetTagsParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -3994,7 +4253,10 @@ type GetTagsNodesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -4039,7 +4301,10 @@ type GetTagsServicesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -4105,7 +4370,10 @@ type GetTagServicesParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -4134,7 +4402,10 @@ type GetUsersParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
@@ -4170,7 +4441,10 @@ type GetUserParams struct {
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
 
-	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit the meta field.
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
 	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.

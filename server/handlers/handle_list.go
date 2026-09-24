@@ -2,6 +2,7 @@ package serverhandlers
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -101,7 +102,62 @@ func (a *Api) handleList(
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get %s", mappingKey)
 	}
 
-	return c.JSON(http.StatusOK, newListResponse(items, mapping, query))
+	response := newListResponse(items, mapping, query)
+	if query.WithMeta && !query.WithStats {
+		response = response.withTotal(listTotal(c.Request().Context(), log, fetch, dbParams, len(items)))
+	}
+	return c.JSON(http.StatusOK, response)
+}
+
+// totalFromPage returns the list total when the page alone tells it: every row
+// was asked for, the page is not full, or the first page is empty. Only a full
+// page, or an empty page past the first, needs a count.
+func totalFromPage(limit, offset, pageLen int) (int, bool) {
+	switch {
+	case limit <= 0:
+		// No limit: the offset is not applied either, the page is the whole list.
+		return pageLen, true
+	case pageLen > 0 && pageLen < limit:
+		return offset + pageLen, true
+	case pageLen == 0 && offset == 0:
+		return 0, true
+	}
+	return 0, false
+}
+
+// listTotal counts the rows of a list without pagination, for meta.total. The
+// fetcher runs again with the same access control, filters and grouping, but
+// selects a window count instead of the columns, without sort and for one row:
+// COUNT(*) OVER () counts the rows of the final result, so a grouped list counts
+// its groups, as the historical collector did. A failed count is logged and the
+// total left out, rather than failing a list whose rows were read.
+func listTotal(ctx context.Context, log *slog.Logger, fetch listFetcher, p cdb.ListParams, pageLen int) *int {
+	if total, known := totalFromPage(p.Limit, p.Offset, pageLen); known {
+		return &total
+	}
+	count := p
+	count.CountOnly = true
+	count.SelectExprs = []string{"COUNT(*) OVER ()"}
+	count.Props = []string{"total"}
+	count.TypeHints = map[string]string{"total": "int64"}
+	count.Limit = 1
+	count.Offset = 0
+	rows, err := fetch(ctx, count)
+	if err != nil {
+		log.Error("cannot count the list rows", logkey.Error, err)
+		return nil
+	}
+	if len(rows) == 0 {
+		return intPtr(0)
+	}
+	switch n := rows[0]["total"].(type) {
+	case int64:
+		return intPtr(int(n))
+	case int:
+		return intPtr(n)
+	}
+	log.Error("unexpected list count", "value", rows[0]["total"])
+	return nil
 }
 
 // handleItem is like handleList but expects exactly one result and returns 404

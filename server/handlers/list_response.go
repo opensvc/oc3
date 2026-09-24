@@ -15,7 +15,7 @@ type listMeta struct {
 	IncludedProps  []string       `json:"included_props,omitempty"`
 	Limit          int            `json:"limit,omitempty"`
 	Offset         int            `json:"offset,omitempty"`
-	Total          int            `json:"total,omitempty"`
+	Total          *int           `json:"total,omitempty"`
 }
 
 type listResponse struct {
@@ -102,7 +102,7 @@ func newListResponse(items []map[string]any, mapping propMapping, query ListQuer
 			Data: statsData,
 			Meta: &listMeta{
 				Distinct: distinct,
-				Total:    len(items),
+				Total:    intPtr(len(items)),
 			},
 		}
 	}
@@ -124,4 +124,16 @@ func newListResponse(items []map[string]any, mapping propMapping, query ListQuer
 	}
 
 	return response
+}
+
+func intPtr(n int) *int { return &n }
+
+// withTotal sets meta.total, the number of rows of the list without pagination,
+// as the historical collector returned it along with every paginated answer. A
+// response without meta is left alone: meta=false asks for the rows only.
+func (r listResponse) withTotal(total *int) listResponse {
+	if r.Meta != nil && total != nil {
+		r.Meta.Total = total
+	}
+	return r
 }

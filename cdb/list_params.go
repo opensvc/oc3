@@ -37,6 +37,10 @@ type ListParams struct {
 
 	// Filters are the column filters of the request, combined with AND.
 	Filters []ColumnFilter
+
+	// CountOnly asks for the query of a list without its sort: the rows are only
+	// counted, see OrderByClause.
+	CountOnly bool
 }
 
 // HasGroup reports whether the caller belongs to the named group. Use it for the
@@ -51,6 +55,11 @@ func (p ListParams) HasGroup(role string) bool {
 }
 
 func (p ListParams) OrderByClause(defaultClause string) string {
+	if p.CountOnly {
+		// A count does not depend on the order of the rows: sorting them first
+		// would only cost.
+		return ""
+	}
 	if len(p.OrderBy) == 0 {
 		return "ORDER BY " + defaultClause
 	}
