@@ -228,6 +228,58 @@ type InfoResponse struct {
 	Info *string `json:"info,omitempty"`
 }
 
+// InstanceListResponse defines model for InstanceListResponse.
+type InstanceListResponse struct {
+	Data InstanceListResponse_Data `json:"data"`
+	Meta *ListMeta                 `json:"meta,omitempty"`
+}
+
+// InstanceListResponseData0 defines model for .
+type InstanceListResponseData0 = []InstanceRow
+
+// InstanceListResponseData1 defines model for .
+type InstanceListResponseData1 map[string]map[string]int
+
+// InstanceListResponse_Data defines model for InstanceListResponse.Data.
+type InstanceListResponse_Data struct {
+	union json.RawMessage
+}
+
+// InstanceRow A service instance: the state of one service on one node, as reported by
+// the agent. Every property is optional: the `props` query parameter selects
+// which columns the server returns. The `nodes.` and `services.` properties
+// come from joined tables; `nodes.` ones are null when the node row is missing.
+type InstanceRow struct {
+	MonAppstatus        *string `json:"mon_appstatus,omitempty"`
+	MonAvailstatus      *string `json:"mon_availstatus,omitempty"`
+	MonChanged          *string `json:"mon_changed,omitempty"`
+	MonContainerstatus  *string `json:"mon_containerstatus,omitempty"`
+	MonDiskstatus       *string `json:"mon_diskstatus,omitempty"`
+	MonEncapFrozenAt    *string `json:"mon_encap_frozen_at,omitempty"`
+	MonFrozen           *string `json:"mon_frozen,omitempty"`
+	MonFrozenAt         *string `json:"mon_frozen_at,omitempty"`
+	MonFsstatus         *string `json:"mon_fsstatus,omitempty"`
+	MonGuestos          *string `json:"mon_guestos,omitempty"`
+	MonHbstatus         *string `json:"mon_hbstatus,omitempty"`
+	MonIpstatus         *string `json:"mon_ipstatus,omitempty"`
+	MonOverallstatus    *string `json:"mon_overallstatus,omitempty"`
+	MonSharestatus      *string `json:"mon_sharestatus,omitempty"`
+	MonSmonGlobalExpect *string `json:"mon_smon_global_expect,omitempty"`
+	MonSmonStatus       *string `json:"mon_smon_status,omitempty"`
+	MonSvctype          *string `json:"mon_svctype,omitempty"`
+	MonSyncstatus       *string `json:"mon_syncstatus,omitempty"`
+	MonUpdated          *string `json:"mon_updated,omitempty"`
+	MonVcpus            *int    `json:"mon_vcpus,omitempty"`
+	MonVmem             *int    `json:"mon_vmem,omitempty"`
+	MonVmname           *string `json:"mon_vmname,omitempty"`
+	MonVmtype           *string `json:"mon_vmtype,omitempty"`
+	NodeId              *string `json:"node_id,omitempty"`
+	NodesNodename       *string `json:"nodes.nodename,omitempty"`
+	NodesOsName         *string `json:"nodes.os_name,omitempty"`
+	ServicesSvcname     *string `json:"services.svcname,omitempty"`
+	SvcId               *string `json:"svc_id,omitempty"`
+}
+
 // IpListResponse defines model for IpListResponse.
 type IpListResponse struct {
 	Data IpListResponse_Data `json:"data"`
@@ -3924,6 +3976,68 @@ func (t GroupListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *GroupListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsInstanceListResponseData0 returns the union data inside the InstanceListResponse_Data as a InstanceListResponseData0
+func (t InstanceListResponse_Data) AsInstanceListResponseData0() (InstanceListResponseData0, error) {
+	var body InstanceListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromInstanceListResponseData0 overwrites any union data inside the InstanceListResponse_Data as the provided InstanceListResponseData0
+func (t *InstanceListResponse_Data) FromInstanceListResponseData0(v InstanceListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeInstanceListResponseData0 performs a merge with any union data inside the InstanceListResponse_Data, using the provided InstanceListResponseData0
+func (t *InstanceListResponse_Data) MergeInstanceListResponseData0(v InstanceListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsInstanceListResponseData1 returns the union data inside the InstanceListResponse_Data as a InstanceListResponseData1
+func (t InstanceListResponse_Data) AsInstanceListResponseData1() (InstanceListResponseData1, error) {
+	var body InstanceListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromInstanceListResponseData1 overwrites any union data inside the InstanceListResponse_Data as the provided InstanceListResponseData1
+func (t *InstanceListResponse_Data) FromInstanceListResponseData1(v InstanceListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeInstanceListResponseData1 performs a merge with any union data inside the InstanceListResponse_Data, using the provided InstanceListResponseData1
+func (t *InstanceListResponse_Data) MergeInstanceListResponseData1(v InstanceListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t InstanceListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *InstanceListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

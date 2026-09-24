@@ -526,6 +526,12 @@ var propsMapping = map[string]propMapping{
 			"mon_updated":            colStr(schema.SvcmonMonUpdated),
 			"mon_changed":            colStr(schema.SvcmonMonChanged),
 		},
+		// An instance row carries only the service and node ids: the names live in
+		// the joined tables, as in the historical collector's svcmon table.
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
+		},
 	},
 	"instance_status_log": {
 		Available: []string{

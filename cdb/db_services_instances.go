@@ -10,8 +10,12 @@ import (
 )
 
 func buildServicesInstancesQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
+	// services is an inner join: the access check filters on services.svc_app.
+	// nodes is a left join so that "nodes.*" props can be selected without dropping
+	// an instance whose node row is missing.
 	q := From(schema.TSvcmon).
 		Via(schema.TServices).
+		LeftJoin(schema.TNodes).
 		RawSelect(selectExprs...)
 
 	if !isManager {

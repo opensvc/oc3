@@ -2,8 +2,10 @@ package serverhandlers
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
+	"github.com/opensvc/oc3/schema"
 	"github.com/opensvc/oc3/server"
 )
 
@@ -91,13 +93,9 @@ func buildOrderBy(orderby *server.InQueryOrderby, mapping propMapping) ([]string
 			desc = true
 			token = token[1:]
 		}
-		def, ok := mapping.Props[token]
-		if !ok {
-			return nil, fmt.Errorf("unknown orderby prop %q", token)
-		}
-		col := def.Col
-		if col == nil {
-			return nil, fmt.Errorf("prop %q cannot be used in orderby (no column reference)", token)
+		col, err := resolvePropCol(token, mapping, "orderby")
+		if err != nil {
+			return nil, err
 		}
 		expr := col.Qualified()
 		if desc {
@@ -106,4 +104,39 @@ func buildOrderBy(orderby *server.InQueryOrderby, mapping propMapping) ([]string
 		exprs = append(exprs, expr)
 	}
 	return exprs, nil
+}
+
+// resolvePropCol resolves an orderby or filter prop to its column. A
+// "table.column" prop is resolved through the mapping's Joins, the same way props
+// selection does, so that a list can be sorted or filtered by a joined name (e.g.
+// "services.svcname"). usage names the parameter in the error messages.
+func resolvePropCol(token string, mapping propMapping, usage string) (*schema.Col, error) {
+	if table, column, ok := strings.Cut(token, "."); ok {
+		jd, joinKnown := mapping.Joins[table]
+		if !joinKnown {
+			return nil, fmt.Errorf("unknown %s prop %q", usage, token)
+		}
+		refMapping, refFound := propsMapping[jd.MappingKey]
+		if !refFound {
+			return nil, fmt.Errorf("unknown %s prop %q", usage, token)
+		}
+		def, ok := refMapping.Props[column]
+		if !ok || !slices.Contains(refMapping.Available, column) {
+			return nil, fmt.Errorf("unknown %s prop %q", usage, token)
+		}
+		// The join key names the table the query joins: refuse a column that lives
+		// elsewhere, which would produce SQL referencing an absent table.
+		if def.Col == nil || def.Col.T.Name != table {
+			return nil, fmt.Errorf("prop %q cannot be used in %s (no column reference)", token, usage)
+		}
+		return def.Col, nil
+	}
+	def, ok := mapping.Props[token]
+	if !ok {
+		return nil, fmt.Errorf("unknown %s prop %q", usage, token)
+	}
+	if def.Col == nil {
+		return nil, fmt.Errorf("prop %q cannot be used in %s (no column reference)", token, usage)
+	}
+	return def.Col, nil
 }

@@ -5642,7 +5642,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/InstanceListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -6285,7 +6285,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/InstanceListResponse'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -6365,7 +6365,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/InstanceListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -7728,6 +7728,92 @@ components:
         services.svcname:
           type: string
           nullable: true
+
+    InstanceRow:
+      type: object
+      description: |
+        A service instance: the state of one service on one node, as reported by
+        the agent. Every property is optional: the `props` query parameter selects
+        which columns the server returns. The `nodes.` and `services.` properties
+        come from joined tables; `nodes.` ones are null when the node row is missing.
+      properties:
+        svc_id:
+          type: string
+        node_id:
+          type: string
+        mon_svctype:
+          type: string
+        mon_availstatus:
+          type: string
+        mon_overallstatus:
+          type: string
+        mon_smon_status:
+          type: string
+        mon_smon_global_expect:
+          type: string
+        mon_ipstatus:
+          type: string
+        mon_fsstatus:
+          type: string
+        mon_diskstatus:
+          type: string
+        mon_containerstatus:
+          type: string
+        mon_sharestatus:
+          type: string
+        mon_syncstatus:
+          type: string
+        mon_appstatus:
+          type: string
+        mon_hbstatus:
+          type: string
+        mon_frozen:
+          type: string
+        mon_frozen_at:
+          type: string
+        mon_encap_frozen_at:
+          type: string
+        mon_vmname:
+          type: string
+        mon_vmtype:
+          type: string
+        mon_guestos:
+          type: string
+        mon_vcpus:
+          type: integer
+        mon_vmem:
+          type: integer
+        mon_updated:
+          type: string
+        mon_changed:
+          type: string
+        nodes.nodename:
+          type: string
+          nullable: true
+        nodes.os_name:
+          type: string
+          nullable: true
+        services.svcname:
+          type: string
+          nullable: true
+
+    InstanceListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/InstanceRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     LogRow:
       type: object
