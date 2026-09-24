@@ -4040,6 +4040,18 @@ type GetUsersParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostUsersJSONBody defines parameters for PostUsers.
+type PostUsersJSONBody struct {
+	Email     string  `json:"email"`
+	FirstName *string `json:"first_name,omitempty"`
+	LastName  *string `json:"last_name,omitempty"`
+
+	// Password At least 8 characters. Stored as a web2py hash.
+	Password  *string `json:"password,omitempty"`
+	PhoneWork *string `json:"phone_work,omitempty"`
+	Username  *string `json:"username,omitempty"`
+}
+
 // GetUserParams defines parameters for GetUser.
 type GetUserParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -4241,6 +4253,9 @@ type PostTagNodeJSONRequestBody PostTagNodeJSONBody
 
 // PostTagServiceJSONRequestBody defines body for PostTagService for application/json ContentType.
 type PostTagServiceJSONRequestBody PostTagServiceJSONBody
+
+// PostUsersJSONRequestBody defines body for PostUsers for application/json ContentType.
+type PostUsersJSONRequestBody PostUsersJSONBody
 
 // PostUserPrefsJSONRequestBody defines body for PostUserPrefs for application/json ContentType.
 type PostUserPrefsJSONRequestBody PostUserPrefsJSONBody
