@@ -62,6 +62,8 @@ func setDefaultServerConfig() {
 	viper.SetDefault(s+".sync.timeout", "2s")
 	viper.SetDefault(s+".allow_anon_register", false)
 	viper.SetDefault(s+".log.request.level", "none")
+
+	setDefaultAuthConfig()
 }
 
 func setDefaultSchedulerConfig() {
@@ -114,7 +116,6 @@ func setDefaultDBConfig() {
 	viper.SetDefault("db.port", "3306")
 	viper.SetDefault("db.log.level", "warn")
 	viper.SetDefault("db.log.slow_query_threshold", "1s")
-
 }
 
 func setDefaultRedisConfig() {
