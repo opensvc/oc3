@@ -847,5 +847,11 @@ var propsMapping = map[string]propMapping{
 			"log_gtalk_sent": colInt(schema.LogLogGtalkSent),
 			"log_email_sent": colInt(schema.LogLogEmailSent),
 		},
+		// A log event names its node and service by id only: the names come from the
+		// joined tables, as in the historical collector's log table.
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
+		},
 	},
 }

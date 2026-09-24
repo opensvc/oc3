@@ -40,7 +40,7 @@ func (oDb *DB) GetLog(ctx context.Context, id string, p ListParams) ([]map[strin
 		return nil, fmt.Errorf("getLog: no select expressions")
 	}
 	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
-		" FROM log WHERE log.id = ?"
+		" FROM log" + logJoins + " WHERE log.id = ?"
 	args := []any{id}
 	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
 	rows, err := oDb.DB.QueryContext(ctx, query, args...)
@@ -51,13 +51,19 @@ func (oDb *DB) GetLog(ctx context.Context, id string, p ListParams) ([]map[strin
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
+// logJoins makes the "nodes." and "services." props selectable: a log event only
+// carries the ids, and most events name no node nor service (empty ids), hence the
+// LEFT JOINs.
+const logJoins = " LEFT JOIN nodes ON nodes.node_id = log.node_id" +
+	" LEFT JOIN services ON services.svc_id = log.svc_id"
+
 // GetLogs returns rows from the collector log table.
 func (oDb *DB) GetLogs(ctx context.Context, p ListParams, fset LogsFiltersetFilter) ([]map[string]any, error) {
 	if len(p.SelectExprs) == 0 {
 		return nil, fmt.Errorf("getLogs: no select expressions")
 	}
 	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
-		" FROM log WHERE log.id > 0"
+		" FROM log" + logJoins + " WHERE log.id > 0"
 	args := []any{}
 	if fset.Active {
 		query, args = appendLogsFiltersetClause(query, args, fset.NodeIDs, fset.SvcIDs)

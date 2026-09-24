@@ -3358,7 +3358,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/LogListResponse'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -3391,7 +3391,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/LogListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -7728,6 +7728,72 @@ components:
         services.svcname:
           type: string
           nullable: true
+
+    LogRow:
+      type: object
+      description: |
+        A collector log event. Every property is optional: the `props` query
+        parameter selects which columns the server returns. The message is `log_fmt`
+        with each `%(key)s` or `%(key)d` placeholder replaced by the matching value of
+        `log_dict`, a JSON object serialized as a string. `node_id` and `svc_id` are
+        empty strings when the event names no node or service; the `nodes.` and
+        `services.` properties come from LEFT JOINs and are then null.
+      properties:
+        id:
+          type: integer
+        log_action:
+          type: string
+        log_user:
+          type: string
+        log_fmt:
+          type: string
+        log_dict:
+          type: string
+          nullable: true
+        log_date:
+          type: string
+        svc_id:
+          type: string
+        node_id:
+          type: string
+        log_level:
+          type: string
+        log_entry_id:
+          type: integer
+          nullable: true
+        log_gtalk_sent:
+          type: integer
+          nullable: true
+        log_email_sent:
+          type: integer
+          nullable: true
+        nodes.nodename:
+          type: string
+          nullable: true
+        nodes.os_name:
+          type: string
+          nullable: true
+        services.svcname:
+          type: string
+          nullable: true
+
+    LogListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/LogRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     AlertListResponse:
       type: object

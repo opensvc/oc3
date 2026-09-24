@@ -301,6 +301,47 @@ type ListResponse_Data struct {
 	union json.RawMessage
 }
 
+// LogListResponse defines model for LogListResponse.
+type LogListResponse struct {
+	Data LogListResponse_Data `json:"data"`
+	Meta *ListMeta            `json:"meta,omitempty"`
+}
+
+// LogListResponseData0 defines model for .
+type LogListResponseData0 = []LogRow
+
+// LogListResponseData1 defines model for .
+type LogListResponseData1 map[string]map[string]int
+
+// LogListResponse_Data defines model for LogListResponse.Data.
+type LogListResponse_Data struct {
+	union json.RawMessage
+}
+
+// LogRow A collector log event. Every property is optional: the `props` query
+// parameter selects which columns the server returns. The message is `log_fmt`
+// with each `%(key)s` or `%(key)d` placeholder replaced by the matching value of
+// `log_dict`, a JSON object serialized as a string. `node_id` and `svc_id` are
+// empty strings when the event names no node or service; the `nodes.` and
+// `services.` properties come from LEFT JOINs and are then null.
+type LogRow struct {
+	Id              *int    `json:"id,omitempty"`
+	LogAction       *string `json:"log_action,omitempty"`
+	LogDate         *string `json:"log_date,omitempty"`
+	LogDict         *string `json:"log_dict,omitempty"`
+	LogEmailSent    *int    `json:"log_email_sent,omitempty"`
+	LogEntryId      *int    `json:"log_entry_id,omitempty"`
+	LogFmt          *string `json:"log_fmt,omitempty"`
+	LogGtalkSent    *int    `json:"log_gtalk_sent,omitempty"`
+	LogLevel        *string `json:"log_level,omitempty"`
+	LogUser         *string `json:"log_user,omitempty"`
+	NodeId          *string `json:"node_id,omitempty"`
+	NodesNodename   *string `json:"nodes.nodename,omitempty"`
+	NodesOsName     *string `json:"nodes.os_name,omitempty"`
+	ServicesSvcname *string `json:"services.svcname,omitempty"`
+	SvcId           *string `json:"svc_id,omitempty"`
+}
+
 // NodeListResponse defines model for NodeListResponse.
 type NodeListResponse struct {
 	Data NodeListResponse_Data `json:"data"`
@@ -4007,6 +4048,68 @@ func (t ListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsLogListResponseData0 returns the union data inside the LogListResponse_Data as a LogListResponseData0
+func (t LogListResponse_Data) AsLogListResponseData0() (LogListResponseData0, error) {
+	var body LogListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromLogListResponseData0 overwrites any union data inside the LogListResponse_Data as the provided LogListResponseData0
+func (t *LogListResponse_Data) FromLogListResponseData0(v LogListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeLogListResponseData0 performs a merge with any union data inside the LogListResponse_Data, using the provided LogListResponseData0
+func (t *LogListResponse_Data) MergeLogListResponseData0(v LogListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsLogListResponseData1 returns the union data inside the LogListResponse_Data as a LogListResponseData1
+func (t LogListResponse_Data) AsLogListResponseData1() (LogListResponseData1, error) {
+	var body LogListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromLogListResponseData1 overwrites any union data inside the LogListResponse_Data as the provided LogListResponseData1
+func (t *LogListResponse_Data) FromLogListResponseData1(v LogListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeLogListResponseData1 performs a merge with any union data inside the LogListResponse_Data, using the provided LogListResponseData1
+func (t *LogListResponse_Data) MergeLogListResponseData1(v LogListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t LogListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *LogListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
