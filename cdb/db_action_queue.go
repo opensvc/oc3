@@ -217,3 +217,68 @@ func (oDb *DB) EnqueueNodeAction(ctx context.Context, nodeID, actionType, comman
 	oDb.SetChange("action_queue")
 	return id, nil
 }
+
+// ServiceLiveNode returns a node of the service seen alive in the last 15 minutes,
+// as get_svc_live_nodes() does, plus the agent version an action command needs.
+func (oDb *DB) ServiceLiveNode(ctx context.Context, svcID string) (*NodeActionTarget, string, error) {
+	const query = "SELECT nodes.node_id, COALESCE(nodes.nodename, ''), COALESCE(nodes.os_name, '')," +
+		" COALESCE(nodes.action_type, ''), COALESCE(nodes.collector, ''), COALESCE(nodes.connect_to, '')," +
+		" COALESCE(nodes.version, '')" +
+		" FROM svcmon JOIN nodes ON nodes.node_id = svcmon.node_id" +
+		" WHERE svcmon.svc_id = ? AND nodes.last_comm > NOW() - INTERVAL 15 MINUTE" +
+		" ORDER BY nodes.nodename LIMIT 1"
+	var t NodeActionTarget
+	var version string
+	err := oDb.DB.QueryRowContext(ctx, query, svcID).
+		Scan(&t.NodeID, &t.Nodename, &t.OSName, &t.ActionType, &t.Collector, &t.ConnectTo, &version)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, "", nil
+	case err != nil:
+		return nil, "", fmt.Errorf("serviceLiveNode: %w", err)
+	}
+	return &t, version, nil
+}
+
+// NodeAgentVersion returns the agent version reported by a node, empty when unknown.
+func (oDb *DB) NodeAgentVersion(ctx context.Context, nodeID string) (string, error) {
+	var version string
+	err := oDb.DB.QueryRowContext(ctx, "SELECT COALESCE(version, '') FROM nodes WHERE node_id = ?", nodeID).Scan(&version)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", nil
+	case err != nil:
+		return "", fmt.Errorf("nodeAgentVersion: %w", err)
+	}
+	return version, nil
+}
+
+// HasServiceInstance reports whether the service runs on that node.
+func (oDb *DB) HasServiceInstance(ctx context.Context, svcID, nodeID string) (bool, error) {
+	var one int
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT 1 FROM svcmon WHERE svc_id = ? AND node_id = ? LIMIT 1", svcID, nodeID).Scan(&one)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("hasServiceInstance: %w", err)
+	}
+	return true, nil
+}
+
+// EnqueueServiceAction posts a service action to the action queue and returns its id.
+func (oDb *DB) EnqueueServiceAction(ctx context.Context, nodeID, svcID, actionType, command, connectTo string, userID *int64) (int64, error) {
+	const query = "INSERT INTO action_queue (node_id, svc_id, action_type, command, user_id, connect_to)" +
+		" VALUES (?, ?, ?, ?, ?, ?)"
+	res, err := oDb.ExecContext(ctx, query, nodeID, svcID, actionType, command, userID, connectTo)
+	if err != nil {
+		return 0, fmt.Errorf("enqueueServiceAction: %w", err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("enqueueServiceAction lastInsertId: %w", err)
+	}
+	oDb.SetChange("action_queue")
+	return id, nil
+}

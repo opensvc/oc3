@@ -268,38 +268,86 @@ func (e PostNodeJSONBodyActionType) Valid() bool {
 
 // Defines values for PostNodeActionJSONBodyAction.
 const (
-	Checks    PostNodeActionJSONBodyAction = "checks"
-	Freeze    PostNodeActionJSONBodyAction = "freeze"
-	Pushasset PostNodeActionJSONBodyAction = "pushasset"
-	Pushdisks PostNodeActionJSONBodyAction = "pushdisks"
-	Pushpatch PostNodeActionJSONBodyAction = "pushpatch"
-	Pushpkg   PostNodeActionJSONBodyAction = "pushpkg"
-	Pushstats PostNodeActionJSONBodyAction = "pushstats"
-	Scanscsi  PostNodeActionJSONBodyAction = "scanscsi"
-	Sysreport PostNodeActionJSONBodyAction = "sysreport"
-	Thaw      PostNodeActionJSONBodyAction = "thaw"
+	PostNodeActionJSONBodyActionChecks    PostNodeActionJSONBodyAction = "checks"
+	PostNodeActionJSONBodyActionFreeze    PostNodeActionJSONBodyAction = "freeze"
+	PostNodeActionJSONBodyActionPushasset PostNodeActionJSONBodyAction = "pushasset"
+	PostNodeActionJSONBodyActionPushdisks PostNodeActionJSONBodyAction = "pushdisks"
+	PostNodeActionJSONBodyActionPushpatch PostNodeActionJSONBodyAction = "pushpatch"
+	PostNodeActionJSONBodyActionPushpkg   PostNodeActionJSONBodyAction = "pushpkg"
+	PostNodeActionJSONBodyActionPushstats PostNodeActionJSONBodyAction = "pushstats"
+	PostNodeActionJSONBodyActionScanscsi  PostNodeActionJSONBodyAction = "scanscsi"
+	PostNodeActionJSONBodyActionSysreport PostNodeActionJSONBodyAction = "sysreport"
+	PostNodeActionJSONBodyActionThaw      PostNodeActionJSONBodyAction = "thaw"
 )
 
 // Valid indicates whether the value is a known member of the PostNodeActionJSONBodyAction enum.
 func (e PostNodeActionJSONBodyAction) Valid() bool {
 	switch e {
-	case Checks:
+	case PostNodeActionJSONBodyActionChecks:
 		return true
+	case PostNodeActionJSONBodyActionFreeze:
+		return true
+	case PostNodeActionJSONBodyActionPushasset:
+		return true
+	case PostNodeActionJSONBodyActionPushdisks:
+		return true
+	case PostNodeActionJSONBodyActionPushpatch:
+		return true
+	case PostNodeActionJSONBodyActionPushpkg:
+		return true
+	case PostNodeActionJSONBodyActionPushstats:
+		return true
+	case PostNodeActionJSONBodyActionScanscsi:
+		return true
+	case PostNodeActionJSONBodyActionSysreport:
+		return true
+	case PostNodeActionJSONBodyActionThaw:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostServiceActionJSONBodyAction.
+const (
+	PostServiceActionJSONBodyActionFreeze      PostServiceActionJSONBodyAction = "freeze"
+	PostServiceActionJSONBodyActionPushConfig  PostServiceActionJSONBodyAction = "push config"
+	PostServiceActionJSONBodyActionPushResinfo PostServiceActionJSONBodyAction = "push resinfo"
+	PostServiceActionJSONBodyActionThaw        PostServiceActionJSONBodyAction = "thaw"
+)
+
+// Valid indicates whether the value is a known member of the PostServiceActionJSONBodyAction enum.
+func (e PostServiceActionJSONBodyAction) Valid() bool {
+	switch e {
+	case PostServiceActionJSONBodyActionFreeze:
+		return true
+	case PostServiceActionJSONBodyActionPushConfig:
+		return true
+	case PostServiceActionJSONBodyActionPushResinfo:
+		return true
+	case PostServiceActionJSONBodyActionThaw:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostServiceInstanceActionJSONBodyAction.
+const (
+	Freeze      PostServiceInstanceActionJSONBodyAction = "freeze"
+	PushConfig  PostServiceInstanceActionJSONBodyAction = "push config"
+	PushResinfo PostServiceInstanceActionJSONBodyAction = "push resinfo"
+	Thaw        PostServiceInstanceActionJSONBodyAction = "thaw"
+)
+
+// Valid indicates whether the value is a known member of the PostServiceInstanceActionJSONBodyAction enum.
+func (e PostServiceInstanceActionJSONBodyAction) Valid() bool {
+	switch e {
 	case Freeze:
 		return true
-	case Pushasset:
+	case PushConfig:
 		return true
-	case Pushdisks:
-		return true
-	case Pushpatch:
-		return true
-	case Pushpkg:
-		return true
-	case Pushstats:
-		return true
-	case Scanscsi:
-		return true
-	case Sysreport:
+	case PushResinfo:
 		return true
 	case Thaw:
 		return true
@@ -3281,6 +3329,15 @@ type PostServiceJSONBody struct {
 	Svcname                 *string `json:"svcname,omitempty"`
 }
 
+// PostServiceActionJSONBody defines parameters for PostServiceAction.
+type PostServiceActionJSONBody struct {
+	// Action Action to queue
+	Action PostServiceActionJSONBodyAction `json:"action"`
+}
+
+// PostServiceActionJSONBodyAction defines parameters for PostServiceAction.
+type PostServiceActionJSONBodyAction string
+
 // GetServiceAlertsParams defines parameters for GetServiceAlerts.
 type GetServiceAlertsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -3577,6 +3634,15 @@ type GetServiceInstanceParams struct {
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
+
+// PostServiceInstanceActionJSONBody defines parameters for PostServiceInstanceAction.
+type PostServiceInstanceActionJSONBody struct {
+	// Action Action to queue
+	Action PostServiceInstanceActionJSONBodyAction `json:"action"`
+}
+
+// PostServiceInstanceActionJSONBodyAction defines parameters for PostServiceInstanceAction.
+type PostServiceInstanceActionJSONBodyAction string
 
 // GetServiceNodesParams defines parameters for GetServiceNodes.
 type GetServiceNodesParams struct {
@@ -4277,6 +4343,12 @@ type PostServicesJSONRequestBody PostServicesJSONBody
 
 // PostServiceJSONRequestBody defines body for PostService for application/json ContentType.
 type PostServiceJSONRequestBody PostServiceJSONBody
+
+// PostServiceActionJSONRequestBody defines body for PostServiceAction for application/json ContentType.
+type PostServiceActionJSONRequestBody PostServiceActionJSONBody
+
+// PostServiceInstanceActionJSONRequestBody defines body for PostServiceInstanceAction for application/json ContentType.
+type PostServiceInstanceActionJSONRequestBody PostServiceInstanceActionJSONBody
 
 // DeleteServicesInstancesJSONRequestBody defines body for DeleteServicesInstances for application/json ContentType.
 type DeleteServicesInstancesJSONRequestBody DeleteServicesInstancesJSONBody

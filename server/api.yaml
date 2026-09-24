@@ -5719,6 +5719,142 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /services/{svc_id}/actions:
+    post:
+      operationId: PostServiceAction
+      description: |
+        Queue an agent action on a service, as the historical collector action menu
+        did: the action is posted for a node of the service seen alive in the last
+        15 minutes, and asks the agent to act on the whole service rather than on
+        that one instance. Requires the NodeExec privilege and responsibility for
+        the service.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service identifier (svc_id UUID or svcname)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  type: string
+                  description: Action to queue
+                  enum:
+                    - push resinfo
+                    - push config
+                    - freeze
+                    - thaw
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    format: int64
+                    description: Action queue entry id
+                  command:
+                    type: string
+                    description: Command queued for the agent
+                  node_id:
+                    type: string
+                    description: Node the action was queued on
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          description: No node of the service has been seen alive recently
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
+  /services/{svc_id}/instances/{node_id}/actions:
+    post:
+      operationId: PostServiceInstanceAction
+      description: |
+        Queue an agent action on one service instance, acting on that node only.
+        Requires the NodeExec privilege and responsibility for both the service and
+        the node.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service identifier (svc_id UUID or svcname)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inPathNodeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  type: string
+                  description: Action to queue
+                  enum:
+                    - push resinfo
+                    - push config
+                    - freeze
+                    - thaw
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    format: int64
+                    description: Action queue entry id
+                  command:
+                    type: string
+                    description: Command queued for the agent
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - collector
+
   /services/{svc_id}/instances/{node_id}:
     delete:
       operationId: DeleteServiceInstance
