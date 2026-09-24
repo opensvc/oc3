@@ -22,6 +22,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -2042,6 +2043,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -2077,6 +2079,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -3671,6 +3674,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -5179,6 +5183,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -6558,6 +6563,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -9053,6 +9059,28 @@ components:
       description: Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
       schema:
         type: string
+
+    inQueryFilter:
+      in: query
+      name: filter
+      required: false
+      description: |
+        Column filter, repeatable; several filters combine with AND. Each value is
+        `prop:expr`, `prop` being a property of the list (joined ones included, as
+        for orderby) and `expr` one of:
+          - text: case-insensitive match anywhere in the value;
+          - `~regex`: regular expression (RE2 syntax), case-insensitive;
+          - `in:a,b,c`: one of the listed values;
+          - `eq:v`, `ne:v`: equal, not equal;
+          - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+          - `empty`, `!empty`: no value, any value.
+        An unknown property, a property without a column, or an invalid regular
+        expression is answered with 400.
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
 
     inQueryProps:
       in: query

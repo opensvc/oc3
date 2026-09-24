@@ -15,6 +15,7 @@ func (a *Api) GetNodes(c echo.Context, params server.GetNodesParams) error {
 	return a.handleList(c, "GetNodes", "node", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
+		filter: params.Filter,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return odb.GetNodes(ctx, p)
 	})

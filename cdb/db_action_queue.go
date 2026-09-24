@@ -109,6 +109,12 @@ func buildActionsQuery(p ListParams, idCond string, idArgs []any) (string, []any
 		}
 	}
 
+	// Column filters of the request: the nodes and services joins are always in
+	// place here, so a filter on their names needs nothing more.
+	filterConds, filterArgs := p.FilterConditions()
+	conds = append(conds, filterConds...)
+	args = append(args, filterArgs...)
+
 	if len(conds) > 0 {
 		sb.WriteString("\nWHERE " + strings.Join(conds, " AND "))
 	}

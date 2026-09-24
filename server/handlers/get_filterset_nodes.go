@@ -36,6 +36,7 @@ func (a *Api) GetFiltersetNodes(c echo.Context, filtersetId string, params serve
 	return a.handleList(c, "GetFiltersetNodes", "node", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
+		filter: params.Filter,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetNodesByIDs(ctx, nodeIDs, p)
 	})

@@ -24,6 +24,7 @@ type listEndpointParams struct {
 	stats   *server.InQueryStats
 	orderby *server.InQueryOrderby
 	groupby *server.InQueryGroupby
+	filter  *server.InQueryFilter
 
 	// withUserID asks for the authenticated user's id to be forwarded in
 	// cdb.ListParams. Set it only on the endpoints whose access control
@@ -51,6 +52,11 @@ func (a *Api) handleList(
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
 
+	filters, err := buildFilters(p.filter, mapping)
+	if err != nil {
+		return JSONProblem(c, http.StatusBadRequest, err.Error())
+	}
+
 	log := echolog.GetLogHandler(c, handlerName)
 	groups := UserGroupsFromContext(c)
 	isManager := IsManager(c)
@@ -63,6 +69,7 @@ func (a *Api) handleList(
 		"stats", query.WithStats,
 		"orderby", query.OrderBy,
 		"groupby", query.GroupBy,
+		"filters", len(filters),
 		"is_manager", isManager,
 	)
 
@@ -82,6 +89,7 @@ func (a *Api) handleList(
 		TypeHints:   buildTypeHints(query.Props, mapping),
 		OrderBy:     query.OrderBy,
 		GroupBy:     query.GroupBy,
+		Filters:     filters,
 	}
 	if p.withUserID {
 		dbParams.UserID = authUserID(c)

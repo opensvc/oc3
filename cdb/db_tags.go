@@ -318,7 +318,7 @@ func (oDb *DB) DetachServiceTag(ctx context.Context, svcID, tagID string) (int64
 
 // GetTagNodes returns nodes where a tag (by integer id) is attached, with app-based auth.
 func (oDb *DB) GetTagNodes(ctx context.Context, tagID int, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -486,7 +486,7 @@ func (oDb *DB) GetServiceCandidateTags(ctx context.Context, svcID string, p List
 
 // GetTagServices returns services where a tag (by integer id) is attached, with app-based auth.
 func (oDb *DB) GetTagServices(ctx context.Context, tagID int, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}

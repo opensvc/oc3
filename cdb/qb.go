@@ -143,6 +143,15 @@ func (q *Query) WhereRaw(expr string, args ...any) *Query {
 	return q
 }
 
+// WhereFilters adds the column filters of a list request. Each carries its column,
+// so a filter on a joined table not otherwise selected still gets its join.
+func (q *Query) WhereFilters(filters []ColumnFilter) *Query {
+	for _, f := range filters {
+		q.wheres = append(q.wheres, condition{col: f.Col, expr: f.Expr, args: f.Args})
+	}
+	return q
+}
+
 // WhereIn adds a "col IN (?,...)" condition. Produces "1=0" for an empty slice.
 func (q *Query) WhereIn(col *schema.Col, vals []string) *Query {
 	if len(vals) == 0 {

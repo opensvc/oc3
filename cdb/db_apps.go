@@ -366,7 +366,7 @@ func (oDb *DB) GetAppNodes(ctx context.Context, appIDOrName string, p ListParams
 		}
 	}
 
-	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +407,7 @@ func (oDb *DB) GetAppServices(ctx context.Context, appIDOrName string, p ListPar
 		}
 	}
 
-	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}

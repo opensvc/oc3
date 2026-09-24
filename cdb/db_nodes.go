@@ -50,7 +50,7 @@ func (n *DBNode) String() string {
 	return fmt.Sprintf("node: {nodename: %s, node_id: %s, cluster_id: %s, app: %s}", n.Nodename, n.NodeID, n.ClusterID, n.App)
 }
 
-func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
+func buildNodesQuery(groups []string, isManager bool, selectExprs []string, filters []ColumnFilter) (string, []any, error) {
 	q := From(schema.TNodes).
 		// A node may name no cluster, or one the collector does not know: a plain join
 		// would then drop the row.
@@ -80,6 +80,9 @@ func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (str
 		q = q.Where(schema.NodesID, ">", 0)
 	}
 
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(filters)
+
 	query, args, err := q.Build()
 	if err != nil {
 		return "", nil, fmt.Errorf("buildNodesQuery: %w", err)
@@ -88,7 +91,7 @@ func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (str
 }
 
 func (oDb *DB) GetNodes(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +112,7 @@ func (oDb *DB) GetNodes(ctx context.Context, p ListParams) ([]map[string]any, er
 
 // GetNodesByIDs fetches nodes whose node_id is in the given list.
 func (oDb *DB) GetNodesByIDs(ctx context.Context, ids []string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +141,7 @@ func (oDb *DB) GetNodesByIDs(ctx context.Context, ids []string, p ListParams) ([
 
 // GetNode fetches a single node by node_id or nodename.
 func (oDb *DB) GetNode(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
