@@ -1762,7 +1762,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/FiltersetListResponse'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -1788,6 +1788,7 @@ paths:
                   description: Name of the filterset to create, or of the filterset to update
                 fset_stats:
                   type: string
+                  enum: ['T', 'F']
                   description: Whether the filterset is a stats filterset (T or F)
       tags:
         - collector
@@ -1797,7 +1798,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/FiltersetListResponse'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -1879,6 +1880,7 @@ paths:
                   type: string
                 fset_stats:
                   type: string
+                  enum: ['T', 'F']
       tags:
         - collector
       responses:
@@ -1887,7 +1889,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/FiltersetListResponse'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -1959,7 +1961,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/FiltersetListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -1988,7 +1990,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/FiltersetUsageResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -2016,7 +2018,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/FiltersetExport'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -2119,7 +2121,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/FiltersetFilterListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -2156,6 +2158,7 @@ paths:
                   type: integer
                 f_log_op:
                   type: string
+                  enum: ['AND', 'AND NOT', 'OR', 'OR NOT']
       tags:
         - collector
       responses:
@@ -2247,7 +2250,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/FiltersetListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -2284,6 +2287,7 @@ paths:
                   type: integer
                 f_log_op:
                   type: string
+                  enum: ['AND', 'AND NOT', 'OR', 'OR NOT']
       tags:
         - collector
       responses:
@@ -2374,6 +2378,7 @@ paths:
                   description: Filter record id, or filter label
                 f_log_op:
                   type: string
+                  enum: ['AND', 'AND NOT', 'OR', 'OR NOT']
                   description: Logical operator joining this filter to the previous one
                 f_order:
                   type: integer
@@ -2472,6 +2477,7 @@ paths:
                   description: Child filterset record id, or name
                 f_log_op:
                   type: string
+                  enum: ['AND', 'AND NOT', 'OR', 'OR NOT']
                   description: Logical operator joining this filterset to the previous entry
                 f_order:
                   type: integer
@@ -7987,6 +7993,193 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    FiltersetRow:
+      type: object
+      description: |
+        A filterset: an ordered combination of filters and other filtersets that
+        selects nodes and services. Every property is optional: the `props` query
+        parameter selects which columns the server returns.
+      properties:
+        id:
+          type: integer
+        fset_name:
+          type: string
+        fset_stats:
+          type: string
+          description: T for a stats filterset, F otherwise.
+        fset_author:
+          type: string
+        fset_updated:
+          type: string
+
+    FiltersetListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/FiltersetRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    FiltersetFilterRow:
+      type: object
+      description: |
+        A filter attached to a filterset: the filter properties, plus its position
+        (`f_order`) and the logical operator joining it to the previous entry.
+      properties:
+        id:
+          type: integer
+        f_table:
+          type: string
+        f_field:
+          type: string
+        f_op:
+          type: string
+        f_value:
+          type: string
+          nullable: true
+        f_label:
+          type: string
+        f_cksum:
+          type: string
+        f_author:
+          type: string
+        f_updated:
+          type: string
+        f_log_op:
+          type: string
+        f_order:
+          type: integer
+        fset_id:
+          type: integer
+        encap_fset_id:
+          type: integer
+          nullable: true
+        join_id:
+          type: integer
+
+    FiltersetFilterListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/FiltersetFilterRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    FiltersetUsageResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required: [filtersets, rulesets, thresholds]
+          properties:
+            filtersets:
+              type: array
+              description: Filtersets encapsulating this one.
+              items:
+                $ref: '#/components/schemas/FiltersetRef'
+            rulesets:
+              type: array
+              description: Compliance rulesets restricted by this filterset. The ruleset name is in `fset_name`.
+              items:
+                $ref: '#/components/schemas/FiltersetRef'
+            thresholds:
+              type: array
+              description: Check thresholds, as "chk_type.chk_instance:low-high".
+              items:
+                type: string
+
+    FiltersetRef:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: integer
+        fset_name:
+          type: string
+
+    FiltersetExport:
+      type: object
+      description: |
+        A filterset and every filterset it encapsulates, recursively, each with its
+        ordered entries. An entry holds either a filter or the name of an
+        encapsulated filterset.
+      required: [filtersets]
+      properties:
+        filtersets:
+          type: array
+          items:
+            $ref: '#/components/schemas/FiltersetExportItem'
+
+    FiltersetExportItem:
+      type: object
+      required: [id, fset_name, filters]
+      properties:
+        id:
+          type: integer
+        fset_name:
+          type: string
+        fset_stats:
+          type: string
+          nullable: true
+        filters:
+          type: array
+          items:
+            $ref: '#/components/schemas/FiltersetExportEntry'
+
+    FiltersetExportEntry:
+      type: object
+      required: [f_log_op, f_order]
+      properties:
+        f_log_op:
+          type: string
+        f_order:
+          type: integer
+        filter:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/FiltersetExportFilter'
+        filterset:
+          type: string
+          nullable: true
+          description: Name of the encapsulated filterset, when the entry is not a filter.
+
+    FiltersetExportFilter:
+      type: object
+      required: [id, f_table, f_field, f_op, f_value]
+      properties:
+        id:
+          type: integer
+        f_table:
+          type: string
+        f_field:
+          type: string
+        f_op:
+          type: string
+        f_value:
+          type: string
 
     AlertListResponse:
       type: object

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 
@@ -33,10 +35,13 @@ func (a *Api) PostFiltersetFilterset(c echo.Context, filtersetId string, childId
 
 	log.Info("called", "filterset_id", filtersetId, "child_id", childId)
 
-	return a.postFiltersetFilterset(c, log, ctx, filtersetId, childId, body.FLogOp, body.FOrder)
+	return a.postFiltersetFilterset(c, log, ctx, filtersetId, childId, stringPtr(body.FLogOp), body.FOrder)
 }
 
 func (a *Api) postFiltersetFilterset(c echo.Context, log *slog.Logger, ctx context.Context, filtersetId, childId string, fLogOp *string, fOrder *int) error {
+	if fLogOp != nil && !slices.Contains(filtersetLogOps, *fLogOp) {
+		return JSONProblemf(c, http.StatusBadRequest, "f_log_op must be one of %s", strings.Join(filtersetLogOps, ", "))
+	}
 	odb := a.ODB
 
 	parentID, found, err := odb.FiltersetID(ctx, filtersetId)

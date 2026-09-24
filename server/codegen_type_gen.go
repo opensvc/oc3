@@ -98,6 +98,138 @@ func (e PostFilterJSONBodyFOp) Valid() bool {
 	}
 }
 
+// Defines values for PostFiltersetsJSONBodyFsetStats.
+const (
+	PostFiltersetsJSONBodyFsetStatsF PostFiltersetsJSONBodyFsetStats = "F"
+	PostFiltersetsJSONBodyFsetStatsT PostFiltersetsJSONBodyFsetStats = "T"
+)
+
+// Valid indicates whether the value is a known member of the PostFiltersetsJSONBodyFsetStats enum.
+func (e PostFiltersetsJSONBodyFsetStats) Valid() bool {
+	switch e {
+	case PostFiltersetsJSONBodyFsetStatsF:
+		return true
+	case PostFiltersetsJSONBodyFsetStatsT:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostFiltersetJSONBodyFsetStats.
+const (
+	PostFiltersetJSONBodyFsetStatsF PostFiltersetJSONBodyFsetStats = "F"
+	PostFiltersetJSONBodyFsetStatsT PostFiltersetJSONBodyFsetStats = "T"
+)
+
+// Valid indicates whether the value is a known member of the PostFiltersetJSONBodyFsetStats enum.
+func (e PostFiltersetJSONBodyFsetStats) Valid() bool {
+	switch e {
+	case PostFiltersetJSONBodyFsetStatsF:
+		return true
+	case PostFiltersetJSONBodyFsetStatsT:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostFiltersetFilterJSONBodyFLogOp.
+const (
+	PostFiltersetFilterJSONBodyFLogOpAND    PostFiltersetFilterJSONBodyFLogOp = "AND"
+	PostFiltersetFilterJSONBodyFLogOpANDNOT PostFiltersetFilterJSONBodyFLogOp = "AND NOT"
+	PostFiltersetFilterJSONBodyFLogOpOR     PostFiltersetFilterJSONBodyFLogOp = "OR"
+	PostFiltersetFilterJSONBodyFLogOpORNOT  PostFiltersetFilterJSONBodyFLogOp = "OR NOT"
+)
+
+// Valid indicates whether the value is a known member of the PostFiltersetFilterJSONBodyFLogOp enum.
+func (e PostFiltersetFilterJSONBodyFLogOp) Valid() bool {
+	switch e {
+	case PostFiltersetFilterJSONBodyFLogOpAND:
+		return true
+	case PostFiltersetFilterJSONBodyFLogOpANDNOT:
+		return true
+	case PostFiltersetFilterJSONBodyFLogOpOR:
+		return true
+	case PostFiltersetFilterJSONBodyFLogOpORNOT:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostFiltersetFiltersetJSONBodyFLogOp.
+const (
+	PostFiltersetFiltersetJSONBodyFLogOpAND    PostFiltersetFiltersetJSONBodyFLogOp = "AND"
+	PostFiltersetFiltersetJSONBodyFLogOpANDNOT PostFiltersetFiltersetJSONBodyFLogOp = "AND NOT"
+	PostFiltersetFiltersetJSONBodyFLogOpOR     PostFiltersetFiltersetJSONBodyFLogOp = "OR"
+	PostFiltersetFiltersetJSONBodyFLogOpORNOT  PostFiltersetFiltersetJSONBodyFLogOp = "OR NOT"
+)
+
+// Valid indicates whether the value is a known member of the PostFiltersetFiltersetJSONBodyFLogOp enum.
+func (e PostFiltersetFiltersetJSONBodyFLogOp) Valid() bool {
+	switch e {
+	case PostFiltersetFiltersetJSONBodyFLogOpAND:
+		return true
+	case PostFiltersetFiltersetJSONBodyFLogOpANDNOT:
+		return true
+	case PostFiltersetFiltersetJSONBodyFLogOpOR:
+		return true
+	case PostFiltersetFiltersetJSONBodyFLogOpORNOT:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostFiltersetsFiltersJSONBodyFLogOp.
+const (
+	PostFiltersetsFiltersJSONBodyFLogOpAND    PostFiltersetsFiltersJSONBodyFLogOp = "AND"
+	PostFiltersetsFiltersJSONBodyFLogOpANDNOT PostFiltersetsFiltersJSONBodyFLogOp = "AND NOT"
+	PostFiltersetsFiltersJSONBodyFLogOpOR     PostFiltersetsFiltersJSONBodyFLogOp = "OR"
+	PostFiltersetsFiltersJSONBodyFLogOpORNOT  PostFiltersetsFiltersJSONBodyFLogOp = "OR NOT"
+)
+
+// Valid indicates whether the value is a known member of the PostFiltersetsFiltersJSONBodyFLogOp enum.
+func (e PostFiltersetsFiltersJSONBodyFLogOp) Valid() bool {
+	switch e {
+	case PostFiltersetsFiltersJSONBodyFLogOpAND:
+		return true
+	case PostFiltersetsFiltersJSONBodyFLogOpANDNOT:
+		return true
+	case PostFiltersetsFiltersJSONBodyFLogOpOR:
+		return true
+	case PostFiltersetsFiltersJSONBodyFLogOpORNOT:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostFiltersetsFiltersetsJSONBodyFLogOp.
+const (
+	PostFiltersetsFiltersetsJSONBodyFLogOpAND    PostFiltersetsFiltersetsJSONBodyFLogOp = "AND"
+	PostFiltersetsFiltersetsJSONBodyFLogOpANDNOT PostFiltersetsFiltersetsJSONBodyFLogOp = "AND NOT"
+	PostFiltersetsFiltersetsJSONBodyFLogOpOR     PostFiltersetsFiltersetsJSONBodyFLogOp = "OR"
+	PostFiltersetsFiltersetsJSONBodyFLogOpORNOT  PostFiltersetsFiltersetsJSONBodyFLogOp = "OR NOT"
+)
+
+// Valid indicates whether the value is a known member of the PostFiltersetsFiltersetsJSONBodyFLogOp enum.
+func (e PostFiltersetsFiltersetsJSONBodyFLogOp) Valid() bool {
+	switch e {
+	case PostFiltersetsFiltersetsJSONBodyFLogOpAND:
+		return true
+	case PostFiltersetsFiltersetsJSONBodyFLogOpANDNOT:
+		return true
+	case PostFiltersetsFiltersetsJSONBodyFLogOpOR:
+		return true
+	case PostFiltersetsFiltersetsJSONBodyFLogOpORNOT:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PostNodesJSONBodyActionType.
 const (
 	PostNodesJSONBodyActionTypePull PostNodesJSONBodyActionType = "pull"
@@ -278,6 +410,126 @@ type FilterRow struct {
 	FUpdated *string `json:"f_updated,omitempty"`
 	FValue   *string `json:"f_value,omitempty"`
 	Id       *int    `json:"id,omitempty"`
+}
+
+// FiltersetExport A filterset and every filterset it encapsulates, recursively, each with its
+// ordered entries. An entry holds either a filter or the name of an
+// encapsulated filterset.
+type FiltersetExport struct {
+	Filtersets []FiltersetExportItem `json:"filtersets"`
+}
+
+// FiltersetExportEntry defines model for FiltersetExportEntry.
+type FiltersetExportEntry struct {
+	FLogOp string                 `json:"f_log_op"`
+	FOrder int                    `json:"f_order"`
+	Filter *FiltersetExportFilter `json:"filter,omitempty"`
+
+	// Filterset Name of the encapsulated filterset, when the entry is not a filter.
+	Filterset *string `json:"filterset,omitempty"`
+}
+
+// FiltersetExportFilter defines model for FiltersetExportFilter.
+type FiltersetExportFilter struct {
+	FField string `json:"f_field"`
+	FOp    string `json:"f_op"`
+	FTable string `json:"f_table"`
+	FValue string `json:"f_value"`
+	Id     int    `json:"id"`
+}
+
+// FiltersetExportItem defines model for FiltersetExportItem.
+type FiltersetExportItem struct {
+	Filters   []FiltersetExportEntry `json:"filters"`
+	FsetName  string                 `json:"fset_name"`
+	FsetStats *string                `json:"fset_stats,omitempty"`
+	Id        int                    `json:"id"`
+}
+
+// FiltersetFilterListResponse defines model for FiltersetFilterListResponse.
+type FiltersetFilterListResponse struct {
+	Data FiltersetFilterListResponse_Data `json:"data"`
+	Meta *ListMeta                        `json:"meta,omitempty"`
+}
+
+// FiltersetFilterListResponseData0 defines model for .
+type FiltersetFilterListResponseData0 = []FiltersetFilterRow
+
+// FiltersetFilterListResponseData1 defines model for .
+type FiltersetFilterListResponseData1 map[string]map[string]int
+
+// FiltersetFilterListResponse_Data defines model for FiltersetFilterListResponse.Data.
+type FiltersetFilterListResponse_Data struct {
+	union json.RawMessage
+}
+
+// FiltersetFilterRow A filter attached to a filterset: the filter properties, plus its position
+// (`f_order`) and the logical operator joining it to the previous entry.
+type FiltersetFilterRow struct {
+	EncapFsetId *int    `json:"encap_fset_id,omitempty"`
+	FAuthor     *string `json:"f_author,omitempty"`
+	FCksum      *string `json:"f_cksum,omitempty"`
+	FField      *string `json:"f_field,omitempty"`
+	FLabel      *string `json:"f_label,omitempty"`
+	FLogOp      *string `json:"f_log_op,omitempty"`
+	FOp         *string `json:"f_op,omitempty"`
+	FOrder      *int    `json:"f_order,omitempty"`
+	FTable      *string `json:"f_table,omitempty"`
+	FUpdated    *string `json:"f_updated,omitempty"`
+	FValue      *string `json:"f_value,omitempty"`
+	FsetId      *int    `json:"fset_id,omitempty"`
+	Id          *int    `json:"id,omitempty"`
+	JoinId      *int    `json:"join_id,omitempty"`
+}
+
+// FiltersetListResponse defines model for FiltersetListResponse.
+type FiltersetListResponse struct {
+	Data FiltersetListResponse_Data `json:"data"`
+	Meta *ListMeta                  `json:"meta,omitempty"`
+}
+
+// FiltersetListResponseData0 defines model for .
+type FiltersetListResponseData0 = []FiltersetRow
+
+// FiltersetListResponseData1 defines model for .
+type FiltersetListResponseData1 map[string]map[string]int
+
+// FiltersetListResponse_Data defines model for FiltersetListResponse.Data.
+type FiltersetListResponse_Data struct {
+	union json.RawMessage
+}
+
+// FiltersetRef defines model for FiltersetRef.
+type FiltersetRef struct {
+	FsetName *string `json:"fset_name,omitempty"`
+	Id       int     `json:"id"`
+}
+
+// FiltersetRow A filterset: an ordered combination of filters and other filtersets that
+// selects nodes and services. Every property is optional: the `props` query
+// parameter selects which columns the server returns.
+type FiltersetRow struct {
+	FsetAuthor *string `json:"fset_author,omitempty"`
+	FsetName   *string `json:"fset_name,omitempty"`
+
+	// FsetStats T for a stats filterset, F otherwise.
+	FsetStats   *string `json:"fset_stats,omitempty"`
+	FsetUpdated *string `json:"fset_updated,omitempty"`
+	Id          *int    `json:"id,omitempty"`
+}
+
+// FiltersetUsageResponse defines model for FiltersetUsageResponse.
+type FiltersetUsageResponse struct {
+	Data struct {
+		// Filtersets Filtersets encapsulating this one.
+		Filtersets []FiltersetRef `json:"filtersets"`
+
+		// Rulesets Compliance rulesets restricted by this filterset. The ruleset name is in `fset_name`.
+		Rulesets []FiltersetRef `json:"rulesets"`
+
+		// Thresholds Check thresholds, as "chk_type.chk_instance:low-high".
+		Thresholds []string `json:"thresholds"`
+	} `json:"data"`
 }
 
 // GroupListResponse defines model for GroupListResponse.
@@ -1393,11 +1645,14 @@ type PostFiltersetsJSONBody struct {
 	FsetName *string `json:"fset_name,omitempty"`
 
 	// FsetStats Whether the filterset is a stats filterset (T or F)
-	FsetStats *string `json:"fset_stats,omitempty"`
+	FsetStats *PostFiltersetsJSONBodyFsetStats `json:"fset_stats,omitempty"`
 
 	// Id Filterset record id or name, to update an existing filterset
 	Id *string `json:"id,omitempty"`
 }
+
+// PostFiltersetsJSONBodyFsetStats defines parameters for PostFiltersets.
+type PostFiltersetsJSONBodyFsetStats string
 
 // GetFiltersetParams defines parameters for GetFilterset.
 type GetFiltersetParams struct {
@@ -1425,9 +1680,12 @@ type GetFiltersetParams struct {
 
 // PostFiltersetJSONBody defines parameters for PostFilterset.
 type PostFiltersetJSONBody struct {
-	FsetName  *string `json:"fset_name,omitempty"`
-	FsetStats *string `json:"fset_stats,omitempty"`
+	FsetName  *string                         `json:"fset_name,omitempty"`
+	FsetStats *PostFiltersetJSONBodyFsetStats `json:"fset_stats,omitempty"`
 }
+
+// PostFiltersetJSONBodyFsetStats defines parameters for PostFilterset.
+type PostFiltersetJSONBodyFsetStats string
 
 // GetFiltersetFiltersParams defines parameters for GetFiltersetFilters.
 type GetFiltersetFiltersParams struct {
@@ -1455,9 +1713,12 @@ type GetFiltersetFiltersParams struct {
 
 // PostFiltersetFilterJSONBody defines parameters for PostFiltersetFilter.
 type PostFiltersetFilterJSONBody struct {
-	FLogOp *string `json:"f_log_op,omitempty"`
-	FOrder *int    `json:"f_order,omitempty"`
+	FLogOp *PostFiltersetFilterJSONBodyFLogOp `json:"f_log_op,omitempty"`
+	FOrder *int                               `json:"f_order,omitempty"`
 }
+
+// PostFiltersetFilterJSONBodyFLogOp defines parameters for PostFiltersetFilter.
+type PostFiltersetFilterJSONBodyFLogOp string
 
 // GetFiltersetFiltersetsParams defines parameters for GetFiltersetFiltersets.
 type GetFiltersetFiltersetsParams struct {
@@ -1485,9 +1746,12 @@ type GetFiltersetFiltersetsParams struct {
 
 // PostFiltersetFiltersetJSONBody defines parameters for PostFiltersetFilterset.
 type PostFiltersetFiltersetJSONBody struct {
-	FLogOp *string `json:"f_log_op,omitempty"`
-	FOrder *int    `json:"f_order,omitempty"`
+	FLogOp *PostFiltersetFiltersetJSONBodyFLogOp `json:"f_log_op,omitempty"`
+	FOrder *int                                  `json:"f_order,omitempty"`
 }
+
+// PostFiltersetFiltersetJSONBodyFLogOp defines parameters for PostFiltersetFilterset.
+type PostFiltersetFiltersetJSONBodyFLogOp string
 
 // GetFiltersetNodesParams defines parameters for GetFiltersetNodes.
 type GetFiltersetNodesParams struct {
@@ -1552,7 +1816,7 @@ type PostFiltersetsFiltersJSONBody struct {
 	FId string `json:"f_id"`
 
 	// FLogOp Logical operator joining this filter to the previous one
-	FLogOp *string `json:"f_log_op,omitempty"`
+	FLogOp *PostFiltersetsFiltersJSONBodyFLogOp `json:"f_log_op,omitempty"`
 
 	// FOrder Position of the filter in the filterset
 	FOrder *int `json:"f_order,omitempty"`
@@ -1560,6 +1824,9 @@ type PostFiltersetsFiltersJSONBody struct {
 	// FsetId Filterset record id, or filterset name
 	FsetId string `json:"fset_id"`
 }
+
+// PostFiltersetsFiltersJSONBodyFLogOp defines parameters for PostFiltersetsFilters.
+type PostFiltersetsFiltersJSONBodyFLogOp string
 
 // DeleteFiltersetsFiltersetsJSONBody defines parameters for DeleteFiltersetsFiltersets.
 type DeleteFiltersetsFiltersetsJSONBody struct {
@@ -1576,7 +1843,7 @@ type PostFiltersetsFiltersetsJSONBody struct {
 	ChildFsetId string `json:"child_fset_id"`
 
 	// FLogOp Logical operator joining this filterset to the previous entry
-	FLogOp *string `json:"f_log_op,omitempty"`
+	FLogOp *PostFiltersetsFiltersetsJSONBodyFLogOp `json:"f_log_op,omitempty"`
 
 	// FOrder Position of the child filterset in the parent filterset
 	FOrder *int `json:"f_order,omitempty"`
@@ -1584,6 +1851,9 @@ type PostFiltersetsFiltersetsJSONBody struct {
 	// ParentFsetId Parent filterset record id, or name
 	ParentFsetId string `json:"parent_fset_id"`
 }
+
+// PostFiltersetsFiltersetsJSONBodyFLogOp defines parameters for PostFiltersetsFiltersets.
+type PostFiltersetsFiltersetsJSONBodyFLogOp string
 
 // GetFrontendHiddenMenuEntriesParams defines parameters for GetFrontendHiddenMenuEntries.
 type GetFrontendHiddenMenuEntriesParams struct {
@@ -4107,6 +4377,130 @@ func (t FilterListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *FilterListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsFiltersetFilterListResponseData0 returns the union data inside the FiltersetFilterListResponse_Data as a FiltersetFilterListResponseData0
+func (t FiltersetFilterListResponse_Data) AsFiltersetFilterListResponseData0() (FiltersetFilterListResponseData0, error) {
+	var body FiltersetFilterListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFiltersetFilterListResponseData0 overwrites any union data inside the FiltersetFilterListResponse_Data as the provided FiltersetFilterListResponseData0
+func (t *FiltersetFilterListResponse_Data) FromFiltersetFilterListResponseData0(v FiltersetFilterListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFiltersetFilterListResponseData0 performs a merge with any union data inside the FiltersetFilterListResponse_Data, using the provided FiltersetFilterListResponseData0
+func (t *FiltersetFilterListResponse_Data) MergeFiltersetFilterListResponseData0(v FiltersetFilterListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFiltersetFilterListResponseData1 returns the union data inside the FiltersetFilterListResponse_Data as a FiltersetFilterListResponseData1
+func (t FiltersetFilterListResponse_Data) AsFiltersetFilterListResponseData1() (FiltersetFilterListResponseData1, error) {
+	var body FiltersetFilterListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFiltersetFilterListResponseData1 overwrites any union data inside the FiltersetFilterListResponse_Data as the provided FiltersetFilterListResponseData1
+func (t *FiltersetFilterListResponse_Data) FromFiltersetFilterListResponseData1(v FiltersetFilterListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFiltersetFilterListResponseData1 performs a merge with any union data inside the FiltersetFilterListResponse_Data, using the provided FiltersetFilterListResponseData1
+func (t *FiltersetFilterListResponse_Data) MergeFiltersetFilterListResponseData1(v FiltersetFilterListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t FiltersetFilterListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *FiltersetFilterListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsFiltersetListResponseData0 returns the union data inside the FiltersetListResponse_Data as a FiltersetListResponseData0
+func (t FiltersetListResponse_Data) AsFiltersetListResponseData0() (FiltersetListResponseData0, error) {
+	var body FiltersetListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFiltersetListResponseData0 overwrites any union data inside the FiltersetListResponse_Data as the provided FiltersetListResponseData0
+func (t *FiltersetListResponse_Data) FromFiltersetListResponseData0(v FiltersetListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFiltersetListResponseData0 performs a merge with any union data inside the FiltersetListResponse_Data, using the provided FiltersetListResponseData0
+func (t *FiltersetListResponse_Data) MergeFiltersetListResponseData0(v FiltersetListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFiltersetListResponseData1 returns the union data inside the FiltersetListResponse_Data as a FiltersetListResponseData1
+func (t FiltersetListResponse_Data) AsFiltersetListResponseData1() (FiltersetListResponseData1, error) {
+	var body FiltersetListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFiltersetListResponseData1 overwrites any union data inside the FiltersetListResponse_Data as the provided FiltersetListResponseData1
+func (t *FiltersetListResponse_Data) FromFiltersetListResponseData1(v FiltersetListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFiltersetListResponseData1 performs a merge with any union data inside the FiltersetListResponse_Data, using the provided FiltersetListResponseData1
+func (t *FiltersetListResponse_Data) MergeFiltersetListResponseData1(v FiltersetListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t FiltersetListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *FiltersetListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

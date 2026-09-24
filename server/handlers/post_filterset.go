@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -35,7 +36,7 @@ func (a *Api) PostFilterset(c echo.Context, filtersetId string) error {
 
 	log.Info("called", "filterset_id", filtersetId)
 
-	return a.postFiltersetUpdate(c, log, ctx, filtersetId, body.FsetName, body.FsetStats)
+	return a.postFiltersetUpdate(c, log, ctx, filtersetId, body.FsetName, stringPtr(body.FsetStats))
 }
 
 func (a *Api) postFiltersetUpdate(c echo.Context, log *slog.Logger, ctx context.Context, filtersetId string, fsetName, fsetStats *string) error {
@@ -68,6 +69,23 @@ func (a *Api) postFiltersetUpdate(c echo.Context, log *slog.Logger, ctx context.
 		return a.handleItem(c, "PostFilterset", "filterset", "id", strconv.Itoa(id), listEndpointParams{}, getFilterset)
 	}
 
+	if fsetStats != nil && !slices.Contains(filtersetStatsValues, *fsetStats) {
+		return JSONProblemf(c, http.StatusBadRequest, "fset_stats must be one of %s", strings.Join(filtersetStatsValues, ", "))
+	}
+	if fsetName != nil {
+		if *fsetName == "" {
+			return JSONProblemf(c, http.StatusBadRequest, "fset_name cannot be empty")
+		}
+		otherID, taken, err := odb.FiltersetByName(ctx, *fsetName)
+		if err != nil {
+			log.Error("cannot check filterset name", "fset_name", *fsetName, logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot check filterset name")
+		}
+		if taken && otherID != id {
+			return JSONProblemf(c, http.StatusConflict, "a filterset named %s already exists: %d", *fsetName, otherID)
+		}
+	}
+
 	fields := cdb.UpdateFiltersetFields{
 		FsetName:  fsetName,
 		FsetStats: fsetStats,
@@ -83,29 +101,32 @@ func (a *Api) postFiltersetUpdate(c echo.Context, log *slog.Logger, ctx context.
 
 	userEmail, _ := c.Get(XUserEmail).(string)
 
-	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
-	if err != nil {
-		log.Error("cannot start transaction", logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot update filterset")
-	}
-	defer endTx()
-
-	if err := tx.UpdateFilterset(ctx, id, fields); err != nil {
+	// The transaction ends before the filterset is read back: a read done while it
+	// is still open, on another connection, returns the previous values.
+	if err := func() error {
+		tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
+		if err != nil {
+			return fmt.Errorf("cannot start transaction: %w", err)
+		}
+		defer endTx()
+		if err := tx.UpdateFilterset(ctx, id, fields); err != nil {
+			return err
+		}
+		if logErr := tx.Log(ctx, cdb.LogEntry{
+			Action: "filterset.change",
+			User:   userEmail,
+			Fmt:    "change filterset %(data)s",
+			Dict:   map[string]any{"data": strings.Join(changes, ", ")},
+			Level:  "info",
+		}); logErr != nil {
+			log.Error("cannot write audit log", logkey.Error, logErr)
+		}
+		markSuccess()
+		return nil
+	}(); err != nil {
 		log.Error("cannot update filterset", "filterset_id", id, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot update filterset")
 	}
-
-	if logErr := tx.Log(ctx, cdb.LogEntry{
-		Action: "filterset.change",
-		User:   userEmail,
-		Fmt:    "change filterset %(data)s",
-		Dict:   map[string]any{"data": strings.Join(changes, ", ")},
-		Level:  "info",
-	}); logErr != nil {
-		log.Error("cannot write audit log", logkey.Error, logErr)
-	}
-
-	markSuccess()
 
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
 		log.Error("cannot notify changes", logkey.Error, err)

@@ -37,3 +37,13 @@ func JSONProblem(ctx echo.Context, code int, s string) error {
 func JSONNodeAuthProblem(c echo.Context) error {
 	return JSONProblem(c, http.StatusForbidden, "expecting node credentials")
 }
+
+// stringPtr converts a pointer to a generated enum string type to a *string,
+// keeping nil for an absent property.
+func stringPtr[T ~string](value *T) *string {
+	if value == nil {
+		return nil
+	}
+	s := string(*value)
+	return &s
+}
