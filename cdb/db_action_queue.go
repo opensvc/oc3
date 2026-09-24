@@ -70,13 +70,19 @@ func (oDb *DB) UpdateActionStatus(ctx context.Context, id int64, status string, 
 	return nil
 }
 
+// actionQueueJoins makes the "nodes." and "services." props selectable: a queued
+// action carries only the ids, and a node action names no service (empty svc_id),
+// hence the LEFT JOINs. Same approach as logJoins.
+const actionQueueJoins = " LEFT JOIN nodes ON nodes.node_id = action_queue.node_id" +
+	" LEFT JOIN services ON services.svc_id = action_queue.svc_id"
+
 func buildActionsQuery(p ListParams, idCond string, idArgs []any) (string, []any, error) {
 	if len(p.SelectExprs) == 0 {
 		return "", nil, fmt.Errorf("buildActionsQuery: no columns selected")
 	}
 
 	sb := &strings.Builder{}
-	fmt.Fprintf(sb, "SELECT %s\nFROM action_queue", strings.Join(p.SelectExprs, ", "))
+	fmt.Fprintf(sb, "SELECT %s\nFROM action_queue%s", strings.Join(p.SelectExprs, ", "), actionQueueJoins)
 
 	var conds []string
 	var args []any
@@ -92,7 +98,7 @@ func buildActionsQuery(p ListParams, idCond string, idArgs []any) (string, []any
 			conds = append(conds, "1=0")
 		} else {
 			conds = append(conds,
-				"node_id IN ("+
+				"action_queue.node_id IN ("+
 					"SELECT n.node_id FROM nodes n"+
 					" JOIN apps a ON n.app = a.app"+
 					" JOIN apps_responsibles ar ON ar.app_id = a.id"+

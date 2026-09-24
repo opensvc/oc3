@@ -75,6 +75,12 @@ var propsMapping = map[string]propMapping{
 			"node_id":       colStr(schema.ActionQueueNodeID),
 			"svc_id":        colStr(schema.ActionQueueSvcID),
 		},
+		// A queued action points at its node, and at its service when it has one, by
+		// id only: the names live in the joined tables, as for dashboard entries.
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
+		},
 	},
 	"cluster": {
 		Available: []string{"id", "cluster_id", "cluster_name"},
