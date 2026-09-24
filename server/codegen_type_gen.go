@@ -559,6 +559,35 @@ type GroupRow struct {
 	Role        *string `json:"role,omitempty"`
 }
 
+// HbaListResponse defines model for HbaListResponse.
+type HbaListResponse struct {
+	Data HbaListResponse_Data `json:"data"`
+	Meta *ListMeta            `json:"meta,omitempty"`
+}
+
+// HbaListResponseData0 defines model for .
+type HbaListResponseData0 = []HbaRow
+
+// HbaListResponseData1 defines model for .
+type HbaListResponseData1 map[string]map[string]int
+
+// HbaListResponse_Data defines model for HbaListResponse.Data.
+type HbaListResponse_Data struct {
+	union json.RawMessage
+}
+
+// HbaRow A host bus adapter of a node, as reported by the agent: `hba_id` is its
+// initiator identifier (an iSCSI IQN or a Fibre Channel WWPN), `hba_type` its
+// transport. Every property is optional: the `props` query parameter selects
+// which columns the server returns.
+type HbaRow struct {
+	HbaId   *string `json:"hba_id,omitempty"`
+	HbaType *string `json:"hba_type,omitempty"`
+	Id      *int    `json:"id,omitempty"`
+	NodeId  *string `json:"node_id,omitempty"`
+	Updated *string `json:"updated,omitempty"`
+}
+
 // InfoResponse Outcome message of a write that returns no record.
 type InfoResponse struct {
 	Info *string `json:"info,omitempty"`
@@ -728,6 +757,38 @@ type LogRow struct {
 	NodesOsName     *string `json:"nodes.os_name,omitempty"`
 	ServicesSvcname *string `json:"services.svcname,omitempty"`
 	SvcId           *string `json:"svc_id,omitempty"`
+}
+
+// NodeHardwareListResponse defines model for NodeHardwareListResponse.
+type NodeHardwareListResponse struct {
+	Data NodeHardwareListResponse_Data `json:"data"`
+	Meta *ListMeta                     `json:"meta,omitempty"`
+}
+
+// NodeHardwareListResponseData0 defines model for .
+type NodeHardwareListResponseData0 = []NodeHardwareRow
+
+// NodeHardwareListResponseData1 defines model for .
+type NodeHardwareListResponseData1 map[string]map[string]int
+
+// NodeHardwareListResponse_Data defines model for NodeHardwareListResponse.Data.
+type NodeHardwareListResponse_Data struct {
+	union json.RawMessage
+}
+
+// NodeHardwareRow A hardware component of a node, as reported by the agent's asset push:
+// `hw_type` is the component family (for example `pci` or `mem`), `hw_path` its
+// address. Every property is optional: the `props` query parameter selects which
+// columns the server returns.
+type NodeHardwareRow struct {
+	HwClass       *string `json:"hw_class,omitempty"`
+	HwDescription *string `json:"hw_description,omitempty"`
+	HwDriver      *string `json:"hw_driver,omitempty"`
+	HwPath        *string `json:"hw_path,omitempty"`
+	HwType        *string `json:"hw_type,omitempty"`
+	Id            *int    `json:"id,omitempty"`
+	NodeId        *string `json:"node_id,omitempty"`
+	Updated       *string `json:"updated,omitempty"`
 }
 
 // NodeListResponse defines model for NodeListResponse.
@@ -4567,6 +4628,68 @@ func (t *GroupListResponse_Data) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsHbaListResponseData0 returns the union data inside the HbaListResponse_Data as a HbaListResponseData0
+func (t HbaListResponse_Data) AsHbaListResponseData0() (HbaListResponseData0, error) {
+	var body HbaListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromHbaListResponseData0 overwrites any union data inside the HbaListResponse_Data as the provided HbaListResponseData0
+func (t *HbaListResponse_Data) FromHbaListResponseData0(v HbaListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeHbaListResponseData0 performs a merge with any union data inside the HbaListResponse_Data, using the provided HbaListResponseData0
+func (t *HbaListResponse_Data) MergeHbaListResponseData0(v HbaListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsHbaListResponseData1 returns the union data inside the HbaListResponse_Data as a HbaListResponseData1
+func (t HbaListResponse_Data) AsHbaListResponseData1() (HbaListResponseData1, error) {
+	var body HbaListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromHbaListResponseData1 overwrites any union data inside the HbaListResponse_Data as the provided HbaListResponseData1
+func (t *HbaListResponse_Data) FromHbaListResponseData1(v HbaListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeHbaListResponseData1 performs a merge with any union data inside the HbaListResponse_Data, using the provided HbaListResponseData1
+func (t *HbaListResponse_Data) MergeHbaListResponseData1(v HbaListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t HbaListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *HbaListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsInstanceListResponseData0 returns the union data inside the InstanceListResponse_Data as a InstanceListResponseData0
 func (t InstanceListResponse_Data) AsInstanceListResponseData0() (InstanceListResponseData0, error) {
 	var body InstanceListResponseData0
@@ -4811,6 +4934,68 @@ func (t LogListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *LogListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsNodeHardwareListResponseData0 returns the union data inside the NodeHardwareListResponse_Data as a NodeHardwareListResponseData0
+func (t NodeHardwareListResponse_Data) AsNodeHardwareListResponseData0() (NodeHardwareListResponseData0, error) {
+	var body NodeHardwareListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNodeHardwareListResponseData0 overwrites any union data inside the NodeHardwareListResponse_Data as the provided NodeHardwareListResponseData0
+func (t *NodeHardwareListResponse_Data) FromNodeHardwareListResponseData0(v NodeHardwareListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNodeHardwareListResponseData0 performs a merge with any union data inside the NodeHardwareListResponse_Data, using the provided NodeHardwareListResponseData0
+func (t *NodeHardwareListResponse_Data) MergeNodeHardwareListResponseData0(v NodeHardwareListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsNodeHardwareListResponseData1 returns the union data inside the NodeHardwareListResponse_Data as a NodeHardwareListResponseData1
+func (t NodeHardwareListResponse_Data) AsNodeHardwareListResponseData1() (NodeHardwareListResponseData1, error) {
+	var body NodeHardwareListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNodeHardwareListResponseData1 overwrites any union data inside the NodeHardwareListResponse_Data as the provided NodeHardwareListResponseData1
+func (t *NodeHardwareListResponse_Data) FromNodeHardwareListResponseData1(v NodeHardwareListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNodeHardwareListResponseData1 performs a merge with any union data inside the NodeHardwareListResponse_Data, using the provided NodeHardwareListResponseData1
+func (t *NodeHardwareListResponse_Data) MergeNodeHardwareListResponseData1(v NodeHardwareListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t NodeHardwareListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *NodeHardwareListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

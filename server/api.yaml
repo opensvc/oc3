@@ -3996,7 +3996,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/AlertListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -4387,7 +4387,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/DiskListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -4422,7 +4422,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/HbaListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -4457,7 +4457,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/NodeHardwareListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -4492,7 +4492,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/IpListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -6164,7 +6164,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/DiskListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -8180,6 +8180,87 @@ components:
           type: string
         f_value:
           type: string
+
+    NodeHardwareRow:
+      type: object
+      description: |
+        A hardware component of a node, as reported by the agent's asset push:
+        `hw_type` is the component family (for example `pci` or `mem`), `hw_path` its
+        address. Every property is optional: the `props` query parameter selects which
+        columns the server returns.
+      properties:
+        id:
+          type: integer
+        node_id:
+          type: string
+        hw_type:
+          type: string
+        hw_path:
+          type: string
+        hw_class:
+          type: string
+        hw_description:
+          type: string
+        hw_driver:
+          type: string
+        updated:
+          type: string
+
+    NodeHardwareListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/NodeHardwareRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    HbaRow:
+      type: object
+      description: |
+        A host bus adapter of a node, as reported by the agent: `hba_id` is its
+        initiator identifier (an iSCSI IQN or a Fibre Channel WWPN), `hba_type` its
+        transport. Every property is optional: the `props` query parameter selects
+        which columns the server returns.
+      properties:
+        id:
+          type: integer
+        node_id:
+          type: string
+        hba_id:
+          type: string
+        hba_type:
+          type: string
+          nullable: true
+        updated:
+          type: string
+
+    HbaListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/HbaRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     AlertListResponse:
       type: object
