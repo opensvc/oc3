@@ -224,8 +224,8 @@ func (oDb *DB) HBLogLastExtend(ctx context.Context, l ...*DBHeartbeatLog) error 
 	}
 	placeholders := strings.Repeat("(?,?,?),", len(l)-1) + "(?,?,?)"
 
-	query := fmt.Sprintf("UPDATE `hbmon_log_last` SET `end` = NOW() WHERE (`node_id`,`peer_node_id`,`name`) IN %s)", placeholders)
-	args := make([]any, 3*len(l))
+	query := fmt.Sprintf("UPDATE `hbmon_log_last` SET `end` = NOW() WHERE (`node_id`,`peer_node_id`,`name`) IN (%s)", placeholders)
+	args := make([]any, 0, 3*len(l))
 	for _, v := range l {
 		args = append(args, v.NodeID, v.PeerNodeID, v.Name)
 	}
