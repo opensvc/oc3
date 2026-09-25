@@ -750,12 +750,13 @@ func (oDb *DB) PurgeInstance(ctx context.Context, id InstanceID) error {
 	return err
 }
 
-func (oDb *DB) InstancesOutdated(ctx context.Context) (instanceIDs []InstanceID, err error) {
+// InstancesOutdated returns the svcmon instance ids not updated since maxAge.
+func (oDb *DB) InstancesOutdated(ctx context.Context, maxAge time.Duration) (instanceIDs []InstanceID, err error) {
 	var rows *sql.Rows
 	query := "SELECT `svc_id`, `node_id` " +
 		"FROM `svcmon` " +
-		"WHERE `mon_updated` < DATE_SUB(NOW(), INTERVAL 21 MINUTE)"
-	rows, err = oDb.DB.QueryContext(ctx, query)
+		"WHERE `mon_updated` < DATE_SUB(NOW(), INTERVAL ? SECOND)"
+	rows, err = oDb.DB.QueryContext(ctx, query, maxAgeSeconds(maxAge))
 	if err != nil {
 		return
 	}
@@ -771,14 +772,13 @@ func (oDb *DB) InstancesOutdated(ctx context.Context) (instanceIDs []InstanceID,
 	return
 }
 
-func (oDb *DB) LogInstancesNotUpdated(ctx context.Context) error {
-	age := 2
+func (oDb *DB) LogInstancesNotUpdated(ctx context.Context, maxAge time.Duration) error {
 	request := fmt.Sprintf(`INSERT IGNORE
              INTO log
                SELECT NULL,
                       "service.status",
                       "scheduler",
-                      "instance status not updated for more than %dh (%%(date)s)",
+                      "instance status not updated for more than %s (%%(date)s)",
                       CONCAT('{"date": "', mon_updated, '"}'),
                       NOW(),
                       svc_id,
@@ -788,8 +788,8 @@ func (oDb *DB) LogInstancesNotUpdated(ctx context.Context) error {
                       "warning",
                       node_id
                from svcmon
-               where mon_updated<DATE_SUB(NOW(), INTERVAL %d HOUR)`, age, age)
-	if count, err := oDb.execCountContext(ctx, request); err != nil {
+               where mon_updated<DATE_SUB(NOW(), INTERVAL ? SECOND)`, FormatMaxAge(maxAge))
+	if count, err := oDb.execCountContext(ctx, request, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		slog.Debug(fmt.Sprintf("alert: instance outdated: %d", count))

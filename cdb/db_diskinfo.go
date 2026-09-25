@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type (
@@ -223,12 +224,12 @@ func (oDb *DB) DeleteDiskinfoByDiskID(ctx context.Context, diskID string) (int64
 	return count, nil
 }
 
-func (oDb *DB) PurgeDiskinfoOutdated(ctx context.Context) error {
+func (oDb *DB) PurgeDiskinfoOutdated(ctx context.Context, maxAge time.Duration) error {
 	var query = `DELETE
 		FROM diskinfo
 		WHERE
-		  disk_updated < DATE_SUB(NOW(), INTERVAL 2 DAY)`
-	if count, err := oDb.execCountContext(ctx, query); err != nil {
+		  disk_updated < DATE_SUB(NOW(), INTERVAL ? SECOND)`
+	if count, err := oDb.execCountContext(ctx, query, maxAgeSeconds(maxAge)); err != nil {
 		return fmt.Errorf("purge diskinfo: %w", err)
 	} else if count > 0 {
 		oDb.SetChange("diskinfo")

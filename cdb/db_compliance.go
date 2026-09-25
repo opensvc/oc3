@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type Moduleset struct {
@@ -82,12 +83,12 @@ func (oDb *DB) PurgeCompModulesetsServices(ctx context.Context) error {
 }
 
 // purge entries older than 30 days
-func (oDb *DB) PurgeCompStatusOutdated(ctx context.Context) error {
+func (oDb *DB) PurgeCompStatusOutdated(ctx context.Context, maxAge time.Duration) error {
 	var query = `DELETE
 		FROM comp_status
 		WHERE
-		  run_date < DATE_SUB(NOW(), INTERVAL 31 DAY)`
-	if count, err := oDb.execCountContext(ctx, query); err != nil {
+		  run_date < DATE_SUB(NOW(), INTERVAL ? SECOND)`
+	if count, err := oDb.execCountContext(ctx, query, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("comp_status")
@@ -127,15 +128,15 @@ func (oDb *DB) PurgeCompStatusNodeOrphans(ctx context.Context) error {
 	return nil
 }
 
-// purge compliance status older than 7 days for modules in no moduleset, ie not schedulable
-func (oDb *DB) PurgeCompStatusModulesetOrphans(ctx context.Context) error {
+// purge compliance status older than maxAge for modules in no moduleset, ie not schedulable
+func (oDb *DB) PurgeCompStatusModulesetOrphans(ctx context.Context, maxAge time.Duration) error {
 	var query = `DELETE FROM comp_status
              WHERE
-	       run_date < DATE_SUB(NOW(), INTERVAL 7 DAY) AND
+	       run_date < DATE_SUB(NOW(), INTERVAL ? SECOND) AND
                run_module NOT IN (
                  SELECT modset_mod_name FROM comp_moduleset_modules
 	       )`
-	if count, err := oDb.execCountContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("comp_status")
@@ -143,11 +144,11 @@ func (oDb *DB) PurgeCompStatusModulesetOrphans(ctx context.Context) error {
 	return nil
 }
 
-// purge node compliance status older than 7 days for unattached modules
-func (oDb *DB) PurgeCompStatusNodeUnattached(ctx context.Context) error {
+// purge node compliance status older than maxAge for unattached modules
+func (oDb *DB) PurgeCompStatusNodeUnattached(ctx context.Context, maxAge time.Duration) error {
 	var query = `DELETE FROM comp_status
              WHERE
-	       run_date < DATE_SUB(NOW(), INTERVAL 7 DAY) AND
+	       run_date < DATE_SUB(NOW(), INTERVAL ? SECOND) AND
 	       svc_id = "" AND
                run_module NOT IN (
                  SELECT modset_mod_name
@@ -157,7 +158,7 @@ func (oDb *DB) PurgeCompStatusNodeUnattached(ctx context.Context) error {
                    FROM comp_node_moduleset
                  )
 	       )`
-	if count, err := oDb.execCountContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("comp_status")
@@ -165,11 +166,11 @@ func (oDb *DB) PurgeCompStatusNodeUnattached(ctx context.Context) error {
 	return nil
 }
 
-// purge svc compliance status older than 7 days for unattached modules
-func (oDb *DB) PurgeCompStatusSvcUnattached(ctx context.Context) error {
+// purge svc compliance status older than maxAge for unattached modules
+func (oDb *DB) PurgeCompStatusSvcUnattached(ctx context.Context, maxAge time.Duration) error {
 	var query = `DELETE FROM comp_status
              WHERE
-	       run_date < DATE_SUB(NOW(), INTERVAL 7 DAY) AND
+	       run_date < DATE_SUB(NOW(), INTERVAL ? SECOND) AND
 	       svc_id = "" AND
                run_module NOT IN (
                  SELECT modset_mod_name
@@ -179,7 +180,7 @@ func (oDb *DB) PurgeCompStatusSvcUnattached(ctx context.Context) error {
                    FROM comp_modulesets_services
                  )
 	       )`
-	if count, err := oDb.execCountContext(ctx, query); err != nil {
+	if count, err := oDb.execCountContext(ctx, query, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("comp_status")

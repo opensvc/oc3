@@ -2,14 +2,15 @@ package cdb
 
 import (
 	"context"
+	"time"
 )
 
-func (oDb *DB) PurgeStorArrayOutdated(ctx context.Context) error {
+func (oDb *DB) PurgeStorArrayOutdated(ctx context.Context, maxAge time.Duration) error {
 	var query = `DELETE FROM stor_array
 		WHERE
 		  array_model LIKE "vdisk%" AND
-		  array_updated < DATE_SUB(NOW(), INTERVAL 2 DAY)`
-	if count, err := oDb.execCountContext(ctx, query); err != nil {
+		  array_updated < DATE_SUB(NOW(), INTERVAL ? SECOND)`
+	if count, err := oDb.execCountContext(ctx, query, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("stor_array")

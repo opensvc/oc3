@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 )
 
-func (oDb *DB) PurgeChecksOutdated(ctx context.Context) error {
-	request := fmt.Sprintf("DELETE FROM `checks_live` WHERE `chk_updated` < DATE_SUB(NOW(), INTERVAL 2 DAY)")
-	if count, err := oDb.execCountContext(ctx, request); err != nil {
+func (oDb *DB) PurgeChecksOutdated(ctx context.Context, maxAge time.Duration) error {
+	request := fmt.Sprintf("DELETE FROM `checks_live` WHERE `chk_updated` < DATE_SUB(NOW(), INTERVAL ? SECOND)")
+	if count, err := oDb.execCountContext(ctx, request, maxAgeSeconds(maxAge)); err != nil {
 		return fmt.Errorf("delete from checks_live: %w", err)
 	} else if count > 0 {
 		// TODO: add metrics about purged count

@@ -221,17 +221,17 @@ func (oDb *DB) GetBActionErrors(ctx context.Context) (lines []BActionErrorCount,
 	return
 }
 
-func (oDb *DB) UpdateUnfinishedActions(ctx context.Context) error {
+func (oDb *DB) UpdateUnfinishedActions(ctx context.Context, maxAge time.Duration) error {
 	request := `UPDATE svcactions
 		SET
 		    status = "err",
 		    end = "1000-01-01 00:00:00"
 		WHERE
-		    begin < DATE_SUB(NOW(), INTERVAL 120 MINUTE)
+		    begin < DATE_SUB(NOW(), INTERVAL ? SECOND)
 		    AND end IS NULL
 		    AND status IS NULL
 		    AND action NOT LIKE "%#%"`
-	if count, err := oDb.execCountContext(ctx, request); err != nil {
+	if count, err := oDb.execCountContext(ctx, request, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("svcactions")
@@ -239,15 +239,15 @@ func (oDb *DB) UpdateUnfinishedActions(ctx context.Context) error {
 	return nil
 }
 
-func (oDb *DB) GetUnfinishedActions(ctx context.Context) (lines []SvcAction, err error) {
+func (oDb *DB) GetUnfinishedActions(ctx context.Context, maxAge time.Duration) (lines []SvcAction, err error) {
 	query := `SELECT id, node_id, svc_id FROM svcactions
 		WHERE
-		    begin < DATE_SUB(NOW(), INTERVAL 120 MINUTE)
+		    begin < DATE_SUB(NOW(), INTERVAL ? SECOND)
 		    AND end IS NULL
 		    AND status IS NULL
 		    AND action NOT LIKE "%#%"`
 	var rows *sql.Rows
-	rows, err = oDb.DB.QueryContext(ctx, query)
+	rows, err = oDb.DB.QueryContext(ctx, query, maxAgeSeconds(maxAge))
 	if err != nil {
 		return
 	}

@@ -8,39 +8,44 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/opensvc/oc3/cdb"
 	"github.com/spf13/viper"
+
+	"github.com/opensvc/oc3/cdb"
 )
 
-// TaskScrubObjects marks services status "undef" if all instances have outdated or absent data.
+// TaskScrubObjects marks services status "undef" if all instances have outdated data.
 //
-// For testing, force a scrubable dataset with:
+// For testing, force a scrubable dataset with (15 MINUTE being the default
+// scheduler.task.scrub_object.max_age):
 //
-//	UPDATE services SET svc_status="up" WHERE svc_id IN (SELECT svc_id FROM v_outdated_services);
+//	UPDATE services SET svc_status="up" WHERE svc_id IN (
+//	  SELECT svc_id FROM svcmon GROUP BY svc_id
+//	  HAVING SUM(mon_updated >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)) = 0
+//	);
 var TaskScrubObjects = Task{
 	name:    "scrub_object",
-	desc:    "marks services status=undef if all instances have outdated (aged 15m) or absent data",
+	desc:    "marks services status=undef if all instances have outdated (aged scheduler.task.scrub_object.max_age, default 15m) data",
 	fn:      taskScrubObjects,
 	timeout: time.Minute,
 }
 
 var TaskScrubUnfinishedActions = Task{
 	name:    "scrub_unfinished_actions",
-	desc:    "set a end date and status=err on actions not finished after 2h running",
+	desc:    "set a end date and status=err on actions not finished after scheduler.task.scrub_unfinished_actions.max_age (default 2h) running",
 	fn:      taskScrubUnfinishedActions,
 	timeout: time.Minute,
 }
 
 var TaskScrubResources = Task{
 	name:    "scrub_resources",
-	desc:    "marks status=undef outdated (aged 15m) resources",
+	desc:    "marks status=undef outdated (aged scheduler.task.scrub_resources.max_age, default 15m) resources",
 	fn:      taskScrubResources,
 	timeout: time.Minute,
 }
 
 var TaskScrubInstances = Task{
 	name:    "scrub_instances",
-	desc:    "marks status=undef outdated (aged 15m) instances",
+	desc:    "purges outdated (aged scheduler.task.scrub_instances.max_age, default 21m) instances",
 	fn:      taskScrubInstances,
 	timeout: time.Minute,
 }
@@ -206,7 +211,11 @@ func taskScrubInstances(ctx context.Context, task *Task) error {
 		return err
 	}
 	defer odb.Rollback()
-	instanceIDs, err := odb.InstancesOutdated(ctx)
+	age, err := maxAge("scrub_instances")
+	if err != nil {
+		return err
+	}
+	instanceIDs, err := odb.InstancesOutdated(ctx, age)
 	if err != nil {
 		return err
 	}
@@ -230,7 +239,11 @@ func taskScrubResources(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	// Fetch the outdated resources still not in "undef" availstatus
-	resources, err := odb.ResourceOutdatedLists(ctx)
+	age, err := maxAge("scrub_resources")
+	if err != nil {
+		return err
+	}
+	resources, err := odb.ResourceOutdatedLists(ctx, age)
 	if err != nil {
 		return err
 	}
@@ -294,7 +307,11 @@ func taskScrubObjects(ctx context.Context, task *Task) error {
 	defer odb.Rollback()
 
 	// Fetch the outdated services still not in "undef" availstatus
-	objects, err := odb.ObjectsOutdated(ctx)
+	age, err := maxAge("scrub_object")
+	if err != nil {
+		return err
+	}
+	objects, err := odb.ObjectsOutdated(ctx, age)
 	if err != nil {
 		return err
 	}
@@ -353,7 +370,11 @@ func taskScrubChecksLive(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.PurgeChecksOutdated(ctx); err != nil {
+	age, err := maxAge("scrub_checks_live")
+	if err != nil {
+		return err
+	}
+	if err := odb.PurgeChecksOutdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -369,7 +390,11 @@ func taskScrubNodeHBA(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.PurgeNodeHBAsOutdated(ctx); err != nil {
+	age, err := maxAge("scrub_node_hba")
+	if err != nil {
+		return err
+	}
+	if err := odb.PurgeNodeHBAsOutdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -385,7 +410,11 @@ func taskScrubPackages(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.PurgePackagesOutdated(ctx); err != nil {
+	age, err := maxAge("scrub_packages")
+	if err != nil {
+		return err
+	}
+	if err := odb.PurgePackagesOutdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -401,7 +430,11 @@ func taskScrubPatches(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.PurgePatchesOutdated(ctx); err != nil {
+	age, err := maxAge("scrub_patches")
+	if err != nil {
+		return err
+	}
+	if err := odb.PurgePatchesOutdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -417,7 +450,11 @@ func taskScrubResmon(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.PurgeResmonOutdated(ctx); err != nil {
+	age, err := maxAge("scrub_resmon")
+	if err != nil {
+		return err
+	}
+	if err := odb.PurgeResmonOutdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -433,7 +470,11 @@ func taskScrubDiskinfo(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.PurgeDiskinfoOutdated(ctx); err != nil {
+	age, err := maxAge("scrub_diskinfo")
+	if err != nil {
+		return err
+	}
+	if err := odb.PurgeDiskinfoOutdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -449,7 +490,11 @@ func taskScrubSvcdisks(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.PurgeSvcdisksOutdated(ctx); err != nil {
+	age, err := maxAge("scrub_svcdisks")
+	if err != nil {
+		return err
+	}
+	if err := odb.PurgeSvcdisksOutdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -465,7 +510,11 @@ func taskScrubStorArray(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.PurgeStorArrayOutdated(ctx); err != nil {
+	age, err := maxAge("scrub_stor_array")
+	if err != nil {
+		return err
+	}
+	if err := odb.PurgeStorArrayOutdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -545,7 +594,15 @@ func taskScrubCompStatus(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.PurgeCompStatusOutdated(ctx); err != nil {
+	age, err := maxAge("scrub_comp_status")
+	if err != nil {
+		return err
+	}
+	unattachedAge, err := maxAge("scrub_comp_status_unattached")
+	if err != nil {
+		return err
+	}
+	if err := odb.PurgeCompStatusOutdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.PurgeCompStatusSvcOrphans(ctx); err != nil {
@@ -554,13 +611,13 @@ func taskScrubCompStatus(ctx context.Context, task *Task) error {
 	if err := odb.PurgeCompStatusNodeOrphans(ctx); err != nil {
 		return err
 	}
-	if err := odb.PurgeCompStatusModulesetOrphans(ctx); err != nil {
+	if err := odb.PurgeCompStatusModulesetOrphans(ctx, unattachedAge); err != nil {
 		return err
 	}
-	if err := odb.PurgeCompStatusNodeUnattached(ctx); err != nil {
+	if err := odb.PurgeCompStatusNodeUnattached(ctx, unattachedAge); err != nil {
 		return err
 	}
-	if err := odb.PurgeCompStatusSvcUnattached(ctx); err != nil {
+	if err := odb.PurgeCompStatusSvcUnattached(ctx, unattachedAge); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -609,7 +666,11 @@ func scrubFiles(pattern string, threshold time.Time) error {
 }
 
 func taskScrubStatic(ctx context.Context, task *Task) error {
-	threshold := time.Now().Add(-1 * time.Hour)
+	age, err := maxAge("scrub_static")
+	if err != nil {
+		return err
+	}
+	threshold := time.Now().Add(-age)
 	directory := viper.GetString("scheduler.directories.static")
 	if directory == "" {
 		slog.Warn("skip: define scheduler.directories.static")
@@ -638,7 +699,11 @@ func taskScrubStatic(ctx context.Context, task *Task) error {
 }
 
 func taskScrubTempviz(ctx context.Context, task *Task) error {
-	threshold := time.Now().Add(-1 * time.Hour)
+	age, err := maxAge("scrub_tempviz")
+	if err != nil {
+		return err
+	}
+	threshold := time.Now().Add(-age)
 	directory := viper.GetString("scheduler.directories.static")
 	if directory == "" {
 		slog.Warn("skip: define scheduler.directories.static")
@@ -648,7 +713,11 @@ func taskScrubTempviz(ctx context.Context, task *Task) error {
 }
 
 func taskScrubPdf(ctx context.Context, task *Task) error {
-	threshold := time.Now().Add(-24 * time.Hour)
+	age, err := maxAge("scrub_pdf")
+	if err != nil {
+		return err
+	}
+	threshold := time.Now().Add(-age)
 	directory := viper.GetString("scheduler.directories.static")
 	if directory == "" {
 		slog.Warn("skip: define scheduler.directories.static")
@@ -664,7 +733,11 @@ func taskScrubUnfinishedActions(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	lines, err := odb.GetUnfinishedActions(ctx)
+	age, err := maxAge("scrub_unfinished_actions")
+	if err != nil {
+		return err
+	}
+	lines, err := odb.GetUnfinishedActions(ctx, age)
 	if err != nil {
 		return fmt.Errorf("get: %w", err)
 	}
@@ -689,7 +762,7 @@ func taskScrubUnfinishedActions(ctx context.Context, task *Task) error {
 	if err := odb.Log(ctx, entries...); err != nil {
 		return fmt.Errorf("log: %w", err)
 	}
-	if err := odb.UpdateUnfinishedActions(ctx); err != nil {
+	if err := odb.UpdateUnfinishedActions(ctx, age); err != nil {
 		return fmt.Errorf("update: %w", err)
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {

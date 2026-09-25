@@ -32,6 +32,9 @@ func newScheduler() (*schedulerT, error) {
 	if err := setup(sectionScheduler); err != nil {
 		return nil, err
 	}
+	if err := scheduler.ValidateMaxAges(); err != nil {
+		return nil, err
+	}
 	if db, err := newDatabase(); err != nil {
 		return nil, err
 	} else {
