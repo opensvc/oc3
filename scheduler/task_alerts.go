@@ -270,7 +270,11 @@ func taskLogInstancesNotUpdated(ctx context.Context, task *Task) error {
 		return err
 	}
 	defer odb.Rollback()
-	if err := odb.LogInstancesNotUpdated(ctx); err != nil {
+	age, err := maxAge("log_instances_not_updated")
+	if err != nil {
+		return err
+	}
+	if err := odb.LogInstancesNotUpdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -388,7 +392,11 @@ func taskAlertNodesNotUpdated(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.DashboardUpdateNodesNotUpdated(ctx); err != nil {
+	age, err := maxAge("alert_nodes_not_updated")
+	if err != nil {
+		return err
+	}
+	if err := odb.DashboardUpdateNodesNotUpdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -420,7 +428,11 @@ func taskAlertServiceConfigNotUpdated(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.DashboardUpdateServiceConfigNotUpdated(ctx); err != nil {
+	age, err := maxAge("alert_service_config_not_updated")
+	if err != nil {
+		return err
+	}
+	if err := odb.DashboardUpdateServiceConfigNotUpdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -436,7 +448,11 @@ func taskAlertInstancesNotUpdated(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.DashboardUpdateInstancesNotUpdated(ctx); err != nil {
+	age, err := maxAge("alert_instances_not_updated")
+	if err != nil {
+		return err
+	}
+	if err := odb.DashboardUpdateInstancesNotUpdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
@@ -500,7 +516,11 @@ func taskAlertChecksNotUpdated(ctx context.Context, task *Task) error {
 	}
 	defer odb.Rollback()
 
-	if err := odb.DashboardUpdateChecksNotUpdated(ctx); err != nil {
+	age, err := maxAge("alert_checks_not_updated")
+	if err != nil {
+		return err
+	}
+	if err := odb.DashboardUpdateChecksNotUpdated(ctx, age); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {

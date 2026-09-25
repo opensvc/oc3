@@ -636,7 +636,7 @@ func (oDb *DB) PurgeAlertsOnDeletedServices(ctx context.Context) error {
 	return nil
 }
 
-func (oDb *DB) DashboardUpdateNodesNotUpdated(ctx context.Context) error {
+func (oDb *DB) DashboardUpdateNodesNotUpdated(ctx context.Context, maxAge time.Duration) error {
 	request := `INSERT INTO dashboard
                SELECT
                  NULL,
@@ -653,10 +653,10 @@ func (oDb *DB) DashboardUpdateNodesNotUpdated(ctx context.Context) error {
                  NULL,
                  NULL
                FROM nodes
-               WHERE updated < date_sub(NOW(), interval 25 hour)
+               WHERE updated < date_sub(NOW(), INTERVAL ? SECOND)
                ON DUPLICATE KEY UPDATE
                  dash_updated=NOW()`
-	if count, err := oDb.execCountContext(ctx, request); err != nil {
+	if count, err := oDb.execCountContext(ctx, request, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -664,7 +664,7 @@ func (oDb *DB) DashboardUpdateNodesNotUpdated(ctx context.Context) error {
 	return nil
 }
 
-func (oDb *DB) DashboardUpdateChecksNotUpdated(ctx context.Context) error {
+func (oDb *DB) DashboardUpdateChecksNotUpdated(ctx context.Context, maxAge time.Duration) error {
 	request := `
 		DELETE FROM dashboard
 		WHERE
@@ -730,10 +730,10 @@ func (oDb *DB) DashboardUpdateChecksNotUpdated(ctx context.Context) error {
 	    CONCAT(chk_type, ":", chk_instance)
 	FROM checks_live c
 	JOIN nodes n ON c.node_id = n.node_id
-	WHERE chk_updated < DATE_SUB(NOW(), INTERVAL 1 DAY)
+	WHERE chk_updated < DATE_SUB(NOW(), INTERVAL ? SECOND)
 	ON DUPLICATE KEY UPDATE dash_updated = NOW();
 	`
-	if count, err := oDb.execCountContext(ctx, request); err != nil {
+	if count, err := oDb.execCountContext(ctx, request, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -793,7 +793,7 @@ func (oDb *DB) DashboardDeleteActionErrorsWithNoError(ctx context.Context) error
 	return nil
 }
 
-func (oDb *DB) DashboardUpdateServiceConfigNotUpdated(ctx context.Context) error {
+func (oDb *DB) DashboardUpdateServiceConfigNotUpdated(ctx context.Context, maxAge time.Duration) error {
 	request := `
 	     INSERT INTO dashboard
              SELECT
@@ -811,11 +811,11 @@ func (oDb *DB) DashboardUpdateServiceConfigNotUpdated(ctx context.Context) error
                NULL,
                NULL
              FROM services
-             WHERE updated < DATE_SUB(NOW(), INTERVAL 25 HOUR)
+             WHERE updated < DATE_SUB(NOW(), INTERVAL ? SECOND)
              ON DUPLICATE KEY UPDATE
                dash_updated=NOW()
 	`
-	if count, err := oDb.execCountContext(ctx, request); err != nil {
+	if count, err := oDb.execCountContext(ctx, request, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -823,7 +823,7 @@ func (oDb *DB) DashboardUpdateServiceConfigNotUpdated(ctx context.Context) error
 	return nil
 }
 
-func (oDb *DB) DashboardUpdateInstancesNotUpdated(ctx context.Context) error {
+func (oDb *DB) DashboardUpdateInstancesNotUpdated(ctx context.Context, maxAge time.Duration) error {
 	request := `
 		INSERT INTO dashboard
 		SELECT
@@ -841,11 +841,11 @@ func (oDb *DB) DashboardUpdateInstancesNotUpdated(ctx context.Context) error {
 		  NULL,
 		  NULL
 		FROM svcmon
-		WHERE mon_updated < DATE_SUB(NOW(), INTERVAL 16 MINUTE)
+		WHERE mon_updated < DATE_SUB(NOW(), INTERVAL ? SECOND)
 		ON DUPLICATE KEY UPDATE
 		  dash_updated=NOW()
 	`
-	if count, err := oDb.execCountContext(ctx, request); err != nil {
+	if count, err := oDb.execCountContext(ctx, request, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("dashboard")
@@ -863,10 +863,10 @@ func (oDb *DB) DashboardUpdateInstancesNotUpdated(ctx context.Context) error {
 			dashboard.dash_type = "service status not updated" AND
 			dashboard.svc_id != "" AND
 			dashboard.node_id != "" AND
-			(svcmon.id IS NULL OR svcmon.mon_updated >= DATE_SUB(NOW(), INTERVAL 16 MINUTE))
+			(svcmon.id IS NULL OR svcmon.mon_updated >= DATE_SUB(NOW(), INTERVAL ? SECOND))
 		)
 	`
-	if count, err := oDb.execCountContext(ctx, request); err != nil {
+	if count, err := oDb.execCountContext(ctx, request, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("dashboard")

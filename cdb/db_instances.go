@@ -232,9 +232,9 @@ func (oDb *DB) SvcmonRefreshTimestamp(ctx context.Context, nodeID string, object
 	return
 }
 
-// InstancePingFromNodeID updates match svcmon.mon_updated, svcmon_log_last.mon_end,
-// resmon.updated and resmon_log_last.res_end when svcmon.mon_updated timestamp
-// for node_id id older than 30s.
+// InstancePingFromNodeID refreshes svcmon.mon_updated, svcmon_log_last.mon_end,
+// resmon.updated and resmon_log_last.res_end of the node_id rows, when older
+// than 30s.
 func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updates bool, err error) {
 	defer logDuration("instancePing "+nodeID, time.Now())
 	const (
@@ -254,13 +254,16 @@ func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updat
 		count int64
 	)
 
+	// svcmon and resmon are refreshed independently: svcmon.mon_updated may
+	// have been refreshed by another path (daemon status) without refreshing
+	// all resmon rows, so skipping resmon when svcmon has no update would let
+	// resmon.updated age until the resources are scrubbed.
 	if count, err = oDb.execCountContext(ctx, qUpdateSvcmon, nodeID); err != nil {
 		return
-	} else if count == 0 {
-		return
+	} else if count > 0 {
+		updates = true
+		oDb.SetChange("svcmon")
 	}
-	updates = true
-	oDb.SetChange("svcmon")
 
 	if _, err = oDb.ExecContext(ctx, qUpdateSvcmonLogLast, nodeID); err != nil {
 		return
@@ -268,10 +271,10 @@ func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updat
 
 	if count, err = oDb.execCountContext(ctx, qUpdateResmon, nodeID); err != nil {
 		return
-	} else if count == 0 {
-		return
+	} else if count > 0 {
+		updates = true
+		oDb.SetChange("resmon")
 	}
-	oDb.SetChange("resmon")
 
 	_, err = oDb.ExecContext(ctx, qUpdateResmonLogLast, nodeID)
 	return
@@ -750,12 +753,13 @@ func (oDb *DB) PurgeInstance(ctx context.Context, id InstanceID) error {
 	return err
 }
 
-func (oDb *DB) InstancesOutdated(ctx context.Context) (instanceIDs []InstanceID, err error) {
+// InstancesOutdated returns the svcmon instance ids not updated since maxAge.
+func (oDb *DB) InstancesOutdated(ctx context.Context, maxAge time.Duration) (instanceIDs []InstanceID, err error) {
 	var rows *sql.Rows
 	query := "SELECT `svc_id`, `node_id` " +
 		"FROM `svcmon` " +
-		"WHERE `mon_updated` < DATE_SUB(NOW(), INTERVAL 21 MINUTE)"
-	rows, err = oDb.DB.QueryContext(ctx, query)
+		"WHERE `mon_updated` < DATE_SUB(NOW(), INTERVAL ? SECOND)"
+	rows, err = oDb.DB.QueryContext(ctx, query, maxAgeSeconds(maxAge))
 	if err != nil {
 		return
 	}
@@ -771,14 +775,13 @@ func (oDb *DB) InstancesOutdated(ctx context.Context) (instanceIDs []InstanceID,
 	return
 }
 
-func (oDb *DB) LogInstancesNotUpdated(ctx context.Context) error {
-	age := 2
+func (oDb *DB) LogInstancesNotUpdated(ctx context.Context, maxAge time.Duration) error {
 	request := fmt.Sprintf(`INSERT IGNORE
              INTO log
                SELECT NULL,
                       "service.status",
                       "scheduler",
-                      "instance status not updated for more than %dh (%%(date)s)",
+                      "instance status not updated for more than %s (%%(date)s)",
                       CONCAT('{"date": "', mon_updated, '"}'),
                       NOW(),
                       svc_id,
@@ -788,8 +791,8 @@ func (oDb *DB) LogInstancesNotUpdated(ctx context.Context) error {
                       "warning",
                       node_id
                from svcmon
-               where mon_updated<DATE_SUB(NOW(), INTERVAL %d HOUR)`, age, age)
-	if count, err := oDb.execCountContext(ctx, request); err != nil {
+               where mon_updated<DATE_SUB(NOW(), INTERVAL ? SECOND)`, FormatMaxAge(maxAge))
+	if count, err := oDb.execCountContext(ctx, request, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		slog.Debug(fmt.Sprintf("alert: instance outdated: %d", count))

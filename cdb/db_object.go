@@ -696,13 +696,17 @@ func (oDb *DB) PurgeTablesFromObjectID(ctx context.Context, id string) error {
 }
 
 // ObjectsOutdated return lists of ids, svc_ids and svcnames for objects that no
-// longer have instances updated in the last 15 minutes and that don't have their object
+// longer have instances updated since maxAge and that don't have their object
 // status set to "undef" yet.
-func (oDb *DB) ObjectsOutdated(ctx context.Context) (objects []ObjectMeta, err error) {
+func (oDb *DB) ObjectsOutdated(ctx context.Context, maxAge time.Duration) (objects []ObjectMeta, err error) {
 	sql := `SELECT id, svc_id, svcname FROM services
-                WHERE svc_id IN (SELECT svc_id FROM v_outdated_services WHERE uptodate=0)
+                WHERE svc_id IN (
+                  SELECT svc_id FROM svcmon
+                  GROUP BY svc_id
+                  HAVING SUM(mon_updated >= DATE_SUB(NOW(), INTERVAL ? SECOND)) = 0
+                )
                 AND (svc_status != "undef" OR svc_availstatus != "undef")`
-	rows, err := oDb.DB.QueryContext(ctx, sql)
+	rows, err := oDb.DB.QueryContext(ctx, sql, maxAgeSeconds(maxAge))
 	if err != nil {
 		return
 	}

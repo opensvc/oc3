@@ -8,11 +8,13 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/cdb"
 )
@@ -295,4 +297,39 @@ func (t *Task) SetLastRunAt(ctx context.Context) error {
 		return fmt.Errorf("set %s last run time: %w", t.name, err)
 	}
 	return nil
+}
+
+// maxAge returns the scheduler.task.<name>.max_age setting: the age after
+// which the task considers a value outdated.
+func maxAge(name string) (time.Duration, error) {
+	return parseMaxAgeKey("scheduler.task." + name + ".max_age")
+}
+
+// parseMaxAgeKey parses the key value with cdb.ParseMaxAge, accepting the
+// time.ParseDuration units plus "d", and rejects values < 1m.
+func parseMaxAgeKey(key string) (time.Duration, error) {
+	s := viper.GetString(key)
+	d, err := cdb.ParseMaxAge(s)
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s value %q: %w", key, s, err)
+	}
+	if d < time.Minute {
+		return 0, fmt.Errorf("invalid %s value %q: must be >= 1m", key, s)
+	}
+	return d, nil
+}
+
+// ValidateMaxAges verifies all the scheduler.task.<name>.max_age settings,
+// so a bad value is reported at startup instead of when the task runs.
+func ValidateMaxAges() error {
+	var errs []error
+	for _, key := range viper.AllKeys() {
+		if !strings.HasPrefix(key, "scheduler.task.") || !strings.HasSuffix(key, ".max_age") {
+			continue
+		}
+		if _, err := parseMaxAgeKey(key); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
 }

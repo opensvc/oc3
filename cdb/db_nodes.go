@@ -433,9 +433,9 @@ func (oDb *DB) NodeUpdateClusterIDForNodeID(ctx context.Context, nodeID, cluster
 	}
 }
 
-func (oDb *DB) PurgeNodeHBAsOutdated(ctx context.Context) error {
-	request := fmt.Sprintf("DELETE FROM `node_hba` WHERE `updated` < DATE_SUB(NOW(), INTERVAL 7 DAY)")
-	if count, err := oDb.execCountContext(ctx, request); err != nil {
+func (oDb *DB) PurgeNodeHBAsOutdated(ctx context.Context, maxAge time.Duration) error {
+	request := fmt.Sprintf("DELETE FROM `node_hba` WHERE `updated` < DATE_SUB(NOW(), INTERVAL ? SECOND)")
+	if count, err := oDb.execCountContext(ctx, request, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		slog.Debug(fmt.Sprintf("purged %d entries from table node_hba", count))

@@ -177,11 +177,13 @@ func (oDb *DB) ResmonRefreshTimestamp(ctx context.Context, nodeID string, object
 	return
 }
 
-func (oDb *DB) ResourceOutdatedLists(ctx context.Context) (resources []ResourceMeta, err error) {
+// ResourceOutdatedLists returns the resmon entries not in "undef" status and
+// not updated since maxAge.
+func (oDb *DB) ResourceOutdatedLists(ctx context.Context, maxAge time.Duration) (resources []ResourceMeta, err error) {
 	sql := `SELECT id, rid, svc_id, node_id FROM resmon
-                WHERE updated < DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+                WHERE updated < DATE_SUB(NOW(), INTERVAL ? SECOND)
                 AND res_status != "undef"`
-	rows, err := oDb.DB.QueryContext(ctx, sql)
+	rows, err := oDb.DB.QueryContext(ctx, sql, maxAgeSeconds(maxAge))
 	if err != nil {
 		return
 	}
@@ -280,12 +282,12 @@ func (oDb *DB) ResourceUpdateStatus(ctx context.Context, resources []ResourceMet
 	return n, err
 }
 
-func (oDb *DB) PurgeResmonOutdated(ctx context.Context) error {
+func (oDb *DB) PurgeResmonOutdated(ctx context.Context, maxAge time.Duration) error {
 	var query = `DELETE
 		FROM resmon
 		WHERE
-		  updated < DATE_SUB(NOW(), INTERVAL 1 DAY)`
-	if count, err := oDb.execCountContext(ctx, query); err != nil {
+		  updated < DATE_SUB(NOW(), INTERVAL ? SECOND)`
+	if count, err := oDb.execCountContext(ctx, query, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("resmon")

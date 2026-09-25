@@ -1,13 +1,16 @@
 package cdb
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
-func (oDb *DB) PurgePackagesOutdated(ctx context.Context) error {
+func (oDb *DB) PurgePackagesOutdated(ctx context.Context, maxAge time.Duration) error {
 	var query = `DELETE
 		FROM packages
 		WHERE
-		  pkg_updated < DATE_SUB(NOW(), INTERVAL 100 DAY)`
-	if count, err := oDb.execCountContext(ctx, query); err != nil {
+		  pkg_updated < DATE_SUB(NOW(), INTERVAL ? SECOND)`
+	if count, err := oDb.execCountContext(ctx, query, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("packages")
@@ -15,12 +18,12 @@ func (oDb *DB) PurgePackagesOutdated(ctx context.Context) error {
 	return nil
 }
 
-func (oDb *DB) PurgePatchesOutdated(ctx context.Context) error {
+func (oDb *DB) PurgePatchesOutdated(ctx context.Context, maxAge time.Duration) error {
 	var query = `DELETE
 		FROM patches
 		WHERE
-		  patch_updated < DATE_SUB(NOW(), INTERVAL 100 DAY)`
-	if count, err := oDb.execCountContext(ctx, query); err != nil {
+		  patch_updated < DATE_SUB(NOW(), INTERVAL ? SECOND)`
+	if count, err := oDb.execCountContext(ctx, query, maxAgeSeconds(maxAge)); err != nil {
 		return err
 	} else if count > 0 {
 		oDb.SetChange("patches")
