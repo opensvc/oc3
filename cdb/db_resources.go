@@ -415,7 +415,7 @@ func (oDb *DB) ResmonUpdate(ctx context.Context, l ...*DBInstanceResource) error
 		insertColList         = "(`svc_id`,`node_id`,`vmname`,`rid`,`res_status`,`res_type`,`res_log`,`res_desc`,`res_optional`,`res_disable`,`res_monitor`, `changed`, `updated`)"
 		valueList             = "(?,?,?,?,?,?,?,?,?,?,?,?,NOW())"
 		onDuplicateAssignment = "" +
-			"`svc_id`=VALUES(`svc_id`), `node_id`=VALUES(`node_id`), `vmname`=VALUES(`vmname`), `rid`=VALUES(`rid`), `res_status`=VALUES(`res_status`)," +
+			"`res_status`=VALUES(`res_status`)," +
 			"`res_type`=VALUES(`res_type`), `res_log`=VALUES(`res_log`), `res_desc`=VALUES(`res_desc`), `res_optional`=VALUES(`res_optional`)," +
 			"`res_disable`=VALUES(`res_disable`), `res_monitor`=VALUES(`res_monitor`),`changed`=VALUES(`changed`),`updated`=VALUES(`updated`)"
 	)
