@@ -232,9 +232,9 @@ func (oDb *DB) SvcmonRefreshTimestamp(ctx context.Context, nodeID string, object
 	return
 }
 
-// InstancePingFromNodeID updates match svcmon.mon_updated, svcmon_log_last.mon_end,
-// resmon.updated and resmon_log_last.res_end when svcmon.mon_updated timestamp
-// for node_id id older than 30s.
+// InstancePingFromNodeID refreshes svcmon.mon_updated, svcmon_log_last.mon_end,
+// resmon.updated and resmon_log_last.res_end of the node_id rows, when older
+// than 30s.
 func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updates bool, err error) {
 	defer logDuration("instancePing "+nodeID, time.Now())
 	const (
@@ -254,13 +254,16 @@ func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updat
 		count int64
 	)
 
+	// svcmon and resmon are refreshed independently: svcmon.mon_updated may
+	// have been refreshed by another path (daemon status) without refreshing
+	// all resmon rows, so skipping resmon when svcmon has no update would let
+	// resmon.updated age until the resources are scrubbed.
 	if count, err = oDb.execCountContext(ctx, qUpdateSvcmon, nodeID); err != nil {
 		return
-	} else if count == 0 {
-		return
+	} else if count > 0 {
+		updates = true
+		oDb.SetChange("svcmon")
 	}
-	updates = true
-	oDb.SetChange("svcmon")
 
 	if _, err = oDb.ExecContext(ctx, qUpdateSvcmonLogLast, nodeID); err != nil {
 		return
@@ -268,10 +271,10 @@ func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updat
 
 	if count, err = oDb.execCountContext(ctx, qUpdateResmon, nodeID); err != nil {
 		return
-	} else if count == 0 {
-		return
+	} else if count > 0 {
+		updates = true
+		oDb.SetChange("resmon")
 	}
-	oDb.SetChange("resmon")
 
 	_, err = oDb.ExecContext(ctx, qUpdateResmonLogLast, nodeID)
 	return
