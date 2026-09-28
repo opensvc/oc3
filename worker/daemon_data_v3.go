@@ -238,14 +238,15 @@ func (d *daemonDataV3) InstanceStatus(objectName string, nodename string) *insta
 	instanceStatus.MonSmonStatus = mapToS(monitor, "", "state")
 	instanceStatus.MonSmonGlobalExpect = mapToS(monitor, "", "global_expect")
 
-	// TODO: status group from v2 (ip/disk/fs/share/container/app/sync)?
-	instanceStatus.MonIpStatus = mapToS(status, "n/a", "status_group", "ip")
-	instanceStatus.MonDiskStatus = mapToS(status, "n/a", "status_group", "disk")
-	instanceStatus.MonFsStatus = mapToS(status, "n/a", "status_group", "fs")
-	instanceStatus.MonShareStatus = mapToS(status, "n/a", "status_group", "share")
-	instanceStatus.MonContainerStatus = mapToS(status, "n/a", "status_group", "container")
-	instanceStatus.MonAppStatus = mapToS(status, "n/a", "status_group", "app")
-	instanceStatus.MonSyncStatus = mapToS(status, "n/a", "status_group", "sync")
+	// v3 has no status_group, compute it from resources with the v2 rules
+	statusGroup := resourcesStatusGroups(instanceStatus.resources)
+	instanceStatus.MonIpStatus = statusGroup["ip"]
+	instanceStatus.MonDiskStatus = statusGroup["disk"]
+	instanceStatus.MonFsStatus = statusGroup["fs"]
+	instanceStatus.MonShareStatus = statusGroup["share"]
+	instanceStatus.MonContainerStatus = statusGroup["container"]
+	instanceStatus.MonAppStatus = statusGroup["app"]
+	instanceStatus.MonSyncStatus = statusGroup["sync"]
 
 	configResources := mapToMap(config, nilMap, "resources")
 	for rid := range instanceStatus.resources {

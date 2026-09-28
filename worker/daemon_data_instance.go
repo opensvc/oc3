@@ -121,7 +121,15 @@ func (i *instanceData) Container(id string) *instanceData {
 		dbI.MonOverallStatus = mergeM[i.MonOverallStatus+",n/a"]
 	}
 
-	if statusGroup, ok := encap["status_group"].(map[string]string); ok {
+	var statusGroup map[string]string
+	if sg, ok := encap["status_group"].(map[string]string); ok {
+		statusGroup = sg
+	} else if _, ok := encap["status_group"]; !ok {
+		// v3 encap has no status_group, compute it from the encap resources
+		var nilMap map[string]any
+		statusGroup = resourcesStatusGroups(mapToMap(encap, nilMap, "resources"))
+	}
+	if statusGroup != nil {
 		dbI.MonIpStatus = mergeM[i.MonIpStatus+","+statusGroup["ip"]]
 		dbI.MonDiskStatus = mergeM[i.MonDiskStatus+","+statusGroup["disk"]]
 		dbI.MonFsStatus = mergeM[i.MonFsStatus+","+statusGroup["fs"]]
