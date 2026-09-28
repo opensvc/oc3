@@ -333,8 +333,8 @@ func (oDb *DB) CompNodeModulesets(ctx context.Context, nodeID string) (moduleset
 
 // CompServiceModulesets returns the modset ids attached to a service
 func (oDb *DB) CompServiceModulesets(ctx context.Context, svcID string, slave bool) (modulesets []int, err error) {
-	const query = `SELECT modset_id FROM comp_modulesets_services WHERE svc_id = ? AND slave = ?`
-	rows, err := oDb.DB.QueryContext(ctx, query, svcID, slave)
+	query := `SELECT modset_id FROM comp_modulesets_services WHERE svc_id = ? AND ` + compSlaveCond("slave", slave)
+	rows, err := oDb.DB.QueryContext(ctx, query, svcID)
 	if err != nil {
 		return nil, err
 	}
@@ -421,8 +421,8 @@ func (oDb *DB) CompServiceCandidateModulesets(ctx context.Context, svcID string,
 
 // CompServiceRulesets returns the ruleset ids attached to a service
 func (oDb *DB) CompServiceRulesets(ctx context.Context, svcID string, slave bool) (rulesets []int, err error) {
-	const query = `SELECT ruleset_id FROM comp_rulesets_services WHERE svc_id = ? AND slave = ?`
-	rows, err := oDb.DB.QueryContext(ctx, query, svcID, slave)
+	query := `SELECT ruleset_id FROM comp_rulesets_services WHERE svc_id = ? AND ` + compSlaveCond("slave", slave)
+	rows, err := oDb.DB.QueryContext(ctx, query, svcID)
 	if err != nil {
 		return nil, err
 	}
@@ -723,10 +723,10 @@ func (oDb *DB) CompServiceAttachedModulesets(ctx context.Context, svcID string, 
 		SELECT comp_moduleset.id, comp_moduleset.modset_name, comp_moduleset.modset_author, comp_moduleset.modset_updated
 		FROM comp_moduleset
 		JOIN comp_modulesets_services ON comp_moduleset.id = comp_modulesets_services.modset_id
-		WHERE comp_modulesets_services.svc_id = ? AND comp_modulesets_services.slave = ?
+		WHERE comp_modulesets_services.svc_id = ? AND ` + compSlaveCond("comp_modulesets_services.slave", slave) + `
 	`
 
-	args := []any{svcID, slave}
+	args := []any{svcID}
 	filter, filterArgs, err := QFilter(ctx, QFilterInput{
 		SvcField:   "comp_modulesets_services.svc_id",
 		IsManager:  isManager,
@@ -774,10 +774,10 @@ func (oDb *DB) CompServiceAttachedRulesets(ctx context.Context, svcID string, sl
 		SELECT comp_rulesets.id, comp_rulesets.ruleset_name, comp_rulesets.ruleset_public, comp_rulesets.ruleset_type
 		FROM comp_rulesets
 		JOIN comp_rulesets_services ON comp_rulesets.id = comp_rulesets_services.ruleset_id
-		WHERE comp_rulesets_services.svc_id = ? AND comp_rulesets_services.slave = ?
+		WHERE comp_rulesets_services.svc_id = ? AND ` + compSlaveCond("comp_rulesets_services.slave", slave) + `
 	`
 
-	args := []any{svcID, slave}
+	args := []any{svcID}
 	filter, filterArgs, err := QFilter(ctx, QFilterInput{
 		SvcField:   "comp_rulesets_services.svc_id",
 		IsManager:  isManager,
@@ -974,10 +974,10 @@ func (oDb *DB) CompModulesetAttachNode(ctx context.Context, nodeID, modulesetID 
 
 // CompModulesetSvcAttached checks if a moduleset is already attached to a service.
 func (oDb *DB) CompModulesetSvcAttached(ctx context.Context, svcID, modulesetID string, slave bool) (bool, error) {
-	const query = "SELECT EXISTS(SELECT 1 FROM comp_modulesets_services WHERE svc_id = ? AND modset_id = ? AND slave = ?)"
+	query := "SELECT EXISTS(SELECT 1 FROM comp_modulesets_services WHERE svc_id = ? AND modset_id = ? AND " + compSlaveCond("slave", slave) + ")"
 	var exists bool
 
-	err := oDb.DB.QueryRowContext(ctx, query, svcID, modulesetID, slave).Scan(&exists)
+	err := oDb.DB.QueryRowContext(ctx, query, svcID, modulesetID).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("compModulesetSvcAttached: %w", err)
 	}
@@ -1019,7 +1019,7 @@ func (oDb *DB) CompModulesetSvcAttachable(ctx context.Context, svcID, modulesetI
 func (oDb *DB) CompModulesetAttachService(ctx context.Context, svcID, modulesetID string, slave bool) (int64, error) {
 	const query = "INSERT INTO comp_modulesets_services (svc_id, modset_id, slave) VALUES (?, ?, ?)"
 
-	result, err := oDb.ExecContext(ctx, query, svcID, modulesetID, slave)
+	result, err := oDb.ExecContext(ctx, query, svcID, modulesetID, compSlaveFlag(slave))
 	if err != nil {
 		return 0, fmt.Errorf("compModulesetAttachService: %w", err)
 	}
@@ -1035,9 +1035,9 @@ func (oDb *DB) CompModulesetAttachService(ctx context.Context, svcID, modulesetI
 
 // CompModulesetDetachService detaches a moduleset from a service.
 func (oDb *DB) CompModulesetDetachService(ctx context.Context, svcID, modulesetID string, slave bool) (int64, error) {
-	const query = "DELETE FROM comp_modulesets_services WHERE svc_id = ? AND modset_id = ? AND slave = ?"
+	query := "DELETE FROM comp_modulesets_services WHERE svc_id = ? AND modset_id = ? AND " + compSlaveCond("slave", slave)
 
-	result, err := oDb.ExecContext(ctx, query, svcID, modulesetID, slave)
+	result, err := oDb.ExecContext(ctx, query, svcID, modulesetID)
 	if err != nil {
 		return 0, fmt.Errorf("compModulesetDetachService: %w", err)
 	}
@@ -1057,10 +1057,10 @@ func (oDb *DB) CompModulesetDetachService(ctx context.Context, svcID, modulesetI
 
 // CompRulesetSvcAttached checks if a ruleset is already attached to a service.
 func (oDb *DB) CompRulesetSvcAttached(ctx context.Context, svcID, rulesetID string, slave bool) (bool, error) {
-	const query = "SELECT EXISTS(SELECT 1 FROM comp_rulesets_services WHERE svc_id = ? AND ruleset_id = ? AND slave = ?)"
+	query := "SELECT EXISTS(SELECT 1 FROM comp_rulesets_services WHERE svc_id = ? AND ruleset_id = ? AND " + compSlaveCond("slave", slave) + ")"
 	var exists bool
 
-	err := oDb.DB.QueryRowContext(ctx, query, svcID, rulesetID, slave).Scan(&exists)
+	err := oDb.DB.QueryRowContext(ctx, query, svcID, rulesetID).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("compRulesetSvcAttached: %w", err)
 	}
@@ -1104,7 +1104,7 @@ func (oDb *DB) CompRulesetSvcAttachable(ctx context.Context, svcID, rulesetID st
 func (oDb *DB) CompRulesetAttachService(ctx context.Context, svcID, rulesetID string, slave bool) (int64, error) {
 	const query = "INSERT INTO comp_rulesets_services (svc_id, ruleset_id, slave) VALUES (?, ?, ?)"
 
-	result, err := oDb.ExecContext(ctx, query, svcID, rulesetID, slave)
+	result, err := oDb.ExecContext(ctx, query, svcID, rulesetID, compSlaveFlag(slave))
 	if err != nil {
 		return 0, fmt.Errorf("compRulesetAttachService: %w", err)
 	}
@@ -1120,9 +1120,9 @@ func (oDb *DB) CompRulesetAttachService(ctx context.Context, svcID, rulesetID st
 
 // CompRulesetDetachService detaches a ruleset from a service.
 func (oDb *DB) CompRulesetDetachService(ctx context.Context, svcID, rulesetID string, slave bool) (int64, error) {
-	const query = "DELETE FROM comp_rulesets_services WHERE svc_id = ? AND ruleset_id = ? AND slave = ?"
+	query := "DELETE FROM comp_rulesets_services WHERE svc_id = ? AND ruleset_id = ? AND " + compSlaveCond("slave", slave)
 
-	result, err := oDb.ExecContext(ctx, query, svcID, rulesetID, slave)
+	result, err := oDb.ExecContext(ctx, query, svcID, rulesetID)
 	if err != nil {
 		return 0, fmt.Errorf("compRulesetDetachService: %w", err)
 	}
@@ -1260,4 +1260,24 @@ func (oDb *DB) GetNodeComplianceStatus(ctx context.Context, nodeID string, p Lis
 	defer func() { _ = rows.Close() }()
 
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// compSlaveFlag is the stored value of the slave flag of a service attachment:
+// "T" or "F", as the historical collector's web2py boolean fields store it.
+func compSlaveFlag(slave bool) string {
+	if slave {
+		return "T"
+	}
+	return "F"
+}
+
+// compSlaveCond selects the service attachments of the given slave flag, stored
+// "T" or "F" by the historical collector and, before this was fixed, 1 or 0 by
+// oc3: comparing the varchar(1) column with a boolean would cast "T" and "F" to
+// 0 alike.
+func compSlaveCond(col string, slave bool) string {
+	if slave {
+		return col + " IN ('T', '1')"
+	}
+	return "(" + col + " IS NULL OR " + col + " NOT IN ('T', '1'))"
 }
