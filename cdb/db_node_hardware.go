@@ -7,8 +7,11 @@ import (
 	"github.com/opensvc/oc3/schema"
 )
 
-func buildNodeHardwareQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
+func buildNodeHardwareQuery(groups []string, isManager bool, selectExprs []string, filters []ColumnFilter) (string, []any, error) {
+	// nodes is a left join, for the nodes. props: a component of an unknown node
+	// is kept, as before the join.
 	q := From(schema.TNodeHW).
+		LeftJoin(schema.TNodes).
 		RawSelect(selectExprs...)
 
 	if !isManager {
@@ -35,6 +38,9 @@ func buildNodeHardwareQuery(groups []string, isManager bool, selectExprs []strin
 		q = q.Where(schema.NodeHWID, ">", 0)
 	}
 
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(filters)
+
 	query, args, err := q.Build()
 	if err != nil {
 		return "", nil, fmt.Errorf("buildNodeHardwareQuery: %w", err)
@@ -43,7 +49,7 @@ func buildNodeHardwareQuery(groups []string, isManager bool, selectExprs []strin
 }
 
 func (oDb *DB) queryHardware(ctx context.Context, nodeID string, defaultOrderBy string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildNodeHardwareQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodeHardwareQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}

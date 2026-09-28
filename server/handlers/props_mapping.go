@@ -316,6 +316,11 @@ var propsMapping = map[string]propMapping{
 			"hw_driver":      colStr(schema.NodeHWHWDriver),
 			"updated":        colStr(schema.NodeHWUpdated),
 		},
+		// A component carries only the node id: its name lives in the joined nodes
+		// table, as in the historical nodes hardware table.
+		Joins: map[string]JoinDef{
+			"nodes": {MappingKey: "node"},
+		},
 	},
 	"hba": {
 		Available: []string{"id", "node_id", "hba_id", "hba_type", "updated"},

@@ -4933,7 +4933,9 @@ paths:
   /nodes/hardware:
     get:
       operationId: GetNodesHardware
-      description: List all nodes PCI and memory hardware
+      description: |
+        List the PCI and memory hardware of the nodes the user can see, as their
+        agents report it. The `nodes.` properties come from the joined nodes table.
       parameters:
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
@@ -4941,6 +4943,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -4950,7 +4953,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/NodeHardwareListResponse'
+        401:
+          $ref: '#/components/responses/401'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -9878,7 +9883,8 @@ components:
         A hardware component of a node, as reported by the agent's asset push:
         `hw_type` is the component family (for example `pci` or `mem`), `hw_path` its
         address. Every property is optional: the `props` query parameter selects which
-        columns the server returns.
+        columns the server returns. The `nodes.` properties come from the joined nodes
+        table, null for a component of an unknown node.
       properties:
         id:
           type: integer
@@ -9896,6 +9902,15 @@ components:
           type: string
         updated:
           type: string
+        nodes.nodename:
+          type: string
+          nullable: true
+        nodes.app:
+          type: string
+          nullable: true
+        nodes.os_name:
+          type: string
+          nullable: true
 
     NodeHardwareListResponse:
       type: object
