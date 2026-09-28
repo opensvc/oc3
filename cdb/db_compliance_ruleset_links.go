@@ -16,16 +16,22 @@ func (oDb *DB) CompRulesetChildAttached(ctx context.Context, parent, child int64
 // CompRulesetLoop tells whether attaching child under parent would close a loop:
 // child already is an ancestor of parent, as rset_loop().
 func (oDb *DB) CompRulesetLoop(ctx context.Context, child, parent int64) (bool, error) {
+	return oDb.compLoop(ctx, "compRulesetLoop", "SELECT parent_rset_id, child_rset_id FROM comp_rulesets_rulesets", child, parent)
+}
+
+// compLoop tells whether child is an ancestor of parent in the parent-child
+// pairs the query returns.
+func (oDb *DB) compLoop(ctx context.Context, name, query string, child, parent int64) (bool, error) {
 	parents := map[int64][]int64{}
-	rows, err := oDb.DB.QueryContext(ctx, "SELECT parent_rset_id, child_rset_id FROM comp_rulesets_rulesets")
+	rows, err := oDb.DB.QueryContext(ctx, query)
 	if err != nil {
-		return false, fmt.Errorf("compRulesetLoop: %w", err)
+		return false, fmt.Errorf("%s: %w", name, err)
 	}
 	for rows.Next() {
 		var p, c int64
 		if err := rows.Scan(&p, &c); err != nil {
 			_ = rows.Close()
-			return false, fmt.Errorf("compRulesetLoop: %w", err)
+			return false, fmt.Errorf("%s: %w", name, err)
 		}
 		parents[c] = append(parents[c], p)
 	}

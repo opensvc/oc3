@@ -11262,6 +11262,183 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/modulesets/{modset_id}/modulesets/{child_modset_id}:
+    post:
+      operationId: PostComplianceModulesetModuleset
+      description: |
+        Attach a moduleset published to the user to a moduleset, as a child. Requires
+        the CompManager privilege and the responsibility of the parent. An attachment
+        closing a loop is a 409; an existing one answers an info message. The change is
+        logged.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - in: path
+          name: child_modset_id
+          required: true
+          description: Child moduleset id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceModulesetModuleset
+      description: |
+        Detach a child moduleset from a moduleset. Requires the CompManager privilege
+        and the responsibility of the parent. The change is logged.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - in: path
+          name: child_modset_id
+          required: true
+          description: Child moduleset id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets/{modset_id}/rulesets/{rset_id}:
+    post:
+      operationId: PostComplianceModulesetRuleset
+      description: |
+        Attach a ruleset published to the user to a moduleset: its variables join the
+        execution environment of the moduleset's modules. Requires the CompManager
+        privilege and the responsibility of the moduleset. An existing attachment
+        answers an info message. The change is logged.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceModulesetRuleset
+      description: |
+        Detach a ruleset published to the user from a moduleset. Requires the
+        CompManager privilege and the responsibility of the moduleset. The change is
+        logged.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:
