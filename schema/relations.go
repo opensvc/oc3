@@ -19,6 +19,9 @@ func init() {
 	ActionQueueNodeID.Ref = NodesNodeID
 	ActionQueueSvcID.Ref = ServicesSvcID
 
+	PackagesNodeID.Ref = NodesNodeID
+	PackagesPkgSig.Ref = PkgSigProviderSigID
+
 	SvcmonSvcID.Ref = ServicesSvcID
 	SvcmonNodeID.Ref = NodesNodeID
 	SvcmonLogSvcID.Ref = ServicesSvcID

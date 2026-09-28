@@ -1018,6 +1018,71 @@ type ObsolescenceSettingRow struct {
 // ObsolescenceSettingRowObsType defines model for ObsolescenceSettingRow.ObsType.
 type ObsolescenceSettingRowObsType string
 
+// PackageDiffNode defines model for PackageDiffNode.
+type PackageDiffNode struct {
+	NodeId   string `json:"node_id"`
+	Nodename string `json:"nodename"`
+}
+
+// PackageDiffRow A package version installed on a compared node, and missing from at least one other.
+type PackageDiffRow struct {
+	NodeId     string `json:"node_id"`
+	PkgArch    string `json:"pkg_arch"`
+	PkgName    string `json:"pkg_name"`
+	PkgType    string `json:"pkg_type"`
+	PkgVersion string `json:"pkg_version"`
+}
+
+// PackageListResponse defines model for PackageListResponse.
+type PackageListResponse struct {
+	Data PackageListResponse_Data `json:"data"`
+	Meta *ListMeta                `json:"meta,omitempty"`
+}
+
+// PackageListResponseData0 defines model for .
+type PackageListResponseData0 = []PackageRow
+
+// PackageListResponseData1 defines model for .
+type PackageListResponseData1 map[string]map[string]int
+
+// PackageListResponse_Data defines model for PackageListResponse.Data.
+type PackageListResponse_Data struct {
+	union json.RawMessage
+}
+
+// PackageRow A package installed on a node, as the agent reports it. Every property is
+// optional: the `props` query parameter selects which columns the server
+// returns. `sig_provider` names the provider of the signing key and is empty
+// when the signature is unknown. The `nodes.` properties come from the joined
+// nodes table.
+type PackageRow struct {
+	Id             *int    `json:"id,omitempty"`
+	NodeId         *string `json:"node_id,omitempty"`
+	NodesApp       *string `json:"nodes.app,omitempty"`
+	NodesNodename  *string `json:"nodes.nodename,omitempty"`
+	NodesOsName    *string `json:"nodes.os_name,omitempty"`
+	PkgArch        *string `json:"pkg_arch,omitempty"`
+	PkgInstallDate *string `json:"pkg_install_date,omitempty"`
+	PkgName        *string `json:"pkg_name,omitempty"`
+	PkgSig         *string `json:"pkg_sig,omitempty"`
+	PkgType        *string `json:"pkg_type,omitempty"`
+	PkgUpdated     *string `json:"pkg_updated,omitempty"`
+	PkgVersion     *string `json:"pkg_version,omitempty"`
+	SigProvider    *string `json:"sig_provider,omitempty"`
+}
+
+// PackagesDiffResponse defines model for PackagesDiffResponse.
+type PackagesDiffResponse struct {
+	Data []PackageDiffRow `json:"data"`
+	Meta struct {
+		// NodeIds The ids of the compared nodes, as the historical API returns them.
+		NodeIds []string `json:"node_ids"`
+
+		// Nodes The compared nodes with their names, ordered by name.
+		Nodes []PackageDiffNode `json:"nodes"`
+	} `json:"meta"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	// Text A human-readable explanation specific to this occurrence of the
@@ -3837,6 +3902,58 @@ type PostObsolescenceSettingJSONBody struct {
 	ObsWarnDate *string `json:"obs_warn_date,omitempty"`
 }
 
+// GetPackagesParams defines parameters for GetPackages.
+type GetPackagesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetPackagesDiffParams defines parameters for GetPackagesDiff.
+type GetPackagesDiffParams struct {
+	// NodeIds A comma-separated list of node ids to compare
+	NodeIds *string `form:"node_ids,omitempty" json:"node_ids,omitempty"`
+
+	// SvcIds A comma-separated list of service ids whose nodes to compare
+	SvcIds *string `form:"svc_ids,omitempty" json:"svc_ids,omitempty"`
+
+	// Encap With svc_ids, compare the services' encapsulated nodes instead of their hosts
+	Encap *bool `form:"encap,omitempty" json:"encap,omitempty"`
+}
+
 // DeleteServicesJSONBody defines parameters for DeleteServices.
 type DeleteServicesJSONBody struct {
 	// SvcId Service id or name
@@ -6114,6 +6231,68 @@ func (t ObsolescenceSettingListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ObsolescenceSettingListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPackageListResponseData0 returns the union data inside the PackageListResponse_Data as a PackageListResponseData0
+func (t PackageListResponse_Data) AsPackageListResponseData0() (PackageListResponseData0, error) {
+	var body PackageListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPackageListResponseData0 overwrites any union data inside the PackageListResponse_Data as the provided PackageListResponseData0
+func (t *PackageListResponse_Data) FromPackageListResponseData0(v PackageListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePackageListResponseData0 performs a merge with any union data inside the PackageListResponse_Data, using the provided PackageListResponseData0
+func (t *PackageListResponse_Data) MergePackageListResponseData0(v PackageListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPackageListResponseData1 returns the union data inside the PackageListResponse_Data as a PackageListResponseData1
+func (t PackageListResponse_Data) AsPackageListResponseData1() (PackageListResponseData1, error) {
+	var body PackageListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPackageListResponseData1 overwrites any union data inside the PackageListResponse_Data as the provided PackageListResponseData1
+func (t *PackageListResponse_Data) FromPackageListResponseData1(v PackageListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePackageListResponseData1 performs a merge with any union data inside the PackageListResponse_Data, using the provided PackageListResponseData1
+func (t *PackageListResponse_Data) MergePackageListResponseData1(v PackageListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PackageListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PackageListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

@@ -634,6 +634,39 @@ var propsMapping = map[string]propMapping{
 			"services": {MappingKey: "service"},
 		},
 	},
+	// Packages installed on the nodes, as the historical packages table lists them.
+	// sig_provider names the provider of the signing key, from pkg_sig_provider;
+	// it is empty when the signature is unknown.
+	"package": {
+		Available: []string{
+			"id", "node_id",
+			"pkg_name", "pkg_version", "pkg_arch", "pkg_type",
+			"pkg_sig", "sig_provider",
+			"pkg_install_date", "pkg_updated",
+		},
+		Default: []string{
+			"id", "node_id",
+			"pkg_name", "pkg_version", "pkg_arch", "pkg_type",
+			"sig_provider", "pkg_install_date", "pkg_updated",
+		},
+		Props: map[string]propDef{
+			"id":               col(schema.PackagesID),
+			"node_id":          colStr(schema.PackagesNodeID),
+			"pkg_name":         colStr(schema.PackagesPkgName),
+			"pkg_version":      colStr(schema.PackagesPkgVersion),
+			"pkg_arch":         colStr(schema.PackagesPkgArch),
+			"pkg_type":         colStr(schema.PackagesPkgType),
+			"pkg_sig":          colStr(schema.PackagesPkgSig),
+			"sig_provider":     colStr(schema.PkgSigProviderSigProvider),
+			"pkg_install_date": colStr(schema.PackagesPkgInstallDate),
+			"pkg_updated":      colStr(schema.PackagesPkgUpdated),
+		},
+		// A package row carries only the node id: its name and properties live in
+		// the joined nodes table.
+		Joins: map[string]JoinDef{
+			"nodes": {MappingKey: "node"},
+		},
+	},
 	"instance_status_log": {
 		Available: []string{
 			"id",

@@ -6302,6 +6302,88 @@ paths:
         500:
           $ref: '#/components/responses/500'
 
+  /packages:
+    get:
+      operationId: GetPackages
+      description: |
+        List the packages installed on the nodes the user can see, with the
+        provider of their signing key. Ordered by node name, package name and
+        architecture by default. The `nodes.` properties come from the joined
+        nodes table.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /packages/diff:
+    get:
+      operationId: GetPackagesDiff
+      description: |
+        List the differences in installed packages between nodes: the package
+        versions installed on some of the compared nodes but not on all of them,
+        one row per node having it. The nodes compared are the given nodes, plus
+        the nodes running the given services, or with `encap` the encapsulated
+        nodes of those services (the nodes named after their instances'
+        `mon_vmname`). Only the nodes and services of the apps the user's groups
+        are responsible for are compared, unless the user is a manager.
+        Fewer than two nodes is a 400, except with `encap`, which then returns an
+        empty list.
+      parameters:
+        - in: query
+          name: node_ids
+          description: A comma-separated list of node ids to compare
+          schema:
+            type: string
+        - in: query
+          name: svc_ids
+          description: A comma-separated list of service ids whose nodes to compare
+          schema:
+            type: string
+        - in: query
+          name: encap
+          description: With svc_ids, compare the services' encapsulated nodes instead of their hosts
+          schema:
+            type: boolean
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackagesDiffResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /services:
     get:
       operationId: GetServices
@@ -9158,6 +9240,115 @@ components:
         services.svcname:
           type: string
           nullable: true
+
+    PackageRow:
+      type: object
+      description: |
+        A package installed on a node, as the agent reports it. Every property is
+        optional: the `props` query parameter selects which columns the server
+        returns. `sig_provider` names the provider of the signing key and is empty
+        when the signature is unknown. The `nodes.` properties come from the joined
+        nodes table.
+      properties:
+        id:
+          type: integer
+        node_id:
+          type: string
+        pkg_name:
+          type: string
+        pkg_version:
+          type: string
+        pkg_arch:
+          type: string
+        pkg_type:
+          type: string
+          nullable: true
+        pkg_sig:
+          type: string
+          nullable: true
+        sig_provider:
+          type: string
+          nullable: true
+        pkg_install_date:
+          type: string
+          nullable: true
+        pkg_updated:
+          type: string
+        nodes.nodename:
+          type: string
+          nullable: true
+        nodes.app:
+          type: string
+          nullable: true
+        nodes.os_name:
+          type: string
+          nullable: true
+
+    PackageListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/PackageRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    PackageDiffRow:
+      type: object
+      description: A package version installed on a compared node, and missing from at least one other.
+      required: [node_id, pkg_name, pkg_version, pkg_arch, pkg_type]
+      properties:
+        node_id:
+          type: string
+        pkg_name:
+          type: string
+        pkg_version:
+          type: string
+        pkg_arch:
+          type: string
+        pkg_type:
+          type: string
+
+    PackageDiffNode:
+      type: object
+      required: [node_id, nodename]
+      properties:
+        node_id:
+          type: string
+        nodename:
+          type: string
+
+    PackagesDiffResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PackageDiffRow'
+        meta:
+          type: object
+          required: [node_ids, nodes]
+          properties:
+            node_ids:
+              description: The ids of the compared nodes, as the historical API returns them.
+              type: array
+              items:
+                type: string
+            nodes:
+              description: The compared nodes with their names, ordered by name.
+              type: array
+              items:
+                $ref: '#/components/schemas/PackageDiffNode'
 
     InstanceListResponse:
       type: object
