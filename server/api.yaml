@@ -8742,6 +8742,41 @@ paths:
         500:
           $ref: '#/components/responses/500'
 
+  /workflows:
+    get:
+      operationId: GetWorkflows
+      description: |
+        List the requests: the workflows started by the submission of a form with a
+        workflow output. As the historical API,
+        every workflow is listed to any authenticated user. `form_name`,
+        `form_folder` and `form_yaml` are those of the form revision the request
+        started from.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:
@@ -9454,6 +9489,70 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/RulesetRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    WorkflowRow:
+      type: object
+      description: |
+        A request: the workflow started by the submission of a form with a workflow
+        output. `form_head_id` is the stored submission that started it,
+        `last_form_id` and `last_form_name` its latest step; `status` is `pending`
+        while a next step awaits `last_assignee`, `closed` otherwise. Every property
+        is optional: the `props` query parameter selects which columns the server
+        returns. `form_name`, `form_folder` and `form_yaml` come from the joined form
+        revision and are null when it is missing.
+      properties:
+        id:
+          type: integer
+        form_head_id:
+          type: integer
+        form_name:
+          type: string
+          nullable: true
+        last_form_id:
+          type: integer
+          nullable: true
+        last_form_name:
+          type: string
+          nullable: true
+        form_folder:
+          type: string
+          nullable: true
+        status:
+          type: string
+        steps:
+          type: integer
+        creator:
+          type: string
+        last_assignee:
+          type: string
+        create_date:
+          type: string
+        last_update:
+          type: string
+        form_md5:
+          type: string
+          nullable: true
+        form_yaml:
+          type: string
+          nullable: true
+
+    WorkflowListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/WorkflowRow'
             - type: object
               additionalProperties:
                 type: object

@@ -449,9 +449,17 @@ var propsMapping = map[string]propMapping{
 			"form_name":        colStr(schema.FormsRevisionsFormName),
 		},
 	},
-	// Workflows chaining stored forms.
+	// Workflows chaining stored forms: the requests. form_name, form_folder and
+	// form_yaml are those of the form revision the request started from, joined
+	// by form_md5 as in the historical workflows table; they are not among the
+	// default props, which stay those of the workflows table (the /dump output).
 	"workflow": {
 		Available: []string{
+			"id", "form_head_id", "status", "steps", "creator", "create_date",
+			"last_assignee", "last_update", "form_md5", "last_form_id", "last_form_name",
+			"form_name", "form_folder", "form_yaml",
+		},
+		Default: []string{
 			"id", "form_head_id", "status", "steps", "creator", "create_date",
 			"last_assignee", "last_update", "form_md5", "last_form_id", "last_form_name",
 		},
@@ -467,6 +475,9 @@ var propsMapping = map[string]propMapping{
 			"form_md5":       colStr(schema.WorkflowsFormMD5),
 			"last_form_id":   col(schema.WorkflowsLastFormID),
 			"last_form_name": colStr(schema.WorkflowsLastFormName),
+			"form_name":      colStr(schema.FormsRevisionsFormName),
+			"form_folder":    colStr(schema.FormsRevisionsFormFolder),
+			"form_yaml":      colStr(schema.FormsRevisionsFormYaml),
 		},
 	},
 	"user": {

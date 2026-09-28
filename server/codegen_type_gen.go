@@ -1288,6 +1288,47 @@ type UserRow struct {
 	Username                *string `json:"username,omitempty"`
 }
 
+// WorkflowListResponse defines model for WorkflowListResponse.
+type WorkflowListResponse struct {
+	Data WorkflowListResponse_Data `json:"data"`
+	Meta *ListMeta                 `json:"meta,omitempty"`
+}
+
+// WorkflowListResponseData0 defines model for .
+type WorkflowListResponseData0 = []WorkflowRow
+
+// WorkflowListResponseData1 defines model for .
+type WorkflowListResponseData1 map[string]map[string]int
+
+// WorkflowListResponse_Data defines model for WorkflowListResponse.Data.
+type WorkflowListResponse_Data struct {
+	union json.RawMessage
+}
+
+// WorkflowRow A request: the workflow started by the submission of a form with a workflow
+// output. `form_head_id` is the stored submission that started it,
+// `last_form_id` and `last_form_name` its latest step; `status` is `pending`
+// while a next step awaits `last_assignee`, `closed` otherwise. Every property
+// is optional: the `props` query parameter selects which columns the server
+// returns. `form_name`, `form_folder` and `form_yaml` come from the joined form
+// revision and are null when it is missing.
+type WorkflowRow struct {
+	CreateDate   *string `json:"create_date,omitempty"`
+	Creator      *string `json:"creator,omitempty"`
+	FormFolder   *string `json:"form_folder,omitempty"`
+	FormHeadId   *int    `json:"form_head_id,omitempty"`
+	FormMd5      *string `json:"form_md5,omitempty"`
+	FormName     *string `json:"form_name,omitempty"`
+	FormYaml     *string `json:"form_yaml,omitempty"`
+	Id           *int    `json:"id,omitempty"`
+	LastAssignee *string `json:"last_assignee,omitempty"`
+	LastFormId   *int    `json:"last_form_id,omitempty"`
+	LastFormName *string `json:"last_form_name,omitempty"`
+	LastUpdate   *string `json:"last_update,omitempty"`
+	Status       *string `json:"status,omitempty"`
+	Steps        *int    `json:"steps,omitempty"`
+}
+
 // Version defines model for version.
 type Version struct {
 	Version string `json:"version"`
@@ -5139,6 +5180,46 @@ type PostUserPrefsJSONBody struct {
 	Uuid *string `json:"uuid,omitempty"`
 }
 
+// GetWorkflowsParams defines parameters for GetWorkflows.
+type GetWorkflowsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
 // PostActionsJSONRequestBody defines body for PostActions for application/json ContentType.
 type PostActionsJSONRequestBody PostActionsJSONBody
 
@@ -6703,6 +6784,68 @@ func (t UserListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *UserListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsWorkflowListResponseData0 returns the union data inside the WorkflowListResponse_Data as a WorkflowListResponseData0
+func (t WorkflowListResponse_Data) AsWorkflowListResponseData0() (WorkflowListResponseData0, error) {
+	var body WorkflowListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWorkflowListResponseData0 overwrites any union data inside the WorkflowListResponse_Data as the provided WorkflowListResponseData0
+func (t *WorkflowListResponse_Data) FromWorkflowListResponseData0(v WorkflowListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWorkflowListResponseData0 performs a merge with any union data inside the WorkflowListResponse_Data, using the provided WorkflowListResponseData0
+func (t *WorkflowListResponse_Data) MergeWorkflowListResponseData0(v WorkflowListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWorkflowListResponseData1 returns the union data inside the WorkflowListResponse_Data as a WorkflowListResponseData1
+func (t WorkflowListResponse_Data) AsWorkflowListResponseData1() (WorkflowListResponseData1, error) {
+	var body WorkflowListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWorkflowListResponseData1 overwrites any union data inside the WorkflowListResponse_Data as the provided WorkflowListResponseData1
+func (t *WorkflowListResponse_Data) FromWorkflowListResponseData1(v WorkflowListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWorkflowListResponseData1 performs a merge with any union data inside the WorkflowListResponse_Data, using the provided WorkflowListResponseData1
+func (t *WorkflowListResponse_Data) MergeWorkflowListResponseData1(v WorkflowListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t WorkflowListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *WorkflowListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

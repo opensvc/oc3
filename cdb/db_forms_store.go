@@ -66,6 +66,10 @@ func (oDb *DB) GetFormsStore(ctx context.Context, storeID *int64, p ListParams) 
 	return oDb.listQuery(ctx, "getFormsStore", formsStoreFrom, conds, args, "forms_store.id", p)
 }
 
+// workflowsFrom joins the form revision a workflow started from, for its name,
+// folder and definition; a workflow whose revision is missing is still listed.
+const workflowsFrom = "workflows LEFT JOIN forms_revisions ON forms_revisions.form_md5 = workflows.form_md5"
+
 // GetWorkflows lists the workflows, one when id is set.
 func (oDb *DB) GetWorkflows(ctx context.Context, id *int64, p ListParams) ([]map[string]any, error) {
 	conds := []string{"workflows.id > 0"}
@@ -74,7 +78,7 @@ func (oDb *DB) GetWorkflows(ctx context.Context, id *int64, p ListParams) ([]map
 		conds = append(conds, "workflows.id = ?")
 		args = append(args, *id)
 	}
-	return oDb.listQuery(ctx, "getWorkflows", "workflows", conds, args, "workflows.id", p)
+	return oDb.listQuery(ctx, "getWorkflows", workflowsFrom, conds, args, "workflows.id", p)
 }
 
 // WorkflowIDByHead returns the workflow started by a stored form.
