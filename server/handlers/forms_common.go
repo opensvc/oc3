@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -67,7 +69,7 @@ func (a *Api) formCaller(ctx context.Context, c echo.Context) (formCaller, error
 func decodeEntries(c echo.Context) (entries []map[string]any, isList bool, err error) {
 	contentType := c.Request().Header.Get(echo.HeaderContentType)
 	if strings.HasPrefix(contentType, echo.MIMEApplicationForm) || strings.HasPrefix(contentType, echo.MIMEMultipartForm) {
-		values, err := c.FormParams()
+		values, err := formValues(c, contentType)
 		if err != nil {
 			return nil, false, httpErrorf(http.StatusBadRequest, "invalid request body: %s", err)
 		}
@@ -96,6 +98,20 @@ func decodeEntries(c echo.Context) (entries []map[string]any, isList bool, err e
 		return nil, false, httpErrorf(http.StatusBadRequest, "invalid request body: %s", err)
 	}
 	return []map[string]any{entry}, false, nil
+}
+
+// formValues reads a form-encoded body. The standard library parses the body of
+// POST, PUT and PATCH requests only, while the historical examples also send
+// DELETE requests with curl -d, so an url-encoded body is read directly.
+func formValues(c echo.Context, contentType string) (url.Values, error) {
+	if !strings.HasPrefix(contentType, echo.MIMEApplicationForm) {
+		return c.FormParams()
+	}
+	b, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		return nil, err
+	}
+	return url.ParseQuery(string(b))
 }
 
 // entryString reads a key of a decoded entry as a string, as posted form
