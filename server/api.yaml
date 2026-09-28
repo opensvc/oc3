@@ -11439,6 +11439,436 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/modulesets/{modset_id}/publications:
+    get:
+      operationId: GetComplianceModulesetPublications
+      description: |
+        List the publication groups of a moduleset; a non-manager sees only the ones they are
+        a member of.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets/{modset_id}/publications/{group_id}:
+    post:
+      operationId: PostComplianceModulesetPublication
+      description: |
+        Make a group a publication group of the moduleset. Requires the CompManager privilege
+        and the responsibility of the moduleset; a non-manager may attach only one of their
+        groups. Everybody may not be made responsible. The change is logged.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceModulesetPublication
+      description: |
+        Remove a publication group from the moduleset. Requires the CompManager privilege and
+        the responsibility of the moduleset. The change is logged.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets_publications:
+    post:
+      operationId: PostComplianceModulesetsPublications
+      description: |
+        Attach a publication group to a moduleset, as
+        POST /compliance/modulesets/{modset_id}/publications/{group_id}, both named in the body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modset_id, group_id]
+              properties:
+                modset_id:
+                  description: Moduleset id or name
+                group_id:
+                  description: Group id or role
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceModulesetsPublications
+      description: |
+        Detach a publication group from a moduleset, as
+        DELETE /compliance/modulesets/{modset_id}/publications/{group_id}, both named in the body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modset_id, group_id]
+              properties:
+                modset_id:
+                  description: Moduleset id or name
+                group_id:
+                  description: Group id or role
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets/{modset_id}/responsibles:
+    get:
+      operationId: GetComplianceModulesetResponsibles
+      description: |
+        List the responsible groups of a moduleset; a non-manager sees only the ones they are
+        a member of.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets/{modset_id}/responsibles/{group_id}:
+    post:
+      operationId: PostComplianceModulesetResponsible
+      description: |
+        Make a group a responsible group of the moduleset. Requires the CompManager privilege
+        and the responsibility of the moduleset; a non-manager may attach only one of their
+        groups. Everybody may not be made responsible. The change is logged.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceModulesetResponsible
+      description: |
+        Remove a responsible group from the moduleset. Requires the CompManager privilege and
+        the responsibility of the moduleset. The change is logged.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets_responsibles:
+    post:
+      operationId: PostComplianceModulesetsResponsibles
+      description: |
+        Attach a responsible group to a moduleset, as
+        POST /compliance/modulesets/{modset_id}/responsibles/{group_id}, both named in the body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modset_id, group_id]
+              properties:
+                modset_id:
+                  description: Moduleset id or name
+                group_id:
+                  description: Group id or role
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceModulesetsResponsibles
+      description: |
+        Detach a responsible group from a moduleset, as
+        DELETE /compliance/modulesets/{modset_id}/responsibles/{group_id}, both named in the body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modset_id, group_id]
+              properties:
+                modset_id:
+                  description: Moduleset id or name
+                group_id:
+                  description: Group id or role
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:

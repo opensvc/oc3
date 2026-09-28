@@ -2243,6 +2243,122 @@ type PostComplianceModulesetModuleJSONBody struct {
 	ModsetModName *string     `json:"modset_mod_name,omitempty"`
 }
 
+// GetComplianceModulesetPublicationsParams defines parameters for GetComplianceModulesetPublications.
+type GetComplianceModulesetPublicationsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetComplianceModulesetResponsiblesParams defines parameters for GetComplianceModulesetResponsibles.
+type GetComplianceModulesetResponsiblesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// DeleteComplianceModulesetsPublicationsJSONBody defines parameters for DeleteComplianceModulesetsPublications.
+type DeleteComplianceModulesetsPublicationsJSONBody struct {
+	// GroupId Group id or role
+	GroupId interface{} `json:"group_id"`
+
+	// ModsetId Moduleset id or name
+	ModsetId interface{} `json:"modset_id"`
+}
+
+// PostComplianceModulesetsPublicationsJSONBody defines parameters for PostComplianceModulesetsPublications.
+type PostComplianceModulesetsPublicationsJSONBody struct {
+	// GroupId Group id or role
+	GroupId interface{} `json:"group_id"`
+
+	// ModsetId Moduleset id or name
+	ModsetId interface{} `json:"modset_id"`
+}
+
+// DeleteComplianceModulesetsResponsiblesJSONBody defines parameters for DeleteComplianceModulesetsResponsibles.
+type DeleteComplianceModulesetsResponsiblesJSONBody struct {
+	// GroupId Group id or role
+	GroupId interface{} `json:"group_id"`
+
+	// ModsetId Moduleset id or name
+	ModsetId interface{} `json:"modset_id"`
+}
+
+// PostComplianceModulesetsResponsiblesJSONBody defines parameters for PostComplianceModulesetsResponsibles.
+type PostComplianceModulesetsResponsiblesJSONBody struct {
+	// GroupId Group id or role
+	GroupId interface{} `json:"group_id"`
+
+	// ModsetId Moduleset id or name
+	ModsetId interface{} `json:"modset_id"`
+}
+
 // DeleteComplianceRulesetsJSONBody defines parameters for DeleteComplianceRulesets.
 type DeleteComplianceRulesetsJSONBody struct {
 	// Id Ruleset id or name
@@ -6222,6 +6338,18 @@ type PostComplianceModulesetModulesJSONRequestBody PostComplianceModulesetModule
 
 // PostComplianceModulesetModuleJSONRequestBody defines body for PostComplianceModulesetModule for application/json ContentType.
 type PostComplianceModulesetModuleJSONRequestBody PostComplianceModulesetModuleJSONBody
+
+// DeleteComplianceModulesetsPublicationsJSONRequestBody defines body for DeleteComplianceModulesetsPublications for application/json ContentType.
+type DeleteComplianceModulesetsPublicationsJSONRequestBody DeleteComplianceModulesetsPublicationsJSONBody
+
+// PostComplianceModulesetsPublicationsJSONRequestBody defines body for PostComplianceModulesetsPublications for application/json ContentType.
+type PostComplianceModulesetsPublicationsJSONRequestBody PostComplianceModulesetsPublicationsJSONBody
+
+// DeleteComplianceModulesetsResponsiblesJSONRequestBody defines body for DeleteComplianceModulesetsResponsibles for application/json ContentType.
+type DeleteComplianceModulesetsResponsiblesJSONRequestBody DeleteComplianceModulesetsResponsiblesJSONBody
+
+// PostComplianceModulesetsResponsiblesJSONRequestBody defines body for PostComplianceModulesetsResponsibles for application/json ContentType.
+type PostComplianceModulesetsResponsiblesJSONRequestBody PostComplianceModulesetsResponsiblesJSONBody
 
 // DeleteComplianceRulesetsJSONRequestBody defines body for DeleteComplianceRulesets for application/json ContentType.
 type DeleteComplianceRulesetsJSONRequestBody DeleteComplianceRulesetsJSONBody
