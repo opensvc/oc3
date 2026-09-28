@@ -757,6 +757,18 @@ var propsMapping = map[string]propMapping{
 			"ruleset_public": colStr(schema.CompRulesetsRulesetPublic),
 		},
 	},
+	// Modules of a compliance moduleset: the agent modules it runs.
+	"moduleset_module": {
+		Available: []string{"id", "modset_id", "modset_mod_name", "autofix", "modset_mod_author", "modset_mod_updated"},
+		Props: map[string]propDef{
+			"id":                 col(schema.CompModulesetModulesID),
+			"modset_id":          colInt(schema.CompModulesetModulesModsetID),
+			"modset_mod_name":    colStr(schema.CompModulesetModulesModsetModName),
+			"autofix":            colStr(schema.CompModulesetModulesAutofix),
+			"modset_mod_author":  colStr(schema.CompModulesetModulesModsetModAuthor),
+			"modset_mod_updated": colStr(schema.CompModulesetModulesModsetModUpdated),
+		},
+	},
 	// Variables of a compliance ruleset: the rules the modules apply.
 	"ruleset_variable": {
 		Available: []string{"id", "ruleset_id", "var_name", "var_class", "var_value", "var_author", "var_updated"},
