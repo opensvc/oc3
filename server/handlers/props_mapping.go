@@ -3,6 +3,7 @@ package serverhandlers
 import (
 	"fmt"
 
+	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/schema"
 )
 
@@ -767,6 +768,28 @@ var propsMapping = map[string]propMapping{
 			"autofix":            colStr(schema.CompModulesetModulesAutofix),
 			"modset_mod_author":  colStr(schema.CompModulesetModulesModsetModAuthor),
 			"modset_mod_updated": colStr(schema.CompModulesetModulesModsetModUpdated),
+		},
+	},
+	// Modules of every moduleset, as the historical v_comp_modulesets view: a
+	// moduleset without module has a row with a zero id and empty module props.
+	"modulesets_module": {
+		Available: []string{
+			"id", "modset_id", "modset_name", "teams_responsible", "teams_publication",
+			"modset_mod_name", "autofix", "modset_mod_updated", "modset_mod_author",
+			"modset_author", "modset_updated",
+		},
+		Props: map[string]propDef{
+			"id":                 colInt(schema.CompModulesetModulesID),
+			"modset_id":          col(schema.CompModulesetID),
+			"modset_name":        colStr(schema.CompModulesetModsetName),
+			"modset_author":      colStr(schema.CompModulesetModsetAuthor),
+			"modset_updated":     colStr(schema.CompModulesetModsetUpdated),
+			"modset_mod_name":    colStr(schema.CompModulesetModulesModsetModName),
+			"autofix":            colStr(schema.CompModulesetModulesAutofix),
+			"modset_mod_author":  colStr(schema.CompModulesetModulesModsetModAuthor),
+			"modset_mod_updated": colStr(schema.CompModulesetModulesModsetModUpdated),
+			"teams_responsible":  colStr(cdb.ModsetResponsibles),
+			"teams_publication":  colStr(cdb.ModsetPublications),
 		},
 	},
 	// Variables of a compliance ruleset: the rules the modules apply.

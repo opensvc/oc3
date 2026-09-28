@@ -67,6 +67,15 @@ func (a *Api) GetComplianceModulesetModules(c echo.Context, modsetId string, par
 		})
 }
 
+// GetComplianceModulesetsModules handles GET /compliance/modulesets_modules.
+func (a *Api) GetComplianceModulesetsModules(c echo.Context, params server.GetComplianceModulesetsModulesParams) error {
+	return a.handleList(c, "GetComplianceModulesetsModules", "modulesets_module",
+		listParams(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, params.Filter),
+		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
+			return a.ODB.GetComplianceModulesetsModules(ctx, p)
+		})
+}
+
 // GetComplianceModulesetModule handles GET /compliance/modulesets/{modset_id}/modules/{mod_id}.
 func (a *Api) GetComplianceModulesetModule(c echo.Context, modsetId, modId string, params server.GetComplianceModulesetModuleParams) error {
 	ctx := c.Request().Context()

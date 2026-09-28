@@ -1106,6 +1106,47 @@ type ModulesetRow struct {
 	ModsetUpdated *string `json:"modset_updated,omitempty"`
 }
 
+// ModulesetsModuleListResponse defines model for ModulesetsModuleListResponse.
+type ModulesetsModuleListResponse struct {
+	Data ModulesetsModuleListResponse_Data `json:"data"`
+	Meta *ListMeta                         `json:"meta,omitempty"`
+}
+
+// ModulesetsModuleListResponseData0 defines model for .
+type ModulesetsModuleListResponseData0 = []ModulesetsModuleRow
+
+// ModulesetsModuleListResponseData1 defines model for .
+type ModulesetsModuleListResponseData1 map[string]map[string]int
+
+// ModulesetsModuleListResponse_Data defines model for ModulesetsModuleListResponse.Data.
+type ModulesetsModuleListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ModulesetsModuleRow A module of a compliance moduleset, with its moduleset and the moduleset's
+// teams. Every property is optional: the `props` query parameter selects which
+// columns the server returns.
+type ModulesetsModuleRow struct {
+	// Autofix T when the module is fixed without being asked, F otherwise.
+	Autofix *string `json:"autofix,omitempty"`
+
+	// Id The module id, 0 on the row of a moduleset without module.
+	Id               *int    `json:"id,omitempty"`
+	ModsetAuthor     *string `json:"modset_author,omitempty"`
+	ModsetId         *int    `json:"modset_id,omitempty"`
+	ModsetModAuthor  *string `json:"modset_mod_author,omitempty"`
+	ModsetModName    *string `json:"modset_mod_name,omitempty"`
+	ModsetModUpdated *string `json:"modset_mod_updated,omitempty"`
+	ModsetName       *string `json:"modset_name,omitempty"`
+	ModsetUpdated    *string `json:"modset_updated,omitempty"`
+
+	// TeamsPublication The roles of the groups the moduleset is published to, comma separated.
+	TeamsPublication *string `json:"teams_publication,omitempty"`
+
+	// TeamsResponsible The roles of the groups responsible for the moduleset, comma separated.
+	TeamsResponsible *string `json:"teams_responsible,omitempty"`
+}
+
 // NetworkListResponse defines model for NetworkListResponse.
 type NetworkListResponse struct {
 	Data []NetworkRow `json:"data"`
@@ -2523,6 +2564,46 @@ type GetComplianceModulesetServicesParams struct {
 	// Slave With true, the encapsulated services
 	Slave *bool `form:"slave,omitempty" json:"slave,omitempty"`
 
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetComplianceModulesetsModulesParams defines parameters for GetComplianceModulesetsModules.
+type GetComplianceModulesetsModulesParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 
@@ -7908,6 +7989,68 @@ func (t ModulesetModuleListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ModulesetModuleListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsModulesetsModuleListResponseData0 returns the union data inside the ModulesetsModuleListResponse_Data as a ModulesetsModuleListResponseData0
+func (t ModulesetsModuleListResponse_Data) AsModulesetsModuleListResponseData0() (ModulesetsModuleListResponseData0, error) {
+	var body ModulesetsModuleListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromModulesetsModuleListResponseData0 overwrites any union data inside the ModulesetsModuleListResponse_Data as the provided ModulesetsModuleListResponseData0
+func (t *ModulesetsModuleListResponse_Data) FromModulesetsModuleListResponseData0(v ModulesetsModuleListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeModulesetsModuleListResponseData0 performs a merge with any union data inside the ModulesetsModuleListResponse_Data, using the provided ModulesetsModuleListResponseData0
+func (t *ModulesetsModuleListResponse_Data) MergeModulesetsModuleListResponseData0(v ModulesetsModuleListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsModulesetsModuleListResponseData1 returns the union data inside the ModulesetsModuleListResponse_Data as a ModulesetsModuleListResponseData1
+func (t ModulesetsModuleListResponse_Data) AsModulesetsModuleListResponseData1() (ModulesetsModuleListResponseData1, error) {
+	var body ModulesetsModuleListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromModulesetsModuleListResponseData1 overwrites any union data inside the ModulesetsModuleListResponse_Data as the provided ModulesetsModuleListResponseData1
+func (t *ModulesetsModuleListResponse_Data) FromModulesetsModuleListResponseData1(v ModulesetsModuleListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeModulesetsModuleListResponseData1 performs a merge with any union data inside the ModulesetsModuleListResponse_Data, using the provided ModulesetsModuleListResponseData1
+func (t *ModulesetsModuleListResponse_Data) MergeModulesetsModuleListResponseData1(v ModulesetsModuleListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ModulesetsModuleListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ModulesetsModuleListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

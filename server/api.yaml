@@ -12059,6 +12059,43 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/modulesets_modules:
+    get:
+      operationId: GetComplianceModulesetsModules
+      description: |
+        List the modules of the modulesets published to one of the user's groups, every
+        moduleset for a manager, as the historical v_comp_modulesets view: one row per
+        module, with its moduleset and the moduleset's responsible and publication
+        teams. A moduleset without module is listed on a row with a zero id and empty
+        module props.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModulesetsModuleListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /compliance/modulesets_nodes:
     post:
       operationId: PostComplianceModulesetsNodes
@@ -13348,6 +13385,58 @@ components:
           nullable: true
         modset_mod_updated:
           type: string
+
+    ModulesetsModuleRow:
+      type: object
+      description: |
+        A module of a compliance moduleset, with its moduleset and the moduleset's
+        teams. Every property is optional: the `props` query parameter selects which
+        columns the server returns.
+      properties:
+        id:
+          type: integer
+          description: The module id, 0 on the row of a moduleset without module.
+        modset_id:
+          type: integer
+        modset_name:
+          type: string
+        modset_author:
+          type: string
+        modset_updated:
+          type: string
+        modset_mod_name:
+          type: string
+        autofix:
+          type: string
+          description: T when the module is fixed without being asked, F otherwise.
+        modset_mod_author:
+          type: string
+        modset_mod_updated:
+          type: string
+        teams_responsible:
+          type: string
+          description: The roles of the groups responsible for the moduleset, comma separated.
+        teams_publication:
+          type: string
+          description: The roles of the groups the moduleset is published to, comma separated.
+
+    ModulesetsModuleListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ModulesetsModuleRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     ModulesetModuleListResponse:
       type: object

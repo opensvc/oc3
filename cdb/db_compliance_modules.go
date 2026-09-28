@@ -7,7 +7,42 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/opensvc/oc3/schema"
 )
+
+// The team roles of each moduleset, as the derived tables modulesetsModulesFrom
+// joins, so the lists can be filtered and sorted by them.
+var (
+	TModsetResponsibles = &schema.Table{Name: "modset_responsibles"}
+	TModsetPublications = &schema.Table{Name: "modset_publications"}
+	ModsetResponsibles  = &schema.Col{T: TModsetResponsibles, Name: "teams", Nullable: true}
+	ModsetPublications  = &schema.Col{T: TModsetPublications, Name: "teams", Nullable: true}
+)
+
+// modsetTeams aggregates the roles of the groups a team table gives each
+// moduleset, into the derived table alias.
+func modsetTeams(table, alias string) string {
+	return "LEFT JOIN (SELECT t.modset_id, GROUP_CONCAT(DISTINCT ag.role ORDER BY ag.role SEPARATOR ', ') AS teams" +
+		" FROM " + table + " t JOIN auth_group ag ON ag.id = t.group_id GROUP BY t.modset_id) " + alias +
+		" ON " + alias + ".modset_id = comp_moduleset.id"
+}
+
+// modulesetsModulesFrom is the historical v_comp_modulesets view: every
+// moduleset with each of its modules, a moduleset without module on a row of
+// its own, and the responsible and publication teams of the moduleset.
+var modulesetsModulesFrom = "comp_moduleset" +
+	" LEFT JOIN comp_moduleset_modules ON comp_moduleset_modules.modset_id = comp_moduleset.id " +
+	modsetTeams("comp_moduleset_team_responsible", TModsetResponsibles.Name) + " " +
+	modsetTeams("comp_moduleset_team_publication", TModsetPublications.Name)
+
+// GetComplianceModulesetsModules lists the modules of the modulesets visible to
+// the caller, by moduleset and module name.
+func (oDb *DB) GetComplianceModulesetsModules(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	cond, args := compObjectVisibleCond(CompModulesetKind, p.Groups, p.IsManager)
+	return oDb.listQuery(ctx, "getComplianceModulesetsModules", modulesetsModulesFrom, []string{cond}, args,
+		"comp_moduleset.modset_name, comp_moduleset_modules.modset_mod_name", p)
+}
 
 // GetComplianceModulesetModules lists the modules of a moduleset, by name; one
 // when modID is set.
