@@ -117,3 +117,26 @@ func (oDb *DB) CompObjectResponsible(ctx context.Context, k CompKind, objID int6
 	return oDb.exists(ctx, "compObjectResponsible", "SELECT 1 FROM "+k.TeamPrefix+"responsible r"+
 		" JOIN auth_group ag ON ag.id = r.group_id WHERE r."+k.FK+" = ? AND "+cond, append([]any{objID}, args...)...)
 }
+
+// compObjectVisibleCond restricts a compliance object table to the objects
+// published to one of the caller's groups; every object for a manager.
+func compObjectVisibleCond(k CompKind, groups []string, isManager bool) (string, []any) {
+	if isManager {
+		return "1=1", nil
+	}
+	cond, args := rolesCond("ag", groups, false)
+	return k.Table + ".id IN (SELECT tp." + k.FK + " FROM " + k.TeamPrefix + "publication tp" +
+		" JOIN auth_group ag ON ag.id = tp.group_id WHERE " + cond + ")", args
+}
+
+// CompObjectPublished tells whether a compliance object is published to the
+// caller: to one of their groups or to Everybody, as ruleset_publication() and
+// moduleset_publication(); always for a manager, when it exists.
+func (oDb *DB) CompObjectPublished(ctx context.Context, k CompKind, objID int64, groups []string, isManager bool) (bool, error) {
+	cond, args := compObjectVisibleCond(k, groups, isManager)
+	if ok, err := oDb.exists(ctx, "compObjectPublished", "SELECT 1 FROM "+k.Table+" WHERE "+k.Table+".id = ? AND "+cond, append([]any{objID}, args...)...); err != nil || ok {
+		return ok, err
+	}
+	return oDb.exists(ctx, "compObjectPublished", "SELECT 1 FROM "+k.TeamPrefix+"publication tp"+
+		" JOIN auth_group ag ON ag.id = tp.group_id WHERE tp."+k.FK+" = ? AND ag.role = 'Everybody'", objID)
+}

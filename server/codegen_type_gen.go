@@ -32,6 +32,21 @@ func (e ObsolescenceSettingRowObsType) Valid() bool {
 	}
 }
 
+// Defines values for PutComplianceModulesetJSONBodyAction.
+const (
+	PutComplianceModulesetJSONBodyActionClone PutComplianceModulesetJSONBodyAction = "clone"
+)
+
+// Valid indicates whether the value is a known member of the PutComplianceModulesetJSONBodyAction enum.
+func (e PutComplianceModulesetJSONBodyAction) Valid() bool {
+	switch e {
+	case PutComplianceModulesetJSONBodyActionClone:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PostComplianceRulesetsJSONBodyRulesetType.
 const (
 	PostComplianceRulesetsJSONBodyRulesetTypeContextual PostComplianceRulesetsJSONBodyRulesetType = "contextual"
@@ -70,13 +85,13 @@ func (e PostComplianceRulesetJSONBodyRulesetType) Valid() bool {
 
 // Defines values for PutComplianceRulesetJSONBodyAction.
 const (
-	Clone PutComplianceRulesetJSONBodyAction = "clone"
+	PutComplianceRulesetJSONBodyActionClone PutComplianceRulesetJSONBodyAction = "clone"
 )
 
 // Valid indicates whether the value is a known member of the PutComplianceRulesetJSONBodyAction enum.
 func (e PutComplianceRulesetJSONBodyAction) Valid() bool {
 	switch e {
-	case Clone:
+	case PutComplianceRulesetJSONBodyActionClone:
 		return true
 	default:
 		return false
@@ -2069,6 +2084,76 @@ type GetComplianceLogParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
+
+// DeleteComplianceModulesetsJSONBody defines parameters for DeleteComplianceModulesets.
+type DeleteComplianceModulesetsJSONBody struct {
+	// Id Moduleset id or name
+	Id interface{} `json:"id,omitempty"`
+}
+
+// GetComplianceModulesetsParams defines parameters for GetComplianceModulesets.
+type GetComplianceModulesetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostComplianceModulesetsJSONBody defines parameters for PostComplianceModulesets.
+type PostComplianceModulesetsJSONBody struct {
+	ModsetName *string `json:"modset_name,omitempty"`
+}
+
+// GetComplianceModulesetParams defines parameters for GetComplianceModuleset.
+type GetComplianceModulesetParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// PostComplianceModulesetJSONBody defines parameters for PostComplianceModuleset.
+type PostComplianceModulesetJSONBody struct {
+	ModsetName *string `json:"modset_name,omitempty"`
+}
+
+// PutComplianceModulesetJSONBody defines parameters for PutComplianceModuleset.
+type PutComplianceModulesetJSONBody struct {
+	Action PutComplianceModulesetJSONBodyAction `json:"action"`
+}
+
+// PutComplianceModulesetJSONBodyAction defines parameters for PutComplianceModuleset.
+type PutComplianceModulesetJSONBodyAction string
 
 // DeleteComplianceRulesetsJSONBody defines parameters for DeleteComplianceRulesets.
 type DeleteComplianceRulesetsJSONBody struct {
@@ -6031,6 +6116,18 @@ type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
 
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
+
+// DeleteComplianceModulesetsJSONRequestBody defines body for DeleteComplianceModulesets for application/json ContentType.
+type DeleteComplianceModulesetsJSONRequestBody DeleteComplianceModulesetsJSONBody
+
+// PostComplianceModulesetsJSONRequestBody defines body for PostComplianceModulesets for application/json ContentType.
+type PostComplianceModulesetsJSONRequestBody PostComplianceModulesetsJSONBody
+
+// PostComplianceModulesetJSONRequestBody defines body for PostComplianceModuleset for application/json ContentType.
+type PostComplianceModulesetJSONRequestBody PostComplianceModulesetJSONBody
+
+// PutComplianceModulesetJSONRequestBody defines body for PutComplianceModuleset for application/json ContentType.
+type PutComplianceModulesetJSONRequestBody PutComplianceModulesetJSONBody
 
 // DeleteComplianceRulesetsJSONRequestBody defines body for DeleteComplianceRulesets for application/json ContentType.
 type DeleteComplianceRulesetsJSONRequestBody DeleteComplianceRulesetsJSONBody
