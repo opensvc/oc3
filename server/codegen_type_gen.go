@@ -372,6 +372,39 @@ type AppRow struct {
 	Updated     *string `json:"updated,omitempty"`
 }
 
+// ComplianceLogListResponse defines model for ComplianceLogListResponse.
+type ComplianceLogListResponse struct {
+	Data ComplianceLogListResponse_Data `json:"data"`
+	Meta *ListMeta                      `json:"meta,omitempty"`
+}
+
+// ComplianceLogListResponseData0 defines model for .
+type ComplianceLogListResponseData0 = []ComplianceLogRow
+
+// ComplianceLogListResponseData1 defines model for .
+type ComplianceLogListResponseData1 map[string]map[string]int
+
+// ComplianceLogListResponse_Data defines model for ComplianceLogListResponse.Data.
+type ComplianceLogListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ComplianceLogRow A run of a compliance module on a node, or on a service instance on that
+// node: its action (check, fixable, fix), its exit code (`run_status`: 0 ok,
+// 1 not ok, 2 not applicable) and its log. Every property is optional: the
+// `props` query parameter selects which columns the server returns.
+type ComplianceLogRow struct {
+	Id        *int    `json:"id,omitempty"`
+	NodeId    *string `json:"node_id,omitempty"`
+	RsetMd5   *string `json:"rset_md5,omitempty"`
+	RunAction *string `json:"run_action,omitempty"`
+	RunDate   *string `json:"run_date,omitempty"`
+	RunLog    *string `json:"run_log,omitempty"`
+	RunModule *string `json:"run_module,omitempty"`
+	RunStatus *int    `json:"run_status,omitempty"`
+	SvcId     *string `json:"svc_id,omitempty"`
+}
+
 // ComplianceStatusListResponse defines model for ComplianceStatusListResponse.
 type ComplianceStatusListResponse struct {
 	Data ComplianceStatusListResponse_Data `json:"data"`
@@ -1869,6 +1902,104 @@ type GetArraysParams struct {
 type PostAuthNodeJSONBody struct {
 	App      *string `json:"app,omitempty"`
 	Nodename string  `json:"nodename"`
+}
+
+// GetComplianceLogsParams defines parameters for GetComplianceLogs.
+type GetComplianceLogsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetComplianceLogParams defines parameters for GetComplianceLog.
+type GetComplianceLogParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// DeleteComplianceStatusJSONBody defines parameters for DeleteComplianceStatus.
+type DeleteComplianceStatusJSONBody struct {
+	// Id Id of the run (comp_status.id)
+	Id *int `json:"id,omitempty"`
+}
+
+// GetComplianceStatusParams defines parameters for GetComplianceStatus.
+type GetComplianceStatusParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetComplianceStatusRunParams defines parameters for GetComplianceStatusRun.
+type GetComplianceStatusRunParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
 
 // DeleteDisksJSONBody defines parameters for DeleteDisks.
@@ -5287,6 +5418,9 @@ type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
 
+// DeleteComplianceStatusJSONRequestBody defines body for DeleteComplianceStatus for application/json ContentType.
+type DeleteComplianceStatusJSONRequestBody DeleteComplianceStatusJSONBody
+
 // DeleteDisksJSONRequestBody defines body for DeleteDisks for application/json ContentType.
 type DeleteDisksJSONRequestBody DeleteDisksJSONBody
 
@@ -5572,6 +5706,68 @@ func (t AppListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *AppListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsComplianceLogListResponseData0 returns the union data inside the ComplianceLogListResponse_Data as a ComplianceLogListResponseData0
+func (t ComplianceLogListResponse_Data) AsComplianceLogListResponseData0() (ComplianceLogListResponseData0, error) {
+	var body ComplianceLogListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromComplianceLogListResponseData0 overwrites any union data inside the ComplianceLogListResponse_Data as the provided ComplianceLogListResponseData0
+func (t *ComplianceLogListResponse_Data) FromComplianceLogListResponseData0(v ComplianceLogListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeComplianceLogListResponseData0 performs a merge with any union data inside the ComplianceLogListResponse_Data, using the provided ComplianceLogListResponseData0
+func (t *ComplianceLogListResponse_Data) MergeComplianceLogListResponseData0(v ComplianceLogListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsComplianceLogListResponseData1 returns the union data inside the ComplianceLogListResponse_Data as a ComplianceLogListResponseData1
+func (t ComplianceLogListResponse_Data) AsComplianceLogListResponseData1() (ComplianceLogListResponseData1, error) {
+	var body ComplianceLogListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromComplianceLogListResponseData1 overwrites any union data inside the ComplianceLogListResponse_Data as the provided ComplianceLogListResponseData1
+func (t *ComplianceLogListResponse_Data) FromComplianceLogListResponseData1(v ComplianceLogListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeComplianceLogListResponseData1 performs a merge with any union data inside the ComplianceLogListResponse_Data, using the provided ComplianceLogListResponseData1
+func (t *ComplianceLogListResponse_Data) MergeComplianceLogListResponseData1(v ComplianceLogListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ComplianceLogListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ComplianceLogListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

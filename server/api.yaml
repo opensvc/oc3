@@ -8788,6 +8788,218 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/logs:
+    get:
+      operationId: GetComplianceLogs
+      description: |
+        List the compliance modules' check, fixable and fix runs of the nodes the
+        user can see: those whose app is published to one of the user's groups, every
+        node for a manager. The most recent first by default.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceLogListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/logs/{log_id}:
+    get:
+      operationId: GetComplianceLog
+      description: |
+        Display the properties of a module run.
+      parameters:
+        - in: path
+          name: log_id
+          required: true
+          description: Id of the run (comp_log.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceLogListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/status:
+    get:
+      operationId: GetComplianceStatus
+      description: |
+        List the last check run of each module-node-service tuple, for the nodes the
+        user can see: those whose app is published to one of the user's groups, every
+        node for a manager.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceStatusListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceStatus
+      description: |
+        Delete the last check run of a module-node-service tuple, named by the `id`
+        key of the body. Requires the CompExec privilege and the responsibility of the
+        node. The deletion is logged.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: Id of the run (comp_status.id)
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/status/{status_id}:
+    get:
+      operationId: GetComplianceStatusRun
+      description: |
+        Display the last check run of a module-node-service tuple.
+      parameters:
+        - in: path
+          name: status_id
+          required: true
+          description: Id of the run (comp_status.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceStatusListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceStatusRun
+      description: |
+        Delete the last check run of a module-node-service tuple. Requires the
+        CompExec privilege and the responsibility of the node. The deletion is logged.
+      parameters:
+        - in: path
+          name: status_id
+          required: true
+          description: Id of the run (comp_status.id)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:
@@ -9564,6 +9776,51 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/WorkflowRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    ComplianceLogRow:
+      type: object
+      description: |
+        A run of a compliance module on a node, or on a service instance on that
+        node: its action (check, fixable, fix), its exit code (`run_status`: 0 ok,
+        1 not ok, 2 not applicable) and its log. Every property is optional: the
+        `props` query parameter selects which columns the server returns.
+      properties:
+        id:
+          type: integer
+        run_module:
+          type: string
+        run_status:
+          type: integer
+        run_log:
+          type: string
+        run_date:
+          type: string
+        run_action:
+          type: string
+        rset_md5:
+          type: string
+        node_id:
+          type: string
+        svc_id:
+          type: string
+
+    ComplianceLogListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ComplianceLogRow'
             - type: object
               additionalProperties:
                 type: object
