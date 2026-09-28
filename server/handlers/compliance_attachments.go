@@ -168,3 +168,96 @@ func (a *Api) PostComplianceRulesetsServices(c echo.Context) error {
 func (a *Api) DeleteComplianceRulesetsServices(c echo.Context) error {
 	return a.rulesetsServices(c, false)
 }
+
+// GetComplianceModulesetNodes handles GET /compliance/modulesets/{modset_id}/nodes.
+func (a *Api) GetComplianceModulesetNodes(c echo.Context, modsetId string, params server.GetComplianceModulesetNodesParams) error {
+	id, err := a.publishedModuleset(c, modsetId)
+	if err != nil {
+		return httpProblem(c, err)
+	}
+	return a.compObjectNodes(c, "GetComplianceModulesetNodes", cdb.CompModulesetKind, id, false,
+		listParams(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, params.Filter))
+}
+
+// GetComplianceModulesetCandidateNodes handles GET /compliance/modulesets/{modset_id}/candidate_nodes.
+func (a *Api) GetComplianceModulesetCandidateNodes(c echo.Context, modsetId string, params server.GetComplianceModulesetCandidateNodesParams) error {
+	id, err := a.publishedModuleset(c, modsetId)
+	if err != nil {
+		return httpProblem(c, err)
+	}
+	return a.compObjectNodes(c, "GetComplianceModulesetCandidateNodes", cdb.CompModulesetKind, id, true,
+		listParams(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, params.Filter))
+}
+
+// GetComplianceModulesetServices handles GET /compliance/modulesets/{modset_id}/services.
+func (a *Api) GetComplianceModulesetServices(c echo.Context, modsetId string, params server.GetComplianceModulesetServicesParams) error {
+	id, err := a.publishedModuleset(c, modsetId)
+	if err != nil {
+		return httpProblem(c, err)
+	}
+	return a.compObjectServices(c, "GetComplianceModulesetServices", cdb.CompModulesetKind, id, params.Slave, false,
+		listParams(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, params.Filter))
+}
+
+// GetComplianceModulesetCandidateServices handles GET /compliance/modulesets/{modset_id}/candidate_services.
+func (a *Api) GetComplianceModulesetCandidateServices(c echo.Context, modsetId string, params server.GetComplianceModulesetCandidateServicesParams) error {
+	id, err := a.publishedModuleset(c, modsetId)
+	if err != nil {
+		return httpProblem(c, err)
+	}
+	return a.compObjectServices(c, "GetComplianceModulesetCandidateServices", cdb.CompModulesetKind, id, params.Slave, true,
+		listParams(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, params.Filter))
+}
+
+// modulesetsNodes attaches or detaches a moduleset named in the body to a node,
+// as POST and DELETE /nodes/{node_id}/compliance/modulesets/{mset_id} do.
+func (a *Api) modulesetsNodes(c echo.Context, attach bool) error {
+	b, err := readCompAttachBody(c, "modset_id", "modset_name", "node_id")
+	if err != nil {
+		return httpProblem(c, err)
+	}
+	id, err := a.resolveModuleset(c.Request().Context(), b.obj)
+	if err != nil {
+		return httpProblem(c, err)
+	}
+	if attach {
+		return a.PostNodeComplianceModuleset(c, b.target, strconv.FormatInt(id, 10))
+	}
+	return a.DeleteNodeComplianceModuleset(c, b.target, strconv.FormatInt(id, 10))
+}
+
+// PostComplianceModulesetsNodes handles POST /compliance/modulesets_nodes.
+func (a *Api) PostComplianceModulesetsNodes(c echo.Context) error { return a.modulesetsNodes(c, true) }
+
+// DeleteComplianceModulesetsNodes handles DELETE /compliance/modulesets_nodes.
+func (a *Api) DeleteComplianceModulesetsNodes(c echo.Context) error {
+	return a.modulesetsNodes(c, false)
+}
+
+// modulesetsServices attaches or detaches a moduleset named in the body to a
+// service, as POST and DELETE /services/{svc_id}/compliance/modulesets/{mset_id} do.
+func (a *Api) modulesetsServices(c echo.Context, attach bool) error {
+	b, err := readCompAttachBody(c, "modset_id", "modset_name", "svc_id")
+	if err != nil {
+		return httpProblem(c, err)
+	}
+	id, err := a.resolveModuleset(c.Request().Context(), b.obj)
+	if err != nil {
+		return httpProblem(c, err)
+	}
+	slave := b.slave
+	if attach {
+		return a.PostServiceComplianceModuleset(c, b.target, strconv.FormatInt(id, 10), server.PostServiceComplianceModulesetParams{Slave: &slave})
+	}
+	return a.DeleteServiceComplianceModuleset(c, b.target, strconv.FormatInt(id, 10), server.DeleteServiceComplianceModulesetParams{Slave: &slave})
+}
+
+// PostComplianceModulesetsServices handles POST /compliance/modulesets_services.
+func (a *Api) PostComplianceModulesetsServices(c echo.Context) error {
+	return a.modulesetsServices(c, true)
+}
+
+// DeleteComplianceModulesetsServices handles DELETE /compliance/modulesets_services.
+func (a *Api) DeleteComplianceModulesetsServices(c echo.Context) error {
+	return a.modulesetsServices(c, false)
+}

@@ -11869,6 +11869,380 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/modulesets/{modset_id}/nodes:
+    get:
+      operationId: GetComplianceModulesetNodes
+      description: |
+        List the nodes a moduleset published to the user is attached to, among the nodes
+        the user can see.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets/{modset_id}/candidate_nodes:
+    get:
+      operationId: GetComplianceModulesetCandidateNodes
+      description: |
+        List the nodes a moduleset published to the user may be attached to: the nodes
+        the user can see whose responsible team is one of the moduleset's publication
+        groups, not attached yet.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets/{modset_id}/services:
+    get:
+      operationId: GetComplianceModulesetServices
+      description: |
+        List the services a moduleset published to the user is attached to, as the
+        service itself or, with slave, as its encapsulated service, among the services
+        the user can see.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - in: query
+          name: slave
+          description: With true, the encapsulated services
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets/{modset_id}/candidate_services:
+    get:
+      operationId: GetComplianceModulesetCandidateServices
+      description: |
+        List the services a moduleset published to the user may be attached to, as the
+        service or with slave as its encapsulated service: the services the user can see
+        whose app has one of the moduleset's publication groups among its responsibles,
+        not attached yet.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+        - in: query
+          name: slave
+          description: With true, the encapsulated services
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets_nodes:
+    post:
+      operationId: PostComplianceModulesetsNodes
+      description: |
+        Attach a moduleset to a node, as POST /nodes/{node_id}/compliance/modulesets/{mset_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id]
+              properties:
+                node_id:
+                  type: string
+                modset_id:
+                  description: Moduleset id or name
+                modset_name:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceModulesetsNodes
+      description: |
+        Detach a moduleset from a node, as DELETE /nodes/{node_id}/compliance/modulesets/{mset_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id]
+              properties:
+                node_id:
+                  type: string
+                modset_id:
+                  description: Moduleset id or name
+                modset_name:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets_services:
+    post:
+      operationId: PostComplianceModulesetsServices
+      description: |
+        Attach a moduleset to a service, as POST /services/{svc_id}/compliance/modulesets/{mset_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [svc_id]
+              properties:
+                svc_id:
+                  type: string
+                modset_id:
+                  description: Moduleset id or name
+                modset_name:
+                  type: string
+                slave:
+                  description: A boolean; true for the encapsulated service. encap is accepted as well.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceModulesetsServices
+      description: |
+        Detach a moduleset from a service, as DELETE /services/{svc_id}/compliance/modulesets/{mset_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [svc_id]
+              properties:
+                svc_id:
+                  type: string
+                modset_id:
+                  description: Moduleset id or name
+                modset_name:
+                  type: string
+                slave:
+                  description: A boolean; true for the encapsulated service. encap is accepted as well.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:
