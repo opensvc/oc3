@@ -29,14 +29,18 @@ func checkCompManager(c echo.Context) error {
 }
 
 // compDesignerError turns the errors of the compliance designer queries into
-// HTTP statuses: 404 for a missing object, 409 for a name already taken, 500
-// otherwise.
+// HTTP statuses: 404 for a missing object, 409 for a name already taken, 400
+// for unusable data, 403 for a refused change, 500 otherwise.
 func compDesignerError(c echo.Context, name string, err error) error {
 	switch {
 	case errors.Is(err, cdb.ErrCompNotFound):
 		return httpErrorf(http.StatusNotFound, "%s", err.Error())
 	case errors.Is(err, cdb.ErrCompConflict):
 		return httpErrorf(http.StatusConflict, "%s", strings.TrimPrefix(err.Error(), cdb.ErrCompConflict.Error()+": "))
+	case errors.Is(err, cdb.ErrCompInvalid):
+		return httpErrorf(http.StatusBadRequest, "%s", strings.TrimPrefix(err.Error(), cdb.ErrCompInvalid.Error()+": "))
+	case errors.Is(err, cdb.ErrCompForbidden):
+		return httpErrorf(http.StatusForbidden, "%s", strings.TrimPrefix(err.Error(), cdb.ErrCompForbidden.Error()+": "))
 	}
 	return httpInternal(echolog.GetLogHandler(c, name), "cannot "+name, err)
 }

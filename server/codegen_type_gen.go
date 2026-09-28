@@ -456,6 +456,71 @@ type AppRow struct {
 	Updated     *string `json:"updated,omitempty"`
 }
 
+// CompExportModule defines model for CompExportModule.
+type CompExportModule struct {
+	Autofix       *string `json:"autofix,omitempty"`
+	ModsetModName *string `json:"modset_mod_name,omitempty"`
+}
+
+// CompExportModuleset defines model for CompExportModuleset.
+type CompExportModuleset struct {
+	Id         *int                `json:"id,omitempty"`
+	ModsetName *string             `json:"modset_name,omitempty"`
+	Modules    *[]CompExportModule `json:"modules,omitempty"`
+
+	// Modulesets The names of the child modulesets
+	Modulesets   *[]string `json:"modulesets,omitempty"`
+	Publications *[]string `json:"publications,omitempty"`
+	Responsibles *[]string `json:"responsibles,omitempty"`
+
+	// Rulesets The names of the attached rulesets
+	Rulesets *[]string `json:"rulesets,omitempty"`
+}
+
+// CompExportRuleset defines model for CompExportRuleset.
+type CompExportRuleset struct {
+	FsetName *string `json:"fset_name,omitempty"`
+	Id       *int    `json:"id,omitempty"`
+
+	// Publications The roles of the publication groups
+	Publications *[]string `json:"publications,omitempty"`
+
+	// Responsibles The roles of the responsible groups
+	Responsibles  *[]string `json:"responsibles,omitempty"`
+	RulesetName   *string   `json:"ruleset_name,omitempty"`
+	RulesetPublic *string   `json:"ruleset_public,omitempty"`
+	RulesetType   *string   `json:"ruleset_type,omitempty"`
+
+	// Rulesets The names of the child rulesets
+	Rulesets  *[]string             `json:"rulesets,omitempty"`
+	Variables *[]CompExportVariable `json:"variables,omitempty"`
+}
+
+// CompExportVariable defines model for CompExportVariable.
+type CompExportVariable struct {
+	Id         *int    `json:"id,omitempty"`
+	VarAuthor  *string `json:"var_author,omitempty"`
+	VarClass   *string `json:"var_class,omitempty"`
+	VarName    *string `json:"var_name,omitempty"`
+	VarUpdated *string `json:"var_updated,omitempty"`
+	VarValue   *string `json:"var_value,omitempty"`
+}
+
+// CompModulesetExport Modulesets with their descendants, and the rulesets and filtersets they use,
+// in the format POST /compliance/import reads.
+type CompModulesetExport struct {
+	Filtersets *[]FiltersetExportItem `json:"filtersets,omitempty"`
+	Modulesets *[]CompExportModuleset `json:"modulesets,omitempty"`
+	Rulesets   *[]CompExportRuleset   `json:"rulesets,omitempty"`
+}
+
+// CompRulesetExport Rulesets with their descendants and the filtersets they use, in the format
+// POST /compliance/import reads.
+type CompRulesetExport struct {
+	Filtersets *[]FiltersetExportItem `json:"filtersets,omitempty"`
+	Rulesets   *[]CompExportRuleset   `json:"rulesets,omitempty"`
+}
+
 // ComplianceLogListResponse defines model for ComplianceLogListResponse.
 type ComplianceLogListResponse struct {
 	Data ComplianceLogListResponse_Data `json:"data"`
@@ -2065,6 +2130,13 @@ type GetArraysParams struct {
 type PostAuthNodeJSONBody struct {
 	App      *string `json:"app,omitempty"`
 	Nodename string  `json:"nodename"`
+}
+
+// PostComplianceImportJSONBody defines parameters for PostComplianceImport.
+type PostComplianceImportJSONBody struct {
+	Filtersets *[]FiltersetExportItem `json:"filtersets,omitempty"`
+	Modulesets *[]CompExportModuleset `json:"modulesets,omitempty"`
+	Rulesets   *[]CompExportRuleset   `json:"rulesets,omitempty"`
 }
 
 // GetComplianceLogsParams defines parameters for GetComplianceLogs.
@@ -6524,6 +6596,9 @@ type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
 
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
+
+// PostComplianceImportJSONRequestBody defines body for PostComplianceImport for application/json ContentType.
+type PostComplianceImportJSONRequestBody PostComplianceImportJSONBody
 
 // DeleteComplianceModulesetsJSONRequestBody defines body for DeleteComplianceModulesets for application/json ContentType.
 type DeleteComplianceModulesetsJSONRequestBody DeleteComplianceModulesetsJSONBody

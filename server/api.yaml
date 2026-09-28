@@ -12243,6 +12243,180 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/rulesets/export:
+    get:
+      operationId: GetComplianceRulesetsExport
+      description: |
+        Export the rulesets published to the user, with their descendants and the
+        filtersets they use.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompRulesetExport'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets/{rset_id}/export:
+    get:
+      operationId: GetComplianceRulesetExport
+      description: |
+        Export a ruleset published to the user, with its descendants and its
+        filterset.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompRulesetExport'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets/export:
+    get:
+      operationId: GetComplianceModulesetsExport
+      description: |
+        Export the modulesets published to the user, with their descendants and the
+        rulesets and filtersets they use.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompModulesetExport'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/modulesets/{modset_id}/export:
+    get:
+      operationId: GetComplianceModulesetExport
+      description: |
+        Export a moduleset published to the user, with its descendants and the rulesets
+        and filtersets they use.
+      parameters:
+        - in: path
+          name: modset_id
+          required: true
+          description: Moduleset id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompModulesetExport'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/import:
+    post:
+      operationId: PostComplianceImport
+      description: |
+        Import the filters, filtersets, rulesets and modulesets of an export. An object
+        existing by name is reused, and the relations missing are added; the new objects
+        are given the user's default group as publication and responsible group, the
+        groups of the export are not imported. Requires the CompManager privilege, and
+        the responsibility of any existing ruleset or moduleset the import adds to. A
+        relation closing a loop is refused. The import applies all or nothing; the info
+        list tells what was added and what already existed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filtersets:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FiltersetExportItem'
+                rulesets:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CompExportRuleset'
+                modulesets:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CompExportModuleset'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: array
+                    items:
+                      type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:
@@ -13192,6 +13366,128 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    CompExportVariable:
+      type: object
+      properties:
+        id:
+          type: integer
+        var_name:
+          type: string
+        var_value:
+          type: string
+        var_class:
+          type: string
+        var_author:
+          type: string
+        var_updated:
+          type: string
+
+    CompExportRuleset:
+      type: object
+      properties:
+        id:
+          type: integer
+        ruleset_name:
+          type: string
+        ruleset_public:
+          type: string
+        ruleset_type:
+          type: string
+        fset_name:
+          type: string
+          nullable: true
+        variables:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompExportVariable'
+        rulesets:
+          description: The names of the child rulesets
+          type: array
+          items:
+            type: string
+        publications:
+          description: The roles of the publication groups
+          type: array
+          items:
+            type: string
+        responsibles:
+          description: The roles of the responsible groups
+          type: array
+          items:
+            type: string
+
+    CompExportModule:
+      type: object
+      properties:
+        modset_mod_name:
+          type: string
+        autofix:
+          type: string
+
+    CompExportModuleset:
+      type: object
+      properties:
+        id:
+          type: integer
+        modset_name:
+          type: string
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompExportModule'
+        modulesets:
+          description: The names of the child modulesets
+          type: array
+          items:
+            type: string
+        rulesets:
+          description: The names of the attached rulesets
+          type: array
+          items:
+            type: string
+        publications:
+          type: array
+          items:
+            type: string
+        responsibles:
+          type: array
+          items:
+            type: string
+
+    CompRulesetExport:
+      type: object
+      description: |
+        Rulesets with their descendants and the filtersets they use, in the format
+        POST /compliance/import reads.
+      properties:
+        filtersets:
+          type: array
+          items:
+            $ref: '#/components/schemas/FiltersetExportItem'
+        rulesets:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompExportRuleset'
+
+    CompModulesetExport:
+      type: object
+      description: |
+        Modulesets with their descendants, and the rulesets and filtersets they use,
+        in the format POST /compliance/import reads.
+      properties:
+        filtersets:
+          type: array
+          items:
+            $ref: '#/components/schemas/FiltersetExportItem'
+        rulesets:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompExportRuleset'
+        modulesets:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompExportModuleset'
 
     InstanceListResponse:
       type: object
