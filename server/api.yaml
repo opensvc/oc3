@@ -9000,6 +9000,363 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/rulesets:
+    get:
+      operationId: GetComplianceRulesets
+      description: |
+        List the rulesets published to one of the user's groups, every ruleset for a
+        manager.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostComplianceRulesets
+      description: |
+        Create a ruleset named ruleset_name, of type explicit and public unless given,
+        published to and under the responsibility of the user's default group (the
+        Manager group without one). When a ruleset of that name exists, its other given
+        properties are updated instead, as POST /compliance/rulesets/{rset_id}.
+        Requires the CompManager privilege. The change is logged and the ruleset chains
+        are rebuilt.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ruleset_name:
+                  type: string
+                ruleset_type:
+                  type: string
+                  enum: [explicit, contextual]
+                ruleset_public:
+                  description: A boolean, or "T" / "F" as stored.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceRulesets
+      description: |
+        Delete the ruleset named by the id key of the body, as
+        DELETE /compliance/rulesets/{rset_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  description: Ruleset id or name
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets/{rset_id}:
+    get:
+      operationId: GetComplianceRuleset
+      description: |
+        Display a ruleset published to one of the user's groups.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostComplianceRuleset
+      description: |
+        Update the given properties of a ruleset. Requires the CompManager privilege and
+        the responsibility of the ruleset. The change is logged.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ruleset_name:
+                  type: string
+                ruleset_type:
+                  type: string
+                  enum: [explicit, contextual]
+                ruleset_public:
+                  description: A boolean, or "T" / "F" as stored.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutComplianceRuleset
+      description: |
+        Special actions on a ruleset. `clone` copies it as "<name>_clone", with its type,
+        publicity, variables, children and, for a contextual ruleset, its filterset,
+        published to and under the responsibility of the user's default group. Requires
+        the CompManager privilege.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [clone]
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceRuleset
+      description: |
+        Delete a ruleset, with its parent and child relations, node and service
+        attachments, publication and responsible groups, variables, filtersets and
+        moduleset links. Requires the CompManager privilege and the responsibility of
+        the ruleset. The deletion is logged.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets/{rset_id}/usage:
+    get:
+      operationId: GetComplianceRulesetUsage
+      description: |
+        Display what uses a ruleset published to one of the user's groups: the
+        modulesets and parent rulesets holding it, the nodes and services it is attached
+        to.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RulesetUsage'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets/{rset_id}/am_i_responsible:
+    get:
+      operationId: GetComplianceRulesetAmIResponsible
+      description: |
+        Tell whether one of the user's groups is responsible for the ruleset.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: boolean
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:
@@ -9828,6 +10185,48 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    RulesetUsage:
+      type: object
+      description: What uses a ruleset.
+      properties:
+        modulesets:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              modset_name:
+                type: string
+        rulesets:
+          description: The rulesets holding this one as a child.
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              ruleset_name:
+                type: string
+        nodes:
+          type: array
+          items:
+            type: object
+            properties:
+              node_id:
+                type: string
+              nodename:
+                type: string
+        services:
+          type: array
+          items:
+            type: object
+            properties:
+              svc_id:
+                type: string
+              svcname:
+                type: string
 
     InstanceListResponse:
       type: object
