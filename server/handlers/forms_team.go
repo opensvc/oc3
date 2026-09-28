@@ -71,7 +71,7 @@ func (a *Api) GetFormResponsibles(c echo.Context, formId int, params server.GetF
 func (a *Api) getFormTeam(c echo.Context, handlerName string, table cdb.FormTeamTable, formID int64, p listEndpointParams) error {
 	log := echolog.GetLogHandler(c, handlerName)
 	if err := a.requireFormPublished(c, log, c.Request().Context(), formID); err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	return a.handleList(c, handlerName, "auth_group", p, func(ctx context.Context, lp cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetFormTeam(ctx, table, formID, lp)
@@ -124,7 +124,7 @@ func (a *Api) formTeamOne(c echo.Context, handlerName string, team formTeam, add
 	defer cancel()
 	result, err := a.formTeamChange(ctx, c, log, team, add, formID, groupID)
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	a.formNotify(ctx, log)
 	return c.JSON(http.StatusOK, result)
@@ -139,17 +139,17 @@ func (a *Api) formTeamBulk(c echo.Context, handlerName string, team formTeam, ad
 	defer cancel()
 	entries, isList, err := decodeEntries(c)
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	defer a.formNotify(ctx, log)
 	return runEntries(c, entries, isList, func(entry map[string]any) (map[string]any, error) {
 		formID, ok := entryString(entry, "form_id")
 		if !ok {
-			return nil, formErrorf(http.StatusBadRequest, "The 'form_id' key is mandatory")
+			return nil, httpErrorf(http.StatusBadRequest, "The 'form_id' key is mandatory")
 		}
 		groupID, ok := entryString(entry, "group_id")
 		if !ok {
-			return nil, formErrorf(http.StatusBadRequest, "The 'group_id' key is mandatory")
+			return nil, httpErrorf(http.StatusBadRequest, "The 'group_id' key is mandatory")
 		}
 		return a.formTeamChange(ctx, c, log, team, add, formID, groupID)
 	})
@@ -174,18 +174,18 @@ func (a *Api) formTeamChange(ctx context.Context, c echo.Context, log *slog.Logg
 	if !add {
 		groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
 		if err != nil {
-			return nil, formErrorf(http.StatusBadRequest, "invalid group id %q", groupIDStr)
+			return nil, httpErrorf(http.StatusBadRequest, "invalid group id %q", groupIDStr)
 		}
 		d := map[string]any{"form_id": formIDStr, "group_id": groupIDStr}
 		exists, err := a.ODB.FormTeamExists(ctx, team.table, formID, groupID)
 		if err != nil {
-			return nil, formInternal(log, "cannot check the form group link", err)
+			return nil, httpInternal(log, "cannot check the form group link", err)
 		}
 		if !exists {
 			return map[string]any{"info": pyFormat(team.deletedFmt, d)}, nil
 		}
 		if err := a.ODB.DeleteFormTeam(ctx, team.table, formID, groupID); err != nil {
-			return nil, formInternal(log, "cannot unlink the form and the group", err)
+			return nil, httpInternal(log, "cannot unlink the form and the group", err)
 		}
 		a.formLog(ctx, c, log, team.delAction, team.delFmt, d)
 		return map[string]any{"info": pyFormat(team.delFmt, d)}, nil
@@ -196,39 +196,39 @@ func (a *Api) formTeamChange(ctx context.Context, c echo.Context, log *slog.Logg
 	if !isManager {
 		user := UserInfoFromContext(c)
 		if user == nil {
-			return nil, formErrorf(http.StatusUnauthorized, "missing user context")
+			return nil, httpErrorf(http.StatusUnauthorized, "missing user context")
 		}
 		userID, err := strconv.ParseInt(user.GetExtensions().Get(xauth.XUserID), 10, 64)
 		if err != nil {
-			return nil, formErrorf(http.StatusBadRequest, "invalid user id")
+			return nil, httpErrorf(http.StatusBadRequest, "invalid user id")
 		}
 		if userGroupIDs, err = a.ODB.UserGroupIDs(ctx, userID); err != nil {
-			return nil, formInternal(log, "cannot list user groups", err)
+			return nil, httpInternal(log, "cannot list user groups", err)
 		}
 	}
 	group, status, err := a.ODB.OrgGroup(ctx, groupIDStr, userGroupIDs, isManager)
 	if err != nil {
-		return nil, formInternal(log, "cannot resolve the group", err)
+		return nil, httpInternal(log, "cannot resolve the group", err)
 	}
 	switch status {
 	case cdb.OrgGroupNotFound:
-		return nil, formErrorf(http.StatusNotFound, "Group not found: %s", groupIDStr)
+		return nil, httpErrorf(http.StatusNotFound, "Group not found: %s", groupIDStr)
 	case cdb.OrgGroupAmbiguous:
-		return nil, formErrorf(http.StatusBadRequest, "Ambiguous group id: %s", groupIDStr)
+		return nil, httpErrorf(http.StatusBadRequest, "Ambiguous group id: %s", groupIDStr)
 	case cdb.OrgGroupPrivileged:
-		return nil, formErrorf(http.StatusForbidden, "Operation not allowed on privilege group: %s", group.Role)
+		return nil, httpErrorf(http.StatusForbidden, "Operation not allowed on privilege group: %s", group.Role)
 	}
 
 	d := map[string]any{"form_id": formIDStr, "role": group.Role}
 	exists, err := a.ODB.FormTeamExists(ctx, team.table, formID, group.ID)
 	if err != nil {
-		return nil, formInternal(log, "cannot check the form group link", err)
+		return nil, httpInternal(log, "cannot check the form group link", err)
 	}
 	if exists {
 		return map[string]any{"info": pyFormat(team.addedFmt, d)}, nil
 	}
 	if err := a.ODB.InsertFormTeam(ctx, team.table, formID, group.ID); err != nil {
-		return nil, formInternal(log, "cannot link the form and the group", err)
+		return nil, httpInternal(log, "cannot link the form and the group", err)
 	}
 	a.formLog(ctx, c, log, team.addAction, team.addFmt, d)
 	return map[string]any{"info": pyFormat(team.addFmt, d)}, nil

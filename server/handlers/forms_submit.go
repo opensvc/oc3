@@ -99,7 +99,7 @@ func (a *Api) PutForm(c echo.Context, formId int) error {
 
 	entries, isList, err := decodeEntries(c)
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	if isList {
 		return JSONProblem(c, http.StatusBadRequest, "expecting an object with the data and prev_wfid keys")
@@ -110,7 +110,7 @@ func (a *Api) PutForm(c echo.Context, formId int) error {
 	s.userEmail, _ = c.Get(XUserEmail).(string)
 	s.nodeID, _ = c.Get(XNodeID).(string)
 	if s.caller, err = a.formCaller(ctx, c); err != nil {
-		return formProblem(c, formInternal(log, "cannot read the caller", err))
+		return httpProblem(c, httpInternal(log, "cannot read the caller", err))
 	}
 
 	// The data may come as its JSON string form, as a posted form variable.
@@ -131,7 +131,7 @@ func (a *Api) PutForm(c echo.Context, formId int) error {
 	}
 
 	if err := s.loadForm(ctx, c); err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 
 	s.results = map[string]any{
@@ -146,14 +146,14 @@ func (a *Api) PutForm(c echo.Context, formId int) error {
 	}
 
 	if done, err := s.workflowStepDone(ctx); err != nil {
-		return formProblem(c, formInternal(log, "cannot read the workflow step", err))
+		return httpProblem(c, httpInternal(log, "cannot read the workflow step", err))
 	} else if done {
 		s.appendLog("", 1, "This step is already completed (id=%(id)d)", map[string]any{"id": *s.prevWfid})
 		return c.JSON(http.StatusOK, s.results)
 	}
 
 	if err := s.validate(ctx); err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 
 	var userID *int64
@@ -162,10 +162,10 @@ func (a *Api) PutForm(c echo.Context, formId int) error {
 	}
 	b, err := json.Marshal(s.results)
 	if err != nil {
-		return formProblem(c, formInternal(log, "cannot encode the results", err))
+		return httpProblem(c, httpInternal(log, "cannot encode the results", err))
 	}
 	if s.resultsID, err = a.ODB.InsertFormOutputResults(ctx, userID, s.nodeID, "", string(b)); err != nil {
-		return formProblem(c, formInternal(log, "cannot store the results", err))
+		return httpProblem(c, httpInternal(log, "cannot store the results", err))
 	}
 	s.results["results_id"] = s.resultsID
 	log.Info("form submitted", "form_id", s.formID, "results_id", s.resultsID)
@@ -185,7 +185,7 @@ func (a *Api) PutForm(c echo.Context, formId int) error {
 // the database the caller may use: published to one of their groups, unless a
 // manager.
 func (s *formSubmission) loadForm(ctx context.Context, c echo.Context) error {
-	notFound := formErrorf(http.StatusNotFound, "the requested form does not exist or you don't have permission to use it")
+	notFound := httpErrorf(http.StatusNotFound, "the requested form does not exist or you don't have permission to use it")
 	if s.formID < 0 {
 		f, ok := internalFormByID(s.formID)
 		if !ok {
@@ -197,13 +197,13 @@ func (s *formSubmission) loadForm(ctx context.Context, c echo.Context) error {
 	}
 	visible, err := s.a.ODB.FormVisible(ctx, s.formID, UserGroupsFromContext(c), IsManager(c))
 	if err != nil {
-		return formInternal(s.log, "cannot check form publication", err)
+		return httpInternal(s.log, "cannot check form publication", err)
 	}
 	if !visible {
 		return notFound
 	}
 	if s.form, err = s.a.ODB.FormByID(ctx, s.formID); err != nil {
-		return formInternal(s.log, "cannot read the form", err)
+		return httpInternal(s.log, "cannot read the form", err)
 	}
 	if s.form == nil {
 		return notFound
@@ -211,7 +211,7 @@ func (s *formSubmission) loadForm(ctx context.Context, c echo.Context) error {
 	s.formName = s.form.Name
 	definition, err := parseFormYaml(s.form.Yaml)
 	if err != nil {
-		return formErrorf(http.StatusBadRequest, "invalid form definition: %s", err)
+		return httpErrorf(http.StatusBadRequest, "invalid form definition: %s", err)
 	}
 	s.definition, _ = definition.(map[string]any)
 	if s.definition == nil {

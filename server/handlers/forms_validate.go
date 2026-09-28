@@ -17,7 +17,7 @@ func (s *formSubmission) validate(ctx context.Context) error {
 		for _, item := range t {
 			m, ok := item.(map[string]any)
 			if !ok {
-				return formErrorf(http.StatusBadRequest, "form data list entries must be objects")
+				return httpErrorf(http.StatusBadRequest, "form data list entries must be objects")
 			}
 			if err := s.validateData(ctx, m); err != nil {
 				return err
@@ -50,14 +50,14 @@ func (s *formSubmission) validateInput(ctx context.Context, data map[string]any,
 
 	applies, err := checkInputCondition(input, data)
 	if err != nil {
-		return formErrorf(http.StatusBadRequest, "%s", err)
+		return httpErrorf(http.StatusBadRequest, "%s", err)
 	}
 	if !applies {
 		return nil
 	}
 	if val == nil {
 		if defBool(input, "Mandatory") {
-			return formErrorf(http.StatusBadRequest, "Missing value for mandatory input '%s'", inputID)
+			return httpErrorf(http.StatusBadRequest, "Missing value for mandatory input '%s'", inputID)
 		}
 		return nil
 	}
@@ -93,10 +93,10 @@ func (s *formSubmission) validateInput(ctx context.Context, data map[string]any,
 			forced = formDereference(strings.TrimSpace(forced), ref, "")
 			refVal, ok := ref[key]
 			if !ok {
-				return formErrorf(http.StatusBadRequest, "missing key '%s', from input %s", key, inputID)
+				return httpErrorf(http.StatusBadRequest, "missing key '%s', from input %s", key, inputID)
 			}
 			if !strings.Contains(forced, "#") && forced != formValueText(refVal) {
-				return formErrorf(http.StatusBadRequest, "unallowed key value '%s=%s', expecting '%s', from input %s",
+				return httpErrorf(http.StatusBadRequest, "unallowed key value '%s=%s', expecting '%s', from input %s",
 					key, formValueText(refVal), forced, inputID)
 			}
 		}
@@ -122,7 +122,7 @@ func (s *formSubmission) validateInput(ctx context.Context, data map[string]any,
 				continue
 			}
 			if !containsString(allowed, formValueText(v)) {
-				return formErrorf(http.StatusBadRequest, "Input '%s' value '%s' not in allowed candidates", inputID, formValueText(v))
+				return httpErrorf(http.StatusBadRequest, "Input '%s' value '%s' not in allowed candidates", inputID, formValueText(v))
 			}
 		}
 	}
@@ -151,7 +151,7 @@ func (s *formSubmission) validateInput(ctx context.Context, data map[string]any,
 	for _, v := range vals {
 		args, err := formRestArgs(fn, data)
 		if err != nil {
-			return formErrorf(http.StatusBadRequest, "cannot build the candidates url %s: missing %s", fn, err)
+			return httpErrorf(http.StatusBadRequest, "cannot build the candidates url %s: missing %s", fn, err)
 		}
 		kwargs := map[string]any{}
 		for _, entry := range defList(input, "Args") {
@@ -176,13 +176,13 @@ func (s *formSubmission) validateInput(ctx context.Context, data map[string]any,
 		path := "/" + strings.Join(args, "/")
 		resp, err := s.callAPI(ctx, http.MethodGet, path, kwargs, "")
 		if err != nil {
-			return formErrorf(http.StatusBadRequest, "cannot verify the submitted value is a valid candidate: %s", err)
+			return httpErrorf(http.StatusBadRequest, "cannot verify the submitted value is a valid candidate: %s", err)
 		}
 		if resp.status == http.StatusNotFound {
-			return formErrorf(http.StatusBadRequest, "Unknown handler '%s': can not verify the submitted value is a valid candidates", fn)
+			return httpErrorf(http.StatusBadRequest, "Unknown handler '%s': can not verify the submitted value is a valid candidates", fn)
 		}
 		if resp.status >= 300 {
-			return formErrorf(http.StatusBadRequest, "cannot verify the submitted value is a valid candidate: %s", problemTextOf(resp))
+			return httpErrorf(http.StatusBadRequest, "cannot verify the submitted value is a valid candidate: %s", problemTextOf(resp))
 		}
 		var candidates []string
 		if m, ok := resp.body.(map[string]any); ok {
@@ -190,7 +190,7 @@ func (s *formSubmission) validateInput(ctx context.Context, data map[string]any,
 			for _, candidate := range list {
 				cv, err := formGetVal(candidate, key)
 				if err != nil {
-					return formErrorf(http.StatusBadRequest, "Key '%s' not in candidates", key)
+					return httpErrorf(http.StatusBadRequest, "Key '%s' not in candidates", key)
 				}
 				candidates = append(candidates, formValueText(cv))
 			}
@@ -199,7 +199,7 @@ func (s *formSubmission) validateInput(ctx context.Context, data map[string]any,
 			continue
 		}
 		if !containsString(candidates, formValueText(keyVal)) {
-			return formErrorf(http.StatusBadRequest, "Input '%s' value '%s' not in allowed candidates %s obtained from %s",
+			return httpErrorf(http.StatusBadRequest, "Input '%s' value '%s' not in allowed candidates %s obtained from %s",
 				inputID, formValueText(keyVal), fmt.Sprint(candidates), path)
 		}
 	}

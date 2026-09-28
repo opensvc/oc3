@@ -142,7 +142,7 @@ func (a *Api) GetFormStoreDump(c echo.Context, storeId int) error {
 	ctx := c.Request().Context()
 	stored, err := a.storedForm(ctx, int64(storeId))
 	if err != nil {
-		return formProblem(c, formInternal(log, "cannot read the stored form", err))
+		return httpProblem(c, httpInternal(log, "cannot read the stored form", err))
 	}
 	if stored == nil {
 		return JSONProblemf(c, http.StatusNotFound, "stored form %d not found", storeId)
@@ -150,11 +150,11 @@ func (a *Api) GetFormStoreDump(c echo.Context, storeId int) error {
 	if headID, ok := asInt64(stored["form_head_id"]); ok {
 		workflowID, found, err := a.ODB.WorkflowIDByHead(ctx, headID)
 		if err != nil {
-			return formProblem(c, formInternal(log, "cannot read the workflow", err))
+			return httpProblem(c, httpInternal(log, "cannot read the workflow", err))
 		}
 		if found {
 			if stored["workflow"], err = a.workflowDump(ctx, workflowID); err != nil {
-				return formProblem(c, formInternal(log, "cannot read the workflow", err))
+				return httpProblem(c, httpInternal(log, "cannot read the workflow", err))
 			}
 		}
 	}
@@ -173,18 +173,18 @@ func (a *Api) GetFormOutputResults(c echo.Context, resultsId int) error {
 	log := echolog.GetLogHandler(c, "GetFormOutputResults")
 	results, err := a.readFormResults(c.Request().Context(), c, int64(resultsId))
 	if err != nil {
-		return formProblem(c, formResultsError(log, err))
+		return httpProblem(c, formResultsError(log, err))
 	}
 	return c.JSON(http.StatusOK, results)
 }
 
 // formResultsError keeps a refusal as it is and logs an internal failure.
 func formResultsError(log *slog.Logger, err error) error {
-	var fe *formError
+	var fe *httpError
 	if errors.As(err, &fe) {
 		return err
 	}
-	return formInternal(log, "cannot read the results", err)
+	return httpInternal(log, "cannot read the results", err)
 }
 
 // readFormResults reads a results structure the caller may see, 404 otherwise.
@@ -194,13 +194,13 @@ func (a *Api) readFormResults(ctx context.Context, c echo.Context, id int64) (ma
 		return nil, err
 	}
 	if !found {
-		return nil, formErrorf(http.StatusNotFound, "results not found")
+		return nil, httpErrorf(http.StatusNotFound, "results not found")
 	}
 	var results map[string]any
 	decoder := json.NewDecoder(bytes.NewReader([]byte(s)))
 	decoder.UseNumber()
 	if err := decoder.Decode(&results); err != nil {
-		return nil, formErrorf(http.StatusInternalServerError, "unreadable results: %s", err)
+		return nil, httpErrorf(http.StatusInternalServerError, "unreadable results: %s", err)
 	}
 	return results, nil
 }
@@ -214,11 +214,11 @@ func (a *Api) PutFormOutputResults(c echo.Context, resultsId int) error {
 	id := int64(resultsId)
 	results, err := a.readFormResults(ctx, c, id)
 	if err != nil {
-		return formProblem(c, formResultsError(log, err))
+		return httpProblem(c, formResultsError(log, err))
 	}
 	entries, isList, err := decodeEntries(c)
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	if isList {
 		return JSONProblem(c, http.StatusBadRequest, "expecting an object")
@@ -248,10 +248,10 @@ func (a *Api) PutFormOutputResults(c echo.Context, resultsId int) error {
 	}
 	b, err := json.Marshal(results)
 	if err != nil {
-		return formProblem(c, formInternal(log, "cannot encode the results", err))
+		return httpProblem(c, httpInternal(log, "cannot encode the results", err))
 	}
 	if err := a.ODB.UpdateFormOutputResults(ctx, id, string(b)); err != nil {
-		return formProblem(c, formInternal(log, "cannot store the results", err))
+		return httpProblem(c, httpInternal(log, "cannot store the results", err))
 	}
 	a.formNotify(ctx, log)
 	return c.JSON(http.StatusOK, results)

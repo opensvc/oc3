@@ -35,7 +35,7 @@ func (a *Api) formCommit(log *slog.Logger, formID int64, content string, caller 
 func (a *Api) formRevisionsAllowed(ctx context.Context, c echo.Context, log *slog.Logger, formID int64) (bool, error) {
 	ok, err := a.ODB.FormVisible(ctx, formID, UserGroupsFromContext(c), IsManager(c))
 	if err != nil {
-		return false, formInternal(log, "cannot check form publication", err)
+		return false, httpInternal(log, "cannot check form publication", err)
 	}
 	return ok, nil
 }
@@ -46,14 +46,14 @@ func (a *Api) GetFormRevisions(c echo.Context, formId int) error {
 	ctx := c.Request().Context()
 	allowed, err := a.formRevisionsAllowed(ctx, c, log, int64(formId))
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	if !allowed {
 		return c.JSON(http.StatusOK, []any{})
 	}
 	revisions, err := formTrack().Timeline(strconv.Itoa(formId))
 	if err != nil {
-		return formProblem(c, formInternal(log, "cannot read the form history", err))
+		return httpProblem(c, httpInternal(log, "cannot read the form history", err))
 	}
 	return c.JSON(http.StatusOK, map[string]any{"data": revisions})
 }
@@ -67,14 +67,14 @@ func (a *Api) GetFormRevision(c echo.Context, formId int, cid string) error {
 	}
 	allowed, err := a.formRevisionsAllowed(ctx, c, log, int64(formId))
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	if !allowed {
 		return c.JSON(http.StatusOK, []any{})
 	}
 	blob, err := formTrack().At(strconv.Itoa(formId), cid)
 	if err != nil {
-		return formProblem(c, formErrorf(http.StatusNotFound, "revision %s not found", cid))
+		return httpProblem(c, httpErrorf(http.StatusNotFound, "revision %s not found", cid))
 	}
 	if blob == nil {
 		return c.JSON(http.StatusOK, map[string]any{"data": ""})
@@ -92,7 +92,7 @@ func (a *Api) GetFormDiff(c echo.Context, formId int, cid string, params server.
 	}
 	allowed, err := a.formRevisionsAllowed(ctx, c, log, int64(formId))
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	if !allowed {
 		return c.JSON(http.StatusOK, []any{})
@@ -104,7 +104,7 @@ func (a *Api) GetFormDiff(c echo.Context, formId int, cid string, params server.
 		out, err = formTrack().Show(strconv.Itoa(formId), cid)
 	}
 	if err != nil {
-		return formProblem(c, formErrorf(http.StatusNotFound, "revision %s not found", cid))
+		return httpProblem(c, httpErrorf(http.StatusNotFound, "revision %s not found", cid))
 	}
 	return c.JSON(http.StatusOK, map[string]any{"data": out})
 }
@@ -120,28 +120,28 @@ func (a *Api) PostFormRollback(c echo.Context, formId int, cid string) error {
 		return JSONProblemf(c, http.StatusBadRequest, "invalid revision %q", cid)
 	}
 	if err := requireFormsManager(c); err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	formID := int64(formId)
 	if err := a.requireFormResponsible(c, log, ctx, formID); err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	caller, err := a.formCaller(ctx, c)
 	if err != nil {
-		return formProblem(c, formInternal(log, "cannot read the caller", err))
+		return httpProblem(c, httpInternal(log, "cannot read the caller", err))
 	}
 	track := formTrack()
 	id := strconv.Itoa(formId)
 	if err := track.Rollback(id, cid, caller.author()); err != nil {
 		log.Error("cannot roll the form back", "form_id", formId, "cid", cid, logkey.Error, err)
-		return formProblem(c, formErrorf(http.StatusNotFound, "cannot roll form %d back to %s", formId, cid))
+		return httpProblem(c, httpErrorf(http.StatusNotFound, "cannot roll form %d back to %s", formId, cid))
 	}
 	content, err := track.Read(id)
 	if err != nil {
-		return formProblem(c, formInternal(log, "cannot read the restored form", err))
+		return httpProblem(c, httpInternal(log, "cannot read the restored form", err))
 	}
 	if err := a.ODB.UpdateForm(ctx, formID, map[string]any{"form_yaml": content}); err != nil {
-		return formProblem(c, formInternal(log, "cannot store the restored form", err))
+		return httpProblem(c, httpInternal(log, "cannot store the restored form", err))
 	}
 	a.formNotify(ctx, log)
 	// The historical handler returns nothing.

@@ -78,12 +78,12 @@ func formFields(entry map[string]any) (map[string]any, error) {
 			definition := v
 			if s, ok := v.(string); ok {
 				if err := json.Unmarshal([]byte(s), &definition); err != nil {
-					return nil, formErrorf(http.StatusBadRequest, "invalid form_definition: %s", err)
+					return nil, httpErrorf(http.StatusBadRequest, "invalid form_definition: %s", err)
 				}
 			}
 			b, err := yaml.Marshal(numbersAsValues(definition))
 			if err != nil {
-				return nil, formErrorf(http.StatusBadRequest, "invalid form_definition: %s", err)
+				return nil, httpErrorf(http.StatusBadRequest, "invalid form_definition: %s", err)
 			}
 			fields["form_yaml"] = string(b)
 		case cdb.IsFormColumn(k):
@@ -94,7 +94,7 @@ func formFields(entry map[string]any) (map[string]any, error) {
 			}
 			if k == "form_yaml" {
 				if _, err := parseFormYaml(s); err != nil {
-					return nil, formErrorf(http.StatusBadRequest, "invalid form_yaml: %s", err)
+					return nil, httpErrorf(http.StatusBadRequest, "invalid form_yaml: %s", err)
 				}
 			}
 			fields[k] = s
@@ -103,7 +103,7 @@ func formFields(entry map[string]any) (map[string]any, error) {
 		}
 	}
 	if len(invalid) > 0 {
-		return nil, formErrorf(http.StatusBadRequest, "invalid properties: %s", strings.Join(invalid, ", "))
+		return nil, httpErrorf(http.StatusBadRequest, "invalid properties: %s", strings.Join(invalid, ", "))
 	}
 	return fields, nil
 }
@@ -138,15 +138,15 @@ func (a *Api) PostForms(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 	if err := requireFormsManager(c); err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	entries, isList, err := decodeEntries(c)
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	caller, err := a.formCaller(ctx, c)
 	if err != nil {
-		return formProblem(c, formInternal(log, "cannot read the caller", err))
+		return httpProblem(c, httpInternal(log, "cannot read the caller", err))
 	}
 	defer a.formNotify(ctx, log)
 	return runEntries(c, entries, isList, func(entry map[string]any) (map[string]any, error) {
@@ -157,23 +157,23 @@ func (a *Api) PostForms(c echo.Context) error {
 func (a *Api) createForm(ctx context.Context, c echo.Context, log *slog.Logger, caller formCaller, entry map[string]any) (map[string]any, error) {
 	name, ok := entryString(entry, "form_name")
 	if !ok || name == "" {
-		return nil, formErrorf(http.StatusBadRequest, "Key 'form_name' is mandatory")
+		return nil, httpErrorf(http.StatusBadRequest, "Key 'form_name' is mandatory")
 	}
 	fields, err := formFields(entry)
 	if err != nil {
 		return nil, err
 	}
 	if _, exists, err := a.ODB.FormIDByName(ctx, name); err != nil {
-		return nil, formInternal(log, "cannot check the form name", err)
+		return nil, httpInternal(log, "cannot check the form name", err)
 	} else if exists {
-		return nil, formErrorf(http.StatusConflict, "a form named %s already exists", name)
+		return nil, httpErrorf(http.StatusConflict, "a form named %s already exists", name)
 	}
 	fields["form_created"] = time.Now().Format(time.DateTime)
 	fields["form_author"] = caller.name
 
 	id, err := a.ODB.InsertForm(ctx, fields)
 	if err != nil {
-		return nil, formInternal(log, "cannot create the form", err)
+		return nil, httpInternal(log, "cannot create the form", err)
 	}
 
 	// The creator's default group is made responsible for the form and the form
@@ -181,12 +181,12 @@ func (a *Api) createForm(ctx context.Context, c echo.Context, log *slog.Logger, 
 	if caller.id != 0 {
 		groupID, found, err := a.ODB.UserDefaultGroupID(ctx, caller.id)
 		if err != nil {
-			return nil, formInternal(log, "cannot read the default group", err)
+			return nil, httpInternal(log, "cannot read the default group", err)
 		}
 		if found {
 			for _, table := range []cdb.FormTeamTable{cdb.FormResponsibles, cdb.FormPublications} {
 				if err := a.ODB.InsertFormTeam(ctx, table, id, groupID); err != nil {
-					return nil, formInternal(log, "cannot link the form to the default group", err)
+					return nil, httpInternal(log, "cannot link the form to the default group", err)
 				}
 			}
 		}
@@ -205,18 +205,18 @@ func (a *Api) PostForm(c echo.Context, formId int) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 	if err := requireFormsManager(c); err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	entries, isList, err := decodeEntries(c)
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	if isList {
 		return JSONProblem(c, http.StatusBadRequest, "expecting an object")
 	}
 	result, err := a.updateForm(ctx, c, log, int64(formId), entries[0])
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	a.formNotify(ctx, log)
 	return c.JSON(http.StatusOK, result)
@@ -225,10 +225,10 @@ func (a *Api) PostForm(c echo.Context, formId int) error {
 func (a *Api) updateForm(ctx context.Context, c echo.Context, log *slog.Logger, id int64, entry map[string]any) (map[string]any, error) {
 	form, err := a.ODB.FormByID(ctx, id)
 	if err != nil {
-		return nil, formInternal(log, "cannot read the form", err)
+		return nil, httpInternal(log, "cannot read the form", err)
 	}
 	if form == nil {
-		return nil, formErrorf(http.StatusNotFound, "Form %d not found", id)
+		return nil, httpErrorf(http.StatusNotFound, "Form %d not found", id)
 	}
 	fields, err := formFields(entry)
 	if err != nil {
@@ -236,13 +236,13 @@ func (a *Api) updateForm(ctx context.Context, c echo.Context, log *slog.Logger, 
 	}
 	if name, ok := fields["form_name"].(string); ok && name != form.Name {
 		if otherID, exists, err := a.ODB.FormIDByName(ctx, name); err != nil {
-			return nil, formInternal(log, "cannot check the form name", err)
+			return nil, httpInternal(log, "cannot check the form name", err)
 		} else if exists && otherID != id {
-			return nil, formErrorf(http.StatusConflict, "a form named %s already exists", name)
+			return nil, httpErrorf(http.StatusConflict, "a form named %s already exists", name)
 		}
 	}
 	if err := a.ODB.UpdateForm(ctx, id, fields); err != nil {
-		return nil, formInternal(log, "cannot update the form", err)
+		return nil, httpInternal(log, "cannot update the form", err)
 	}
 
 	d := map[string]any{"form_name": form.Name, "data": formChanges(form, fields)}
@@ -251,14 +251,14 @@ func (a *Api) updateForm(ctx context.Context, c echo.Context, log *slog.Logger, 
 	if yamlText, ok := fields["form_yaml"].(string); ok && yamlText != "" {
 		caller, err := a.formCaller(ctx, c)
 		if err != nil {
-			return nil, formInternal(log, "cannot read the caller", err)
+			return nil, httpInternal(log, "cannot read the caller", err)
 		}
 		a.formCommit(log, id, yamlText, caller)
 	}
 
 	result, err := a.formResponse(ctx, id)
 	if err != nil {
-		return nil, formInternal(log, "cannot read the form back", err)
+		return nil, httpInternal(log, "cannot read the form back", err)
 	}
 	result["info"] = pyFormat("Form %(form_name)s change: %(data)s", d)
 	return result, nil
@@ -300,7 +300,7 @@ func (a *Api) DeleteForm(c echo.Context, formId int) error {
 	defer cancel()
 	result, err := a.deleteForm(ctx, c, log, int64(formId))
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	a.formNotify(ctx, log)
 	return c.JSON(http.StatusOK, result)
@@ -313,13 +313,13 @@ func (a *Api) DeleteForms(c echo.Context) error {
 	defer cancel()
 	entries, isList, err := decodeEntries(c)
 	if err != nil {
-		return formProblem(c, err)
+		return httpProblem(c, err)
 	}
 	defer a.formNotify(ctx, log)
 	return runEntries(c, entries, isList, func(entry map[string]any) (map[string]any, error) {
 		s, ok := entryString(entry, "id")
 		if !ok {
-			return nil, formErrorf(http.StatusBadRequest, "The 'id' key is mandatory")
+			return nil, httpErrorf(http.StatusBadRequest, "The 'id' key is mandatory")
 		}
 		id, err := parseFormID(s)
 		if err != nil {
@@ -338,13 +338,13 @@ func (a *Api) deleteForm(ctx context.Context, c echo.Context, log *slog.Logger, 
 	}
 	form, err := a.ODB.FormByID(ctx, id)
 	if err != nil {
-		return nil, formInternal(log, "cannot read the form", err)
+		return nil, httpInternal(log, "cannot read the form", err)
 	}
 	if form == nil {
-		return nil, formErrorf(http.StatusNotFound, "Form %d not found", id)
+		return nil, httpErrorf(http.StatusNotFound, "Form %d not found", id)
 	}
 	if err := a.ODB.DeleteForm(ctx, id); err != nil {
-		return nil, formInternal(log, "cannot delete the form", err)
+		return nil, httpInternal(log, "cannot delete the form", err)
 	}
 	d := map[string]any{"form_name": form.Name}
 	a.formLog(ctx, c, log, "form.del", "Form %(form_name)s deleted", d)
@@ -358,7 +358,7 @@ func (a *Api) GetFormAmIResponsible(c echo.Context, formId int) error {
 	defer cancel()
 	ok, err := a.ODB.FormResponsible(ctx, int64(formId), UserGroupsFromContext(c), IsManager(c))
 	if err != nil {
-		return formProblem(c, formInternal(log, "cannot check form responsibility", err))
+		return httpProblem(c, httpInternal(log, "cannot check form responsibility", err))
 	}
 	return c.JSON(http.StatusOK, map[string]bool{"data": ok})
 }
