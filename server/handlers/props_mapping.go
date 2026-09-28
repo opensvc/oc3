@@ -757,6 +757,19 @@ var propsMapping = map[string]propMapping{
 			"ruleset_public": colStr(schema.CompRulesetsRulesetPublic),
 		},
 	},
+	// Variables of a compliance ruleset: the rules the modules apply.
+	"ruleset_variable": {
+		Available: []string{"id", "ruleset_id", "var_name", "var_class", "var_value", "var_author", "var_updated"},
+		Props: map[string]propDef{
+			"id":          col(schema.CompRulesetsVariablesID),
+			"ruleset_id":  colInt(schema.CompRulesetsVariablesRulesetID),
+			"var_name":    colStr(schema.CompRulesetsVariablesVarName),
+			"var_class":   colStr(schema.CompRulesetsVariablesVarClass),
+			"var_value":   colStr(schema.CompRulesetsVariablesVarValue),
+			"var_author":  colStr(schema.CompRulesetsVariablesVarAuthor),
+			"var_updated": colStr(schema.CompRulesetsVariablesVarUpdated),
+		},
+	},
 	"alert_event": {
 		Available: []string{"id", "svc_id", "node_id", "dash_begin", "dash_end", "dash_md5"},
 		Props: map[string]propDef{

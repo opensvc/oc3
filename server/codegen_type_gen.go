@@ -83,6 +83,24 @@ func (e PutComplianceRulesetJSONBodyAction) Valid() bool {
 	}
 }
 
+// Defines values for PutComplianceRulesetVariableJSONBodyAction.
+const (
+	Copy PutComplianceRulesetVariableJSONBodyAction = "copy"
+	Move PutComplianceRulesetVariableJSONBodyAction = "move"
+)
+
+// Valid indicates whether the value is a known member of the PutComplianceRulesetVariableJSONBodyAction enum.
+func (e PutComplianceRulesetVariableJSONBodyAction) Valid() bool {
+	switch e {
+	case Copy:
+		return true
+	case Move:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PostFiltersJSONBodyFOp.
 const (
 	PostFiltersJSONBodyFOpEqual            PostFiltersJSONBodyFOp = "="
@@ -1301,6 +1319,35 @@ type RulesetUsage struct {
 	} `json:"services,omitempty"`
 }
 
+// RulesetVariableListResponse defines model for RulesetVariableListResponse.
+type RulesetVariableListResponse struct {
+	Data RulesetVariableListResponse_Data `json:"data"`
+	Meta *ListMeta                        `json:"meta,omitempty"`
+}
+
+// RulesetVariableListResponseData0 defines model for .
+type RulesetVariableListResponseData0 = []RulesetVariableRow
+
+// RulesetVariableListResponseData1 defines model for .
+type RulesetVariableListResponseData1 map[string]map[string]int
+
+// RulesetVariableListResponse_Data defines model for RulesetVariableListResponse.Data.
+type RulesetVariableListResponse_Data struct {
+	union json.RawMessage
+}
+
+// RulesetVariableRow A variable of a compliance ruleset. Every property is optional: the `props`
+// query parameter selects which columns the server returns.
+type RulesetVariableRow struct {
+	Id         *int    `json:"id,omitempty"`
+	RulesetId  *int    `json:"ruleset_id,omitempty"`
+	VarAuthor  *string `json:"var_author,omitempty"`
+	VarClass   *string `json:"var_class,omitempty"`
+	VarName    *string `json:"var_name,omitempty"`
+	VarUpdated *string `json:"var_updated,omitempty"`
+	VarValue   *string `json:"var_value,omitempty"`
+}
+
 // ServiceListResponse defines model for ServiceListResponse.
 type ServiceListResponse struct {
 	Data ServiceListResponse_Data `json:"data"`
@@ -2106,6 +2153,94 @@ type PutComplianceRulesetJSONBody struct {
 
 // PutComplianceRulesetJSONBodyAction defines parameters for PutComplianceRuleset.
 type PutComplianceRulesetJSONBodyAction string
+
+// GetComplianceRulesetVariablesParams defines parameters for GetComplianceRulesetVariables.
+type GetComplianceRulesetVariablesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostComplianceRulesetVariablesJSONBody defines parameters for PostComplianceRulesetVariables.
+type PostComplianceRulesetVariablesJSONBody struct {
+	// VarClass The class of the variable, telling the modules how to read its value.
+	VarClass *string `json:"var_class,omitempty"`
+	VarName  *string `json:"var_name,omitempty"`
+
+	// VarValue The value, a string or any JSON value, stored serialized.
+	VarValue interface{} `json:"var_value,omitempty"`
+}
+
+// GetComplianceRulesetVariableParams defines parameters for GetComplianceRulesetVariable.
+type GetComplianceRulesetVariableParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// PostComplianceRulesetVariableJSONBody defines parameters for PostComplianceRulesetVariable.
+type PostComplianceRulesetVariableJSONBody struct {
+	// VarClass The class of the variable, telling the modules how to read its value.
+	VarClass *string `json:"var_class,omitempty"`
+	VarName  *string `json:"var_name,omitempty"`
+
+	// VarValue The value, a string or any JSON value, stored serialized.
+	VarValue interface{} `json:"var_value,omitempty"`
+}
+
+// PutComplianceRulesetVariableJSONBody defines parameters for PutComplianceRulesetVariable.
+type PutComplianceRulesetVariableJSONBody struct {
+	Action PutComplianceRulesetVariableJSONBodyAction `json:"action"`
+
+	// DstRuleset Id or name of the destination ruleset
+	DstRuleset interface{} `json:"dst_ruleset"`
+}
+
+// PutComplianceRulesetVariableJSONBodyAction defines parameters for PutComplianceRulesetVariable.
+type PutComplianceRulesetVariableJSONBodyAction string
+
+// PostComplianceRulesetsVariablesJSONBody defines parameters for PostComplianceRulesetsVariables.
+type PostComplianceRulesetsVariablesJSONBody struct {
+	RulesetId   *int    `json:"ruleset_id,omitempty"`
+	RulesetName *string `json:"ruleset_name,omitempty"`
+	VarClass    *string `json:"var_class,omitempty"`
+	VarName     *string `json:"var_name,omitempty"`
+
+	// VarValue The value, a string or any JSON value, stored serialized.
+	VarValue interface{} `json:"var_value,omitempty"`
+}
 
 // DeleteComplianceStatusJSONBody defines parameters for DeleteComplianceStatus.
 type DeleteComplianceStatusJSONBody struct {
@@ -5587,6 +5722,18 @@ type PostComplianceRulesetJSONRequestBody PostComplianceRulesetJSONBody
 // PutComplianceRulesetJSONRequestBody defines body for PutComplianceRuleset for application/json ContentType.
 type PutComplianceRulesetJSONRequestBody PutComplianceRulesetJSONBody
 
+// PostComplianceRulesetVariablesJSONRequestBody defines body for PostComplianceRulesetVariables for application/json ContentType.
+type PostComplianceRulesetVariablesJSONRequestBody PostComplianceRulesetVariablesJSONBody
+
+// PostComplianceRulesetVariableJSONRequestBody defines body for PostComplianceRulesetVariable for application/json ContentType.
+type PostComplianceRulesetVariableJSONRequestBody PostComplianceRulesetVariableJSONBody
+
+// PutComplianceRulesetVariableJSONRequestBody defines body for PutComplianceRulesetVariable for application/json ContentType.
+type PutComplianceRulesetVariableJSONRequestBody PutComplianceRulesetVariableJSONBody
+
+// PostComplianceRulesetsVariablesJSONRequestBody defines body for PostComplianceRulesetsVariables for application/json ContentType.
+type PostComplianceRulesetsVariablesJSONRequestBody PostComplianceRulesetsVariablesJSONBody
+
 // DeleteComplianceStatusJSONRequestBody defines body for DeleteComplianceStatus for application/json ContentType.
 type DeleteComplianceStatusJSONRequestBody DeleteComplianceStatusJSONBody
 
@@ -7053,6 +7200,68 @@ func (t RulesetListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *RulesetListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsRulesetVariableListResponseData0 returns the union data inside the RulesetVariableListResponse_Data as a RulesetVariableListResponseData0
+func (t RulesetVariableListResponse_Data) AsRulesetVariableListResponseData0() (RulesetVariableListResponseData0, error) {
+	var body RulesetVariableListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromRulesetVariableListResponseData0 overwrites any union data inside the RulesetVariableListResponse_Data as the provided RulesetVariableListResponseData0
+func (t *RulesetVariableListResponse_Data) FromRulesetVariableListResponseData0(v RulesetVariableListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeRulesetVariableListResponseData0 performs a merge with any union data inside the RulesetVariableListResponse_Data, using the provided RulesetVariableListResponseData0
+func (t *RulesetVariableListResponse_Data) MergeRulesetVariableListResponseData0(v RulesetVariableListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsRulesetVariableListResponseData1 returns the union data inside the RulesetVariableListResponse_Data as a RulesetVariableListResponseData1
+func (t RulesetVariableListResponse_Data) AsRulesetVariableListResponseData1() (RulesetVariableListResponseData1, error) {
+	var body RulesetVariableListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromRulesetVariableListResponseData1 overwrites any union data inside the RulesetVariableListResponse_Data as the provided RulesetVariableListResponseData1
+func (t *RulesetVariableListResponse_Data) FromRulesetVariableListResponseData1(v RulesetVariableListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeRulesetVariableListResponseData1 performs a merge with any union data inside the RulesetVariableListResponse_Data, using the provided RulesetVariableListResponseData1
+func (t *RulesetVariableListResponse_Data) MergeRulesetVariableListResponseData1(v RulesetVariableListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t RulesetVariableListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *RulesetVariableListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

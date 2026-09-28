@@ -9357,6 +9357,347 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/rulesets/{rset_id}/variables:
+    get:
+      operationId: GetComplianceRulesetVariables
+      description: |
+        List the variables of a ruleset published to the user (to one of the user's
+        groups, or to Everybody).
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetVariableListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostComplianceRulesetVariables
+      description: |
+        Create a variable named var_name in the ruleset; when the ruleset has one of
+        that name, its other given properties are updated instead. Requires the
+        CompManager privilege and the responsibility of the ruleset. The change is
+        logged.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                var_name:
+                  type: string
+                var_class:
+                  type: string
+                  description: The class of the variable, telling the modules how to read its value.
+                var_value:
+                  description: The value, a string or any JSON value, stored serialized.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetVariableListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets_variables:
+    post:
+      operationId: PostComplianceRulesetsVariables
+      description: |
+        Create or update a variable, as POST /compliance/rulesets/{rset_id}/variables,
+        the ruleset being named by the ruleset_id or ruleset_name key of the body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ruleset_id:
+                  type: integer
+                ruleset_name:
+                  type: string
+                var_name:
+                  type: string
+                var_class:
+                  type: string
+                var_value:
+                  description: The value, a string or any JSON value, stored serialized.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetVariableListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets/{rset_id}/variables/{var_id}:
+    get:
+      operationId: GetComplianceRulesetVariable
+      description: |
+        Display a variable of a ruleset published to the user.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - in: path
+          name: var_id
+          required: true
+          description: Variable id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetVariableListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostComplianceRulesetVariable
+      description: |
+        Update the given properties of a variable. Requires the CompManager privilege
+        and the responsibility of the ruleset. The change is logged.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - in: path
+          name: var_id
+          required: true
+          description: Variable id or name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                var_name:
+                  type: string
+                var_class:
+                  type: string
+                  description: The class of the variable, telling the modules how to read its value.
+                var_value:
+                  description: The value, a string or any JSON value, stored serialized.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetVariableListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutComplianceRulesetVariable
+      description: |
+        Special actions on a variable: copy or move it to dst_ruleset (id or name).
+        Requires the CompManager privilege, the publication of the source ruleset for a
+        copy or its responsibility for a move, and the responsibility of the destination,
+        which must not have a variable of the same name.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - in: path
+          name: var_id
+          required: true
+          description: Variable id or name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action, dst_ruleset]
+              properties:
+                action:
+                  type: string
+                  enum: [copy, move]
+                dst_ruleset:
+                  description: Id or name of the destination ruleset
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceRulesetVariable
+      description: |
+        Delete a variable. Requires the CompManager privilege and the responsibility of
+        the ruleset. The deletion is logged.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - in: path
+          name: var_id
+          required: true
+          description: Variable id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:
@@ -10227,6 +10568,46 @@ components:
                 type: string
               svcname:
                 type: string
+
+    RulesetVariableRow:
+      type: object
+      description: |
+        A variable of a compliance ruleset. Every property is optional: the `props`
+        query parameter selects which columns the server returns.
+      properties:
+        id:
+          type: integer
+        ruleset_id:
+          type: integer
+        var_name:
+          type: string
+        var_class:
+          type: string
+        var_value:
+          type: string
+          nullable: true
+        var_author:
+          type: string
+        var_updated:
+          type: string
+
+    RulesetVariableListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/RulesetVariableRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     InstanceListResponse:
       type: object
