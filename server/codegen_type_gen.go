@@ -354,6 +354,39 @@ type AppRow struct {
 	Updated     *string `json:"updated,omitempty"`
 }
 
+// ComplianceStatusListResponse defines model for ComplianceStatusListResponse.
+type ComplianceStatusListResponse struct {
+	Data ComplianceStatusListResponse_Data `json:"data"`
+	Meta *ListMeta                         `json:"meta,omitempty"`
+}
+
+// ComplianceStatusListResponseData0 defines model for .
+type ComplianceStatusListResponseData0 = []ComplianceStatusRow
+
+// ComplianceStatusListResponseData1 defines model for .
+type ComplianceStatusListResponseData1 map[string]map[string]int
+
+// ComplianceStatusListResponse_Data defines model for ComplianceStatusListResponse.Data.
+type ComplianceStatusListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ComplianceStatusRow The last run of a compliance module on a node, or on a service's instance
+// on it. Every property is optional: the `props` query parameter selects which
+// columns the server returns. `run_status` is the module's exit code: 0 ok,
+// 1 not ok, 2 not applicable.
+type ComplianceStatusRow struct {
+	Id        *int    `json:"id,omitempty"`
+	NodeId    *string `json:"node_id,omitempty"`
+	RsetMd5   *string `json:"rset_md5,omitempty"`
+	RunAction *string `json:"run_action,omitempty"`
+	RunDate   *string `json:"run_date,omitempty"`
+	RunLog    *string `json:"run_log,omitempty"`
+	RunModule *string `json:"run_module,omitempty"`
+	RunStatus *int    `json:"run_status,omitempty"`
+	SvcId     *string `json:"svc_id,omitempty"`
+}
+
 // DiskListResponse defines model for DiskListResponse.
 type DiskListResponse struct {
 	Data DiskListResponse_Data `json:"data"`
@@ -820,6 +853,31 @@ type LogRow struct {
 	SvcId           *string `json:"svc_id,omitempty"`
 }
 
+// ModulesetListResponse defines model for ModulesetListResponse.
+type ModulesetListResponse struct {
+	Data ModulesetListResponse_Data `json:"data"`
+	Meta *ListMeta                  `json:"meta,omitempty"`
+}
+
+// ModulesetListResponseData0 defines model for .
+type ModulesetListResponseData0 = []ModulesetRow
+
+// ModulesetListResponseData1 defines model for .
+type ModulesetListResponseData1 map[string]map[string]int
+
+// ModulesetListResponse_Data defines model for ModulesetListResponse.Data.
+type ModulesetListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ModulesetRow A compliance moduleset. Every property is optional, as selected by `props`.
+type ModulesetRow struct {
+	Id            *int    `json:"id,omitempty"`
+	ModsetAuthor  *string `json:"modset_author,omitempty"`
+	ModsetName    *string `json:"modset_name,omitempty"`
+	ModsetUpdated *string `json:"modset_updated,omitempty"`
+}
+
 // NetworkListResponse defines model for NetworkListResponse.
 type NetworkListResponse struct {
 	Data []NetworkRow `json:"data"`
@@ -1088,6 +1146,31 @@ type Problem struct {
 	// Text A human-readable explanation specific to this occurrence of the
 	// problem.
 	Text string `json:"text"`
+}
+
+// RulesetListResponse defines model for RulesetListResponse.
+type RulesetListResponse struct {
+	Data RulesetListResponse_Data `json:"data"`
+	Meta *ListMeta                `json:"meta,omitempty"`
+}
+
+// RulesetListResponseData0 defines model for .
+type RulesetListResponseData0 = []RulesetRow
+
+// RulesetListResponseData1 defines model for .
+type RulesetListResponseData1 map[string]map[string]int
+
+// RulesetListResponse_Data defines model for RulesetListResponse.Data.
+type RulesetListResponse_Data struct {
+	union json.RawMessage
+}
+
+// RulesetRow A compliance ruleset. Every property is optional, as selected by `props`.
+type RulesetRow struct {
+	Id            *int    `json:"id,omitempty"`
+	RulesetName   *string `json:"ruleset_name,omitempty"`
+	RulesetPublic *string `json:"ruleset_public,omitempty"`
+	RulesetType   *string `json:"ruleset_type,omitempty"`
 }
 
 // ServiceListResponse defines model for ServiceListResponse.
@@ -5367,6 +5450,68 @@ func (t *AppListResponse_Data) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsComplianceStatusListResponseData0 returns the union data inside the ComplianceStatusListResponse_Data as a ComplianceStatusListResponseData0
+func (t ComplianceStatusListResponse_Data) AsComplianceStatusListResponseData0() (ComplianceStatusListResponseData0, error) {
+	var body ComplianceStatusListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromComplianceStatusListResponseData0 overwrites any union data inside the ComplianceStatusListResponse_Data as the provided ComplianceStatusListResponseData0
+func (t *ComplianceStatusListResponse_Data) FromComplianceStatusListResponseData0(v ComplianceStatusListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeComplianceStatusListResponseData0 performs a merge with any union data inside the ComplianceStatusListResponse_Data, using the provided ComplianceStatusListResponseData0
+func (t *ComplianceStatusListResponse_Data) MergeComplianceStatusListResponseData0(v ComplianceStatusListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsComplianceStatusListResponseData1 returns the union data inside the ComplianceStatusListResponse_Data as a ComplianceStatusListResponseData1
+func (t ComplianceStatusListResponse_Data) AsComplianceStatusListResponseData1() (ComplianceStatusListResponseData1, error) {
+	var body ComplianceStatusListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromComplianceStatusListResponseData1 overwrites any union data inside the ComplianceStatusListResponse_Data as the provided ComplianceStatusListResponseData1
+func (t *ComplianceStatusListResponse_Data) FromComplianceStatusListResponseData1(v ComplianceStatusListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeComplianceStatusListResponseData1 performs a merge with any union data inside the ComplianceStatusListResponse_Data, using the provided ComplianceStatusListResponseData1
+func (t *ComplianceStatusListResponse_Data) MergeComplianceStatusListResponseData1(v ComplianceStatusListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ComplianceStatusListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ComplianceStatusListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsDiskListResponseData0 returns the union data inside the DiskListResponse_Data as a DiskListResponseData0
 func (t DiskListResponse_Data) AsDiskListResponseData0() (DiskListResponseData0, error) {
 	var body DiskListResponseData0
@@ -6049,6 +6194,68 @@ func (t *LogListResponse_Data) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsModulesetListResponseData0 returns the union data inside the ModulesetListResponse_Data as a ModulesetListResponseData0
+func (t ModulesetListResponse_Data) AsModulesetListResponseData0() (ModulesetListResponseData0, error) {
+	var body ModulesetListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromModulesetListResponseData0 overwrites any union data inside the ModulesetListResponse_Data as the provided ModulesetListResponseData0
+func (t *ModulesetListResponse_Data) FromModulesetListResponseData0(v ModulesetListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeModulesetListResponseData0 performs a merge with any union data inside the ModulesetListResponse_Data, using the provided ModulesetListResponseData0
+func (t *ModulesetListResponse_Data) MergeModulesetListResponseData0(v ModulesetListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsModulesetListResponseData1 returns the union data inside the ModulesetListResponse_Data as a ModulesetListResponseData1
+func (t ModulesetListResponse_Data) AsModulesetListResponseData1() (ModulesetListResponseData1, error) {
+	var body ModulesetListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromModulesetListResponseData1 overwrites any union data inside the ModulesetListResponse_Data as the provided ModulesetListResponseData1
+func (t *ModulesetListResponse_Data) FromModulesetListResponseData1(v ModulesetListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeModulesetListResponseData1 performs a merge with any union data inside the ModulesetListResponse_Data, using the provided ModulesetListResponseData1
+func (t *ModulesetListResponse_Data) MergeModulesetListResponseData1(v ModulesetListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ModulesetListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ModulesetListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsNodeHardwareListResponseData0 returns the union data inside the NodeHardwareListResponse_Data as a NodeHardwareListResponseData0
 func (t NodeHardwareListResponse_Data) AsNodeHardwareListResponseData0() (NodeHardwareListResponseData0, error) {
 	var body NodeHardwareListResponseData0
@@ -6293,6 +6500,68 @@ func (t PackageListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *PackageListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsRulesetListResponseData0 returns the union data inside the RulesetListResponse_Data as a RulesetListResponseData0
+func (t RulesetListResponse_Data) AsRulesetListResponseData0() (RulesetListResponseData0, error) {
+	var body RulesetListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromRulesetListResponseData0 overwrites any union data inside the RulesetListResponse_Data as the provided RulesetListResponseData0
+func (t *RulesetListResponse_Data) FromRulesetListResponseData0(v RulesetListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeRulesetListResponseData0 performs a merge with any union data inside the RulesetListResponse_Data, using the provided RulesetListResponseData0
+func (t *RulesetListResponse_Data) MergeRulesetListResponseData0(v RulesetListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsRulesetListResponseData1 returns the union data inside the RulesetListResponse_Data as a RulesetListResponseData1
+func (t RulesetListResponse_Data) AsRulesetListResponseData1() (RulesetListResponseData1, error) {
+	var body RulesetListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromRulesetListResponseData1 overwrites any union data inside the RulesetListResponse_Data as the provided RulesetListResponseData1
+func (t *RulesetListResponse_Data) FromRulesetListResponseData1(v RulesetListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeRulesetListResponseData1 performs a merge with any union data inside the RulesetListResponse_Data, using the provided RulesetListResponseData1
+func (t *RulesetListResponse_Data) MergeRulesetListResponseData1(v RulesetListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t RulesetListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *RulesetListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

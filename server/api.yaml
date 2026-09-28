@@ -5455,7 +5455,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/ModulesetListResponse'
         404:
           description: Node not found
         500:
@@ -5536,7 +5536,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/RulesetListResponse'
         404:
           description: Node not found
         500:
@@ -5617,7 +5617,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/ComplianceStatusListResponse'
         404:
           description: Node not found
         500:
@@ -9349,6 +9349,113 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/PackageDiffNode'
+
+    ComplianceStatusRow:
+      type: object
+      description: |
+        The last run of a compliance module on a node, or on a service's instance
+        on it. Every property is optional: the `props` query parameter selects which
+        columns the server returns. `run_status` is the module's exit code: 0 ok,
+        1 not ok, 2 not applicable.
+      properties:
+        id:
+          type: integer
+        run_module:
+          type: string
+        node_id:
+          type: string
+        svc_id:
+          type: string
+        run_status:
+          type: integer
+        run_log:
+          type: string
+        run_date:
+          type: string
+        run_action:
+          type: string
+        rset_md5:
+          type: string
+
+    ComplianceStatusListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ComplianceStatusRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    ModulesetRow:
+      type: object
+      description: A compliance moduleset. Every property is optional, as selected by `props`.
+      properties:
+        id:
+          type: integer
+        modset_name:
+          type: string
+        modset_author:
+          type: string
+        modset_updated:
+          type: string
+
+    ModulesetListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ModulesetRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    RulesetRow:
+      type: object
+      description: A compliance ruleset. Every property is optional, as selected by `props`.
+      properties:
+        id:
+          type: integer
+        ruleset_name:
+          type: string
+        ruleset_type:
+          type: string
+        ruleset_public:
+          type: string
+
+    RulesetListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/RulesetRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     InstanceListResponse:
       type: object
