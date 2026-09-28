@@ -9875,6 +9875,438 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/rulesets/{rset_id}/publications:
+    get:
+      operationId: GetComplianceRulesetPublications
+      description: |
+        List the publication groups of a ruleset; a non-manager sees only the ones they are
+        a member of.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets/{rset_id}/publications/{group_id}:
+    post:
+      operationId: PostComplianceRulesetPublication
+      description: |
+        Make a group a publication group of the ruleset. Requires the CompManager privilege
+        and the responsibility of the ruleset; a non-manager may attach only one of their
+        groups. Everybody may not be made responsible, nor be given the publication of a
+        contextual ruleset. The change is logged.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceRulesetPublication
+      description: |
+        Remove a publication group from the ruleset. Requires the CompManager privilege and
+        the responsibility of the ruleset. The change is logged.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets_publications:
+    post:
+      operationId: PostComplianceRulesetsPublications
+      description: |
+        Attach a publication group to a ruleset, as
+        POST /compliance/rulesets/{rset_id}/publications/{group_id}, both named in the body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ruleset_id, group_id]
+              properties:
+                ruleset_id:
+                  description: Ruleset id or name
+                group_id:
+                  description: Group id or role
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceRulesetsPublications
+      description: |
+        Detach a publication group from a ruleset, as
+        DELETE /compliance/rulesets/{rset_id}/publications/{group_id}, both named in the body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ruleset_id, group_id]
+              properties:
+                ruleset_id:
+                  description: Ruleset id or name
+                group_id:
+                  description: Group id or role
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets/{rset_id}/responsibles:
+    get:
+      operationId: GetComplianceRulesetResponsibles
+      description: |
+        List the responsible groups of a ruleset; a non-manager sees only the ones they are
+        a member of.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets/{rset_id}/responsibles/{group_id}:
+    post:
+      operationId: PostComplianceRulesetResponsible
+      description: |
+        Make a group a responsible group of the ruleset. Requires the CompManager privilege
+        and the responsibility of the ruleset; a non-manager may attach only one of their
+        groups. Everybody may not be made responsible, nor be given the publication of a
+        contextual ruleset. The change is logged.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceRulesetResponsible
+      description: |
+        Remove a responsible group from the ruleset. Requires the CompManager privilege and
+        the responsibility of the ruleset. The change is logged.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id or role
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets_responsibles:
+    post:
+      operationId: PostComplianceRulesetsResponsibles
+      description: |
+        Attach a responsible group to a ruleset, as
+        POST /compliance/rulesets/{rset_id}/responsibles/{group_id}, both named in the body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ruleset_id, group_id]
+              properties:
+                ruleset_id:
+                  description: Ruleset id or name
+                group_id:
+                  description: Group id or role
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceRulesetsResponsibles
+      description: |
+        Detach a responsible group from a ruleset, as
+        DELETE /compliance/rulesets/{rset_id}/responsibles/{group_id}, both named in the body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ruleset_id, group_id]
+              properties:
+                ruleset_id:
+                  description: Ruleset id or name
+                group_id:
+                  description: Group id or role
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:

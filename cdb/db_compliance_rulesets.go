@@ -398,3 +398,9 @@ var (
 	ErrCompNotFound = errors.New("not found")
 	ErrCompConflict = errors.New("conflict")
 )
+
+// RulesetIsContextual tells whether a ruleset is contextual, applied through its
+// filterset rather than by attachment.
+func (oDb *DB) RulesetIsContextual(ctx context.Context, id int64) (bool, error) {
+	return oDb.exists(ctx, "rulesetIsContextual", "SELECT 1 FROM comp_rulesets WHERE id = ? AND ruleset_type = 'contextual'", id)
+}
