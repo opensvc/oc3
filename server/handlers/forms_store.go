@@ -116,7 +116,7 @@ func asInt64(v any) (int64, bool) {
 // /workflows/{id}/dump does in the historical collector.
 func (a *Api) workflowDump(ctx context.Context, workflowID int64) (map[string]any, error) {
 	rows, err := a.defaultRows(ctx, "workflow", nil, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
-		return a.ODB.GetWorkflows(ctx, &workflowID, p)
+		return a.ODB.GetWorkflows(ctx, &workflowID, "", p)
 	})
 	if err != nil || len(rows) == 0 {
 		return nil, err

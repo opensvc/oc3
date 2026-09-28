@@ -8760,6 +8760,17 @@ paths:
         - $ref: '#/components/parameters/inQueryOrderby'
         - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
+        - in: query
+          name: assigned
+          description: |
+            Keep the pending workflows (status not closed) related to the caller's
+            team, the caller's full name and the roles of their non-privilege
+            groups: `team` those whose last assignee is in the team, as the
+            historical "Assigned to my team"; `tiers` those created by the team and
+            assigned to someone else, as the historical "Pending tiers action".
+          schema:
+            type: string
+            enum: [team, tiers]
       tags:
         - collector
       responses:

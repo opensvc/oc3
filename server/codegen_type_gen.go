@@ -266,6 +266,24 @@ func (e PostNodeJSONBodyActionType) Valid() bool {
 	}
 }
 
+// Defines values for GetWorkflowsParamsAssigned.
+const (
+	Team  GetWorkflowsParamsAssigned = "team"
+	Tiers GetWorkflowsParamsAssigned = "tiers"
+)
+
+// Valid indicates whether the value is a known member of the GetWorkflowsParamsAssigned enum.
+func (e GetWorkflowsParamsAssigned) Valid() bool {
+	switch e {
+	case Team:
+		return true
+	case Tiers:
+		return true
+	default:
+		return false
+	}
+}
+
 // ActionEnqueue One action to enqueue with PUT /actions.
 type ActionEnqueue struct {
 	// Action Agent action to run
@@ -5218,7 +5236,17 @@ type GetWorkflowsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Assigned Keep the pending workflows (status not closed) related to the caller's
+	// team, the caller's full name and the roles of their non-privilege
+	// groups: `team` those whose last assignee is in the team, as the
+	// historical "Assigned to my team"; `tiers` those created by the team and
+	// assigned to someone else, as the historical "Pending tiers action".
+	Assigned *GetWorkflowsParamsAssigned `form:"assigned,omitempty" json:"assigned,omitempty"`
 }
+
+// GetWorkflowsParamsAssigned defines parameters for GetWorkflows.
+type GetWorkflowsParamsAssigned string
 
 // PostActionsJSONRequestBody defines body for PostActions for application/json ContentType.
 type PostActionsJSONRequestBody PostActionsJSONBody

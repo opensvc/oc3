@@ -70,13 +70,47 @@ func (oDb *DB) GetFormsStore(ctx context.Context, storeID *int64, p ListParams) 
 // folder and definition; a workflow whose revision is missing is still listed.
 const workflowsFrom = "workflows LEFT JOIN forms_revisions ON forms_revisions.form_md5 = workflows.form_md5"
 
-// GetWorkflows lists the workflows, one when id is set.
-func (oDb *DB) GetWorkflows(ctx context.Context, id *int64, p ListParams) ([]map[string]any, error) {
+// myTeamNames is the subquery naming the caller and their team, as the historical
+// requests tables compare them with a workflow's creator and last assignee: the
+// user's full name ("first last") and the roles of their non-privilege groups.
+const myTeamNames = "(SELECT CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) FROM auth_user WHERE id = ?" +
+	" UNION SELECT auth_group.role FROM auth_group" +
+	" JOIN auth_membership ON auth_membership.group_id = auth_group.id" +
+	" WHERE auth_membership.user_id = ? AND auth_group.privilege = 'F')"
+
+// Workflows assigned to the caller's team, or started by it and awaiting a
+// tier, as the historical "Assigned to my team" and "Pending tiers action".
+const (
+	WorkflowsAssignedTeam  = "team"
+	WorkflowsAssignedTiers = "tiers"
+)
+
+// GetWorkflows lists the workflows, one when id is set. assigned, when set,
+// keeps the pending workflows assigned to the caller's team (WorkflowsAssignedTeam),
+// or started by it and assigned to someone else (WorkflowsAssignedTiers); it
+// requires p.UserID, and matches nothing without it.
+func (oDb *DB) GetWorkflows(ctx context.Context, id *int64, assigned string, p ListParams) ([]map[string]any, error) {
 	conds := []string{"workflows.id > 0"}
 	var args []any
 	if id != nil {
 		conds = append(conds, "workflows.id = ?")
 		args = append(args, *id)
+	}
+	switch {
+	case assigned == "":
+	case p.UserID == nil:
+		conds = append(conds, "1=0")
+	case assigned == WorkflowsAssignedTeam:
+		conds = append(conds, "workflows.status != 'closed'",
+			"workflows.last_assignee IN "+myTeamNames)
+		args = append(args, *p.UserID, *p.UserID)
+	case assigned == WorkflowsAssignedTiers:
+		conds = append(conds, "workflows.status != 'closed'",
+			"workflows.last_assignee NOT IN "+myTeamNames,
+			"workflows.creator IN "+myTeamNames)
+		args = append(args, *p.UserID, *p.UserID, *p.UserID, *p.UserID)
+	default:
+		return nil, fmt.Errorf("getWorkflows: unknown assigned value %q", assigned)
 	}
 	return oDb.listQuery(ctx, "getWorkflows", workflowsFrom, conds, args, "workflows.id", p)
 }
