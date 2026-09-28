@@ -792,6 +792,38 @@ var propsMapping = map[string]propMapping{
 			"teams_publication":  colStr(cdb.ModsetPublications),
 		},
 	},
+	// Variables of every ruleset, as the historical v_comp_rulesets view: a
+	// ruleset lists its own variables, then those of each ruleset it
+	// encapsulates; a ruleset of the chain without variable has a row with a zero
+	// id and empty variable props.
+	"rulesets_variable": {
+		Available: []string{
+			"id", "ruleset_id", "ruleset_name", "ruleset_type", "ruleset_public",
+			"teams_responsible", "teams_publication", "fset_name", "chain", "chain_len",
+			"encap_rset", "var_class", "var_name", "var_value", "var_updated", "var_author",
+			"encap_rset_id", "fset_id",
+		},
+		Props: map[string]propDef{
+			"id":                colInt(schema.CompRulesetsVariablesID),
+			"ruleset_id":        col(schema.CompRulesetsID),
+			"ruleset_name":      colStr(schema.CompRulesetsRulesetName),
+			"ruleset_type":      colStr(schema.CompRulesetsRulesetType),
+			"ruleset_public":    colStr(schema.CompRulesetsRulesetPublic),
+			"teams_responsible": colStr(cdb.RsetResponsibles),
+			"teams_publication": colStr(cdb.RsetPublications),
+			"fset_name":         colStr(schema.GenFiltersetsFsetName),
+			"chain":             colStr(cdb.RsetChainsChain),
+			"chain_len":         colInt(cdb.RsetChainsLen),
+			"encap_rset":        colStr(cdb.RsetChainsEncap),
+			"var_class":         colStr(schema.CompRulesetsVariablesVarClass),
+			"var_name":          colStr(schema.CompRulesetsVariablesVarName),
+			"var_value":         colStr(schema.CompRulesetsVariablesVarValue),
+			"var_updated":       colStr(schema.CompRulesetsVariablesVarUpdated),
+			"var_author":        colStr(schema.CompRulesetsVariablesVarAuthor),
+			"encap_rset_id":     colInt(cdb.RsetChainsEncapID),
+			"fset_id":           colInt(schema.CompRulesetsFiltersetsFsetID),
+		},
+	},
 	// Variables of a compliance ruleset: the rules the modules apply.
 	"ruleset_variable": {
 		Available: []string{"id", "ruleset_id", "var_name", "var_class", "var_value", "var_author", "var_updated"},

@@ -1497,6 +1497,66 @@ type RulesetVariableRow struct {
 	VarValue   *string `json:"var_value,omitempty"`
 }
 
+// RulesetsVariableListResponse defines model for RulesetsVariableListResponse.
+type RulesetsVariableListResponse struct {
+	Data RulesetsVariableListResponse_Data `json:"data"`
+	Meta *ListMeta                         `json:"meta,omitempty"`
+}
+
+// RulesetsVariableListResponseData0 defines model for .
+type RulesetsVariableListResponseData0 = []RulesetsVariableRow
+
+// RulesetsVariableListResponseData1 defines model for .
+type RulesetsVariableListResponseData1 map[string]map[string]int
+
+// RulesetsVariableListResponse_Data defines model for RulesetsVariableListResponse.Data.
+type RulesetsVariableListResponse_Data struct {
+	union json.RawMessage
+}
+
+// RulesetsVariableRow A variable of a compliance ruleset, own or encapsulated, with its ruleset and
+// the ruleset's filterset and teams. Every property is optional: the `props`
+// query parameter selects which columns the server returns.
+type RulesetsVariableRow struct {
+	// Chain The path from the ruleset to the encapsulated one, as "a > b > c", empty for its own variables.
+	Chain *string `json:"chain,omitempty"`
+
+	// ChainLen The number of rulesets in the chain, 1 for its own variables.
+	ChainLen *int `json:"chain_len,omitempty"`
+
+	// EncapRset The encapsulated ruleset holding the variable, empty for its own variables.
+	EncapRset *string `json:"encap_rset,omitempty"`
+
+	// EncapRsetId The id of encap_rset, 0 for its own variables.
+	EncapRsetId *int `json:"encap_rset_id,omitempty"`
+	FsetId      *int `json:"fset_id,omitempty"`
+
+	// FsetName The filterset of a contextual ruleset.
+	FsetName *string `json:"fset_name,omitempty"`
+
+	// Id The variable id, 0 on the row of a ruleset without variable.
+	Id          *int    `json:"id,omitempty"`
+	RulesetId   *int    `json:"ruleset_id,omitempty"`
+	RulesetName *string `json:"ruleset_name,omitempty"`
+
+	// RulesetPublic T when the ruleset is public, F otherwise.
+	RulesetPublic *string `json:"ruleset_public,omitempty"`
+
+	// RulesetType explicit or contextual.
+	RulesetType *string `json:"ruleset_type,omitempty"`
+
+	// TeamsPublication The roles of the groups the ruleset is published to, comma separated.
+	TeamsPublication *string `json:"teams_publication,omitempty"`
+
+	// TeamsResponsible The roles of the groups responsible for the ruleset, comma separated.
+	TeamsResponsible *string `json:"teams_responsible,omitempty"`
+	VarAuthor        *string `json:"var_author,omitempty"`
+	VarClass         *string `json:"var_class,omitempty"`
+	VarName          *string `json:"var_name,omitempty"`
+	VarUpdated       *string `json:"var_updated,omitempty"`
+	VarValue         *string `json:"var_value,omitempty"`
+}
+
 // ServiceListResponse defines model for ServiceListResponse.
 type ServiceListResponse struct {
 	Data ServiceListResponse_Data `json:"data"`
@@ -3197,6 +3257,46 @@ type PostComplianceRulesetsServicesJSONBody struct {
 	// Slave A boolean; true for the encapsulated service. encap is accepted as well.
 	Slave interface{} `json:"slave,omitempty"`
 	SvcId string      `json:"svc_id"`
+}
+
+// GetComplianceRulesetsVariablesParams defines parameters for GetComplianceRulesetsVariables.
+type GetComplianceRulesetsVariablesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
 // PostComplianceRulesetsVariablesJSONBody defines parameters for PostComplianceRulesetsVariables.
@@ -8423,6 +8523,68 @@ func (t RulesetVariableListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *RulesetVariableListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsRulesetsVariableListResponseData0 returns the union data inside the RulesetsVariableListResponse_Data as a RulesetsVariableListResponseData0
+func (t RulesetsVariableListResponse_Data) AsRulesetsVariableListResponseData0() (RulesetsVariableListResponseData0, error) {
+	var body RulesetsVariableListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromRulesetsVariableListResponseData0 overwrites any union data inside the RulesetsVariableListResponse_Data as the provided RulesetsVariableListResponseData0
+func (t *RulesetsVariableListResponse_Data) FromRulesetsVariableListResponseData0(v RulesetsVariableListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeRulesetsVariableListResponseData0 performs a merge with any union data inside the RulesetsVariableListResponse_Data, using the provided RulesetsVariableListResponseData0
+func (t *RulesetsVariableListResponse_Data) MergeRulesetsVariableListResponseData0(v RulesetsVariableListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsRulesetsVariableListResponseData1 returns the union data inside the RulesetsVariableListResponse_Data as a RulesetsVariableListResponseData1
+func (t RulesetsVariableListResponse_Data) AsRulesetsVariableListResponseData1() (RulesetsVariableListResponseData1, error) {
+	var body RulesetsVariableListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromRulesetsVariableListResponseData1 overwrites any union data inside the RulesetsVariableListResponse_Data as the provided RulesetsVariableListResponseData1
+func (t *RulesetsVariableListResponse_Data) FromRulesetsVariableListResponseData1(v RulesetsVariableListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeRulesetsVariableListResponseData1 performs a merge with any union data inside the RulesetsVariableListResponse_Data, using the provided RulesetsVariableListResponseData1
+func (t *RulesetsVariableListResponse_Data) MergeRulesetsVariableListResponseData1(v RulesetsVariableListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t RulesetsVariableListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *RulesetsVariableListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

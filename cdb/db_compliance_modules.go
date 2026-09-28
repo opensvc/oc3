@@ -20,12 +20,13 @@ var (
 	ModsetPublications  = &schema.Col{T: TModsetPublications, Name: "teams", Nullable: true}
 )
 
-// modsetTeams aggregates the roles of the groups a team table gives each
-// moduleset, into the derived table alias.
-func modsetTeams(table, alias string) string {
-	return "LEFT JOIN (SELECT t.modset_id, GROUP_CONCAT(DISTINCT ag.role ORDER BY ag.role SEPARATOR ', ') AS teams" +
-		" FROM " + table + " t JOIN auth_group ag ON ag.id = t.group_id GROUP BY t.modset_id) " + alias +
-		" ON " + alias + ".modset_id = comp_moduleset.id"
+// compTeamsJoin joins, under alias, the roles of the groups of gtype
+// ("responsible" or "publication") of each object of kind k, comma separated in
+// the teams column.
+func compTeamsJoin(k CompKind, gtype, alias string) string {
+	return "LEFT JOIN (SELECT t." + k.FK + ", GROUP_CONCAT(DISTINCT ag.role ORDER BY ag.role SEPARATOR ', ') AS teams" +
+		" FROM " + k.TeamPrefix + gtype + " t JOIN auth_group ag ON ag.id = t.group_id GROUP BY t." + k.FK + ") " + alias +
+		" ON " + alias + "." + k.FK + " = " + k.Table + ".id"
 }
 
 // modulesetsModulesFrom is the historical v_comp_modulesets view: every
@@ -33,8 +34,8 @@ func modsetTeams(table, alias string) string {
 // its own, and the responsible and publication teams of the moduleset.
 var modulesetsModulesFrom = "comp_moduleset" +
 	" LEFT JOIN comp_moduleset_modules ON comp_moduleset_modules.modset_id = comp_moduleset.id " +
-	modsetTeams("comp_moduleset_team_responsible", TModsetResponsibles.Name) + " " +
-	modsetTeams("comp_moduleset_team_publication", TModsetPublications.Name)
+	compTeamsJoin(CompModulesetKind, "responsible", TModsetResponsibles.Name) + " " +
+	compTeamsJoin(CompModulesetKind, "publication", TModsetPublications.Name)
 
 // GetComplianceModulesetsModules lists the modules of the modulesets visible to
 // the caller, by moduleset and module name.

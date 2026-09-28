@@ -138,6 +138,15 @@ func (a *Api) PostComplianceRulesetVariables(c echo.Context, rsetId string) erro
 }
 
 // PostComplianceRulesetsVariables handles POST /compliance/rulesets_variables,
+// GetComplianceRulesetsVariables handles GET /compliance/rulesets_variables.
+func (a *Api) GetComplianceRulesetsVariables(c echo.Context, params server.GetComplianceRulesetsVariablesParams) error {
+	return a.handleList(c, "GetComplianceRulesetsVariables", "rulesets_variable",
+		listParams(params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, params.Filter),
+		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
+			return a.ODB.GetComplianceRulesetsVariables(ctx, p)
+		})
+}
+
 // the form naming the ruleset by ruleset_id or ruleset_name in the body.
 func (a *Api) PostComplianceRulesetsVariables(c echo.Context) error {
 	entry, err := oneEntry(c)

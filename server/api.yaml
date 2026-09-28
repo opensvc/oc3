@@ -9454,6 +9454,42 @@ paths:
         - bearerAuth: [ ]
 
   /compliance/rulesets_variables:
+    get:
+      operationId: GetComplianceRulesetsVariables
+      description: |
+        List the variables of the rulesets published to one of the user's groups, every
+        ruleset for a manager, as the historical v_comp_rulesets view: a ruleset lists
+        its own variables, then those of each ruleset it encapsulates, named by
+        encap_rset and chain, with the ruleset's filterset and its responsible and
+        publication teams. A ruleset of the chain without variable is listed on a row
+        with a zero id and empty variable props.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetsVariableListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
     post:
       operationId: PostComplianceRulesetsVariables
       description: |
@@ -13385,6 +13421,78 @@ components:
           nullable: true
         modset_mod_updated:
           type: string
+
+    RulesetsVariableRow:
+      type: object
+      description: |
+        A variable of a compliance ruleset, own or encapsulated, with its ruleset and
+        the ruleset's filterset and teams. Every property is optional: the `props`
+        query parameter selects which columns the server returns.
+      properties:
+        id:
+          type: integer
+          description: The variable id, 0 on the row of a ruleset without variable.
+        ruleset_id:
+          type: integer
+        ruleset_name:
+          type: string
+        ruleset_type:
+          type: string
+          description: explicit or contextual.
+        ruleset_public:
+          type: string
+          description: T when the ruleset is public, F otherwise.
+        teams_responsible:
+          type: string
+          description: The roles of the groups responsible for the ruleset, comma separated.
+        teams_publication:
+          type: string
+          description: The roles of the groups the ruleset is published to, comma separated.
+        fset_name:
+          type: string
+          description: The filterset of a contextual ruleset.
+        fset_id:
+          type: integer
+        chain:
+          type: string
+          description: The path from the ruleset to the encapsulated one, as "a > b > c", empty for its own variables.
+        chain_len:
+          type: integer
+          description: The number of rulesets in the chain, 1 for its own variables.
+        encap_rset:
+          type: string
+          description: The encapsulated ruleset holding the variable, empty for its own variables.
+        encap_rset_id:
+          type: integer
+          description: The id of encap_rset, 0 for its own variables.
+        var_class:
+          type: string
+        var_name:
+          type: string
+        var_value:
+          type: string
+        var_updated:
+          type: string
+        var_author:
+          type: string
+
+    RulesetsVariableListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/RulesetsVariableRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     ModulesetsModuleRow:
       type: object

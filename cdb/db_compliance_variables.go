@@ -7,7 +7,49 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/opensvc/oc3/schema"
 )
+
+// The derived tables rulesetsVariablesFrom joins, declared as columns so the
+// lists can be filtered and sorted by them: the team roles of each ruleset, and
+// the chains from a ruleset to itself and to each ruleset it encapsulates.
+var (
+	TRsetResponsibles = &schema.Table{Name: "rset_responsibles"}
+	TRsetPublications = &schema.Table{Name: "rset_publications"}
+	TRsetChains       = &schema.Table{Name: "rset_chains"}
+	RsetResponsibles  = &schema.Col{T: TRsetResponsibles, Name: "teams", Nullable: true}
+	RsetPublications  = &schema.Col{T: TRsetPublications, Name: "teams", Nullable: true}
+	RsetChainsChain   = &schema.Col{T: TRsetChains, Name: "chain", Nullable: true}
+	RsetChainsLen     = &schema.Col{T: TRsetChains, Name: "chain_len", Nullable: true}
+	RsetChainsEncap   = &schema.Col{T: TRsetChains, Name: "encap_rset", Nullable: true}
+	RsetChainsEncapID = &schema.Col{T: TRsetChains, Name: "encap_rset_id", Nullable: true}
+)
+
+// rulesetsVariablesFrom is the historical v_comp_rulesets view: every ruleset
+// with its filterset and teams, and the variables of the ruleset itself then of
+// each ruleset it encapsulates, found through comp_rulesets_chains. On its own
+// chain a ruleset names no encapsulated ruleset; a ruleset of the chain without
+// variable is on a row of its own.
+var rulesetsVariablesFrom = "comp_rulesets" +
+	" LEFT JOIN comp_rulesets_filtersets ON comp_rulesets_filtersets.ruleset_id = comp_rulesets.id" +
+	" LEFT JOIN gen_filtersets ON gen_filtersets.id = comp_rulesets_filtersets.fset_id " +
+	compTeamsJoin(CompRulesetKind, "responsible", TRsetResponsibles.Name) + " " +
+	compTeamsJoin(CompRulesetKind, "publication", TRsetPublications.Name) +
+	" LEFT JOIN (SELECT c.head_rset_id, c.tail_rset_id, c.chain, c.chain_len," +
+	" IF(c.tail_rset_id = c.head_rset_id, '', r.ruleset_name) AS encap_rset," +
+	" IF(c.tail_rset_id = c.head_rset_id, NULL, c.tail_rset_id) AS encap_rset_id" +
+	" FROM comp_rulesets_chains c JOIN comp_rulesets r ON r.id = c.tail_rset_id) " + TRsetChains.Name +
+	" ON " + TRsetChains.Name + ".head_rset_id = comp_rulesets.id" +
+	" LEFT JOIN comp_rulesets_variables ON comp_rulesets_variables.ruleset_id = " + TRsetChains.Name + ".tail_rset_id"
+
+// GetComplianceRulesetsVariables lists the variables of the rulesets visible to
+// the caller, encapsulated ones included, by ruleset, chain and variable name.
+func (oDb *DB) GetComplianceRulesetsVariables(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	cond, args := compRulesetVisibleCond(p.Groups, p.IsManager)
+	return oDb.listQuery(ctx, "getComplianceRulesetsVariables", rulesetsVariablesFrom, []string{cond}, args,
+		"comp_rulesets.ruleset_name, "+RsetChainsLen.Qualified()+", "+RsetChainsEncap.Qualified()+", comp_rulesets_variables.var_name", p)
+}
 
 // CompRulesetPublished tells whether a ruleset is published to the caller: to
 // one of the caller's groups or to Everybody, as ruleset_publication(); always
