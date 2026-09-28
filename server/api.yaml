@@ -10307,6 +10307,380 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/rulesets/{rset_id}/nodes:
+    get:
+      operationId: GetComplianceRulesetNodes
+      description: |
+        List the nodes a ruleset published to the user is attached to, among the nodes
+        the user can see.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets/{rset_id}/candidate_nodes:
+    get:
+      operationId: GetComplianceRulesetCandidateNodes
+      description: |
+        List the nodes a ruleset published to the user may be attached to: the nodes
+        the user can see whose responsible team is one of the ruleset's publication
+        groups, not attached yet.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets/{rset_id}/services:
+    get:
+      operationId: GetComplianceRulesetServices
+      description: |
+        List the services a ruleset published to the user is attached to, as the
+        service itself or, with slave, as its encapsulated service, among the services
+        the user can see.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - in: query
+          name: slave
+          description: With true, the encapsulated services
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets/{rset_id}/candidate_services:
+    get:
+      operationId: GetComplianceRulesetCandidateServices
+      description: |
+        List the services a ruleset published to the user may be attached to, as the
+        service or with slave as its encapsulated service: the services the user can see
+        whose app has one of the ruleset's publication groups among its responsibles,
+        not attached yet.
+      parameters:
+        - in: path
+          name: rset_id
+          required: true
+          description: Ruleset id or name
+          schema:
+            type: string
+        - in: query
+          name: slave
+          description: With true, the encapsulated services
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets_nodes:
+    post:
+      operationId: PostComplianceRulesetsNodes
+      description: |
+        Attach a ruleset to a node, as POST /nodes/{node_id}/compliance/rulesets/{rset_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id]
+              properties:
+                node_id:
+                  type: string
+                ruleset_id:
+                  description: Ruleset id or name
+                ruleset_name:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceRulesetsNodes
+      description: |
+        Detach a ruleset from a node, as DELETE /nodes/{node_id}/compliance/rulesets/{rset_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id]
+              properties:
+                node_id:
+                  type: string
+                ruleset_id:
+                  description: Ruleset id or name
+                ruleset_name:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/rulesets_services:
+    post:
+      operationId: PostComplianceRulesetsServices
+      description: |
+        Attach a ruleset to a service, as POST /services/{svc_id}/compliance/rulesets/{rset_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [svc_id]
+              properties:
+                svc_id:
+                  type: string
+                ruleset_id:
+                  description: Ruleset id or name
+                ruleset_name:
+                  type: string
+                slave:
+                  description: A boolean; true for the encapsulated service. encap is accepted as well.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteComplianceRulesetsServices
+      description: |
+        Detach a ruleset from a service, as DELETE /services/{svc_id}/compliance/rulesets/{rset_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [svc_id]
+              properties:
+                svc_id:
+                  type: string
+                ruleset_id:
+                  description: Ruleset id or name
+                ruleset_name:
+                  type: string
+                slave:
+                  description: A boolean; true for the encapsulated service. encap is accepted as well.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:

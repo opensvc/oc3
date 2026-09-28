@@ -15,11 +15,18 @@ type CompKind struct {
 	// TeamPrefix is the prefix of the group tables, completed by "publication"
 	// or "responsible"; FK is their column naming the object.
 	TeamPrefix, FK string
+	// NodesTable and ServicesTable hold the attachments to nodes and services,
+	// by FK and node_id, or FK, svc_id and slave.
+	NodesTable, ServicesTable string
 }
 
 var (
-	CompRulesetKind   = CompKind{Name: "ruleset", Table: "comp_rulesets", NameCol: "ruleset_name", TeamPrefix: "comp_ruleset_team_", FK: "ruleset_id"}
-	CompModulesetKind = CompKind{Name: "moduleset", Table: "comp_moduleset", NameCol: "modset_name", TeamPrefix: "comp_moduleset_team_", FK: "modset_id"}
+	CompRulesetKind = CompKind{Name: "ruleset", Table: "comp_rulesets", NameCol: "ruleset_name",
+		TeamPrefix: "comp_ruleset_team_", FK: "ruleset_id",
+		NodesTable: "comp_rulesets_nodes", ServicesTable: "comp_rulesets_services"}
+	CompModulesetKind = CompKind{Name: "moduleset", Table: "comp_moduleset", NameCol: "modset_name",
+		TeamPrefix: "comp_moduleset_team_", FK: "modset_id",
+		NodesTable: "comp_node_moduleset", ServicesTable: "comp_modulesets_services"}
 )
 
 // CompTeamTypes are the two kinds of groups of a compliance object.
