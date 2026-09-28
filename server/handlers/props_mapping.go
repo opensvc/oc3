@@ -1058,6 +1058,12 @@ var propsMapping = map[string]propMapping{
 			"node_id":    colStr(schema.CompLogNodeID),
 			"svc_id":     colStr(schema.CompLogSvcID),
 		},
+		// A run points at its node, and at its service when it has one, by id
+		// only: the names live in the joined tables.
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
+		},
 	},
 	"log_event": {
 		Available: []string{

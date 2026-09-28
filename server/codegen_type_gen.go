@@ -543,15 +543,21 @@ type ComplianceLogListResponse_Data struct {
 // 1 not ok, 2 not applicable) and its log. Every property is optional: the
 // `props` query parameter selects which columns the server returns.
 type ComplianceLogRow struct {
-	Id        *int    `json:"id,omitempty"`
-	NodeId    *string `json:"node_id,omitempty"`
-	RsetMd5   *string `json:"rset_md5,omitempty"`
-	RunAction *string `json:"run_action,omitempty"`
-	RunDate   *string `json:"run_date,omitempty"`
-	RunLog    *string `json:"run_log,omitempty"`
-	RunModule *string `json:"run_module,omitempty"`
-	RunStatus *int    `json:"run_status,omitempty"`
-	SvcId     *string `json:"svc_id,omitempty"`
+	Id     *int    `json:"id,omitempty"`
+	NodeId *string `json:"node_id,omitempty"`
+
+	// NodesNodename The name of the node, joined.
+	NodesNodename *string `json:"nodes.nodename,omitempty"`
+	RsetMd5       *string `json:"rset_md5,omitempty"`
+	RunAction     *string `json:"run_action,omitempty"`
+	RunDate       *string `json:"run_date,omitempty"`
+	RunLog        *string `json:"run_log,omitempty"`
+	RunModule     *string `json:"run_module,omitempty"`
+	RunStatus     *int    `json:"run_status,omitempty"`
+
+	// ServicesSvcname The name of the service, joined; null for a run on the node itself.
+	ServicesSvcname *string `json:"services.svcname,omitempty"`
+	SvcId           *string `json:"svc_id,omitempty"`
 }
 
 // ComplianceStatusListResponse defines model for ComplianceStatusListResponse.
@@ -2242,6 +2248,9 @@ type PostComplianceImportJSONBody struct {
 
 // GetComplianceLogsParams defines parameters for GetComplianceLogs.
 type GetComplianceLogsParams struct {
+	// FsetId Restrict to the runs of the nodes this filterset selects (gen_filtersets.id or fset_name)
+	FsetId *string `form:"fset_id,omitempty" json:"fset_id,omitempty"`
+
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 

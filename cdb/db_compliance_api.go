@@ -29,16 +29,33 @@ func compPublishedNodesCond(nodeCol string, groups []string, isManager bool) (st
 		" WHERE ag.role IN (" + Placeholders(len(clean)) + "))", args
 }
 
+// compLogFrom joins the node and the service of a run, for their names.
+const compLogFrom = "comp_log" +
+	" LEFT JOIN nodes ON nodes.node_id = comp_log.node_id" +
+	" LEFT JOIN services ON services.svc_id = comp_log.svc_id"
+
 // GetComplianceLogs lists the compliance module runs (check, fixable, fix) of the
-// nodes the caller may see, the most recent first; one when id is set.
-func (oDb *DB) GetComplianceLogs(ctx context.Context, id *int64, p ListParams) ([]map[string]any, error) {
+// nodes the caller may see, the most recent first; one when id is set. A non-nil
+// fsetNodeIDs restricts the runs to those nodes, the ones a filterset selects,
+// as apply_filters_id() does on the node of a run.
+func (oDb *DB) GetComplianceLogs(ctx context.Context, id *int64, fsetNodeIDs []string, p ListParams) ([]map[string]any, error) {
 	cond, args := compPublishedNodesCond("comp_log.node_id", p.Groups, p.IsManager)
 	conds := []string{cond}
 	if id != nil {
 		conds = append(conds, "comp_log.id = ?")
 		args = append(args, *id)
 	}
-	return oDb.listQuery(ctx, "getComplianceLogs", "comp_log", conds, args, "comp_log.id DESC", p)
+	if fsetNodeIDs != nil {
+		if len(fsetNodeIDs) == 0 {
+			conds = append(conds, "1=0")
+		} else {
+			conds = append(conds, "comp_log.node_id IN ("+Placeholders(len(fsetNodeIDs))+")")
+			for _, nodeID := range fsetNodeIDs {
+				args = append(args, nodeID)
+			}
+		}
+	}
+	return oDb.listQuery(ctx, "getComplianceLogs", compLogFrom, conds, args, "comp_log.id DESC", p)
 }
 
 // GetComplianceStatus lists the last check run of each module-node-service tuple,

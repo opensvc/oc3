@@ -25,15 +25,44 @@ func parseCompID(raw string) (int64, error) {
 }
 
 // GetComplianceLogs handles GET /compliance/logs, as the historical
-// rest_get_compliance_logs: the runs of the nodes the caller may see.
+// rest_get_compliance_logs: the runs of the nodes the caller may see, of the
+// nodes of the fset_id filterset when one is given.
 func (a *Api) GetComplianceLogs(c echo.Context, params server.GetComplianceLogsParams) error {
+	var fsetNodeIDs []string
+	if params.FsetId != nil && *params.FsetId != "" {
+		ids, err := a.filtersetNodeIDs(c.Request().Context(), *params.FsetId)
+		if err != nil {
+			return httpProblem(c, err)
+		}
+		fsetNodeIDs = ids
+	}
 	return a.handleList(c, "GetComplianceLogs", "comp_log", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
 		filter: params.Filter,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
-		return a.ODB.GetComplianceLogs(ctx, nil, p)
+		return a.ODB.GetComplianceLogs(ctx, nil, fsetNodeIDs, p)
 	})
+}
+
+// filtersetNodeIDs resolves a filterset given by id or name to the ids of the
+// nodes it selects, never nil: an empty selection matches no node.
+func (a *Api) filtersetNodeIDs(ctx context.Context, ref string) ([]string, error) {
+	fsetID, _, err := a.ODB.FiltersetByIDOrName(ctx, ref)
+	if err != nil {
+		return nil, fmt.Errorf("filtersetNodeIDs: %w", err)
+	}
+	if fsetID == 0 {
+		return nil, httpErrorf(http.StatusNotFound, "fset %s does not exist", ref)
+	}
+	ids, err := a.ODB.ResolveFilterset(ctx, fsetID, "node_id")
+	if err != nil {
+		return nil, fmt.Errorf("filtersetNodeIDs: %w", err)
+	}
+	if ids == nil {
+		ids = []string{}
+	}
+	return ids, nil
 }
 
 // GetComplianceLog handles GET /compliance/logs/{log_id}.
@@ -45,7 +74,7 @@ func (a *Api) GetComplianceLog(c echo.Context, logId string, params server.GetCo
 	return a.handleItem(c, "GetComplianceLog", "comp_log", "id", logId, listEndpointParams{
 		props: params.Props,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
-		return a.ODB.GetComplianceLogs(ctx, &id, p)
+		return a.ODB.GetComplianceLogs(ctx, &id, nil, p)
 	})
 }
 

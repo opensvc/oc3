@@ -8794,8 +8794,15 @@ paths:
       description: |
         List the compliance modules' check, fixable and fix runs of the nodes the
         user can see: those whose app is published to one of the user's groups, every
-        node for a manager. The most recent first by default.
+        node for a manager. The most recent first by default. The nodes.* and
+        services.* props give the node and service names.
       parameters:
+        - in: query
+          name: fset_id
+          required: false
+          description: Restrict to the runs of the nodes this filterset selects (gen_filtersets.id or fset_name)
+          schema:
+            type: string
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
@@ -13300,6 +13307,14 @@ components:
           type: string
         svc_id:
           type: string
+        nodes.nodename:
+          type: string
+          nullable: true
+          description: The name of the node, joined.
+        services.svcname:
+          type: string
+          nullable: true
+          description: The name of the service, joined; null for a run on the node itself.
 
     ComplianceLogListResponse:
       type: object
