@@ -512,6 +512,7 @@ paths:
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
         - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
       tags:
         - collector
       responses:
@@ -1435,6 +1436,7 @@ paths:
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
         - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
       tags:
         - collector
       responses:
@@ -1815,6 +1817,7 @@ paths:
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
         - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
       tags:
         - collector
       responses:
@@ -3768,6 +3771,7 @@ paths:
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
         - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
       tags:
         - collector
       responses:
@@ -4607,6 +4611,59 @@ paths:
                 $ref: '#/components/schemas/LogListResponse'
         404:
           $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /search:
+    get:
+      operationId: GetSearch
+      description: |
+        Search the main kinds of objects for the text, as the historical collector's
+        search: nodes, services, instances, applications, node addresses, disks, tags,
+        users, teams, requests, modulesets, rulesets, filtersets and forms. For each
+        kind, the objects whose name or another identifying prop contains the text,
+        case-insensitively, are read through the kind's own list and its access
+        control. A request also matches by its number. Groups come in that order, one
+        per kind, with `more` set when other objects match beyond `limit`. A kind that
+        cannot be searched reports it in its `error` without failing the others. A
+        text shorter than 2 characters returns no group.
+      parameters:
+        - in: query
+          name: q
+          required: true
+          description: The text to search for.
+          schema:
+            type: string
+        - in: query
+          name: kinds
+          description: |
+            Comma-separated kinds to search, all by default: node, service, instance,
+            app, network, disk, tag, user, group, request, moduleset, ruleset,
+            filterset, form.
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: Hits returned per kind, 5 by default, 20 at most.
+          schema:
+            type: integer
+            minimum: 1
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -8630,6 +8687,7 @@ paths:
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
         - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
       tags:
         - collector
       responses:
@@ -14395,6 +14453,53 @@ components:
           $ref: '#/components/schemas/ListMeta'
         info:
           type: string
+
+    SearchGroup:
+      type: object
+      description: The objects of one kind matching a search.
+      required:
+        - kind
+        - items
+        - more
+      properties:
+        kind:
+          type: string
+          enum: [node, service, instance, app, network, disk, tag, user, group, request, moduleset, ruleset, filterset, form]
+        items:
+          type: array
+          description: |
+            One entry per object, with the props of its kind: node_id, nodename, app,
+            node_env, cluster_id, fqdn, os_name for a node; svc_id, svcname, svc_app,
+            svc_env, cluster_id, svc_availstatus, svc_topology for a service; svc_id,
+            node_id, mon_vmname, mon_availstatus, services.svcname, nodes.nodename for
+            an instance; id, app, app_domain, description for an application; id, addr,
+            mask, intf, node_id, nodename, net_name for a node address; disk_id,
+            disk_name, disk_size, disk_arrayid, nodename, svcname for a disk; tag_id,
+            tag_name, tag_exclude for a tag; id, email, first_name, last_name, username
+            for a user; id, role, privilege, description for a team; id, form_name,
+            last_form_name, status, creator, last_update for a request; id,
+            modset_name, modset_author for a moduleset; id, ruleset_name, ruleset_type,
+            ruleset_public for a ruleset; id, fset_name, fset_author for a filterset;
+            id, form_name, form_type, form_folder for a form.
+          items:
+            type: object
+            additionalProperties: true
+        more:
+          type: boolean
+          description: Other objects of the kind match beyond those returned.
+        error:
+          type: string
+          description: Set when the kind could not be searched.
+
+    SearchResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchGroup'
 
     NetworkSegmentRow:
       type: object

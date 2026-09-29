@@ -62,7 +62,7 @@ func scanApps(rows *sql.Rows) ([]App, error) {
 	return apps, nil
 }
 
-func buildAppsQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
+func buildAppsQuery(groups []string, isManager bool, selectExprs []string, filters []ColumnFilter) (string, []any, error) {
 	q := From(schema.TApps).
 		Distinct().
 		RawSelect(selectExprs...)
@@ -74,6 +74,9 @@ func buildAppsQuery(groups []string, isManager bool, selectExprs []string) (stri
 	} else {
 		q = q.Where(schema.AppsID, ">", 0)
 	}
+
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(filters)
 
 	query, args, err := q.Build()
 	if err != nil {
@@ -87,11 +90,11 @@ func buildAppsQueryAll(groups []string, isManager bool) (string, []any, error) {
 		"apps.id", "apps.app",
 		"COALESCE(apps.updated, '')", "COALESCE(apps.app_domain, '')",
 		"COALESCE(apps.app_team_ops, '')", "COALESCE(apps.description, '')",
-	})
+	}, nil)
 }
 
 func (oDb *DB) GetApps(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildAppsQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildAppsQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}

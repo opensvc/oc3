@@ -49,8 +49,12 @@ func (oDb *DB) GetUsers(ctx context.Context, p ListParams) ([]map[string]any, er
 		return nil, fmt.Errorf("getUsers: no select expressions")
 	}
 	authClause, args := usersAuthClause(p)
+	conds := []string{authClause}
+	filterConds, filterArgs := p.FilterConditions()
+	conds = append(conds, filterConds...)
+	args = append(args, filterArgs...)
 	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
-		" FROM auth_user WHERE " + authClause
+		" FROM auth_user WHERE " + strings.Join(conds, " AND ")
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}

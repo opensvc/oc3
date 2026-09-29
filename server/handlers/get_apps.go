@@ -15,6 +15,7 @@ func (a *Api) GetApps(c echo.Context, params server.GetAppsParams) error {
 	return a.handleList(c, "GetApps", "app", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
+		filter: params.Filter,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return odb.GetApps(ctx, p)
 	})

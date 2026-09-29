@@ -26,6 +26,11 @@ func (oDb *DB) GetGroups(ctx context.Context, p ListParams) ([]map[string]any, e
 			args = append(args, stringsToAny(cleanG)...)
 		}
 	}
+	filterConds, filterArgs := p.FilterConditions()
+	for _, cond := range filterConds {
+		query += " AND " + cond
+	}
+	args = append(args, filterArgs...)
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}

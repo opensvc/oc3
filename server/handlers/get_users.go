@@ -14,6 +14,7 @@ func (a *Api) GetUsers(c echo.Context, params server.GetUsersParams) error {
 	return a.handleList(c, "GetUsers", "user", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
+		filter:     params.Filter,
 		withUserID: true,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetUsers(ctx, p)

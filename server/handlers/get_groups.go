@@ -14,6 +14,7 @@ func (a *Api) GetGroups(c echo.Context, params server.GetGroupsParams) error {
 	return a.handleList(c, "GetGroups", "auth_group", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
+		filter: params.Filter,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetGroups(ctx, p)
 	})

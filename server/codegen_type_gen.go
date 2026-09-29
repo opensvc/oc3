@@ -50,6 +50,60 @@ func (e ObsolescenceSettingRowObsType) Valid() bool {
 	}
 }
 
+// Defines values for SearchGroupKind.
+const (
+	App       SearchGroupKind = "app"
+	Disk      SearchGroupKind = "disk"
+	Filterset SearchGroupKind = "filterset"
+	Form      SearchGroupKind = "form"
+	Group     SearchGroupKind = "group"
+	Instance  SearchGroupKind = "instance"
+	Moduleset SearchGroupKind = "moduleset"
+	Network   SearchGroupKind = "network"
+	Node      SearchGroupKind = "node"
+	Request   SearchGroupKind = "request"
+	Ruleset   SearchGroupKind = "ruleset"
+	Service   SearchGroupKind = "service"
+	Tag       SearchGroupKind = "tag"
+	User      SearchGroupKind = "user"
+)
+
+// Valid indicates whether the value is a known member of the SearchGroupKind enum.
+func (e SearchGroupKind) Valid() bool {
+	switch e {
+	case App:
+		return true
+	case Disk:
+		return true
+	case Filterset:
+		return true
+	case Form:
+		return true
+	case Group:
+		return true
+	case Instance:
+		return true
+	case Moduleset:
+		return true
+	case Network:
+		return true
+	case Node:
+		return true
+	case Request:
+		return true
+	case Ruleset:
+		return true
+	case Service:
+		return true
+	case Tag:
+		return true
+	case User:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PutComplianceModulesetJSONBodyAction.
 const (
 	PutComplianceModulesetJSONBodyActionClone PutComplianceModulesetJSONBodyAction = "clone"
@@ -1618,6 +1672,39 @@ type RulesetsVariableRow struct {
 	VarValue         *string `json:"var_value,omitempty"`
 }
 
+// SearchGroup The objects of one kind matching a search.
+type SearchGroup struct {
+	// Error Set when the kind could not be searched.
+	Error *string `json:"error,omitempty"`
+
+	// Items One entry per object, with the props of its kind: node_id, nodename, app,
+	// node_env, cluster_id, fqdn, os_name for a node; svc_id, svcname, svc_app,
+	// svc_env, cluster_id, svc_availstatus, svc_topology for a service; svc_id,
+	// node_id, mon_vmname, mon_availstatus, services.svcname, nodes.nodename for
+	// an instance; id, app, app_domain, description for an application; id, addr,
+	// mask, intf, node_id, nodename, net_name for a node address; disk_id,
+	// disk_name, disk_size, disk_arrayid, nodename, svcname for a disk; tag_id,
+	// tag_name, tag_exclude for a tag; id, email, first_name, last_name, username
+	// for a user; id, role, privilege, description for a team; id, form_name,
+	// last_form_name, status, creator, last_update for a request; id,
+	// modset_name, modset_author for a moduleset; id, ruleset_name, ruleset_type,
+	// ruleset_public for a ruleset; id, fset_name, fset_author for a filterset;
+	// id, form_name, form_type, form_folder for a form.
+	Items []map[string]interface{} `json:"items"`
+	Kind  SearchGroupKind          `json:"kind"`
+
+	// More Other objects of the kind match beyond those returned.
+	More bool `json:"more"`
+}
+
+// SearchGroupKind defines model for SearchGroup.Kind.
+type SearchGroupKind string
+
+// SearchResponse defines model for SearchResponse.
+type SearchResponse struct {
+	Data []SearchGroup `json:"data"`
+}
+
 // ServiceListResponse defines model for ServiceListResponse.
 type ServiceListResponse struct {
 	Data ServiceListResponse_Data `json:"data"`
@@ -2066,6 +2153,19 @@ type GetAppsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
 // PostAppsJSONBody defines parameters for PostApps.
@@ -3457,6 +3557,19 @@ type GetDisksParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
 // PostDisksJSONBody defines parameters for PostDisks.
@@ -3624,6 +3737,19 @@ type GetFiltersetsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
 // PostFiltersetsJSONBody defines parameters for PostFiltersets.
@@ -4360,6 +4486,19 @@ type GetGroupsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
 // PostGroupsJSONBody defines parameters for PostGroups.
@@ -5736,6 +5875,20 @@ type GetPackagesDiffParams struct {
 	Encap *bool `form:"encap,omitempty" json:"encap,omitempty"`
 }
 
+// GetSearchParams defines parameters for GetSearch.
+type GetSearchParams struct {
+	// Q The text to search for.
+	Q string `form:"q" json:"q"`
+
+	// Kinds Comma-separated kinds to search, all by default: node, service, instance,
+	// app, network, disk, tag, user, group, request, moduleset, ruleset,
+	// filterset, form.
+	Kinds *string `form:"kinds,omitempty" json:"kinds,omitempty"`
+
+	// Limit Hits returned per kind, 5 by default, 20 at most.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // DeleteServicesJSONBody defines parameters for DeleteServices.
 type DeleteServicesJSONBody struct {
 	// SvcId Service id or name
@@ -6770,6 +6923,19 @@ type GetUsersParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
 // PostUsersJSONBody defines parameters for PostUsers.
