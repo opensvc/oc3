@@ -6788,7 +6788,7 @@ type PostUsersJSONBody struct {
 type PostUserSelfPasswordJSONBody struct {
 	CurrentPassword string `json:"current_password"`
 
-	// NewPassword At least 8 characters.
+	// NewPassword At least 12 characters.
 	NewPassword string `json:"new_password"`
 }
 

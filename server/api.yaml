@@ -8701,7 +8701,7 @@ paths:
       operationId: PostUserSelfPassword
       description: |
         Change the password of the signed-in user, who gives the current one. The new
-        password must be at least 8 characters long and differ from the current one;
+        password must be at least 12 characters long and differ from the current one;
         it is stored as a web2py hash, accepted by both collectors. The change is
         logged, without the password. Requires user authentication, no privilege.
       requestBody:
@@ -8716,7 +8716,8 @@ paths:
                   type: string
                 new_password:
                   type: string
-                  description: At least 8 characters.
+                  minLength: 12
+                  description: At least 12 characters.
       tags:
         - collector
       responses:
