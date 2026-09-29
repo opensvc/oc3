@@ -359,3 +359,36 @@ func (oDb *DB) SetUserPassword(ctx context.Context, userID int64, hash string) e
 	oDb.SetChange("auth_user")
 	return nil
 }
+
+// UserIdentity is what a user may change about themselves: their name and email.
+type UserIdentity struct {
+	FirstName string
+	LastName  string
+	Email     string
+}
+
+// GetUserIdentity returns the name and email of a user; false when there is no
+// such user.
+func (oDb *DB) GetUserIdentity(ctx context.Context, userID int64) (UserIdentity, bool, error) {
+	var first, last, email sql.NullString
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT first_name, last_name, email FROM auth_user WHERE id = ?", userID).Scan(&first, &last, &email)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return UserIdentity{}, false, nil
+	case err != nil:
+		return UserIdentity{}, false, fmt.Errorf("getUserIdentity: %w", err)
+	}
+	return UserIdentity{FirstName: first.String, LastName: last.String, Email: email.String}, true, nil
+}
+
+// SetUserIdentity stores the name and email of a user.
+func (oDb *DB) SetUserIdentity(ctx context.Context, userID int64, u UserIdentity) error {
+	if _, err := oDb.DB.ExecContext(ctx,
+		"UPDATE auth_user SET first_name = ?, last_name = ?, email = ? WHERE id = ?",
+		u.FirstName, u.LastName, u.Email, userID); err != nil {
+		return fmt.Errorf("setUserIdentity: %w", err)
+	}
+	oDb.SetChange("auth_user")
+	return nil
+}

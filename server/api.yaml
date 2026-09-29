@@ -8839,6 +8839,64 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    post:
+      operationId: PostUser
+      description: |
+        Change the first name, last name or email of the signed-in user, as the
+        profile form of the historical collector: `user_id` must designate the caller
+        ("self", their id or their email), another user's account is refused with a
+        403. Only the keys given are changed; names are trimmed, at most 128
+        characters, and may be empty. The email must be a valid address, at most 512
+        characters, not used by another user (409): it is the sign-in name, so the
+        next requests must authenticate with it. The change is logged with the fields
+        changed. Requires user authentication, no privilege. Returns the user.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: The caller, as "self", their auth_user.id or their email.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                  maxLength: 128
+                last_name:
+                  type: string
+                  maxLength: 128
+                email:
+                  type: string
+                  maxLength: 512
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /users/{user_id}/prefs:
     get:

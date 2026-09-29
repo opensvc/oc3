@@ -6985,6 +6985,13 @@ type GetUserParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostUserJSONBody defines parameters for PostUser.
+type PostUserJSONBody struct {
+	Email     *string `json:"email,omitempty"`
+	FirstName *string `json:"first_name,omitempty"`
+	LastName  *string `json:"last_name,omitempty"`
+}
+
 // PostUserPrefsJSONBody defines parameters for PostUserPrefs.
 type PostUserPrefsJSONBody struct {
 	// Data The preferences object, stored verbatim.
@@ -7347,6 +7354,9 @@ type PostUsersJSONRequestBody PostUsersJSONBody
 
 // PostUserSelfPasswordJSONRequestBody defines body for PostUserSelfPassword for application/json ContentType.
 type PostUserSelfPasswordJSONRequestBody PostUserSelfPasswordJSONBody
+
+// PostUserJSONRequestBody defines body for PostUser for application/json ContentType.
+type PostUserJSONRequestBody PostUserJSONBody
 
 // PostUserPrefsJSONRequestBody defines body for PostUserPrefs for application/json ContentType.
 type PostUserPrefsJSONRequestBody PostUserPrefsJSONBody
