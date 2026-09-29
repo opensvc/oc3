@@ -332,3 +332,26 @@ func (oDb *DB) UserDefaultGroup(ctx context.Context, userID int64) (string, bool
 	err = oDb.DB.QueryRowContext(ctx, query, gid).Scan(&role)
 	return checkRow(err, role.Valid, role.String)
 }
+
+// UserPasswordHash returns the stored password hash of a user, empty when the
+// account has no password; false when there is no such user.
+func (oDb *DB) UserPasswordHash(ctx context.Context, userID int64) (string, bool, error) {
+	var hash sql.NullString
+	err := oDb.DB.QueryRowContext(ctx, "SELECT password FROM auth_user WHERE id = ?", userID).Scan(&hash)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", false, nil
+	case err != nil:
+		return "", false, fmt.Errorf("userPasswordHash: %w", err)
+	}
+	return hash.String, true, nil
+}
+
+// SetUserPassword stores a new password hash for a user.
+func (oDb *DB) SetUserPassword(ctx context.Context, userID int64, hash string) error {
+	if _, err := oDb.DB.ExecContext(ctx, "UPDATE auth_user SET password = ? WHERE id = ?", hash, userID); err != nil {
+		return fmt.Errorf("setUserPassword: %w", err)
+	}
+	oDb.SetChange("auth_user")
+	return nil
+}

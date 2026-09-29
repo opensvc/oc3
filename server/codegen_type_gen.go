@@ -6661,6 +6661,14 @@ type PostUsersJSONBody struct {
 	Username  *string `json:"username,omitempty"`
 }
 
+// PostUserSelfPasswordJSONBody defines parameters for PostUserSelfPassword.
+type PostUserSelfPasswordJSONBody struct {
+	CurrentPassword string `json:"current_password"`
+
+	// NewPassword At least 8 characters.
+	NewPassword string `json:"new_password"`
+}
+
 // GetUserParams defines parameters for GetUser.
 type GetUserParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -7044,6 +7052,9 @@ type PostTagServiceJSONRequestBody PostTagServiceJSONBody
 
 // PostUsersJSONRequestBody defines body for PostUsers for application/json ContentType.
 type PostUsersJSONRequestBody PostUsersJSONBody
+
+// PostUserSelfPasswordJSONRequestBody defines body for PostUserSelfPassword for application/json ContentType.
+type PostUserSelfPasswordJSONRequestBody PostUserSelfPasswordJSONBody
 
 // PostUserPrefsJSONRequestBody defines body for PostUserPrefs for application/json ContentType.
 type PostUserPrefsJSONRequestBody PostUserPrefsJSONBody

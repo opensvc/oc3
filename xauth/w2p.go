@@ -154,6 +154,12 @@ func toSHA1(b []byte) []byte {
 	return a[:]
 }
 
+// VerifyWeb2pyPassword tells whether password matches a hash stored by web2py
+// or by HashWeb2pyPassword, as the sign-in does.
+func VerifyWeb2pyPassword(password, storedHash, hmacKey string) bool {
+	return verifyWeb2pyPassword(password, storedHash, hmacKey)
+}
+
 func verifyWeb2pyPassword(password, storedHash, hmacKey string) bool {
 	if storedHash == "" {
 		return false

@@ -8600,6 +8600,51 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /users/self/password:
+    post:
+      operationId: PostUserSelfPassword
+      description: |
+        Change the password of the signed-in user, who gives the current one. The new
+        password must be at least 8 characters long and differ from the current one;
+        it is stored as a web2py hash, accepted by both collectors. The change is
+        logged, without the password. Requires user authentication, no privilege.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password:
+                  type: string
+                new_password:
+                  type: string
+                  description: At least 8 characters.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /users/{user_id}:
     get:
       operationId: GetUser
