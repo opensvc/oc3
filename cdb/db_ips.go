@@ -6,7 +6,19 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/opensvc/oc3/schema"
 )
+
+// TNodeNetworks is the v_nodenetworks view: the addresses of the nodes, joined to
+// the declared network each one belongs to.
+var TNodeNetworks = &schema.Table{Name: "v_nodenetworks"}
+
+// NodeNetworksCol returns a column of the v_nodenetworks view, for the list
+// props that sort and filter on it.
+func NodeNetworksCol(name string) *schema.Col {
+	return &schema.Col{T: TNodeNetworks, Name: name, Nullable: true}
+}
 
 type NodeIP struct {
 	ID     int64
@@ -75,6 +87,10 @@ func buildIpsQuery(p ListParams, idCond string, idArgs []any) (string, []any, er
 			args = append(args, stringsToAny(cleanGroups)...)
 		}
 	}
+
+	filterConds, filterArgs := p.FilterConditions()
+	conds = append(conds, filterConds...)
+	args = append(args, filterArgs...)
 
 	if len(conds) > 0 {
 		sb.WriteString("\nWHERE " + strings.Join(conds, " AND "))
