@@ -22,11 +22,11 @@ const (
 	maxUserEmailLength = 512
 )
 
-// PostUser handles POST /users/{user_id}: the caller changes their own first
-// name, last name or email, as the profile form of the historical collector
-// allows any signed-in user to. Another user's account is refused: changing it
-// is the UserManager's, not ported yet. The email is the sign-in name, unique
-// among users; the change is logged with the fields changed.
+// PostUser handles POST /users/{user_id}: the first name, last name or email of
+// a user. Any signed-in user may change their own, as the profile form of the
+// historical collector allows; another user's requires the UserManager
+// privilege (or Manager), as rest_post_user did. The email is the sign-in name,
+// unique among users; the change is logged with the fields changed.
 func (a *Api) PostUser(c echo.Context, userId string) error {
 	log := echolog.GetLogHandler(c, "PostUser")
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
@@ -41,8 +41,22 @@ func (a *Api) PostUser(c echo.Context, userId string) error {
 		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
 	}
 	callerEmail, _ := c.Get(XUserEmail).(string)
+	targetID := *selfID
 	if userId != "self" && userId != strconv.FormatInt(*selfID, 10) && userId != callerEmail {
-		return JSONProblemf(c, http.StatusForbidden, "only your own account can be changed")
+		if !IsManager(c) && !HasGroup(c, "UserManager") {
+			return JSONProblemf(c, http.StatusForbidden, "the UserManager privilege is required to change another user")
+		}
+		id, found, err := odb.UserIDForPrefs(ctx, userId, cdb.ListParams{
+			Groups: UserGroupsFromContext(c), IsManager: IsManager(c), UserID: selfID,
+		})
+		if err != nil {
+			log.Error("cannot resolve user", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot resolve the user")
+		}
+		if !found {
+			return JSONProblemf(c, http.StatusNotFound, "user %s not found", userId)
+		}
+		targetID = id
 	}
 
 	var body server.PostUserJSONRequestBody
@@ -50,13 +64,13 @@ func (a *Api) PostUser(c echo.Context, userId string) error {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
 
-	current, found, err := odb.GetUserIdentity(ctx, *selfID)
+	current, found, err := odb.GetUserIdentity(ctx, targetID)
 	if err != nil {
 		log.Error("cannot read user", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot read the user")
 	}
 	if !found {
-		return JSONProblemf(c, http.StatusNotFound, "user %d not found", *selfID)
+		return JSONProblemf(c, http.StatusNotFound, "user %d not found", targetID)
 	}
 
 	next := current
@@ -102,7 +116,7 @@ func (a *Api) PostUser(c echo.Context, userId string) error {
 				log.Error("cannot check email", logkey.Error, err)
 				return JSONProblemf(c, http.StatusInternalServerError, "cannot check email")
 			}
-			if taken && otherID != *selfID {
+			if taken && otherID != targetID {
 				return JSONProblemf(c, http.StatusConflict, "another user already has the email %s", email)
 			}
 		}
@@ -113,7 +127,7 @@ func (a *Api) PostUser(c echo.Context, userId string) error {
 	}
 
 	if len(changed) > 0 {
-		if err := odb.SetUserIdentity(ctx, *selfID, next); err != nil {
+		if err := odb.SetUserIdentity(ctx, targetID, next); err != nil {
 			log.Error("cannot store user", logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot store the user")
 		}
@@ -138,7 +152,7 @@ func (a *Api) PostUser(c echo.Context, userId string) error {
 		log.Info("user changed", "fields", strings.Join(changed, ","))
 	}
 
-	id := strconv.FormatInt(*selfID, 10)
+	id := strconv.FormatInt(targetID, 10)
 	return a.handleItem(c, "PostUser", "user", "user_id", id, listEndpointParams{props: &userCreatedProps, withUserID: true},
 		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 			return odb.GetUser(ctx, id, p)

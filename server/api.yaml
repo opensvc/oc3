@@ -8842,19 +8842,21 @@ paths:
     post:
       operationId: PostUser
       description: |
-        Change the first name, last name or email of the signed-in user, as the
-        profile form of the historical collector: `user_id` must designate the caller
-        ("self", their id or their email), another user's account is refused with a
-        403. Only the keys given are changed; names are trimmed, at most 128
+        Change the first name, last name or email of a user. Any signed-in user may
+        change their own, as the profile form of the historical collector allows;
+        another user's requires the UserManager privilege (or Manager), else 403.
+        Only the keys given are changed; names are trimmed, at most 128
         characters, and may be empty. The email must be a valid address, at most 512
         characters, not used by another user (409): it is the sign-in name, so the
         next requests must authenticate with it. The change is logged with the fields
-        changed. Requires user authentication, no privilege. Returns the user.
+        changed. Requires user authentication. Returns the user.
       parameters:
         - in: path
           name: user_id
           required: true
-          description: The caller, as "self", their auth_user.id or their email.
+          description: |
+            User identifier: auth_user.id, the user email when it contains an
+            "@", or "self" for the authenticated user.
           schema:
             type: string
       requestBody:
