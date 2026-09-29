@@ -3,18 +3,20 @@ package feederhandlers
 import (
 	"archive/tar"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 
 	"github.com/opensvc/oc3/cachekeys"
-	"github.com/opensvc/oc3/feeder"
 	"github.com/opensvc/oc3/util/echolog"
 	"github.com/opensvc/oc3/util/logkey"
 
@@ -27,37 +29,68 @@ type sysreportData struct {
 	NodeID     string   `json:"node_id"`
 }
 
+// PostNodeSysReport stores the files and command outputs a node tracks, as
+// the tree <uploads>/sysreport/<node id>/{file,cmd}/..., and queues the
+// commit of the tree the scheduler versions.
+//
+// The form carries the tar of what changed, the tracked files deleted, and
+// the full flag of a report holding everything the node tracks. A report of
+// deletions only has no tar.
+//
+// Every path is confined to the tree of the node: a member or a deleted path
+// climbing out of it with ".." lands inside it, as rooted there.
 func (a *Api) PostNodeSysReport(ctx echo.Context) error {
 	log := echolog.GetLogHandler(ctx, "PostNodeSysReport")
-	file, err := ctx.FormFile("file")
+	nodeID, ok := ctx.Get(XNodeID).(string)
+	if !ok || nodeID == "" {
+		return JSONNodeAuthProblem(ctx)
+	}
+	form, err := ctx.MultipartForm()
 	if err != nil {
-		return JSONProblemf(ctx, http.StatusBadRequest, "FormFile: %s", err)
+		return JSONProblemf(ctx, http.StatusBadRequest, "multipart form: %s", err)
 	}
-
-	var payload feeder.SysReport
-	if values, ok := ctx.Request().MultipartForm.Value["deleted"]; ok {
-		payload.Deleted = values
+	deleted := form.Value["deleted"]
+	full := false
+	if l := form.Value["full"]; len(l) > 0 {
+		if full, err = strconv.ParseBool(l[0]); err != nil {
+			return JSONProblemf(ctx, http.StatusBadRequest, "full: %s", err)
+		}
 	}
-	payload.File.InitFromMultipart(file)
+	var file *multipart.FileHeader
+	if l := form.File["file"]; len(l) > 0 {
+		file = l[0]
+	}
+	if file == nil && full {
+		return JSONProblem(ctx, http.StatusBadRequest, "a full report needs its archive")
+	}
 
 	uploadDir := viper.GetString("scheduler.directories.uploads")
-	sysreportDir := filepath.Join(uploadDir, "sysreport")
-	if err := os.MkdirAll(sysreportDir, 0755); err != nil {
+	nodeDir := filepath.Join(uploadDir, "sysreport", nodeID)
+	if err := os.MkdirAll(nodeDir, 0755); err != nil {
 		log.Error("can't create sysreport dir", logkey.Error, err)
 		return JSONProblem(ctx, http.StatusInternalServerError, "can't create sysreport dir")
 	}
 
-	nodeID := ctx.Get(XNodeID).(string)
-
-	needCommit := false
-	needCommit = sendSysreportDelete(log, payload.Deleted, sysreportDir, nodeID) || needCommit
-	needCommit = sendSysreportArchive(log, payload, file.Filename, sysreportDir, nodeID) || needCommit
-
-	// TODO: Add metric PostNodeSysReport File size
+	needCommit := sysreportDelete(log, deleted, nodeDir)
+	if file != nil {
+		written, err := sysreportExtract(file, nodeDir)
+		if err != nil {
+			log.Error("sysreportExtract", logkey.Error, err)
+			return JSONProblemf(ctx, http.StatusBadRequest, "archive: %s", err)
+		}
+		if len(written) > 0 {
+			needCommit = true
+		}
+		if full {
+			if n := sysreportRemoveOthers(log, nodeDir, written); n > 0 {
+				needCommit = true
+			}
+		}
+	}
 
 	v := sysreportData{
 		NeedCommit: needCommit,
-		Deleted:    payload.Deleted,
+		Deleted:    deleted,
 		NodeID:     nodeID,
 	}
 	if b, err := json.Marshal(v); err != nil {
@@ -71,44 +104,45 @@ func (a *Api) PostNodeSysReport(ctx echo.Context) error {
 	return ctx.JSON(http.StatusAccepted, "sysreport accepted")
 }
 
-func sendSysreportDelete(l *slog.Logger, deleted []string, sysreportDir string, nodeID string) bool {
+// confine returns the path rel names inside base, rel rooted at base: a rel
+// climbing with ".." stops at base, and never leaves it.
+func confine(base, rel string) string {
+	return filepath.Join(base, filepath.Clean("/"+rel))
+}
+
+// sysreportDelete removes the files of the node tree the node deleted,
+// named by their path on the node, and says whether it was given any.
+func sysreportDelete(l *slog.Logger, deleted []string, nodeDir string) bool {
 	if len(deleted) == 0 {
 		return false
 	}
-	nodeDir := filepath.Join(sysreportDir, nodeID)
+	fileDir := filepath.Join(nodeDir, "file")
 	for _, fpath := range deleted {
 		fpath = strings.TrimSpace(fpath)
-		var relpath string
-		if filepath.IsAbs(fpath) {
-			relpath = "file" + fpath
-		} else {
-			relpath = filepath.Join("file", fpath)
+		if fpath == "" {
+			continue
 		}
-		pathToDelete := filepath.Join(nodeDir, relpath)
-		if err := os.Remove(pathToDelete); err != nil && !os.IsNotExist(err) {
-			l.Warn("sendSysreportDelete", logkey.Error, err)
+		if err := os.Remove(confine(fileDir, fpath)); err != nil && !os.IsNotExist(err) {
+			l.Warn("sysreportDelete", logkey.Error, err)
 		}
 	}
 	return true
 }
 
-func sendSysreportArchive(l *slog.Logger, payload feeder.SysReport, filename string, sysreportDir string, nodeID string) bool {
-	if filename == "" {
-		return false
-	}
-	fPath := filepath.Join(sysreportDir, filename)
-
-	if !strings.HasSuffix(fPath, ".tar") {
-		return false
-	}
-
-	reader, err := payload.File.Reader()
+// sysreportExtract writes the regular files of the archive in the node tree,
+// the first component of their name, the node name, replaced by the tree,
+// and returns the paths written. Each file is closed once written.
+func sysreportExtract(file *multipart.FileHeader, nodeDir string) (map[string]bool, error) {
+	reader, err := file.Open()
 	if err != nil {
-		l.Error("sendSysreportArchive", logkey.Error, err)
-		return false
+		return nil, err
 	}
 	defer reader.Close()
+	return sysreportExtractReader(reader, nodeDir)
+}
 
+func sysreportExtractReader(reader io.Reader, nodeDir string) (map[string]bool, error) {
+	written := make(map[string]bool)
 	tr := tar.NewReader(reader)
 	for {
 		header, err := tr.Next()
@@ -116,46 +150,67 @@ func sendSysreportArchive(l *slog.Logger, payload feeder.SysReport, filename str
 			break
 		}
 		if err != nil {
-			l.Error("sendSysreportArchive", logkey.Error, err)
-			return false
+			return written, err
 		}
-		idx := strings.Index(header.Name, "/")
-		if idx == -1 {
+		if header.Typeflag != tar.TypeReg {
 			continue
 		}
-		targetName := nodeID + header.Name[idx:]
-		targetPath := filepath.Join(sysreportDir, targetName)
-
-		if info, err := os.Stat(targetPath); err == nil {
-			// enable write
-			_ = os.Chmod(targetPath, info.Mode()|0200)
+		_, rel, ok := strings.Cut(header.Name, "/")
+		if !ok || rel == "" {
+			continue
 		}
-
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
-			l.Error("sendSysreportArchive", logkey.Error, err)
-			return false
+		targetPath := confine(nodeDir, rel)
+		if err := writeSysreportFile(targetPath, fs.FileMode(header.Mode).Perm(), tr); err != nil {
+			return written, err
 		}
-
-		outFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, fs.FileMode(header.Mode))
-		if err != nil {
-			l.Error("sendSysreportArchive OpenFile", logkey.Error, err)
-			return false
-		} else {
-			defer func() {
-				_ = outFile.Close()
-			}()
-		}
-
-		if _, err := io.Copy(outFile, tr); err != nil {
-			l.Error("sendSysreportArchive Copy", logkey.Error, err)
-			return false
-		}
-
-		if info, err := os.Stat(targetPath); err == nil {
-			// restore read only
-			_ = os.Chmod(targetPath, info.Mode()|0400)
-		}
-
+		written[targetPath] = true
 	}
-	return true
+	return written, nil
+}
+
+func writeSysreportFile(targetPath string, mode fs.FileMode, r io.Reader) error {
+	if info, err := os.Stat(targetPath); err == nil {
+		// enable write
+		_ = os.Chmod(targetPath, info.Mode()|0200)
+	}
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		return err
+	}
+	f, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, mode|0600)
+	if err != nil {
+		return fmt.Errorf("open %s: %w", targetPath, err)
+	}
+	if _, err := io.Copy(f, r); err != nil {
+		_ = f.Close()
+		return fmt.Errorf("write %s: %w", targetPath, err)
+	}
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("close %s: %w", targetPath, err)
+	}
+	return os.Chmod(targetPath, mode|0400)
+}
+
+// sysreportRemoveOthers removes the files of the node tree a full report does
+// not hold, and returns how many it removed. The git history of the tree is
+// left alone.
+func sysreportRemoveOthers(l *slog.Logger, nodeDir string, written map[string]bool) int {
+	n := 0
+	for _, sub := range []string{"file", "cmd"} {
+		root := filepath.Join(nodeDir, sub)
+		_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil
+			}
+			if d.IsDir() || written[path] {
+				return nil
+			}
+			if err := os.Remove(path); err != nil {
+				l.Warn("sysreportRemoveOthers", logkey.Error, err)
+				return nil
+			}
+			n++
+			return nil
+		})
+	}
+	return n
 }

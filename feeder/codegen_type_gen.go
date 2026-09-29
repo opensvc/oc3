@@ -227,8 +227,19 @@ type SANSwitchType string
 
 // SysReport defines model for SysReport.
 type SysReport struct {
-	Deleted []string           `json:"deleted"`
-	File    openapi_types.File `json:"file"`
+	// Deleted the tracked files deleted on the node since its last report, as
+	// their paths on the node
+	Deleted *[]string `json:"deleted,omitempty"`
+
+	// File a tar of the files and command outputs changed since the last
+	// report, each member named <nodename>/file/<path> or
+	// <nodename>/cmd/<name>. A report of deletions only has none.
+	File *openapi_types.File `json:"file,omitempty"`
+
+	// Full the archive holds every file and command output of the node: the
+	// ones the collector holds for the node and the archive does not
+	// are removed
+	Full *bool `json:"full,omitempty"`
 }
 
 // Package defines model for package.
