@@ -14,6 +14,24 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for NetworkSegmentRowSegType.
+const (
+	NetworkSegmentRowSegTypeDynamic NetworkSegmentRowSegType = "dynamic"
+	NetworkSegmentRowSegTypeStatic  NetworkSegmentRowSegType = "static"
+)
+
+// Valid indicates whether the value is a known member of the NetworkSegmentRowSegType enum.
+func (e NetworkSegmentRowSegType) Valid() bool {
+	switch e {
+	case NetworkSegmentRowSegTypeDynamic:
+		return true
+	case NetworkSegmentRowSegTypeStatic:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ObsolescenceSettingRowObsType.
 const (
 	Hw ObsolescenceSettingRowObsType = "hw"
@@ -308,6 +326,24 @@ func (e PostFiltersetsFiltersetsJSONBodyFLogOp) Valid() bool {
 	case PostFiltersetsFiltersetsJSONBodyFLogOpOR:
 		return true
 	case PostFiltersetsFiltersetsJSONBodyFLogOpORNOT:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostNetworkSegmentsJSONBodySegType.
+const (
+	PostNetworkSegmentsJSONBodySegTypeDynamic PostNetworkSegmentsJSONBodySegType = "dynamic"
+	PostNetworkSegmentsJSONBodySegTypeStatic  PostNetworkSegmentsJSONBodySegType = "static"
+)
+
+// Valid indicates whether the value is a known member of the PostNetworkSegmentsJSONBodySegType enum.
+func (e PostNetworkSegmentsJSONBodySegType) Valid() bool {
+	switch e {
+	case PostNetworkSegmentsJSONBodySegTypeDynamic:
+		return true
+	case PostNetworkSegmentsJSONBodySegTypeStatic:
 		return true
 	default:
 		return false
@@ -1157,6 +1193,7 @@ type ModulesetsModuleRow struct {
 type NetworkListResponse struct {
 	Data []NetworkRow `json:"data"`
 	Info *string      `json:"info,omitempty"`
+	Meta *ListMeta    `json:"meta,omitempty"`
 }
 
 // NetworkRow A declared network. `begin`, `end` and `broadcast` are computed from
@@ -1176,6 +1213,24 @@ type NetworkRow struct {
 	TeamResponsible *string `json:"team_responsible,omitempty"`
 	Updated         *string `json:"updated,omitempty"`
 }
+
+// NetworkSegmentListResponse defines model for NetworkSegmentListResponse.
+type NetworkSegmentListResponse struct {
+	Data []NetworkSegmentRow `json:"data"`
+	Info *string             `json:"info,omitempty"`
+}
+
+// NetworkSegmentRow An address range of a network, delegated to its responsible groups.
+type NetworkSegmentRow struct {
+	Id       *int                      `json:"id,omitempty"`
+	NetId    *int                      `json:"net_id,omitempty"`
+	SegBegin *string                   `json:"seg_begin,omitempty"`
+	SegEnd   *string                   `json:"seg_end,omitempty"`
+	SegType  *NetworkSegmentRowSegType `json:"seg_type,omitempty"`
+}
+
+// NetworkSegmentRowSegType defines model for NetworkSegmentRow.SegType.
+type NetworkSegmentRowSegType string
 
 // NodeHardwareListResponse defines model for NodeHardwareListResponse.
 type NodeHardwareListResponse struct {
@@ -4684,6 +4739,46 @@ type GetLogParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetNetworksParams defines parameters for GetNetworks.
+type GetNetworksParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`, `!empty`: no value, any value.
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
 // PostNetworksJSONBody defines parameters for PostNetworks.
 type PostNetworksJSONBody struct {
 	Comment *string `json:"comment,omitempty"`
@@ -4707,6 +4802,21 @@ type PostNetworksJSONBody struct {
 	// TeamResponsible Organisational group responsible for the network
 	TeamResponsible *string `json:"team_responsible,omitempty"`
 }
+
+// PostNetworkSegmentsJSONBody defines parameters for PostNetworkSegments.
+type PostNetworkSegmentsJSONBody struct {
+	// SegBegin First IPv4 address of the segment
+	SegBegin string `json:"seg_begin"`
+
+	// SegEnd Last IPv4 address of the segment
+	SegEnd string `json:"seg_end"`
+
+	// SegType How the addresses of the segment are allocated
+	SegType *PostNetworkSegmentsJSONBodySegType `json:"seg_type,omitempty"`
+}
+
+// PostNetworkSegmentsJSONBodySegType defines parameters for PostNetworkSegments.
+type PostNetworkSegmentsJSONBodySegType string
 
 // DeleteNodesJSONBody defines parameters for DeleteNodes.
 type DeleteNodesJSONBody struct {
@@ -6983,6 +7093,9 @@ type PostLogsJSONRequestBody PostLogsJSONBody
 
 // PostNetworksJSONRequestBody defines body for PostNetworks for application/json ContentType.
 type PostNetworksJSONRequestBody PostNetworksJSONBody
+
+// PostNetworkSegmentsJSONRequestBody defines body for PostNetworkSegments for application/json ContentType.
+type PostNetworkSegmentsJSONRequestBody PostNetworkSegmentsJSONBody
 
 // DeleteNodesJSONRequestBody defines body for DeleteNodes for application/json ContentType.
 type DeleteNodesJSONRequestBody DeleteNodesJSONBody

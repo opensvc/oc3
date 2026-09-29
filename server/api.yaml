@@ -4613,6 +4613,39 @@ paths:
         - bearerAuth: [ ]
 
   /networks:
+    get:
+      operationId: GetNetworks
+      description: |
+        List the declared networks, by name then address. Every authenticated user
+        may read them. `begin`, `end` and `broadcast` are computed from `network` and
+        `netmask`.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
     post:
       operationId: PostNetworks
       description: |
@@ -4671,6 +4704,68 @@ paths:
           $ref: '#/components/responses/401'
         403:
           $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /networks/{net_id}/segments:
+    post:
+      operationId: PostNetworkSegments
+      description: |
+        Declare a segment of a network: an address range whose responsible groups
+        may allocate its addresses. Requires the NetworkManager privilege and, unless
+        the caller is a manager, membership of the network's responsible team. The
+        range must lie inside the network and must not overlap another segment of it
+        (409). The caller's primary group becomes responsible for the segment.
+      parameters:
+        - in: path
+          name: net_id
+          required: true
+          description: Record id of the network
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - seg_begin
+                - seg_end
+              properties:
+                seg_type:
+                  type: string
+                  enum: [static, dynamic]
+                  default: static
+                  description: How the addresses of the segment are allocated
+                seg_begin:
+                  type: string
+                  description: First IPv4 address of the segment
+                seg_end:
+                  type: string
+                  description: Last IPv4 address of the segment
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkSegmentListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
         409:
           $ref: '#/components/responses/409'
         500:
@@ -14294,6 +14389,36 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NetworkRow'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+        info:
+          type: string
+
+    NetworkSegmentRow:
+      type: object
+      description: An address range of a network, delegated to its responsible groups.
+      properties:
+        id:
+          type: integer
+        net_id:
+          type: integer
+        seg_type:
+          type: string
+          enum: [static, dynamic]
+        seg_begin:
+          type: string
+        seg_end:
+          type: string
+
+    NetworkSegmentListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetworkSegmentRow'
         info:
           type: string
 
