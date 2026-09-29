@@ -20,6 +20,10 @@ const (
 	FeedNodeDiskQ        = "oc3:q:feed_node_disk"
 	FeedNodeDiskPendingH = "oc3:h:feed_node_disk_pending"
 
+	FeedSANSwitchH        = "oc3:h:feed_san_switch"
+	FeedSANSwitchQ        = "oc3:q:feed_san_switch"
+	FeedSANSwitchPendingH = "oc3:h:feed_san_switch_pending"
+
 	FeedObjectConfigForClusterIDH = "oc3:h:feed_object_config_for_cluster_id"
 
 	FeedObjectConfigH        = "oc3:h:feed_object_config"

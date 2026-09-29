@@ -74,6 +74,7 @@ const (
 	jtNodeDisk             = "nodeDisk"
 	jtNodeSystem           = "nodeSystem"
 	jtObjectConfig         = "objectConfig"
+	jtSANSwitch            = "sanSwitch"
 
 	// job or job step statuses
 	jobStatusOk     = "ok"
@@ -145,6 +146,14 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 			return fmt.Errorf("invalid feed node disk index expected `nodename`@`nodeID`@`clusterID` found: %s", unqueuedJob[1])
 		}
 		j = newNodeDisk(l[0], l[1], l[2])
+	case cachekeys.FeedSANSwitchQ:
+		// expected unqueuedJob[1]: <type>@<name>
+		if l := strings.SplitN(unqueuedJob[1], "@", 2); len(l) != 2 || l[0] == "" || l[1] == "" {
+			err := fmt.Errorf("invalid feed san switch index expected `type`@`name` found: %s", unqueuedJob[1])
+			slog.Warn(err.Error())
+			return err
+		}
+		j = newSANSwitch(unqueuedJob[1])
 	case cachekeys.FeedObjectConfigQ:
 		objectName, nodeID, ClusterID, err := w.jobToInstanceAndClusterID(unqueuedJob[1])
 		if err != nil {

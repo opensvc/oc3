@@ -14,6 +14,21 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for SANSwitchType.
+const (
+	Brocade SANSwitchType = "brocade"
+)
+
+// Valid indicates whether the value is a known member of the SANSwitchType enum.
+func (e SANSwitchType) Valid() bool {
+	switch e {
+	case Brocade:
+		return true
+	default:
+		return false
+	}
+}
+
 // Action The begin or end action request
 type Action struct {
 	Action string `json:"action"`
@@ -194,6 +209,22 @@ type QueuedActions struct {
 	Actions []QueuedAction `json:"actions"`
 }
 
+// SANSwitch defines model for SANSwitch.
+type SANSwitch struct {
+	// Data the raw output of each switch command, by command name. For a
+	// brocade: switchshow, nsshow and zoneshow.
+	Data map[string]string `json:"data"`
+
+	// Name the name the agent reaches the switch with
+	Name string `json:"name"`
+
+	// Type the driver of the switch, which says how data is read
+	Type SANSwitchType `json:"type"`
+}
+
+// SANSwitchType the driver of the switch, which says how data is read
+type SANSwitchType string
+
 // SysReport defines model for SysReport.
 type SysReport struct {
 	Deleted []string           `json:"deleted"`
@@ -302,3 +333,6 @@ type PostSystemJSONRequestBody = System
 
 // PostObjectConfigJSONRequestBody defines body for PostObjectConfig for application/json ContentType.
 type PostObjectConfigJSONRequestBody = ObjectConfig
+
+// PostSANSwitchJSONRequestBody defines body for PostSANSwitch for application/json ContentType.
+type PostSANSwitchJSONRequestBody = SANSwitch

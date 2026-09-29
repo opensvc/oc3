@@ -367,6 +367,31 @@ paths:
       tags:
         - agent
 
+  /sanswitch:
+    post:
+      description: |
+        Update the configuration of a SAN switch, as the agent inventoried it:
+        the raw outputs of the switch commands, which the worker parses into
+        the switches, zones and aliases tables. A node inventories the
+        switches its configuration declares, on the schedule of each.
+      operationId: PostSANSwitch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SANSwitch'
+      responses:
+        202:
+          description: the switch configuration will be refreshed
+        400:
+          $ref: '#/components/responses/400'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /version:
     get:
       operationId: GetVersion
@@ -607,6 +632,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Disk'
+
+    SANSwitch:
+      type: object
+      required:
+        - name
+        - type
+        - data
+      properties:
+        name:
+          type: string
+          description: the name the agent reaches the switch with
+        type:
+          type: string
+          enum:
+            - brocade
+          description: the driver of the switch, which says how data is read
+        data:
+          type: object
+          additionalProperties:
+            type: string
+          description: |
+            the raw output of each switch command, by command name. For a
+            brocade: switchshow, nsshow and zoneshow.
 
     ObjectConfig:
       type: object
