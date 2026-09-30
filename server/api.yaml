@@ -4702,7 +4702,11 @@ paths:
         users, teams, requests, modulesets, rulesets, filtersets and forms. For each
         kind, the objects whose name or another identifying prop contains the text,
         case-insensitively, are read through the kind's own list and its access
-        control. A request also matches by its number. Groups come in that order, one
+        control. A request also matches by its number. Then come, while `limit` leaves
+        room, the objects whose context contains the text: the props returned beside
+        the name to tell homonyms apart, such as the application, the environment and
+        the operating system of a node, the node of an instance, of an address or of
+        a disk, or the author of a moduleset. Groups come in that order, one
         per kind, with `more` set when other objects match beyond `limit`. A kind that
         cannot be searched reports it in its `error` without failing the others. A
         text shorter than 2 characters returns no group.
@@ -15048,7 +15052,7 @@ components:
             svc_env, cluster_id, svc_availstatus, svc_topology for a service; svc_id,
             node_id, mon_vmname, mon_availstatus, services.svcname, nodes.nodename for
             an instance; id, app, app_domain, description for an application; id, addr,
-            mask, intf, node_id, nodename, net_name for a node address; disk_id,
+            mask, mac, intf, node_id, nodename, net_name for a node address; disk_id,
             disk_name, disk_size, disk_arrayid, nodename, svcname for a disk; tag_id,
             tag_name, tag_exclude for a tag; id, email, first_name, last_name, username
             for a user; id, role, privilege, description for a team; id, form_name,

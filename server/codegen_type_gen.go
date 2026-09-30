@@ -1819,7 +1819,7 @@ type SearchGroup struct {
 	// svc_env, cluster_id, svc_availstatus, svc_topology for a service; svc_id,
 	// node_id, mon_vmname, mon_availstatus, services.svcname, nodes.nodename for
 	// an instance; id, app, app_domain, description for an application; id, addr,
-	// mask, intf, node_id, nodename, net_name for a node address; disk_id,
+	// mask, mac, intf, node_id, nodename, net_name for a node address; disk_id,
 	// disk_name, disk_size, disk_arrayid, nodename, svcname for a disk; tag_id,
 	// tag_name, tag_exclude for a tag; id, email, first_name, last_name, username
 	// for a user; id, role, privilege, description for a team; id, form_name,

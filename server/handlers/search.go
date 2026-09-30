@@ -33,10 +33,18 @@ const (
 // searchKind says how the global search looks for one kind of object: the
 // list of the collector it reads, with the access control of that list, the
 // props whose value may contain the text and the props returned for each hit.
+//
+// match names the props that identify the object: its name, its ids. context
+// names the other props shown beside the name in a result — the application of a
+// node, the node of an instance — which may contain the text too. An object
+// matching by what identifies it comes before one matching only by its context:
+// "prd" finds the node named prd-db01 before the hundred nodes of the PRD
+// environment.
 type searchKind struct {
 	kind    string
 	mapping string
 	match   []string
+	context []string
 	// idProp is also compared for equality when the text is an integer: a
 	// request is named by its number.
 	idProp  string
@@ -57,6 +65,7 @@ var searchKinds = []searchKind{
 	{
 		kind: "node", mapping: "node",
 		match:   []string{"nodename", "node_id", "fqdn"},
+		context: []string{"app", "node_env", "os_name"},
 		props:   []string{"node_id", "nodename", "app", "node_env", "cluster_id", "fqdn", "os_name"},
 		orderby: "nodename",
 		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
@@ -66,6 +75,7 @@ var searchKinds = []searchKind{
 	{
 		kind: "service", mapping: "service",
 		match:   []string{"svcname", "svc_id"},
+		context: []string{"svc_app", "svc_env", "svc_topology", "cluster_id"},
 		props:   []string{"svc_id", "svcname", "svc_app", "svc_env", "cluster_id", "svc_availstatus", "svc_topology"},
 		orderby: "svcname",
 		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
@@ -75,6 +85,7 @@ var searchKinds = []searchKind{
 	{
 		kind: "instance", mapping: "instance",
 		match:   []string{"services.svcname", "mon_vmname"},
+		context: []string{"nodes.nodename", "svc_id"},
 		props:   []string{"svc_id", "node_id", "mon_vmname", "mon_availstatus", "services.svcname", "nodes.nodename"},
 		orderby: "services.svcname,nodes.nodename",
 		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
@@ -84,6 +95,7 @@ var searchKinds = []searchKind{
 	{
 		kind: "app", mapping: "app",
 		match:   []string{"app", "description"},
+		context: []string{"app_domain"},
 		props:   []string{"id", "app", "app_domain", "description"},
 		orderby: "app",
 		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
@@ -93,7 +105,8 @@ var searchKinds = []searchKind{
 	{
 		kind: "network", mapping: "node_ip",
 		match:   []string{"addr", "mac"},
-		props:   []string{"id", "addr", "mask", "intf", "node_id", "nodename", "net_name"},
+		context: []string{"nodename", "intf", "net_name"},
+		props:   []string{"id", "addr", "mask", "mac", "intf", "node_id", "nodename", "net_name"},
 		orderby: "addr",
 		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 			return a.ODB.GetIps(ctx, p)
@@ -102,6 +115,7 @@ var searchKinds = []searchKind{
 	{
 		kind: "disk", mapping: "disk",
 		match:   []string{"disk_id", "disk_name", "disk_devid"},
+		context: []string{"nodename", "svcname", "disk_arrayid"},
 		props:   []string{"disk_id", "disk_name", "disk_size", "disk_arrayid", "nodename", "svcname"},
 		orderby: "disk_id",
 		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
@@ -138,6 +152,7 @@ var searchKinds = []searchKind{
 	{
 		kind: "request", mapping: "workflow",
 		match:   []string{"form_name", "last_form_name"},
+		context: []string{"status", "creator"},
 		idProp:  "id",
 		props:   []string{"id", "form_name", "last_form_name", "status", "creator", "last_update"},
 		orderby: "-id",
@@ -148,6 +163,7 @@ var searchKinds = []searchKind{
 	{
 		kind: "moduleset", mapping: "moduleset",
 		match:   []string{"modset_name"},
+		context: []string{"modset_author"},
 		props:   []string{"id", "modset_name", "modset_author"},
 		orderby: "modset_name",
 		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
@@ -157,6 +173,7 @@ var searchKinds = []searchKind{
 	{
 		kind: "ruleset", mapping: "ruleset",
 		match:   []string{"ruleset_name"},
+		context: []string{"ruleset_type"},
 		props:   []string{"id", "ruleset_name", "ruleset_type", "ruleset_public"},
 		orderby: "ruleset_name",
 		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
@@ -166,6 +183,7 @@ var searchKinds = []searchKind{
 	{
 		kind: "filterset", mapping: "filterset",
 		match:   []string{"fset_name"},
+		context: []string{"fset_author"},
 		props:   []string{"id", "fset_name", "fset_author"},
 		orderby: "fset_name",
 		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
@@ -175,6 +193,7 @@ var searchKinds = []searchKind{
 	{
 		kind: "form", mapping: "form",
 		match:   []string{"form_name", "form_folder"},
+		context: []string{"form_type"},
 		props:   []string{"id", "form_name", "form_type", "form_folder"},
 		orderby: "form_name",
 		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
@@ -194,7 +213,7 @@ type searchGroup struct {
 
 // GetSearch handles GET /search: the objects of the main kinds whose name, or
 // another identifying prop, contains the text, as the historical collector's
-// search did. Each kind is read through its own list, with its access control,
+// search did, then those whose context shown beside the name contains it. Each kind is read through its own list, with its access control,
 // all kinds at once; a kind that fails is reported in its group without
 // failing the others.
 func (a *Api) GetSearch(c echo.Context, params server.GetSearchParams) error {
@@ -280,21 +299,9 @@ func (a *Api) searchOne(ctx context.Context, k searchKind, text, pattern string,
 		return nil, err
 	}
 
-	var (
-		conds []string
-		args  []any
-		first *cdb.ColumnFilter
-	)
-	for _, prop := range k.match {
-		col, err := resolvePropCol(prop, mapping, "search")
-		if err != nil {
-			return nil, err
-		}
-		if first == nil {
-			first = &cdb.ColumnFilter{Col: col}
-		}
-		conds = append(conds, col.Qualified()+" LIKE ?")
-		args = append(args, pattern)
+	named, err := searchCondition(k.match, mapping, pattern)
+	if err != nil {
+		return nil, err
 	}
 	if k.idProp != "" {
 		if id, err := strconv.ParseInt(text, 10, 64); err == nil {
@@ -302,13 +309,9 @@ func (a *Api) searchOne(ctx context.Context, k searchKind, text, pattern string,
 			if err != nil {
 				return nil, err
 			}
-			conds = append(conds, col.Qualified()+" = ?")
-			args = append(args, id)
+			named.Expr = "(" + named.Expr + " OR " + col.Qualified() + " = ?)"
+			named.Args = append(named.Args, id)
 		}
-	}
-	match := cdb.ColumnFilter{Expr: "(" + strings.Join(conds, " OR ") + ")", Args: args}
-	if first != nil {
-		match.Col = first.Col
 	}
 
 	p := base
@@ -317,9 +320,53 @@ func (a *Api) searchOne(ctx context.Context, k searchKind, text, pattern string,
 	p.SelectExprs = selectExprs
 	p.TypeHints = buildTypeHints(query.Props, mapping)
 	p.OrderBy = query.OrderBy
-	p.Filters = append([]cdb.ColumnFilter{match}, k.extra...)
+	p.Filters = append([]cdb.ColumnFilter{named}, k.extra...)
 	if k.withUserID {
 		p.UserID = userID
 	}
-	return k.fetch(a, ctx, p)
+	items, err := k.fetch(a, ctx, p)
+	if err != nil || len(k.context) == 0 || len(items) >= fetchLimit {
+		return items, err
+	}
+
+	// Room left: the objects matching by their context only, after the others.
+	around, err := searchCondition(k.context, mapping, pattern)
+	if err != nil {
+		return nil, err
+	}
+	// A prop without a value makes the first condition neither true nor false:
+	// such an object did not match by name, and is not to be left out here.
+	around.Expr = "(" + around.Expr + " AND NOT COALESCE(" + named.Expr + ", FALSE))"
+	around.Args = append(around.Args, named.Args...)
+	p.Limit = fetchLimit - len(items)
+	p.Filters = append([]cdb.ColumnFilter{around}, k.extra...)
+	more, err := k.fetch(a, ctx, p)
+	if err != nil {
+		return nil, err
+	}
+	return append(items, more...), nil
+}
+
+// searchCondition is the condition "one of these props contains the text", on the
+// columns of the props.
+func searchCondition(props []string, mapping propMapping, pattern string) (cdb.ColumnFilter, error) {
+	var (
+		conds []string
+		args  []any
+		f     cdb.ColumnFilter
+	)
+	for _, prop := range props {
+		col, err := resolvePropCol(prop, mapping, "search")
+		if err != nil {
+			return f, err
+		}
+		if f.Col == nil {
+			f.Col = col
+		}
+		conds = append(conds, col.Qualified()+" LIKE ?")
+		args = append(args, pattern)
+	}
+	f.Expr = "(" + strings.Join(conds, " OR ") + ")"
+	f.Args = args
+	return f, nil
 }
