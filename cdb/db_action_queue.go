@@ -70,13 +70,19 @@ func (oDb *DB) UpdateActionStatus(ctx context.Context, id int64, status string, 
 	return nil
 }
 
+// actionQueueJoins makes the "nodes." and "services." props selectable: a queued
+// action carries only the ids, and a node action names no service (empty svc_id),
+// hence the LEFT JOINs. Same approach as logJoins.
+const actionQueueJoins = " LEFT JOIN nodes ON nodes.node_id = action_queue.node_id" +
+	" LEFT JOIN services ON services.svc_id = action_queue.svc_id"
+
 func buildActionsQuery(p ListParams, idCond string, idArgs []any) (string, []any, error) {
 	if len(p.SelectExprs) == 0 {
 		return "", nil, fmt.Errorf("buildActionsQuery: no columns selected")
 	}
 
 	sb := &strings.Builder{}
-	fmt.Fprintf(sb, "SELECT %s\nFROM action_queue", strings.Join(p.SelectExprs, ", "))
+	fmt.Fprintf(sb, "SELECT %s\nFROM action_queue%s", strings.Join(p.SelectExprs, ", "), actionQueueJoins)
 
 	var conds []string
 	var args []any
@@ -92,7 +98,7 @@ func buildActionsQuery(p ListParams, idCond string, idArgs []any) (string, []any
 			conds = append(conds, "1=0")
 		} else {
 			conds = append(conds,
-				"node_id IN ("+
+				"action_queue.node_id IN ("+
 					"SELECT n.node_id FROM nodes n"+
 					" JOIN apps a ON n.app = a.app"+
 					" JOIN apps_responsibles ar ON ar.app_id = a.id"+
@@ -102,6 +108,12 @@ func buildActionsQuery(p ListParams, idCond string, idArgs []any) (string, []any
 			args = append(args, stringsToAny(cleanGroups)...)
 		}
 	}
+
+	// Column filters of the request: the nodes and services joins are always in
+	// place here, so a filter on their names needs nothing more.
+	filterConds, filterArgs := p.FilterConditions()
+	conds = append(conds, filterConds...)
+	args = append(args, filterArgs...)
 
 	if len(conds) > 0 {
 		sb.WriteString("\nWHERE " + strings.Join(conds, " AND "))
@@ -146,4 +158,133 @@ func (oDb *DB) GetActionOne(ctx context.Context, id string, p ListParams) ([]map
 	defer func() { _ = rows.Close() }()
 
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// NodeActionTarget is what building an agent action command needs from a node.
+type NodeActionTarget struct {
+	NodeID     string
+	Nodename   string
+	OSName     string
+	ActionType string
+	Collector  string
+	ConnectTo  string
+}
+
+// NodeActionTargetByID returns the node fields the action queue entry is built from.
+func (oDb *DB) NodeActionTargetByID(ctx context.Context, nodeID string) (*NodeActionTarget, error) {
+	const query = "SELECT node_id, COALESCE(nodename, ''), COALESCE(os_name, ''), COALESCE(action_type, '')," +
+		" COALESCE(collector, ''), COALESCE(connect_to, '') FROM nodes WHERE node_id = ?"
+	var t NodeActionTarget
+	err := oDb.DB.QueryRowContext(ctx, query, nodeID).
+		Scan(&t.NodeID, &t.Nodename, &t.OSName, &t.ActionType, &t.Collector, &t.ConnectTo)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("nodeActionTargetByID: %w", err)
+	}
+	return &t, nil
+}
+
+// NodeReachableAddress returns the address an action should connect to, mirroring
+// get_reachable_name() of the python collector: the explicit connect_to, else the
+// best routable address of the node, else its name.
+func (oDb *DB) NodeReachableAddress(ctx context.Context, t *NodeActionTarget) (string, error) {
+	if t.ConnectTo != "" {
+		return t.ConnectTo, nil
+	}
+	const query = "SELECT addr FROM v_nodenetworks WHERE node_id = ?" +
+		" AND mask IS NOT NULL AND mask != '' AND flag_deprecated = 0" +
+		" AND net_gateway IS NOT NULL AND net_gateway != '' AND net_gateway != '0.0.0.0'" +
+		" ORDER BY prio DESC, type LIMIT 1"
+	var addr string
+	err := oDb.DB.QueryRowContext(ctx, query, t.NodeID).Scan(&addr)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return t.Nodename, nil
+	case err != nil:
+		return "", fmt.Errorf("nodeReachableAddress: %w", err)
+	}
+	return addr, nil
+}
+
+// EnqueueNodeAction posts a node action to the action queue and returns its id.
+func (oDb *DB) EnqueueNodeAction(ctx context.Context, nodeID, actionType, command, connectTo string, userID *int64) (int64, error) {
+	const query = "INSERT INTO action_queue (node_id, svc_id, action_type, command, user_id, connect_to)" +
+		" VALUES (?, '', ?, ?, ?, ?)"
+	res, err := oDb.ExecContext(ctx, query, nodeID, actionType, command, userID, connectTo)
+	if err != nil {
+		return 0, fmt.Errorf("enqueueNodeAction: %w", err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("enqueueNodeAction lastInsertId: %w", err)
+	}
+	oDb.SetChange("action_queue")
+	return id, nil
+}
+
+// ServiceLiveNode returns a node of the service seen alive in the last 15 minutes,
+// as get_svc_live_nodes() does, plus the agent version an action command needs.
+func (oDb *DB) ServiceLiveNode(ctx context.Context, svcID string) (*NodeActionTarget, string, error) {
+	const query = "SELECT nodes.node_id, COALESCE(nodes.nodename, ''), COALESCE(nodes.os_name, '')," +
+		" COALESCE(nodes.action_type, ''), COALESCE(nodes.collector, ''), COALESCE(nodes.connect_to, '')," +
+		" COALESCE(nodes.version, '')" +
+		" FROM svcmon JOIN nodes ON nodes.node_id = svcmon.node_id" +
+		" WHERE svcmon.svc_id = ? AND nodes.last_comm > NOW() - INTERVAL 15 MINUTE" +
+		" ORDER BY nodes.nodename LIMIT 1"
+	var t NodeActionTarget
+	var version string
+	err := oDb.DB.QueryRowContext(ctx, query, svcID).
+		Scan(&t.NodeID, &t.Nodename, &t.OSName, &t.ActionType, &t.Collector, &t.ConnectTo, &version)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, "", nil
+	case err != nil:
+		return nil, "", fmt.Errorf("serviceLiveNode: %w", err)
+	}
+	return &t, version, nil
+}
+
+// NodeAgentVersion returns the agent version reported by a node, empty when unknown.
+func (oDb *DB) NodeAgentVersion(ctx context.Context, nodeID string) (string, error) {
+	var version string
+	err := oDb.DB.QueryRowContext(ctx, "SELECT COALESCE(version, '') FROM nodes WHERE node_id = ?", nodeID).Scan(&version)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", nil
+	case err != nil:
+		return "", fmt.Errorf("nodeAgentVersion: %w", err)
+	}
+	return version, nil
+}
+
+// HasServiceInstance reports whether the service runs on that node.
+func (oDb *DB) HasServiceInstance(ctx context.Context, svcID, nodeID string) (bool, error) {
+	var one int
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT 1 FROM svcmon WHERE svc_id = ? AND node_id = ? LIMIT 1", svcID, nodeID).Scan(&one)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("hasServiceInstance: %w", err)
+	}
+	return true, nil
+}
+
+// EnqueueServiceAction posts a service action to the action queue and returns its id.
+func (oDb *DB) EnqueueServiceAction(ctx context.Context, nodeID, svcID, actionType, command, connectTo string, userID *int64) (int64, error) {
+	const query = "INSERT INTO action_queue (node_id, svc_id, action_type, command, user_id, connect_to)" +
+		" VALUES (?, ?, ?, ?, ?, ?)"
+	res, err := oDb.ExecContext(ctx, query, nodeID, svcID, actionType, command, userID, connectTo)
+	if err != nil {
+		return 0, fmt.Errorf("enqueueServiceAction: %w", err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("enqueueServiceAction lastInsertId: %w", err)
+	}
+	oDb.SetChange("action_queue")
+	return id, nil
 }

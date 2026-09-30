@@ -50,8 +50,11 @@ func (n *DBNode) String() string {
 	return fmt.Sprintf("node: {nodename: %s, node_id: %s, cluster_id: %s, app: %s}", n.Nodename, n.NodeID, n.ClusterID, n.App)
 }
 
-func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
+func buildNodesQuery(groups []string, isManager bool, selectExprs []string, filters []ColumnFilter) (string, []any, error) {
 	q := From(schema.TNodes).
+		// A node may name no cluster, or one the collector does not know: a plain join
+		// would then drop the row.
+		LeftJoin(schema.TClusters).
 		RawSelect(selectExprs...)
 
 	if !isManager {
@@ -77,6 +80,9 @@ func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (str
 		q = q.Where(schema.NodesID, ">", 0)
 	}
 
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(filters)
+
 	query, args, err := q.Build()
 	if err != nil {
 		return "", nil, fmt.Errorf("buildNodesQuery: %w", err)
@@ -85,7 +91,7 @@ func buildNodesQuery(groups []string, isManager bool, selectExprs []string) (str
 }
 
 func (oDb *DB) GetNodes(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +112,7 @@ func (oDb *DB) GetNodes(ctx context.Context, p ListParams) ([]map[string]any, er
 
 // GetNodesByIDs fetches nodes whose node_id is in the given list.
 func (oDb *DB) GetNodesByIDs(ctx context.Context, ids []string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +141,7 @@ func (oDb *DB) GetNodesByIDs(ctx context.Context, ids []string, p ListParams) ([
 
 // GetNode fetches a single node by node_id or nodename.
 func (oDb *DB) GetNode(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -754,11 +760,26 @@ func (oDb *DB) UpdateNodeFields(ctx context.Context, nodeID string, fields map[s
 		"serial": true, "sp_version": true, "team_integ": true, "team_support": true,
 		"updated": true,
 	}
+	// Datetime columns reject the empty string, and one bad value fails the whole
+	// UPDATE: clearing a date would silently discard every other field of the same
+	// request. An empty value clears the column instead.
+	datetime := map[string]bool{
+		"warranty_end": true, "maintenance_end": true, "snooze_till": true,
+		"node_frozen_at": true, "last_boot": true, "last_comm": true,
+		"hw_obs_warn_date": true, "hw_obs_alert_date": true,
+		"os_obs_warn_date": true, "os_obs_alert_date": true,
+	}
 	setClauses := []string{"updated = NOW()"}
 	args := []any{}
 	for col, val := range fields {
 		if !allowed[col] {
 			continue
+		}
+		if datetime[col] {
+			if s, ok := val.(string); ok && s == "" {
+				setClauses = append(setClauses, col+" = NULL")
+				continue
+			}
 		}
 		setClauses = append(setClauses, col+" = ?")
 		args = append(args, val)

@@ -35,5 +35,5 @@ func (a *Api) PostFiltersetsFiltersets(c echo.Context) error {
 
 	log.Info("called", "parent_fset_id", body.ParentFsetId, "child_fset_id", body.ChildFsetId)
 
-	return a.postFiltersetFilterset(c, log, ctx, body.ParentFsetId, body.ChildFsetId, body.FLogOp, body.FOrder)
+	return a.postFiltersetFilterset(c, log, ctx, body.ParentFsetId, body.ChildFsetId, stringPtr(body.FLogOp), body.FOrder)
 }

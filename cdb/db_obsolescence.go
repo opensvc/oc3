@@ -395,11 +395,11 @@ func (oDb *DB) UpdateObsolescenceSetting(ctx context.Context, id int, fields Upd
 	args := []any{}
 	if fields.ObsWarnDate != nil {
 		setClauses = append(setClauses, "obs_warn_date = ?", "obs_warn_date_updated_by = ?", "obs_warn_date_updated = NOW()")
-		args = append(args, *fields.ObsWarnDate, author)
+		args = append(args, nullIfEmpty(*fields.ObsWarnDate), author)
 	}
 	if fields.ObsAlertDate != nil {
 		setClauses = append(setClauses, "obs_alert_date = ?", "obs_alert_date_updated_by = ?", "obs_alert_date_updated = NOW()")
-		args = append(args, *fields.ObsAlertDate, author)
+		args = append(args, nullIfEmpty(*fields.ObsAlertDate), author)
 	}
 	if len(setClauses) == 0 {
 		return nil
@@ -421,20 +421,24 @@ func (oDb *DB) DeleteObsolescenceSetting(ctx context.Context, id int) error {
 	return nil
 }
 
-func (oDb *DB) UpdateNodeObsolescenceDates(ctx context.Context, obsType, obsName string, warnDate, alertDate sql.NullString) error {
+// SyncNodeObsolescenceDates copies the stored dates of an obsolescence setting to
+// the nodes it applies to. Copying inside the database keeps datetime values
+// intact: passing back a date read through the driver would send it in RFC 3339
+// form, which a datetime column rejects in strict mode.
+func (oDb *DB) SyncNodeObsolescenceDates(ctx context.Context, id int, obsType string) error {
+	var query string
 	switch obsType {
 	case "hw":
-		if _, err := oDb.ExecContext(ctx,
-			"UPDATE nodes SET hw_obs_warn_date = ?, hw_obs_alert_date = ? WHERE model = ?",
-			warnDate, alertDate, obsName); err != nil {
-			return fmt.Errorf("UpdateNodeObsolescenceDates: %w", err)
-		}
+		query = `UPDATE nodes JOIN obsolescence o ON o.id = ? AND nodes.model = o.obs_name
+			SET nodes.hw_obs_warn_date = o.obs_warn_date, nodes.hw_obs_alert_date = o.obs_alert_date`
 	case "os":
-		if _, err := oDb.ExecContext(ctx,
-			"UPDATE nodes SET os_obs_warn_date = ?, os_obs_alert_date = ? WHERE os_concat = ?",
-			warnDate, alertDate, obsName); err != nil {
-			return fmt.Errorf("UpdateNodeObsolescenceDates: %w", err)
-		}
+		query = `UPDATE nodes JOIN obsolescence o ON o.id = ? AND nodes.os_concat = o.obs_name
+			SET nodes.os_obs_warn_date = o.obs_warn_date, nodes.os_obs_alert_date = o.obs_alert_date`
+	default:
+		return nil
+	}
+	if _, err := oDb.ExecContext(ctx, query, id); err != nil {
+		return fmt.Errorf("SyncNodeObsolescenceDates: %w", err)
 	}
 	return nil
 }
@@ -653,4 +657,12 @@ func (oDb *DB) UpdateNodesObsolescence(ctx context.Context) error {
 		return fmt.Errorf("update node obsolescence data failed: %w", err)
 	}
 	return nil
+}
+
+// nullIfEmpty maps an empty date to NULL: a datetime column rejects ”.
+func nullIfEmpty(value string) any {
+	if value == "" {
+		return nil
+	}
+	return value
 }

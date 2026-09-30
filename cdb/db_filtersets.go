@@ -616,7 +616,10 @@ func (oDb *DB) GetFiltersets(ctx context.Context, p ListParams) ([]map[string]an
 	}
 	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
 		" FROM gen_filtersets WHERE gen_filtersets.id > 0"
-	args := []any{}
+	filterConds, args := p.FilterConditions()
+	for _, cond := range filterConds {
+		query += " AND " + cond
+	}
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}

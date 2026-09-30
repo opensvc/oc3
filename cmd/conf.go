@@ -61,6 +61,12 @@ func setDefaultServerConfig() {
 	viper.SetDefault(s+".ui.enable", false)
 	viper.SetDefault(s+".sync.timeout", "2s")
 	viper.SetDefault(s+".allow_anon_register", false)
+	// One git repository per form, holding its yaml history, as the historical
+	// collector keeps them under private/forms.
+	viper.SetDefault(s+".directories.forms", "/oc3/uploads/forms")
+	// The javascript sandbox running the manglers of the form rest outputs.
+	viper.SetDefault(s+".forms.nodejs", "/usr/bin/nodejs")
+	viper.SetDefault(s+".forms.vm2", "/usr/local/bin/vm2")
 	viper.SetDefault(s+".log.request.level", "none")
 
 	setDefaultAuthConfig()

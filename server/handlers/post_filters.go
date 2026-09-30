@@ -32,6 +32,13 @@ var filterTables = []string{
 
 var filterOperators = []string{"=", "LIKE", ">", ">=", "<", "<=", "IN"}
 
+// filtersetLogOps are the logical operators joining an entry of a filterset to the
+// previous one, as in the historical collector (gen_filtersets_filters.f_log_op).
+var filtersetLogOps = []string{"AND", "AND NOT", "OR", "OR NOT"}
+
+// filtersetStatsValues are the accepted values of gen_filtersets.fset_stats.
+var filtersetStatsValues = []string{"T", "F"}
+
 // PostFilters handles POST /filters
 func (a *Api) PostFilters(c echo.Context) error {
 	log := echolog.GetLogHandler(c, "PostFilters")

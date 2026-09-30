@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
@@ -19,10 +20,10 @@ import (
 
 func requireObsManager(c echo.Context) error {
 	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
+		return denyRequest(c, http.StatusUnauthorized, "user authentication required")
 	}
 	if !IsObsManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "ObsManager privilege required")
+		return denyRequest(c, http.StatusForbidden, "ObsManager privilege required")
 	}
 	return nil
 }
@@ -60,6 +61,13 @@ func (a *Api) postObsolescenceSettingUpdate(c echo.Context, ctx context.Context,
 		return JSONProblemf(c, http.StatusNotFound, "obsolescence setting %s not found", id)
 	}
 
+	if _, err := parseObsDate(obsWarnDate); err != nil {
+		return JSONProblemf(c, http.StatusBadRequest, "invalid obs_warn_date: %s", err)
+	}
+	if _, err := parseObsDate(obsAlertDate); err != nil {
+		return JSONProblemf(c, http.StatusBadRequest, "invalid obs_alert_date: %s", err)
+	}
+
 	changes := []string{}
 	if obsWarnDate != nil {
 		changes = append(changes, fmt.Sprintf("obs_warn_date: %s => %s", row.ObsWarnDate.String, *obsWarnDate))
@@ -78,23 +86,20 @@ func (a *Api) postObsolescenceSettingUpdate(c echo.Context, ctx context.Context,
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot update obsolescence setting")
 	}
 
-	if obsWarnDate != nil {
-		newWarn := sql.NullString{String: *obsWarnDate, Valid: true}
-		if err := odb.UpdateNodeObsolescenceDates(ctx, row.ObsType, row.ObsName, newWarn, row.ObsAlertDate); err != nil {
+	// The nodes take the setting's dates as now stored, both at once.
+	if obsWarnDate != nil || obsAlertDate != nil {
+		if err := odb.SyncNodeObsolescenceDates(ctx, row.ID, row.ObsType); err != nil {
 			log.Error("cannot update node obsolescence dates", "id", row.ID, logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot update node obsolescence dates")
 		}
+	}
+	if obsWarnDate != nil {
 		if err := odb.DeleteDashObsWithout(ctx, row.ObsName, row.ObsType, "warn"); err != nil {
 			log.Error("cannot clean up obsolescence dashboard alerts", "id", row.ID, logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot clean up obsolescence dashboard alerts")
 		}
 	}
 	if obsAlertDate != nil {
-		newAlert := sql.NullString{String: *obsAlertDate, Valid: true}
-		if err := odb.UpdateNodeObsolescenceDates(ctx, row.ObsType, row.ObsName, row.ObsWarnDate, newAlert); err != nil {
-			log.Error("cannot update node obsolescence dates", "id", row.ID, logkey.Error, err)
-			return JSONProblemf(c, http.StatusInternalServerError, "cannot update node obsolescence dates")
-		}
 		if err := odb.DeleteDashObsWithout(ctx, row.ObsName, row.ObsType, "alert"); err != nil {
 			log.Error("cannot clean up obsolescence dashboard alerts", "id", row.ID, logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot clean up obsolescence dashboard alerts")
@@ -145,4 +150,22 @@ func (a *Api) postObsolescenceSettingUpdate(c echo.Context, ctx context.Context,
 		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 			return odb.GetObsolescenceSetting(ctx, idStr, p)
 		})
+}
+
+// obsDateLayouts are the date forms accepted for obsolescence dates: a calendar
+// date, or the "YYYY-MM-DD hh:mm:ss" form the settings are listed with.
+var obsDateLayouts = []string{"2006-01-02", "2006-01-02 15:04:05"}
+
+// parseObsDate validates an obsolescence date from a request body. An empty string
+// clears the date and maps to NULL: the column is a datetime, which rejects ”.
+func parseObsDate(value *string) (sql.NullString, error) {
+	if value == nil || *value == "" {
+		return sql.NullString{}, nil
+	}
+	for _, layout := range obsDateLayouts {
+		if _, err := time.Parse(layout, *value); err == nil {
+			return sql.NullString{String: *value, Valid: true}, nil
+		}
+	}
+	return sql.NullString{}, fmt.Errorf("%q is not a YYYY-MM-DD or YYYY-MM-DD hh:mm:ss date", *value)
 }

@@ -14,7 +14,17 @@ func init() {
 
 	NodeIPNodeID.Ref = NodesNodeID
 
+	NodesClusterID.Ref = ClustersClusterID
+
+	ActionQueueNodeID.Ref = NodesNodeID
+	ActionQueueSvcID.Ref = ServicesSvcID
+
+	PackagesNodeID.Ref = NodesNodeID
+	NodeHWNodeID.Ref = NodesNodeID
+	PackagesPkgSig.Ref = PkgSigProviderSigID
+
 	SvcmonSvcID.Ref = ServicesSvcID
+	SvcmonNodeID.Ref = NodesNodeID
 	SvcmonLogSvcID.Ref = ServicesSvcID
 	ServicesLogSvcID.Ref = ServicesSvcID
 }

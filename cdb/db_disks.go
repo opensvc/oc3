@@ -7,7 +7,7 @@ import (
 	"github.com/opensvc/oc3/schema"
 )
 
-func buildDisksQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
+func buildDisksQuery(groups []string, isManager bool, selectExprs []string, filters []ColumnFilter) (string, []any, error) {
 	q := From(schema.TDiskinfo).
 		LeftJoin(schema.TSvcdisks, schema.TNodes, schema.TServices, schema.TApps).
 		RawSelect(selectExprs...)
@@ -37,6 +37,9 @@ func buildDisksQuery(groups []string, isManager bool, selectExprs []string) (str
 		q = q.Where(schema.DiskinfoID, ">", 0)
 	}
 
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(filters)
+
 	query, args, err := q.Build()
 	if err != nil {
 		return "", nil, fmt.Errorf("buildDisksQuery: %w", err)
@@ -45,7 +48,7 @@ func buildDisksQuery(groups []string, isManager bool, selectExprs []string) (str
 }
 
 func (oDb *DB) GetDisk(ctx context.Context, diskID string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildDisksQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildDisksQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +121,7 @@ func (oDb *DB) GetServiceDisks(ctx context.Context, svcID string, p ListParams) 
 }
 
 func (oDb *DB) GetNodeDisks(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildDisksQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildDisksQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +143,7 @@ func (oDb *DB) GetNodeDisks(ctx context.Context, nodeID string, p ListParams) ([
 }
 
 func (oDb *DB) GetDisks(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildDisksQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildDisksQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}

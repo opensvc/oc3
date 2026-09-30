@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/md5"
+	"crypto/rand"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
@@ -153,6 +154,12 @@ func toSHA1(b []byte) []byte {
 	return a[:]
 }
 
+// VerifyWeb2pyPassword tells whether password matches a hash stored by web2py
+// or by HashWeb2pyPassword, as the sign-in does.
+func VerifyWeb2pyPassword(password, storedHash, hmacKey string) bool {
+	return verifyWeb2pyPassword(password, storedHash, hmacKey)
+}
+
 func verifyWeb2pyPassword(password, storedHash, hmacKey string) bool {
 	if storedHash == "" {
 		return false
@@ -213,4 +220,30 @@ func verifyWeb2pyPassword(password, storedHash, hmacKey string) bool {
 
 	computedHash := prefix + hex.EncodeToString(digestBytes)
 	return hmac.Equal([]byte(computedHash), []byte(storedHash))
+}
+
+// HashWeb2pyPassword returns a password hash in the web2py format that
+// verifyWeb2pyPassword accepts: "sha512$<salt>$<hex digest>", the digest being an
+// HMAC-SHA512 keyed with hmacKey and the salt when a key is configured, as web2py's
+// CRYPT does, and a salted SHA-512 otherwise.
+func HashWeb2pyPassword(password, hmacKey string) (string, error) {
+	saltBytes := make([]byte, 8)
+	if _, err := rand.Read(saltBytes); err != nil {
+		return "", fmt.Errorf("HashWeb2pyPassword: %w", err)
+	}
+	salt := hex.EncodeToString(saltBytes)
+	var digest []byte
+	if hmacKey != "" {
+		alg, keyPart := "sha512", hmacKey
+		if a, k, ok := strings.Cut(hmacKey, ":"); ok {
+			alg, keyPart = a, k
+		}
+		if alg != "sha512" {
+			return "", fmt.Errorf("HashWeb2pyPassword: unsupported hmac algorithm %q", alg)
+		}
+		digest = toHMACSHA512([]byte(keyPart+salt), []byte(password))
+	} else {
+		digest = toSHA512([]byte(password + salt))
+	}
+	return "sha512$" + salt + "$" + hex.EncodeToString(digest), nil
 }

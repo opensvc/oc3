@@ -9,9 +9,13 @@ import (
 	"github.com/opensvc/oc3/schema"
 )
 
-func buildServicesInstancesQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
+func buildServicesInstancesQuery(groups []string, isManager bool, selectExprs []string, filters []ColumnFilter) (string, []any, error) {
+	// services is an inner join: the access check filters on services.svc_app.
+	// nodes is a left join so that "nodes.*" props can be selected without dropping
+	// an instance whose node row is missing.
 	q := From(schema.TSvcmon).
 		Via(schema.TServices).
+		LeftJoin(schema.TNodes).
 		RawSelect(selectExprs...)
 
 	if !isManager {
@@ -37,6 +41,9 @@ func buildServicesInstancesQuery(groups []string, isManager bool, selectExprs []
 		q = q.Where(schema.SvcmonID, ">", 0)
 	}
 
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(filters)
+
 	query, args, err := q.Build()
 	if err != nil {
 		return "", nil, fmt.Errorf("buildServicesInstancesQuery: %w", err)
@@ -45,7 +52,7 @@ func buildServicesInstancesQuery(groups []string, isManager bool, selectExprs []
 }
 
 func (oDb *DB) GetServicesInstances(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildServicesInstancesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildServicesInstancesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +73,7 @@ func (oDb *DB) GetServicesInstances(ctx context.Context, p ListParams) ([]map[st
 
 // GetServiceNodeInstance fetches the service instance on a specific node.
 func (oDb *DB) GetServiceNodeInstance(ctx context.Context, svcID, nodeID string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildServicesInstancesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildServicesInstancesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +92,7 @@ func (oDb *DB) GetServiceNodeInstance(ctx context.Context, svcID, nodeID string,
 
 // GetNodeServices fetches all service instances on a specific node.
 func (oDb *DB) GetNodeServices(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildServicesInstancesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildServicesInstancesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +139,7 @@ func (oDb *DB) DeleteServiceInstanceCascade(ctx context.Context, svcID, nodeID s
 
 // GetServicesInstance fetches all instances of a single service by svc_id (UUID) or svcname.
 func (oDb *DB) GetServicesInstance(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildServicesInstancesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildServicesInstancesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}

@@ -84,10 +84,10 @@ func (a *Api) deleteTagCascade(c echo.Context, log *slog.Logger, ctx context.Con
 
 func requireTagManager(c echo.Context) error {
 	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
+		return denyRequest(c, http.StatusUnauthorized, "user authentication required")
 	}
 	if !IsTagManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "TagManager privilege required")
+		return denyRequest(c, http.StatusForbidden, "TagManager privilege required")
 	}
 	return nil
 }

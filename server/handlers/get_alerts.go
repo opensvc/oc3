@@ -67,7 +67,7 @@ func (a *Api) handleAlerts(
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot build select clause")
 	}
 
-	items, err := fetch(c.Request().Context(), cdb.ListParams{
+	dbParams := cdb.ListParams{
 		Groups:      UserGroupsFromContext(c),
 		IsManager:   IsManager(c),
 		Limit:       query.Page.Limit,
@@ -77,7 +77,8 @@ func (a *Api) handleAlerts(
 		TypeHints:   buildTypeHints(fetchProps, mapping),
 		OrderBy:     query.OrderBy,
 		GroupBy:     query.GroupBy,
-	})
+	}
+	items, err := fetch(c.Request().Context(), dbParams)
 	if err != nil {
 		log.Error("cannot fetch alerts", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get alerts")
@@ -91,5 +92,9 @@ func (a *Api) handleAlerts(
 		return JSONProblemf(c, http.StatusNotFound, "alert %s not found", itemVal)
 	}
 
-	return c.JSON(http.StatusOK, newListResponse(items, mapping, query))
+	response := newListResponse(items, mapping, query)
+	if !isItem && query.WithMeta && !query.WithStats {
+		response = response.withTotal(listTotal(c.Request().Context(), log, fetch, dbParams, len(items)))
+	}
+	return c.JSON(http.StatusOK, response)
 }

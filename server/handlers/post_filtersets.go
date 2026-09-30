@@ -3,7 +3,9 @@ package serverhandlers
 import (
 	"context"
 	"net/http"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 
@@ -30,9 +32,13 @@ func (a *Api) PostFiltersets(c echo.Context) error {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
 
+	if body.FsetStats != nil && !slices.Contains(filtersetStatsValues, string(*body.FsetStats)) {
+		return JSONProblemf(c, http.StatusBadRequest, "fset_stats must be one of %s", strings.Join(filtersetStatsValues, ", "))
+	}
+
 	if body.Id != nil && *body.Id != "" {
 		log.Info("called", "filterset_id", *body.Id)
-		return a.postFiltersetUpdate(c, log, ctx, *body.Id, nil, body.FsetStats)
+		return a.postFiltersetUpdate(c, log, ctx, *body.Id, nil, stringPtr(body.FsetStats))
 	}
 
 	if body.FsetName == nil || *body.FsetName == "" {
@@ -48,12 +54,12 @@ func (a *Api) PostFiltersets(c echo.Context) error {
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot check filterset existence")
 	}
 	if exists {
-		return a.postFiltersetUpdate(c, log, ctx, strconv.Itoa(existingID), nil, body.FsetStats)
+		return a.postFiltersetUpdate(c, log, ctx, strconv.Itoa(existingID), nil, stringPtr(body.FsetStats))
 	}
 
 	fsetStats := "F"
 	if body.FsetStats != nil {
-		fsetStats = *body.FsetStats
+		fsetStats = string(*body.FsetStats)
 	}
 
 	userEmail, _ := c.Get(XUserEmail).(string)

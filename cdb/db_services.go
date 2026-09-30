@@ -11,7 +11,7 @@ import (
 	"github.com/opensvc/oc3/schema"
 )
 
-func buildServicesQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
+func buildServicesQuery(groups []string, isManager bool, selectExprs []string, filters []ColumnFilter) (string, []any, error) {
 	q := From(schema.TServices).
 		RawSelect(selectExprs...)
 
@@ -38,6 +38,9 @@ func buildServicesQuery(groups []string, isManager bool, selectExprs []string) (
 		q = q.Where(schema.ServicesID, ">", 0)
 	}
 
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(filters)
+
 	query, args, err := q.Build()
 	if err != nil {
 		return "", nil, fmt.Errorf("buildServicesQuery: %w", err)
@@ -46,7 +49,7 @@ func buildServicesQuery(groups []string, isManager bool, selectExprs []string) (
 }
 
 func (oDb *DB) GetServices(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +70,7 @@ func (oDb *DB) GetServices(ctx context.Context, p ListParams) ([]map[string]any,
 
 // GetServicesByIDs fetches services whose svc_id is in the given list.
 func (oDb *DB) GetServicesByIDs(ctx context.Context, ids []string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +99,7 @@ func (oDb *DB) GetServicesByIDs(ctx context.Context, ids []string, p ListParams)
 
 // GetService fetches a single service by svc_id (UUID) or svcname.
 func (oDb *DB) GetService(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}

@@ -21,6 +21,15 @@ type Tag struct {
 }
 
 // GetTags returns all tags with id > 0, or a specific tag if tagID is provided
+// CountTags returns the number of tags, for the total of the paginated tag list.
+func (oDb *DB) CountTags(ctx context.Context) (int, error) {
+	var n int
+	if err := oDb.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM tags WHERE id > 0").Scan(&n); err != nil {
+		return 0, fmt.Errorf("countTags: %w", err)
+	}
+	return n, nil
+}
+
 func (oDb *DB) GetTags(ctx context.Context, tagID *int, limit, offset int) ([]Tag, error) {
 	query := `
 		SELECT id, tag_name, tag_created, tag_exclude, tag_data, tag_id
@@ -318,7 +327,7 @@ func (oDb *DB) DetachServiceTag(ctx context.Context, svcID, tagID string) (int64
 
 // GetTagNodes returns nodes where a tag (by integer id) is attached, with app-based auth.
 func (oDb *DB) GetTagNodes(ctx context.Context, tagID int, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildNodesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -486,7 +495,7 @@ func (oDb *DB) GetServiceCandidateTags(ctx context.Context, svcID string, p List
 
 // GetTagServices returns services where a tag (by integer id) is attached, with app-based auth.
 func (oDb *DB) GetTagServices(ctx context.Context, tagID int, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildServicesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package serverhandlers
 import (
 	"fmt"
 
+	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/schema"
 )
 
@@ -74,6 +75,20 @@ var propsMapping = map[string]propMapping{
 			"connect_to":    colStr(schema.ActionQueueConnectTo),
 			"node_id":       colStr(schema.ActionQueueNodeID),
 			"svc_id":        colStr(schema.ActionQueueSvcID),
+		},
+		// A queued action points at its node, and at its service when it has one, by
+		// id only: the names live in the joined tables, as for dashboard entries.
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
+		},
+	},
+	"cluster": {
+		Available: []string{"id", "cluster_id", "cluster_name"},
+		Props: map[string]propDef{
+			"id":           col(schema.ClustersID),
+			"cluster_id":   colStr(schema.ClustersClusterID),
+			"cluster_name": colStr(schema.ClustersClusterName),
 		},
 	},
 	"node": {
@@ -176,6 +191,11 @@ var propsMapping = map[string]propMapping{
 			"os_obs_alert_date":     colStr(schema.NodesOSObsAlertDate),
 			"updated":               colStr(schema.NodesUpdated),
 		},
+		// A node names its cluster by id only: the name lives in the joined table, as
+		// for the node and service names of an instance.
+		Joins: map[string]JoinDef{
+			"clusters": {MappingKey: "cluster"},
+		},
 	},
 	"disk": {
 		Available: []string{
@@ -231,6 +251,8 @@ var propsMapping = map[string]propMapping{
 			"app_id":        {SQLExpr: "COALESCE(app_id, 0) AS app_id", Kind: "int64"},
 		},
 	},
+	// Addresses of the nodes, read from the v_nodenetworks view. Each prop keeps
+	// its expression and names the view column it reads, for sorting and filtering.
 	"node_ip": {
 		Available: []string{
 			"id", "node_id", "nodename", "intf", "mac", "type", "addr", "mask", "updated", "flag_deprecated",
@@ -239,28 +261,28 @@ var propsMapping = map[string]propMapping{
 		},
 		Default: []string{"node_id", "intf", "addr", "mask", "net_name", "net_network", "net_netmask", "net_gateway"},
 		Props: map[string]propDef{
-			"id":                   {SQLExpr: "id", Kind: "int64"},
-			"node_id":              {SQLExpr: "COALESCE(node_id, '') AS node_id", Kind: "string"},
-			"nodename":             {SQLExpr: "COALESCE(nodename, '') AS nodename", Kind: "string"},
-			"intf":                 {SQLExpr: "COALESCE(intf, '') AS intf", Kind: "string"},
-			"mac":                  {SQLExpr: "COALESCE(mac, '') AS mac", Kind: "string"},
-			"type":                 {SQLExpr: "COALESCE(addr_type, '') AS type", Kind: "string"},
-			"addr":                 {SQLExpr: "COALESCE(addr, '') AS addr", Kind: "string"},
-			"mask":                 {SQLExpr: "COALESCE(mask, '') AS mask", Kind: "string"},
-			"updated":              {SQLExpr: "COALESCE(addr_updated, '') AS updated", Kind: "string"},
-			"flag_deprecated":      {SQLExpr: "COALESCE(flag_deprecated, 0) AS flag_deprecated", Kind: "int64"},
-			"net_id":               {SQLExpr: "net_id", Kind: "int64"},
-			"net_name":             {SQLExpr: "COALESCE(net_name, '') AS net_name", Kind: "string"},
-			"net_network":          {SQLExpr: "COALESCE(net_network, '') AS net_network", Kind: "string"},
-			"net_netmask":          {SQLExpr: "COALESCE(net_netmask, '') AS net_netmask", Kind: "string"},
-			"net_broadcast":        {SQLExpr: "COALESCE(net_broadcast, '') AS net_broadcast", Kind: "string"},
-			"net_gateway":          {SQLExpr: "COALESCE(net_gateway, '') AS net_gateway", Kind: "string"},
-			"net_begin":            {SQLExpr: "COALESCE(net_begin, '') AS net_begin", Kind: "string"},
-			"net_end":              {SQLExpr: "COALESCE(net_end, '') AS net_end", Kind: "string"},
-			"net_pvid":             {SQLExpr: "COALESCE(net_pvid, '') AS net_pvid", Kind: "string"},
-			"net_prio":             {SQLExpr: "COALESCE(net_prio, 0) AS net_prio", Kind: "int64"},
-			"net_comment":          {SQLExpr: "COALESCE(net_comment, '') AS net_comment", Kind: "string"},
-			"net_team_responsible": {SQLExpr: "COALESCE(net_team_responsible, '') AS net_team_responsible", Kind: "string"},
+			"id":                   {Col: cdb.NodeNetworksCol("id"), SQLExpr: "id", Kind: "int64"},
+			"node_id":              {Col: cdb.NodeNetworksCol("node_id"), SQLExpr: "COALESCE(node_id, '') AS node_id", Kind: "string"},
+			"nodename":             {Col: cdb.NodeNetworksCol("nodename"), SQLExpr: "COALESCE(nodename, '') AS nodename", Kind: "string"},
+			"intf":                 {Col: cdb.NodeNetworksCol("intf"), SQLExpr: "COALESCE(intf, '') AS intf", Kind: "string"},
+			"mac":                  {Col: cdb.NodeNetworksCol("mac"), SQLExpr: "COALESCE(mac, '') AS mac", Kind: "string"},
+			"type":                 {Col: cdb.NodeNetworksCol("addr_type"), SQLExpr: "COALESCE(addr_type, '') AS type", Kind: "string"},
+			"addr":                 {Col: cdb.NodeNetworksCol("addr"), SQLExpr: "COALESCE(addr, '') AS addr", Kind: "string"},
+			"mask":                 {Col: cdb.NodeNetworksCol("mask"), SQLExpr: "COALESCE(mask, '') AS mask", Kind: "string"},
+			"updated":              {Col: cdb.NodeNetworksCol("addr_updated"), SQLExpr: "COALESCE(addr_updated, '') AS updated", Kind: "string"},
+			"flag_deprecated":      {Col: cdb.NodeNetworksCol("flag_deprecated"), SQLExpr: "COALESCE(flag_deprecated, 0) AS flag_deprecated", Kind: "int64"},
+			"net_id":               {Col: cdb.NodeNetworksCol("net_id"), SQLExpr: "net_id", Kind: "int64"},
+			"net_name":             {Col: cdb.NodeNetworksCol("net_name"), SQLExpr: "COALESCE(net_name, '') AS net_name", Kind: "string"},
+			"net_network":          {Col: cdb.NodeNetworksCol("net_network"), SQLExpr: "COALESCE(net_network, '') AS net_network", Kind: "string"},
+			"net_netmask":          {Col: cdb.NodeNetworksCol("net_netmask"), SQLExpr: "COALESCE(net_netmask, '') AS net_netmask", Kind: "string"},
+			"net_broadcast":        {Col: cdb.NodeNetworksCol("net_broadcast"), SQLExpr: "COALESCE(net_broadcast, '') AS net_broadcast", Kind: "string"},
+			"net_gateway":          {Col: cdb.NodeNetworksCol("net_gateway"), SQLExpr: "COALESCE(net_gateway, '') AS net_gateway", Kind: "string"},
+			"net_begin":            {Col: cdb.NodeNetworksCol("net_begin"), SQLExpr: "COALESCE(net_begin, '') AS net_begin", Kind: "string"},
+			"net_end":              {Col: cdb.NodeNetworksCol("net_end"), SQLExpr: "COALESCE(net_end, '') AS net_end", Kind: "string"},
+			"net_pvid":             {Col: cdb.NodeNetworksCol("net_pvid"), SQLExpr: "COALESCE(net_pvid, '') AS net_pvid", Kind: "string"},
+			"net_prio":             {Col: cdb.NodeNetworksCol("prio"), SQLExpr: "COALESCE(prio, 0) AS net_prio", Kind: "int64"},
+			"net_comment":          {Col: cdb.NodeNetworksCol("net_comment"), SQLExpr: "COALESCE(net_comment, '') AS net_comment", Kind: "string"},
+			"net_team_responsible": {Col: cdb.NodeNetworksCol("net_team_responsible"), SQLExpr: "COALESCE(net_team_responsible, '') AS net_team_responsible", Kind: "string"},
 		},
 	},
 	"node_interface": {
@@ -296,6 +318,11 @@ var propsMapping = map[string]propMapping{
 			"hw_description": colStr(schema.NodeHWHWDescription),
 			"hw_driver":      colStr(schema.NodeHWHWDriver),
 			"updated":        colStr(schema.NodeHWUpdated),
+		},
+		// A component carries only the node id: its name lives in the joined nodes
+		// table, as in the historical nodes hardware table.
+		Joins: map[string]JoinDef{
+			"nodes": {MappingKey: "node"},
 		},
 	},
 	"hba": {
@@ -361,6 +388,99 @@ var propsMapping = map[string]propMapping{
 			"role":        colStr(schema.AuthGroupRole),
 			"privilege":   colStr(schema.AuthGroupPrivilege),
 			"description": colStr(schema.AuthGroupDescription),
+		},
+	},
+	// Forms, as the historical collector lists them: form_definition is not a
+	// column but form_yaml parsed, computed by the forms handlers.
+	"form": {
+		Available: []string{
+			"id", "form_name", "form_yaml", "form_author", "form_created",
+			"form_type", "form_folder", "form_definition",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.FormsID),
+			"form_name":    colStr(schema.FormsFormName),
+			"form_yaml":    colStr(schema.FormsFormYaml),
+			"form_author":  colStr(schema.FormsFormAuthor),
+			"form_created": colStr(schema.FormsFormCreated),
+			"form_type":    colStr(schema.FormsFormType),
+			"form_folder":  colStr(schema.FormsFormFolder),
+		},
+	},
+	// Form revisions: the definition of a form as submitted, kept by md5.
+	"form_revision": {
+		Available: []string{
+			"id", "form_yaml", "form_md5", "form_date", "form_id",
+			"form_folder", "form_name", "form_definition",
+		},
+		Props: map[string]propDef{
+			"id":          col(schema.FormsRevisionsID),
+			"form_yaml":   colStr(schema.FormsRevisionsFormYaml),
+			"form_md5":    colStr(schema.FormsRevisionsFormMD5),
+			"form_date":   colStr(schema.FormsRevisionsFormDate),
+			"form_id":     col(schema.FormsRevisionsFormID),
+			"form_folder": colStr(schema.FormsRevisionsFormFolder),
+			"form_name":   colStr(schema.FormsRevisionsFormName),
+		},
+	},
+	// Forms stored by workflows, joined to the revision they were submitted with,
+	// as the historical collector's v_forms_store view does: the revision columns
+	// keep their own name, flat.
+	"form_store": {
+		Available: []string{
+			"id", "results_id", "form_submitter", "form_submit_date", "form_data",
+			"form_next_id", "form_prev_id", "form_assignee", "form_head_id",
+			"form_md5", "form_var_id", "form_yaml", "form_date", "form_id",
+			"form_folder", "form_name", "form_definition",
+		},
+		Props: map[string]propDef{
+			"id":               col(schema.FormsStoreID),
+			"results_id":       col(schema.FormsStoreResultsID),
+			"form_submitter":   colStr(schema.FormsStoreFormSubmitter),
+			"form_submit_date": colStr(schema.FormsStoreFormSubmitDate),
+			"form_data":        colStr(schema.FormsStoreFormData),
+			"form_next_id":     col(schema.FormsStoreFormNextID),
+			"form_prev_id":     col(schema.FormsStoreFormPrevID),
+			"form_assignee":    colStr(schema.FormsStoreFormAssignee),
+			"form_head_id":     col(schema.FormsStoreFormHeadID),
+			"form_md5":         colStr(schema.FormsStoreFormMD5),
+			"form_var_id":      col(schema.FormsStoreFormVarID),
+			"form_yaml":        colStr(schema.FormsRevisionsFormYaml),
+			"form_date":        colStr(schema.FormsRevisionsFormDate),
+			"form_id":          col(schema.FormsRevisionsFormID),
+			"form_folder":      colStr(schema.FormsRevisionsFormFolder),
+			"form_name":        colStr(schema.FormsRevisionsFormName),
+		},
+	},
+	// Workflows chaining stored forms: the requests. form_name, form_folder and
+	// form_yaml are those of the form revision the request started from, joined
+	// by form_md5 as in the historical workflows table; they are not among the
+	// default props, which stay those of the workflows table (the /dump output).
+	"workflow": {
+		Available: []string{
+			"id", "form_head_id", "status", "steps", "creator", "create_date",
+			"last_assignee", "last_update", "form_md5", "last_form_id", "last_form_name",
+			"form_name", "form_folder", "form_yaml",
+		},
+		Default: []string{
+			"id", "form_head_id", "status", "steps", "creator", "create_date",
+			"last_assignee", "last_update", "form_md5", "last_form_id", "last_form_name",
+		},
+		Props: map[string]propDef{
+			"id":             col(schema.WorkflowsID),
+			"form_head_id":   col(schema.WorkflowsFormHeadID),
+			"status":         colStr(schema.WorkflowsStatus),
+			"steps":          col(schema.WorkflowsSteps),
+			"creator":        colStr(schema.WorkflowsCreator),
+			"create_date":    colStr(schema.WorkflowsCreateDate),
+			"last_assignee":  colStr(schema.WorkflowsLastAssignee),
+			"last_update":    colStr(schema.WorkflowsLastUpdate),
+			"form_md5":       colStr(schema.WorkflowsFormMD5),
+			"last_form_id":   col(schema.WorkflowsLastFormID),
+			"last_form_name": colStr(schema.WorkflowsLastFormName),
+			"form_name":      colStr(schema.FormsRevisionsFormName),
+			"form_folder":    colStr(schema.FormsRevisionsFormFolder),
+			"form_yaml":      colStr(schema.FormsRevisionsFormYaml),
 		},
 	},
 	"user": {
@@ -526,6 +646,45 @@ var propsMapping = map[string]propMapping{
 			"mon_updated":            colStr(schema.SvcmonMonUpdated),
 			"mon_changed":            colStr(schema.SvcmonMonChanged),
 		},
+		// An instance row carries only the service and node ids: the names live in
+		// the joined tables, as in the historical collector's svcmon table.
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
+		},
+	},
+	// Packages installed on the nodes, as the historical packages table lists them.
+	// sig_provider names the provider of the signing key, from pkg_sig_provider;
+	// it is empty when the signature is unknown.
+	"package": {
+		Available: []string{
+			"id", "node_id",
+			"pkg_name", "pkg_version", "pkg_arch", "pkg_type",
+			"pkg_sig", "sig_provider",
+			"pkg_install_date", "pkg_updated",
+		},
+		Default: []string{
+			"id", "node_id",
+			"pkg_name", "pkg_version", "pkg_arch", "pkg_type",
+			"sig_provider", "pkg_install_date", "pkg_updated",
+		},
+		Props: map[string]propDef{
+			"id":               col(schema.PackagesID),
+			"node_id":          colStr(schema.PackagesNodeID),
+			"pkg_name":         colStr(schema.PackagesPkgName),
+			"pkg_version":      colStr(schema.PackagesPkgVersion),
+			"pkg_arch":         colStr(schema.PackagesPkgArch),
+			"pkg_type":         colStr(schema.PackagesPkgType),
+			"pkg_sig":          colStr(schema.PackagesPkgSig),
+			"sig_provider":     colStr(schema.PkgSigProviderSigProvider),
+			"pkg_install_date": colStr(schema.PackagesPkgInstallDate),
+			"pkg_updated":      colStr(schema.PackagesPkgUpdated),
+		},
+		// A package row carries only the node id: its name and properties live in
+		// the joined nodes table.
+		Joins: map[string]JoinDef{
+			"nodes": {MappingKey: "node"},
+		},
 	},
 	"instance_status_log": {
 		Available: []string{
@@ -601,6 +760,108 @@ var propsMapping = map[string]propMapping{
 			"ruleset_public": colStr(schema.CompRulesetsRulesetPublic),
 		},
 	},
+	// Modules of a compliance moduleset: the agent modules it runs.
+	"moduleset_module": {
+		Available: []string{"id", "modset_id", "modset_mod_name", "autofix", "modset_mod_author", "modset_mod_updated"},
+		Props: map[string]propDef{
+			"id":                 col(schema.CompModulesetModulesID),
+			"modset_id":          colInt(schema.CompModulesetModulesModsetID),
+			"modset_mod_name":    colStr(schema.CompModulesetModulesModsetModName),
+			"autofix":            colStr(schema.CompModulesetModulesAutofix),
+			"modset_mod_author":  colStr(schema.CompModulesetModulesModsetModAuthor),
+			"modset_mod_updated": colStr(schema.CompModulesetModulesModsetModUpdated),
+		},
+	},
+	// Modules of every moduleset, as the historical v_comp_modulesets view: a
+	// moduleset without module has a row with a zero id and empty module props.
+	"modulesets_module": {
+		Available: []string{
+			"id", "modset_id", "modset_name", "teams_responsible", "teams_publication",
+			"modset_mod_name", "autofix", "modset_mod_updated", "modset_mod_author",
+			"modset_author", "modset_updated",
+		},
+		Props: map[string]propDef{
+			"id":                 colInt(schema.CompModulesetModulesID),
+			"modset_id":          col(schema.CompModulesetID),
+			"modset_name":        colStr(schema.CompModulesetModsetName),
+			"modset_author":      colStr(schema.CompModulesetModsetAuthor),
+			"modset_updated":     colStr(schema.CompModulesetModsetUpdated),
+			"modset_mod_name":    colStr(schema.CompModulesetModulesModsetModName),
+			"autofix":            colStr(schema.CompModulesetModulesAutofix),
+			"modset_mod_author":  colStr(schema.CompModulesetModulesModsetModAuthor),
+			"modset_mod_updated": colStr(schema.CompModulesetModulesModsetModUpdated),
+			"teams_responsible":  colStr(cdb.ModsetResponsibles),
+			"teams_publication":  colStr(cdb.ModsetPublications),
+		},
+	},
+	// Declared networks. begin, end and broadcast are generated by the database
+	// from network and netmask.
+	"network": {
+		Available: []string{
+			"id", "name", "network", "netmask", "broadcast", "gateway", "begin", "end",
+			"pvid", "prio", "team_responsible", "comment", "updated",
+		},
+		Props: map[string]propDef{
+			"id":               colInt(schema.NetworksID),
+			"name":             colStr(schema.NetworksName),
+			"network":          colStr(schema.NetworksNetwork),
+			"netmask":          colInt(schema.NetworksNetmask),
+			"broadcast":        colStr(schema.NetworksBroadcast),
+			"gateway":          colStr(schema.NetworksGateway),
+			"begin":            colStr(schema.NetworksBegin),
+			"end":              colStr(schema.NetworksEnd),
+			"pvid":             colInt(schema.NetworksPvid),
+			"prio":             colInt(schema.NetworksPrio),
+			"team_responsible": colStr(schema.NetworksTeamResponsible),
+			"comment":          colStr(schema.NetworksComment),
+			"updated":          colStr(schema.NetworksUpdated),
+		},
+	},
+	// Variables of every ruleset, as the historical v_comp_rulesets view: a
+	// ruleset lists its own variables, then those of each ruleset it
+	// encapsulates; a ruleset of the chain without variable has a row with a zero
+	// id and empty variable props.
+	"rulesets_variable": {
+		Available: []string{
+			"id", "ruleset_id", "ruleset_name", "ruleset_type", "ruleset_public",
+			"teams_responsible", "teams_publication", "fset_name", "chain", "chain_len",
+			"encap_rset", "var_class", "var_name", "var_value", "var_updated", "var_author",
+			"encap_rset_id", "fset_id",
+		},
+		Props: map[string]propDef{
+			"id":                colInt(schema.CompRulesetsVariablesID),
+			"ruleset_id":        col(schema.CompRulesetsID),
+			"ruleset_name":      colStr(schema.CompRulesetsRulesetName),
+			"ruleset_type":      colStr(schema.CompRulesetsRulesetType),
+			"ruleset_public":    colStr(schema.CompRulesetsRulesetPublic),
+			"teams_responsible": colStr(cdb.RsetResponsibles),
+			"teams_publication": colStr(cdb.RsetPublications),
+			"fset_name":         colStr(schema.GenFiltersetsFsetName),
+			"chain":             colStr(cdb.RsetChainsChain),
+			"chain_len":         colInt(cdb.RsetChainsLen),
+			"encap_rset":        colStr(cdb.RsetChainsEncap),
+			"var_class":         colStr(schema.CompRulesetsVariablesVarClass),
+			"var_name":          colStr(schema.CompRulesetsVariablesVarName),
+			"var_value":         colStr(schema.CompRulesetsVariablesVarValue),
+			"var_updated":       colStr(schema.CompRulesetsVariablesVarUpdated),
+			"var_author":        colStr(schema.CompRulesetsVariablesVarAuthor),
+			"encap_rset_id":     colInt(cdb.RsetChainsEncapID),
+			"fset_id":           colInt(schema.CompRulesetsFiltersetsFsetID),
+		},
+	},
+	// Variables of a compliance ruleset: the rules the modules apply.
+	"ruleset_variable": {
+		Available: []string{"id", "ruleset_id", "var_name", "var_class", "var_value", "var_author", "var_updated"},
+		Props: map[string]propDef{
+			"id":          col(schema.CompRulesetsVariablesID),
+			"ruleset_id":  colInt(schema.CompRulesetsVariablesRulesetID),
+			"var_name":    colStr(schema.CompRulesetsVariablesVarName),
+			"var_class":   colStr(schema.CompRulesetsVariablesVarClass),
+			"var_value":   colStr(schema.CompRulesetsVariablesVarValue),
+			"var_author":  colStr(schema.CompRulesetsVariablesVarAuthor),
+			"var_updated": colStr(schema.CompRulesetsVariablesVarUpdated),
+		},
+	},
 	"alert_event": {
 		Available: []string{"id", "svc_id", "node_id", "dash_begin", "dash_end", "dash_md5"},
 		Props: map[string]propDef{
@@ -641,6 +902,12 @@ var propsMapping = map[string]propMapping{
 			"dash_dict_md5": colStr(schema.DashboardDashDictMD5),
 			"dash_env":      colStr(schema.DashboardDashEnv),
 			"dash_instance": colStr(schema.DashboardDashInstance),
+		},
+		// A dashboard entry points at a node or a service by id only. The names live
+		// in the joined tables, as in the historical collector's own alert query.
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
 		},
 	},
 	"check": {
@@ -816,6 +1083,12 @@ var propsMapping = map[string]propMapping{
 			"node_id":    colStr(schema.CompLogNodeID),
 			"svc_id":     colStr(schema.CompLogSvcID),
 		},
+		// A run points at its node, and at its service when it has one, by id
+		// only: the names live in the joined tables.
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
+		},
 	},
 	"log_event": {
 		Available: []string{
@@ -840,6 +1113,12 @@ var propsMapping = map[string]propMapping{
 			"log_entry_id":   colInt(schema.LogLogEntryID),
 			"log_gtalk_sent": colInt(schema.LogLogGtalkSent),
 			"log_email_sent": colInt(schema.LogLogEmailSent),
+		},
+		// A log event names its node and service by id only: the names come from the
+		// joined tables, as in the historical collector's log table.
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
 		},
 	},
 }

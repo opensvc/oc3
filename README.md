@@ -76,6 +76,7 @@ worker.fast:
     - "instance_action"
     - "node_disk"
     - "object_config"
+    - "san_switch"
     - "system"
 ```
 

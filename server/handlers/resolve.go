@@ -15,6 +15,21 @@ import (
 	"github.com/opensvc/oc3/xauth"
 )
 
+// authUserID returns the authenticated user's auth_user.id, or nil when the
+// request is not authenticated as a user (node credentials, public path) or the
+// id does not parse.
+func authUserID(c echo.Context) *int64 {
+	user := UserInfoFromContext(c)
+	if user == nil {
+		return nil
+	}
+	id, err := strconv.ParseInt(user.GetExtensions().Get(xauth.XUserID), 10, 64)
+	if err != nil {
+		return nil
+	}
+	return &id
+}
+
 // resolveUserGroupIDs returns the group ids the authenticated user belongs to.
 func (a *Api) resolveUserGroupIDs(c echo.Context, log *slog.Logger) ([]int64, error) {
 	ctx := c.Request().Context()
@@ -51,31 +66,38 @@ func (a *Api) resolveNode(c echo.Context, log *slog.Logger, nodeId string) (*cdb
 // resolveServiceRow resolves a service by svc_id or name
 func (a *Api) resolveServiceRow(c echo.Context, log *slog.Logger, ctx context.Context, svcId string) (*cdb.DBService, error) {
 	if svcId == "" {
-		return nil, JSONProblemf(c, http.StatusBadRequest, "invalid svc_id: ''")
+		return nil, denyRequest(c, http.StatusBadRequest, "invalid svc_id: ''")
 	}
 	svc, err := a.ODB.ServiceBySvcIDOrName(ctx, svcId)
 	if err != nil {
 		log.Error("cannot resolve service", "svc_id", svcId, logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot resolve service %s", svcId)
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot resolve service %s", svcId)
 	}
 	if svc == nil {
-		return nil, JSONProblemf(c, http.StatusNotFound, "service %s not found", svcId)
+		return nil, denyRequest(c, http.StatusNotFound, "service %s not found", svcId)
 	}
 	return svc, nil
 }
 
-// resolveService verifies that a service exists and is accessible
+// resolveService verifies that a service exists and is accessible. On failure the
+// problem response is written and a non-nil error returned, so that the caller
+// stops: JSONProblemf alone returns nil once the response is written.
 func (a *Api) resolveService(c echo.Context, log *slog.Logger, svcId string) error {
 	ctx := c.Request().Context()
 	groups := UserGroupsFromContext(c)
 	isManager := IsManager(c)
-	svcs, err := a.ODB.GetService(ctx, svcId, cdb.ListParams{Limit: 1, Groups: groups, IsManager: isManager})
+	// The query builder refuses a query without selected columns: only existence
+	// matters here, the id is enough.
+	svcs, err := a.ODB.GetService(ctx, svcId, cdb.ListParams{
+		Limit: 1, Groups: groups, IsManager: isManager,
+		SelectExprs: []string{"services.svc_id"}, Props: []string{"svc_id"},
+	})
 	if err != nil {
 		log.Error("cannot resolve service", "svc_id", svcId, logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot resolve service")
+		return denyRequest(c, http.StatusInternalServerError, "cannot resolve service")
 	}
 	if len(svcs) == 0 {
-		return JSONProblemf(c, http.StatusNotFound, "service %s not found", svcId)
+		return denyRequest(c, http.StatusNotFound, "service %s not found", svcId)
 	}
 	return nil
 }
