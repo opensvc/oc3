@@ -40,5 +40,8 @@ func (a *Api) GetNodeActionQueued(c echo.Context) error {
 		log.Error("set action sent", logkey.Error, err)
 		return JSONError(c)
 	}
+	if len(ids) > 0 {
+		a.notifyChanges(c)
+	}
 	return c.JSON(200, feeder.QueuedActions{Actions: actions})
 }

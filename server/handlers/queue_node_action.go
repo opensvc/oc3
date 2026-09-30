@@ -158,6 +158,10 @@ func (a *Api) queueNodeAction(c echo.Context, log *slog.Logger, ctx context.Cont
 	}
 
 	log.Info("action queued", logkey.NodeID, node.NodeID, "action", action, "action_id", id)
+	// Announced at once: the action queue views follow it live.
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		log.Debug("cannot notify changes", logkey.Error, err)
+	}
 
 	userEmail, _ := c.Get(XUserEmail).(string)
 	logEntry := cdb.LogEntry{

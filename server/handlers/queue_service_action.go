@@ -100,6 +100,10 @@ func (a *Api) enqueueServiceCommand(
 	}
 
 	log.Info("action queued", "svc_id", svc.SvcID, logkey.NodeID, target.NodeID, "action", action, "rid", rid, "action_id", id)
+	// Announced at once: the action queue views follow it live.
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		log.Debug("cannot notify changes", logkey.Error, err)
+	}
 
 	userEmail, _ := c.Get(XUserEmail).(string)
 	logEntry := cdb.LogEntry{
