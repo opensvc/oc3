@@ -225,6 +225,12 @@ func (a *Api) GetNodeSysreportChange(c echo.Context, nodeId string, cid string) 
 	if err != nil {
 		return sysreportProblem(c, "GetNodeSysreportChange", err, cid)
 	}
+	return c.JSON(http.StatusOK, map[string]any{"data": map[string]any{"cid": cid, "date": date, "files": sysreportDiffFiles(acc, diffs)}})
+}
+
+// sysreportDiffFiles presents the diffs of a change, the content of the
+// sensitive paths the caller may not read withheld.
+func sysreportDiffFiles(acc *sysreportAccess, diffs []git.SysreportFileDiff) []map[string]any {
 	files := []map[string]any{}
 	for _, d := range diffs {
 		file := sysreportFile(d.Path)
@@ -236,11 +242,52 @@ func (a *Api) GetNodeSysreportChange(c echo.Context, nodeId string, cid string) 
 		file["restricted"] = restricted
 		file["truncated"] = d.Truncated && !restricted
 		if !restricted {
-			file["diff"] = strings.ToValidUTF8(d.Diff, "�")
+			file["diff"] = strings.ToValidUTF8(d.Diff, "\uFFFD")
 		}
 		files = append(files, file)
 	}
-	return c.JSON(http.StatusOK, map[string]any{"data": map[string]any{"cid": cid, "date": date, "files": files}})
+	return files
+}
+
+// GetNodeSysreportTimediff handles GET /nodes/{node_id}/sysreport/timediff: what
+// changed in each file between two states of the node's sysreport, each given
+// as a date — the last report made at or before it — or as a revision. The end
+// defaults to the latest report. Sensitive paths are withheld as for a change.
+func (a *Api) GetNodeSysreportTimediff(c echo.Context, nodeId string, params server.GetNodeSysreportTimediffParams) error {
+	ctx := c.Request().Context()
+	acc, err := a.nodeSysreportAccess(c, ctx, "GetNodeSysreportTimediff", nodeId)
+	if acc == nil {
+		return err
+	}
+	repos := sysreportRepos()
+	end := ""
+	if params.End != nil {
+		end = strings.TrimSpace(*params.End)
+	}
+	points := make([]git.SysreportPoint, 2)
+	for i, spec := range []string{strings.TrimSpace(params.Begin), end} {
+		// A date holds the separators of a date or a time; a revision is a commit
+		// id or a ref.
+		isDate := sysreportDatePattern.MatchString(spec) && strings.ContainsAny(spec, "-:")
+		if spec != "" && !isDate && !git.ValidRev(spec) {
+			return JSONProblemf(c, http.StatusBadRequest, "begin and end must be a date or a revision, got %q", spec)
+		}
+		point, err := repos.At(nodeId, spec, isDate)
+		if err != nil {
+			return sysreportProblem(c, "GetNodeSysreportTimediff", err, spec)
+		}
+		points[i] = point
+	}
+	diffs, err := repos.Diff(nodeId, points[0], points[1])
+	if err != nil {
+		return sysreportProblem(c, "GetNodeSysreportTimediff", err, "")
+	}
+	point := func(p git.SysreportPoint) map[string]any {
+		return map[string]any{"cid": p.ID, "date": p.Date}
+	}
+	return c.JSON(http.StatusOK, map[string]any{"data": map[string]any{
+		"begin": point(points[0]), "end": point(points[1]), "files": sysreportDiffFiles(acc, diffs),
+	}})
 }
 
 // GetNodeSysreportTree handles GET /nodes/{node_id}/sysreport/{cid}/tree: the
@@ -305,7 +352,7 @@ func (a *Api) GetNodeSysreportFile(c echo.Context, nodeId string, cid string, oi
 	binary := bytes.IndexByte(content, 0) >= 0 || (!utf8.Valid(content) && !truncated)
 	file["binary"] = binary
 	if !binary {
-		file["content"] = strings.ToValidUTF8(string(content), "�")
+		file["content"] = strings.ToValidUTF8(string(content), "\uFFFD")
 	}
 	return c.JSON(http.StatusOK, map[string]any{"data": file})
 }

@@ -1926,6 +1926,24 @@ type SysreportFileStat struct {
 // SysreportFileStatKind defines model for SysreportFileStat.Kind.
 type SysreportFileStatKind string
 
+// SysreportPoint A state of the sysreport, the report it was left in; empty before the first report.
+type SysreportPoint struct {
+	Cid  string `json:"cid"`
+	Date string `json:"date"`
+}
+
+// SysreportTimediffResponse defines model for SysreportTimediffResponse.
+type SysreportTimediffResponse struct {
+	Data struct {
+		// Begin A state of the sysreport, the report it was left in; empty before the first report.
+		Begin SysreportPoint `json:"begin"`
+
+		// End A state of the sysreport, the report it was left in; empty before the first report.
+		End   SysreportPoint      `json:"end"`
+		Files []SysreportFileDiff `json:"files"`
+	} `json:"data"`
+}
+
 // SysreportTimelineResponse defines model for SysreportTimelineResponse.
 type SysreportTimelineResponse struct {
 	Data []SysreportChange `json:"data"`
@@ -5910,6 +5928,15 @@ type GetNodeSysreportParams struct {
 
 	// Offset Skip the first changes.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// GetNodeSysreportTimediffParams defines parameters for GetNodeSysreportTimediff.
+type GetNodeSysreportTimediffParams struct {
+	// Begin The state compared from, a date (2026-09-01T10:00:00Z) or a revision.
+	Begin string `form:"begin" json:"begin"`
+
+	// End The state compared to, a date or a revision; the latest report by default.
+	End *string `form:"end,omitempty" json:"end,omitempty"`
 }
 
 // GetNodeTagsParams defines parameters for GetNodeTags.

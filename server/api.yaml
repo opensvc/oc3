@@ -5887,6 +5887,57 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /nodes/{node_id}/sysreport/timediff:
+    get:
+      operationId: GetNodeSysreportTimediff
+      description: |
+        Show what changed in each file between two states of the node's sysreport, as
+        one unified diff per file. Each state is given as a date, which designates the
+        last report made at or before it, or as a revision of the timeline; the end
+        defaults to the latest report. A begin older than the first report compares
+        with nothing reported: every file is then added. Sensitive paths are withheld
+        as in a change.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID)
+          schema:
+            type: string
+        - in: query
+          name: begin
+          required: true
+          description: The state compared from, a date (2026-09-01T10:00:00Z) or a revision.
+          schema:
+            type: string
+        - in: query
+          name: end
+          description: The state compared to, a date or a revision; the latest report by default.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SysreportTimediffResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /nodes/{node_id}/sysreport/{cid}:
     get:
       operationId: GetNodeSysreportChange
@@ -14862,6 +14913,33 @@ components:
               type: string
             date:
               type: string
+            files:
+              type: array
+              items:
+                $ref: '#/components/schemas/SysreportFileDiff'
+
+    SysreportPoint:
+      type: object
+      description: A state of the sysreport, the report it was left in; empty before the first report.
+      required: [cid, date]
+      properties:
+        cid:
+          type: string
+        date:
+          type: string
+
+    SysreportTimediffResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [begin, end, files]
+          properties:
+            begin:
+              $ref: '#/components/schemas/SysreportPoint'
+            end:
+              $ref: '#/components/schemas/SysreportPoint'
             files:
               type: array
               items:

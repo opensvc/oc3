@@ -164,6 +164,65 @@ func (s Sysreport) Show(nodeID, rev string) (string, []SysreportFileDiff, error)
 	return strings.TrimSpace(date), parsePatch(patch), nil
 }
 
+// emptyTree is the object id git gives the tree holding nothing: what a node
+// reported before its first report.
+const emptyTree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
+// SysreportPoint is a state of the node's sysreport: the report it was left in.
+// ID and Date are empty for the state before the first report.
+type SysreportPoint struct {
+	ID   string
+	Date string
+}
+
+// At returns the state of the node's sysreport a revision or a date designates:
+// the revision itself, or the last report made at or before the date. An empty
+// spec is the latest report.
+func (s Sysreport) At(nodeID, spec string, isDate bool) (SysreportPoint, error) {
+	rev := spec
+	switch {
+	case spec == "":
+		rev = "HEAD"
+	case isDate:
+		out, err := s.git(nodeID, "rev-list", "-1", "--before="+spec, "HEAD")
+		if err != nil {
+			return SysreportPoint{}, err
+		}
+		rev = strings.TrimSpace(out)
+		if rev == "" {
+			// Nothing reported yet at that date.
+			return SysreportPoint{}, nil
+		}
+	case !ValidRev(spec):
+		return SysreportPoint{}, ErrNoRevision
+	}
+	out, err := s.git(nodeID, "show", "-s", "--format=%H%x09%cI", rev+"^{commit}")
+	if err != nil {
+		if errors.Is(err, ErrNoSysreport) {
+			return SysreportPoint{}, err
+		}
+		return SysreportPoint{}, ErrNoRevision
+	}
+	id, date, _ := strings.Cut(strings.TrimSpace(out), "\t")
+	return SysreportPoint{ID: id, Date: date}, nil
+}
+
+// Diff returns what changed in each file between two states of the node's
+// sysreport, as one unified diff per file.
+func (s Sysreport) Diff(nodeID string, from, to SysreportPoint) ([]SysreportFileDiff, error) {
+	tree := func(p SysreportPoint) string {
+		if p.ID == "" {
+			return emptyTree
+		}
+		return p.ID
+	}
+	out, err := s.git(nodeID, "diff", "--no-renames", "--no-color", "-U3", tree(from), tree(to))
+	if err != nil {
+		return nil, err
+	}
+	return parsePatch(out), nil
+}
+
 func parsePatch(patch string) []SysreportFileDiff {
 	var diffs []SysreportFileDiff
 	for _, block := range strings.Split("\n"+patch, "\ndiff --git ")[1:] {
