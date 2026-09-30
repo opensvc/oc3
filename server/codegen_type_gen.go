@@ -1835,6 +1835,48 @@ type ServiceRow struct {
 	Updated                 *string `json:"updated,omitempty"`
 }
 
+// SwitchPortListResponse defines model for SwitchPortListResponse.
+type SwitchPortListResponse struct {
+	Data SwitchPortListResponse_Data `json:"data"`
+	Meta *ListMeta                   `json:"meta,omitempty"`
+}
+
+// SwitchPortListResponseData0 defines model for .
+type SwitchPortListResponseData0 = []SwitchPortRow
+
+// SwitchPortListResponseData1 defines model for .
+type SwitchPortListResponseData1 map[string]map[string]int
+
+// SwitchPortListResponse_Data defines model for SwitchPortListResponse.Data.
+type SwitchPortListResponse_Data struct {
+	union json.RawMessage
+}
+
+// SwitchPortRow A port of a SAN switch. `sw_portname` is its own port name (WWPN),
+// `sw_rportname` the port plugged on its other end and `sw_rname` the name of
+// what owns that port: a node, a storage array or another switch; empty when
+// the collector does not know it. `node_id` is set when it is a node. The
+// numbers are null when the switch does not report them. Every property is
+// optional: the `props` query parameter selects which columns the server
+// returns.
+type SwitchPortRow struct {
+	Id          *int    `json:"id,omitempty"`
+	NodeId      *string `json:"node_id,omitempty"`
+	SwFabric    *string `json:"sw_fabric,omitempty"`
+	SwIndex     *int    `json:"sw_index,omitempty"`
+	SwName      *string `json:"sw_name,omitempty"`
+	SwPort      *int    `json:"sw_port,omitempty"`
+	SwPortname  *string `json:"sw_portname,omitempty"`
+	SwPortnego  *string `json:"sw_portnego,omitempty"`
+	SwPortspeed *int    `json:"sw_portspeed,omitempty"`
+	SwPortstate *string `json:"sw_portstate,omitempty"`
+	SwPorttype  *string `json:"sw_porttype,omitempty"`
+	SwRname     *string `json:"sw_rname,omitempty"`
+	SwRportname *string `json:"sw_rportname,omitempty"`
+	SwSlot      *int    `json:"sw_slot,omitempty"`
+	SwUpdated   *string `json:"sw_updated,omitempty"`
+}
+
 // SysreportChange A report that changed something.
 type SysreportChange struct {
 	Cid string `json:"cid"`
@@ -6222,6 +6264,49 @@ type GetPackagesDiffParams struct {
 	Encap *bool `form:"encap,omitempty" json:"encap,omitempty"`
 }
 
+// GetSanSwitchesParams defines parameters for GetSanSwitches.
+type GetSanSwitchesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
 // GetSearchParams defines parameters for GetSearch.
 type GetSearchParams struct {
 	// Q The text to search for.
@@ -9328,6 +9413,68 @@ func (t ServiceListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ServiceListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsSwitchPortListResponseData0 returns the union data inside the SwitchPortListResponse_Data as a SwitchPortListResponseData0
+func (t SwitchPortListResponse_Data) AsSwitchPortListResponseData0() (SwitchPortListResponseData0, error) {
+	var body SwitchPortListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSwitchPortListResponseData0 overwrites any union data inside the SwitchPortListResponse_Data as the provided SwitchPortListResponseData0
+func (t *SwitchPortListResponse_Data) FromSwitchPortListResponseData0(v SwitchPortListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSwitchPortListResponseData0 performs a merge with any union data inside the SwitchPortListResponse_Data, using the provided SwitchPortListResponseData0
+func (t *SwitchPortListResponse_Data) MergeSwitchPortListResponseData0(v SwitchPortListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSwitchPortListResponseData1 returns the union data inside the SwitchPortListResponse_Data as a SwitchPortListResponseData1
+func (t SwitchPortListResponse_Data) AsSwitchPortListResponseData1() (SwitchPortListResponseData1, error) {
+	var body SwitchPortListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSwitchPortListResponseData1 overwrites any union data inside the SwitchPortListResponse_Data as the provided SwitchPortListResponseData1
+func (t *SwitchPortListResponse_Data) FromSwitchPortListResponseData1(v SwitchPortListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSwitchPortListResponseData1 performs a merge with any union data inside the SwitchPortListResponse_Data, using the provided SwitchPortListResponseData1
+func (t *SwitchPortListResponse_Data) MergeSwitchPortListResponseData1(v SwitchPortListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SwitchPortListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *SwitchPortListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

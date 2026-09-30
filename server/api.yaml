@@ -4657,6 +4657,42 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /san-switches:
+    get:
+      operationId: GetSanSwitches
+      description: |
+        List the ports of the SAN switches: one row per port, with the port plugged
+        on its other end (`sw_rportname`) and the name of what owns that port
+        (`sw_rname`: a node, a storage array or another switch). Any authenticated
+        user sees every port.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwitchPortListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /search:
     get:
       operationId: GetSearch
@@ -14716,6 +14752,70 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/NodeHardwareRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    SwitchPortRow:
+      type: object
+      description: |
+        A port of a SAN switch. `sw_portname` is its own port name (WWPN),
+        `sw_rportname` the port plugged on its other end and `sw_rname` the name of
+        what owns that port: a node, a storage array or another switch; empty when
+        the collector does not know it. `node_id` is set when it is a node. The
+        numbers are null when the switch does not report them. Every property is
+        optional: the `props` query parameter selects which columns the server
+        returns.
+      properties:
+        id:
+          type: integer
+        sw_fabric:
+          type: string
+        sw_name:
+          type: string
+        sw_index:
+          type: integer
+          nullable: true
+        sw_slot:
+          type: integer
+          nullable: true
+        sw_port:
+          type: integer
+          nullable: true
+        sw_portspeed:
+          type: integer
+          nullable: true
+        sw_portnego:
+          type: string
+        sw_porttype:
+          type: string
+        sw_portstate:
+          type: string
+        sw_portname:
+          type: string
+        sw_rportname:
+          type: string
+        sw_rname:
+          type: string
+        node_id:
+          type: string
+        sw_updated:
+          type: string
+
+    SwitchPortListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/SwitchPortRow'
             - type: object
               additionalProperties:
                 type: object

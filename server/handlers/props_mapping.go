@@ -325,6 +325,34 @@ var propsMapping = map[string]propMapping{
 			"nodes": {MappingKey: "node"},
 		},
 	},
+	// The ports of the SAN switches, read from the v_switches view, which adds to the
+	// switches table what is plugged on the other end of each port: sw_rname, the
+	// name of a node, an array or another switch, and node_id when it is a node. The
+	// numbers stay null when the switch does not report them: slot 0 is a slot.
+	"switch": {
+		Available: []string{
+			"id", "sw_fabric", "sw_name", "sw_index", "sw_slot", "sw_port", "sw_portspeed",
+			"sw_portnego", "sw_porttype", "sw_portstate", "sw_portname", "sw_rportname",
+			"sw_rname", "node_id", "sw_updated",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.VSwitchesID),
+			"sw_fabric":    colStr(schema.VSwitchesSwFabric),
+			"sw_name":      colStr(schema.VSwitchesSwName),
+			"sw_index":     col(schema.VSwitchesSwIndex),
+			"sw_slot":      col(schema.VSwitchesSwSlot),
+			"sw_port":      col(schema.VSwitchesSwPort),
+			"sw_portspeed": col(schema.VSwitchesSwPortspeed),
+			"sw_portnego":  colStr(schema.VSwitchesSwPortnego),
+			"sw_porttype":  colStr(schema.VSwitchesSwPorttype),
+			"sw_portstate": colStr(schema.VSwitchesSwPortstate),
+			"sw_portname":  colStr(schema.VSwitchesSwPortname),
+			"sw_rportname": colStr(schema.VSwitchesSwRportname),
+			"sw_rname":     colStr(schema.VSwitchesSwRname),
+			"node_id":      colStr(schema.VSwitchesNodeID),
+			"sw_updated":   colStr(schema.VSwitchesSwUpdated),
+		},
+	},
 	"hba": {
 		Available: []string{"id", "node_id", "hba_id", "hba_type", "updated"},
 		Props: map[string]propDef{
