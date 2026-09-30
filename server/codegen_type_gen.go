@@ -50,6 +50,27 @@ func (e ObsolescenceSettingRowObsType) Valid() bool {
 	}
 }
 
+// Defines values for SanTopologyNodeKind.
+const (
+	Array  SanTopologyNodeKind = "array"
+	Server SanTopologyNodeKind = "server"
+	Switch SanTopologyNodeKind = "switch"
+)
+
+// Valid indicates whether the value is a known member of the SanTopologyNodeKind enum.
+func (e SanTopologyNodeKind) Valid() bool {
+	switch e {
+	case Array:
+		return true
+	case Server:
+		return true
+	case Switch:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SearchGroupKind.
 const (
 	App       SearchGroupKind = "app"
@@ -1742,6 +1763,50 @@ type RulesetsVariableRow struct {
 	VarName          *string `json:"var_name,omitempty"`
 	VarUpdated       *string `json:"var_updated,omitempty"`
 	VarValue         *string `json:"var_value,omitempty"`
+}
+
+// SanTopology defines model for SanTopology.
+type SanTopology struct {
+	Links []SanTopologyLink `json:"links"`
+	Nodes []SanTopologyNode `json:"nodes"`
+}
+
+// SanTopologyLink A link of a SAN wiring graph, from the device nearer to the node (`tail`) to
+// the one nearer to the arrays (`head`), each with the port it uses. `speeds`
+// holds the speed in Gb/s of each physical link: one, or one per member of a
+// trunk between two switches; 0 when the switch does not report it.
+type SanTopologyLink struct {
+	Head     string `json:"head"`
+	HeadPort string `json:"head_port"`
+	Speeds   []int  `json:"speeds"`
+	Tail     string `json:"tail"`
+	TailPort string `json:"tail_port"`
+}
+
+// SanTopologyNode A device of a SAN wiring graph. `rank` is its column from the node to the
+// arrays: 0 for the node, 1 for the switches its adapters are plugged in, one
+// more per inter-switch link followed, and the last one for the arrays.
+// `ports` are the ports the links of the graph use: adapter ports for the node,
+// target ports for an array, port indexes for a switch, several of them joined
+// by commas for the members of a trunk.
+type SanTopologyNode struct {
+	// Fabric Fabric of a switch.
+	Fabric *string             `json:"fabric,omitempty"`
+	Id     string              `json:"id"`
+	Kind   SanTopologyNodeKind `json:"kind"`
+
+	// Label Node name, switch name or array name; empty for an unknown array.
+	Label string   `json:"label"`
+	Ports []string `json:"ports"`
+	Rank  int      `json:"rank"`
+}
+
+// SanTopologyNodeKind defines model for SanTopologyNode.Kind.
+type SanTopologyNodeKind string
+
+// SanTopologyResponse defines model for SanTopologyResponse.
+type SanTopologyResponse struct {
+	Data SanTopology `json:"data"`
 }
 
 // SearchGroup The objects of one kind matching a search.

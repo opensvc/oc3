@@ -6152,6 +6152,42 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /nodes/{node_id}/san:
+    get:
+      operationId: GetNodeSan
+      description: |
+        The SAN wiring of a node, as a graph: the node and its host bus adapters, the
+        switches their ports are plugged in, the inter-switch links followed from
+        there, and the storage arrays owning the target ports zoned to the adapters.
+        A switch reached through an inter-switch link is kept only when it leads to
+        one of those target ports. The graph has no link for a node without a
+        fibre channel wiring known to the collector.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID or nodename)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SanTopologyResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /nodes/{node_id}/hbas:
     get:
       operationId: GetNodeHbas
@@ -14759,6 +14795,90 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    SanTopologyNode:
+      type: object
+      description: |
+        A device of a SAN wiring graph. `rank` is its column from the node to the
+        arrays: 0 for the node, 1 for the switches its adapters are plugged in, one
+        more per inter-switch link followed, and the last one for the arrays.
+        `ports` are the ports the links of the graph use: adapter ports for the node,
+        target ports for an array, port indexes for a switch, several of them joined
+        by commas for the members of a trunk.
+      required:
+        - id
+        - kind
+        - label
+        - rank
+        - ports
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [server, switch, array]
+        label:
+          type: string
+          description: Node name, switch name or array name; empty for an unknown array.
+        fabric:
+          type: string
+          description: Fabric of a switch.
+        rank:
+          type: integer
+        ports:
+          type: array
+          items:
+            type: string
+
+    SanTopologyLink:
+      type: object
+      description: |
+        A link of a SAN wiring graph, from the device nearer to the node (`tail`) to
+        the one nearer to the arrays (`head`), each with the port it uses. `speeds`
+        holds the speed in Gb/s of each physical link: one, or one per member of a
+        trunk between two switches; 0 when the switch does not report it.
+      required:
+        - tail
+        - tail_port
+        - head
+        - head_port
+        - speeds
+      properties:
+        tail:
+          type: string
+        tail_port:
+          type: string
+        head:
+          type: string
+        head_port:
+          type: string
+        speeds:
+          type: array
+          items:
+            type: integer
+
+    SanTopology:
+      type: object
+      required:
+        - nodes
+        - links
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SanTopologyNode'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/SanTopologyLink'
+
+    SanTopologyResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/SanTopology'
 
     SwitchPortRow:
       type: object
