@@ -5821,6 +5821,210 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /nodes/{node_id}/sysreport:
+    get:
+      operationId: GetNodeSysreport
+      description: |
+        List the changes of the files and command outputs the node reports
+        (sysreport), newest first, as the historical collector's timeline: one entry
+        per report that changed something, with the files it changed and their added
+        and deleted line counts. Requires responsibility for the node. A node that
+        never reported has no change.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID)
+          schema:
+            type: string
+        - in: query
+          name: path
+          description: Keep the files whose path or command line contains this text, and the changes touching one.
+          schema:
+            type: string
+        - in: query
+          name: begin
+          description: Keep the changes made since this date, for example 2026-09-01 or 2026-09-01T10:00:00.
+          schema:
+            type: string
+        - in: query
+          name: end
+          description: Keep the changes made until this date.
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: The maximum number of changes to return, 50 by default. 0 means no limit.
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: offset
+          description: Skip the first changes.
+          schema:
+            type: integer
+            minimum: 0
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SysreportTimelineResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/sysreport/{cid}:
+    get:
+      operationId: GetNodeSysreportChange
+      description: |
+        Show the change a report made to each file, as a unified diff starting at its
+        first hunk. The paths matching a secure pattern are sensitive: their diff is
+        given only to managers, to the node's responsible team and to the groups an
+        authorization names for the path and a filterset holding the node; for the
+        others the file is listed with `restricted` set and no diff. Without any secure
+        pattern every path is sensitive.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID)
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Revision of the sysreport, a commit id of the timeline or HEAD for the latest.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SysreportChangeResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/sysreport/{cid}/tree:
+    get:
+      operationId: GetNodeSysreportTree
+      description: |
+        List the files and command outputs of the node's sysreport at a revision, with
+        the object id each content is read by, and whether the caller may read it.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID)
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Revision of the sysreport, a commit id of the timeline or HEAD for the latest.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SysreportTreeResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/sysreport/{cid}/tree/{oid}:
+    get:
+      operationId: GetNodeSysreportFile
+      description: |
+        Show the content of a file or command output of the node's sysreport at a
+        revision. The object must belong to that revision. A sensitive path the caller
+        may not read is refused with a 403. A content larger than 1 MiB is cut
+        (`truncated`), a binary one is not returned (`binary`).
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID)
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Revision of the sysreport, a commit id of the timeline or HEAD for the latest.
+          schema:
+            type: string
+        - in: path
+          name: oid
+          required: true
+          description: Object id of the file, as the tree lists it.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SysreportFileResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /nodes/{node_id}/hbas:
     get:
       operationId: GetNodeHbas
@@ -14560,6 +14764,162 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SearchGroup'
+
+    SysreportFileStat:
+      type: object
+      description: A file or command output changed by a report.
+      required: [path, kind, added, deleted, binary]
+      properties:
+        path:
+          type: string
+          description: Absolute path of a tracked file, or command line of a tracked command.
+        kind:
+          type: string
+          enum: [file, command]
+        added:
+          type: integer
+        deleted:
+          type: integer
+        binary:
+          type: boolean
+
+    SysreportChange:
+      type: object
+      description: A report that changed something.
+      required: [cid, date, initial, files]
+      properties:
+        cid:
+          type: string
+        date:
+          type: string
+          description: Date of the report, ISO 8601 with its offset.
+        initial:
+          type: boolean
+          description: The first report of the node, which adds every file.
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/SysreportFileStat'
+
+    SysreportTimelineResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SysreportChange'
+        meta:
+          type: object
+          required: [total, limit, offset, count]
+          properties:
+            total:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+            count:
+              type: integer
+
+    SysreportFileDiff:
+      type: object
+      required: [path, kind, added, deleted, binary, secure, restricted, truncated]
+      properties:
+        path:
+          type: string
+        kind:
+          type: string
+          enum: [file, command]
+        added:
+          type: integer
+        deleted:
+          type: integer
+        binary:
+          type: boolean
+        secure:
+          type: boolean
+          description: The path matches a secure pattern.
+        restricted:
+          type: boolean
+          description: The caller may not read this sensitive path, the diff is withheld.
+        truncated:
+          type: boolean
+          description: The diff was cut at the size limit.
+        diff:
+          type: string
+          description: Unified diff from its first hunk; absent when restricted or binary.
+
+    SysreportChangeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [cid, date, files]
+          properties:
+            cid:
+              type: string
+            date:
+              type: string
+            files:
+              type: array
+              items:
+                $ref: '#/components/schemas/SysreportFileDiff'
+
+    SysreportEntry:
+      type: object
+      required: [oid, path, kind, size, secure, restricted]
+      properties:
+        oid:
+          type: string
+        path:
+          type: string
+        kind:
+          type: string
+          enum: [file, command]
+        size:
+          type: integer
+        secure:
+          type: boolean
+        restricted:
+          type: boolean
+
+    SysreportTreeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SysreportEntry'
+
+    SysreportFileResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [oid, path, kind, size, secure, truncated, binary]
+          properties:
+            oid:
+              type: string
+            path:
+              type: string
+            kind:
+              type: string
+              enum: [file, command]
+            size:
+              type: integer
+            secure:
+              type: boolean
+            truncated:
+              type: boolean
+            binary:
+              type: boolean
+            content:
+              type: string
+              description: Absent for a binary content.
 
     NetworkSegmentRow:
       type: object

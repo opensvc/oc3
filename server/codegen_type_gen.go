@@ -104,6 +104,78 @@ func (e SearchGroupKind) Valid() bool {
 	}
 }
 
+// Defines values for SysreportEntryKind.
+const (
+	SysreportEntryKindCommand SysreportEntryKind = "command"
+	SysreportEntryKindFile    SysreportEntryKind = "file"
+)
+
+// Valid indicates whether the value is a known member of the SysreportEntryKind enum.
+func (e SysreportEntryKind) Valid() bool {
+	switch e {
+	case SysreportEntryKindCommand:
+		return true
+	case SysreportEntryKindFile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SysreportFileDiffKind.
+const (
+	SysreportFileDiffKindCommand SysreportFileDiffKind = "command"
+	SysreportFileDiffKindFile    SysreportFileDiffKind = "file"
+)
+
+// Valid indicates whether the value is a known member of the SysreportFileDiffKind enum.
+func (e SysreportFileDiffKind) Valid() bool {
+	switch e {
+	case SysreportFileDiffKindCommand:
+		return true
+	case SysreportFileDiffKindFile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SysreportFileResponseDataKind.
+const (
+	SysreportFileResponseDataKindCommand SysreportFileResponseDataKind = "command"
+	SysreportFileResponseDataKindFile    SysreportFileResponseDataKind = "file"
+)
+
+// Valid indicates whether the value is a known member of the SysreportFileResponseDataKind enum.
+func (e SysreportFileResponseDataKind) Valid() bool {
+	switch e {
+	case SysreportFileResponseDataKindCommand:
+		return true
+	case SysreportFileResponseDataKindFile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SysreportFileStatKind.
+const (
+	SysreportFileStatKindCommand SysreportFileStatKind = "command"
+	SysreportFileStatKindFile    SysreportFileStatKind = "file"
+)
+
+// Valid indicates whether the value is a known member of the SysreportFileStatKind enum.
+func (e SysreportFileStatKind) Valid() bool {
+	switch e {
+	case SysreportFileStatKindCommand:
+		return true
+	case SysreportFileStatKindFile:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PutComplianceModulesetJSONBodyAction.
 const (
 	PutComplianceModulesetJSONBodyActionClone PutComplianceModulesetJSONBodyAction = "clone"
@@ -1761,6 +1833,113 @@ type ServiceRow struct {
 	SvcWave                 *int    `json:"svc_wave,omitempty"`
 	Svcname                 *string `json:"svcname,omitempty"`
 	Updated                 *string `json:"updated,omitempty"`
+}
+
+// SysreportChange A report that changed something.
+type SysreportChange struct {
+	Cid string `json:"cid"`
+
+	// Date Date of the report, ISO 8601 with its offset.
+	Date  string              `json:"date"`
+	Files []SysreportFileStat `json:"files"`
+
+	// Initial The first report of the node, which adds every file.
+	Initial bool `json:"initial"`
+}
+
+// SysreportChangeResponse defines model for SysreportChangeResponse.
+type SysreportChangeResponse struct {
+	Data struct {
+		Cid   string              `json:"cid"`
+		Date  string              `json:"date"`
+		Files []SysreportFileDiff `json:"files"`
+	} `json:"data"`
+}
+
+// SysreportEntry defines model for SysreportEntry.
+type SysreportEntry struct {
+	Kind       SysreportEntryKind `json:"kind"`
+	Oid        string             `json:"oid"`
+	Path       string             `json:"path"`
+	Restricted bool               `json:"restricted"`
+	Secure     bool               `json:"secure"`
+	Size       int                `json:"size"`
+}
+
+// SysreportEntryKind defines model for SysreportEntry.Kind.
+type SysreportEntryKind string
+
+// SysreportFileDiff defines model for SysreportFileDiff.
+type SysreportFileDiff struct {
+	Added   int  `json:"added"`
+	Binary  bool `json:"binary"`
+	Deleted int  `json:"deleted"`
+
+	// Diff Unified diff from its first hunk; absent when restricted or binary.
+	Diff *string               `json:"diff,omitempty"`
+	Kind SysreportFileDiffKind `json:"kind"`
+	Path string                `json:"path"`
+
+	// Restricted The caller may not read this sensitive path, the diff is withheld.
+	Restricted bool `json:"restricted"`
+
+	// Secure The path matches a secure pattern.
+	Secure bool `json:"secure"`
+
+	// Truncated The diff was cut at the size limit.
+	Truncated bool `json:"truncated"`
+}
+
+// SysreportFileDiffKind defines model for SysreportFileDiff.Kind.
+type SysreportFileDiffKind string
+
+// SysreportFileResponse defines model for SysreportFileResponse.
+type SysreportFileResponse struct {
+	Data struct {
+		Binary bool `json:"binary"`
+
+		// Content Absent for a binary content.
+		Content   *string                       `json:"content,omitempty"`
+		Kind      SysreportFileResponseDataKind `json:"kind"`
+		Oid       string                        `json:"oid"`
+		Path      string                        `json:"path"`
+		Secure    bool                          `json:"secure"`
+		Size      int                           `json:"size"`
+		Truncated bool                          `json:"truncated"`
+	} `json:"data"`
+}
+
+// SysreportFileResponseDataKind defines model for SysreportFileResponse.Data.Kind.
+type SysreportFileResponseDataKind string
+
+// SysreportFileStat A file or command output changed by a report.
+type SysreportFileStat struct {
+	Added   int                   `json:"added"`
+	Binary  bool                  `json:"binary"`
+	Deleted int                   `json:"deleted"`
+	Kind    SysreportFileStatKind `json:"kind"`
+
+	// Path Absolute path of a tracked file, or command line of a tracked command.
+	Path string `json:"path"`
+}
+
+// SysreportFileStatKind defines model for SysreportFileStat.Kind.
+type SysreportFileStatKind string
+
+// SysreportTimelineResponse defines model for SysreportTimelineResponse.
+type SysreportTimelineResponse struct {
+	Data []SysreportChange `json:"data"`
+	Meta struct {
+		Count  int `json:"count"`
+		Limit  int `json:"limit"`
+		Offset int `json:"offset"`
+		Total  int `json:"total"`
+	} `json:"meta"`
+}
+
+// SysreportTreeResponse defines model for SysreportTreeResponse.
+type SysreportTreeResponse struct {
+	Data []SysreportEntry `json:"data"`
 }
 
 // UserListResponse defines model for UserListResponse.
@@ -5713,6 +5892,24 @@ type GetNodeServiceParams struct {
 type PostNodeSnoozeJSONBody struct {
 	// Duration Duration string (e.g. "1h", "30m", "2d"). Omit to unsnooze.
 	Duration *string `json:"duration,omitempty"`
+}
+
+// GetNodeSysreportParams defines parameters for GetNodeSysreport.
+type GetNodeSysreportParams struct {
+	// Path Keep the files whose path or command line contains this text, and the changes touching one.
+	Path *string `form:"path,omitempty" json:"path,omitempty"`
+
+	// Begin Keep the changes made since this date, for example 2026-09-01 or 2026-09-01T10:00:00.
+	Begin *string `form:"begin,omitempty" json:"begin,omitempty"`
+
+	// End Keep the changes made until this date.
+	End *string `form:"end,omitempty" json:"end,omitempty"`
+
+	// Limit The maximum number of changes to return, 50 by default. 0 means no limit.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first changes.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
 // GetNodeTagsParams defines parameters for GetNodeTags.
