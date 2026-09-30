@@ -2110,6 +2110,9 @@ type N409 = Problem
 // N500 defines model for 500.
 type N500 = Problem
 
+// N503 defines model for 503.
+type N503 = Problem
+
 // basicAuthContextKey is the context key for basicAuth security scheme
 type basicAuthContextKey string
 

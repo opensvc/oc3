@@ -4617,6 +4617,46 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /realtime/token:
+    post:
+      operationId: PostRealtimeToken
+      description: |
+        Get a one-time token for the websocket of the messenger, which broadcasts a
+        "<table>_change" event each time a table of the collector changes. The client
+        connects to `/realtime/<group>/<token>` on the messenger. When the messenger
+        requires tokens, only those registered here are let in: only signed-in users
+        listen. The token is single use: a new one is asked for each connection.
+        Answers 503 when no messenger is configured or reachable.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [token, group]
+                    properties:
+                      token:
+                        type: string
+                      group:
+                        type: string
+                        description: The messenger group the change events are published to.
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+        503:
+          $ref: '#/components/responses/503'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /search:
     get:
       operationId: GetSearch

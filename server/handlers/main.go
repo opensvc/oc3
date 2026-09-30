@@ -25,6 +25,12 @@ type (
 			EventPublish(eventName string, data map[string]any) error
 		}
 
+		// Realtime registers the one-time tokens of the websocket clients with
+		// the messenger; nil when no messenger is configured.
+		Realtime interface {
+			RegisterToken(token string) error
+		}
+
 		SubSystem string
 	}
 )
