@@ -2150,7 +2150,10 @@ type GetActionsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2362,7 +2365,10 @@ type GetAppsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2635,7 +2641,10 @@ type GetComplianceLogsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2687,7 +2696,10 @@ type GetComplianceModulesetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2751,7 +2763,10 @@ type GetComplianceModulesetCandidateNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2794,7 +2809,10 @@ type GetComplianceModulesetCandidateServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2834,7 +2852,10 @@ type GetComplianceModulesetModulesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2894,7 +2915,10 @@ type GetComplianceModulesetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2934,7 +2958,10 @@ type GetComplianceModulesetPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2974,7 +3001,10 @@ type GetComplianceModulesetResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3017,7 +3047,10 @@ type GetComplianceModulesetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3057,7 +3090,10 @@ type GetComplianceModulesetsModulesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3177,7 +3213,10 @@ type GetComplianceRulesetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3255,7 +3294,10 @@ type GetComplianceRulesetCandidateNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3298,7 +3340,10 @@ type GetComplianceRulesetCandidateServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3338,7 +3383,10 @@ type GetComplianceRulesetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3378,7 +3426,10 @@ type GetComplianceRulesetPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3418,7 +3469,10 @@ type GetComplianceRulesetResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3461,7 +3515,10 @@ type GetComplianceRulesetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3501,7 +3558,10 @@ type GetComplianceRulesetVariablesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3654,7 +3714,10 @@ type GetComplianceRulesetsVariablesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3711,7 +3774,10 @@ type GetComplianceStatusParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3766,7 +3832,10 @@ type GetDisksParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3946,7 +4015,10 @@ type GetFiltersetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4106,7 +4178,10 @@ type GetFiltersetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4146,7 +4221,10 @@ type GetFiltersetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4266,7 +4344,10 @@ type GetFormsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4317,7 +4398,10 @@ type GetFormParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4375,7 +4459,10 @@ type GetFormPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4415,7 +4502,10 @@ type GetFormResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4499,7 +4589,10 @@ type GetFormsRevisionsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4539,7 +4632,10 @@ type GetFormsRevisionParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4579,7 +4675,10 @@ type GetFormsStoreParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4619,7 +4718,10 @@ type GetFormStoreParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4695,7 +4797,10 @@ type GetGroupsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4989,7 +5094,10 @@ type GetIpsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -5122,7 +5230,10 @@ type GetNetworksParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -5207,7 +5318,10 @@ type GetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -5328,7 +5442,10 @@ type GetNodesHardwareParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -6081,7 +6198,10 @@ type GetPackagesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -6153,7 +6273,10 @@ type GetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -6834,7 +6957,10 @@ type GetServicesInstancesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -7159,7 +7285,10 @@ type GetUsersParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -7260,7 +7389,10 @@ type GetWorkflowsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
