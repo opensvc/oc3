@@ -99,7 +99,7 @@ func (n *authWeb2py) extensions() auth.Extensions {
 	return ext
 }
 
-func (n *authWeb2py) Groups(ctx context.Context, db *sql.DB, username string) []string {
+func (n *authWeb2py) Groups(ctx context.Context, db Querier, username string) []string {
 	rows, err := db.QueryContext(ctx, queryUserGroups, username)
 	if err != nil {
 		return []string{}

@@ -1190,6 +1190,24 @@ type HbaRow struct {
 	Updated *string `json:"updated,omitempty"`
 }
 
+// Impersonation defines model for Impersonation.
+type Impersonation struct {
+	Email string `json:"email"`
+
+	// Groups The groups of the impersonated user.
+	Groups []string `json:"groups"`
+
+	// UserId auth_user.id to send in the OC3-Impersonate header.
+	UserId int64 `json:"user_id"`
+}
+
+// ImpersonationStatus defines model for ImpersonationStatus.
+type ImpersonationStatus struct {
+	// Allowed Whether the user who signed in holds the Manager privilege, which impersonating requires.
+	Allowed       bool           `json:"allowed"`
+	Impersonating *Impersonation `json:"impersonating,omitempty"`
+}
+
 // InfoResponse Outcome message of a write that returns no record.
 type InfoResponse struct {
 	Info *string `json:"info,omitempty"`

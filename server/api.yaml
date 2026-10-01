@@ -9884,6 +9884,76 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /impersonation:
+    get:
+      operationId: GetImpersonation
+      description: |
+        Tell whether the user who signed in may impersonate other users (the
+        Manager privilege), and which user the request is made as when it
+        carries the OC3-Impersonate header. Requires user authentication.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImpersonationStatus'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /users/{user_id}/impersonate:
+    post:
+      operationId: PostUserImpersonate
+      description: |
+        Start acting as another user, as the impersonation of the historical
+        collector does. Checks that the caller may impersonate that user and logs
+        the start ("User %(id)s is impersonating %(other_id)s"). The requests made
+        as that user then carry its id in the OC3-Impersonate header: the server
+        handles them with the identity, the groups and the visibility of that
+        user, checks the privilege again on every request, and answers with the
+        OC3-Impersonated-By header naming the user who signed in. A refusal due to
+        the impersonation itself carries OC3-Impersonation-Refused. Stopping is
+        dropping the header. Requires the Manager privilege, and a request not
+        already made as another user.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: User identifier, auth_user.id or email.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Impersonation'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /users/{user_id}/prefs:
     get:
       operationId: GetUserPrefs
@@ -16351,6 +16421,32 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    Impersonation:
+      type: object
+      required: [user_id, email, groups]
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          description: auth_user.id to send in the OC3-Impersonate header.
+        email:
+          type: string
+        groups:
+          type: array
+          description: The groups of the impersonated user.
+          items:
+            type: string
+
+    ImpersonationStatus:
+      type: object
+      required: [allowed]
+      properties:
+        allowed:
+          type: boolean
+          description: Whether the user who signed in holds the Manager privilege, which impersonating requires.
+        impersonating:
+          $ref: '#/components/schemas/Impersonation'
 
     UserRow:
       type: object

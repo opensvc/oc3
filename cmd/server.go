@@ -60,7 +60,17 @@ func (t *server) docMiddleware() echo.MiddlewareFunc {
 	return handlers.UIMiddleware(context.Background(), pathApi, pathSpec)
 }
 
+// authMiddleware authenticates the request, then lets a member of the
+// Manager make it as another user.
 func (t *server) authMiddleware(publicPath, publicPrefix []string) echo.MiddlewareFunc {
+	authenticate := t.authenticateMiddleware(publicPath, publicPrefix)
+	impersonate := handlers.ImpersonateMiddleware(t.db)
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return authenticate(impersonate(next))
+	}
+}
+
+func (t *server) authenticateMiddleware(publicPath, publicPrefix []string) echo.MiddlewareFunc {
 	return handlers.AuthMiddleware(union.New(
 		xauth.NewPublicStrategy(publicPath, publicPrefix),
 		xauth.NewAnonRegister(),
