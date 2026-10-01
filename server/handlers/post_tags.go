@@ -62,5 +62,5 @@ func (a *Api) PostTags(c echo.Context) error {
 
 	a.notifyChanges(log, ctx)
 
-	return a.handleGetTags(c, &tag.ID, ListQueryParameters{Props: defaultProps(propsMapping["tag"])})
+	return a.handleGetTags(c, &tag.ID, ListQueryParameters{Props: defaultProps(propsMapping["tag"])}, nil)
 }

@@ -1570,6 +1570,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -6565,6 +6566,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -8333,6 +8335,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector

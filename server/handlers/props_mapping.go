@@ -394,6 +394,8 @@ var propsMapping = map[string]propMapping{
 			"description":  colStr(schema.AppsDescription),
 		},
 	},
+	// Read from the v_obsolescence view, declared in schema/views.go: its columns
+	// give the props a column to sort and filter on.
 	"obsolescence": {
 		Available: []string{
 			"id", "obs_type", "obs_name", "obs_warn_date", "obs_alert_date",
@@ -401,16 +403,16 @@ var propsMapping = map[string]propMapping{
 			"obs_warn_date_updated", "obs_alert_date_updated", "obs_count",
 		},
 		Props: map[string]propDef{
-			"id":                        {SQLExpr: "v_obsolescence.id", Kind: "int64"},
-			"obs_type":                  {SQLExpr: "v_obsolescence.obs_type", Kind: "string"},
-			"obs_name":                  {SQLExpr: "v_obsolescence.obs_name", Kind: "string"},
-			"obs_warn_date":             {SQLExpr: "COALESCE(v_obsolescence.obs_warn_date, '')", Kind: "string"},
-			"obs_alert_date":            {SQLExpr: "COALESCE(v_obsolescence.obs_alert_date, '')", Kind: "string"},
-			"obs_warn_date_updated_by":  {SQLExpr: "v_obsolescence.obs_warn_date_updated_by", Kind: "string"},
-			"obs_alert_date_updated_by": {SQLExpr: "v_obsolescence.obs_alert_date_updated_by", Kind: "string"},
-			"obs_warn_date_updated":     {SQLExpr: "v_obsolescence.obs_warn_date_updated", Kind: "string"},
-			"obs_alert_date_updated":    {SQLExpr: "v_obsolescence.obs_alert_date_updated", Kind: "string"},
-			"obs_count":                 {SQLExpr: "v_obsolescence.obs_count", Kind: "int64"},
+			"id":                        {Col: schema.VObsolescenceID, SQLExpr: "v_obsolescence.id", Kind: "int64"},
+			"obs_type":                  {Col: schema.VObsolescenceObsType, SQLExpr: "v_obsolescence.obs_type", Kind: "string"},
+			"obs_name":                  {Col: schema.VObsolescenceObsName, SQLExpr: "v_obsolescence.obs_name", Kind: "string"},
+			"obs_warn_date":             {Col: schema.VObsolescenceObsWarnDate, SQLExpr: "COALESCE(v_obsolescence.obs_warn_date, '')", Kind: "string"},
+			"obs_alert_date":            {Col: schema.VObsolescenceObsAlertDate, SQLExpr: "COALESCE(v_obsolescence.obs_alert_date, '')", Kind: "string"},
+			"obs_warn_date_updated_by":  {Col: schema.VObsolescenceObsWarnDateUpdatedBy, SQLExpr: "v_obsolescence.obs_warn_date_updated_by", Kind: "string"},
+			"obs_alert_date_updated_by": {Col: schema.VObsolescenceObsAlertDateUpdBy, SQLExpr: "v_obsolescence.obs_alert_date_updated_by", Kind: "string"},
+			"obs_warn_date_updated":     {Col: schema.VObsolescenceObsWarnDateUpdated, SQLExpr: "v_obsolescence.obs_warn_date_updated", Kind: "string"},
+			"obs_alert_date_updated":    {Col: schema.VObsolescenceObsAlertDateUpdated, SQLExpr: "v_obsolescence.obs_alert_date_updated", Kind: "string"},
+			"obs_count":                 {Col: schema.VObsolescenceObsCount, SQLExpr: "v_obsolescence.obs_count", Kind: "int64"},
 		},
 	},
 	"auth_group": {

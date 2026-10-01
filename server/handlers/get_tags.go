@@ -5,18 +5,19 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/util/echolog"
 	"github.com/opensvc/oc3/util/logkey"
 )
 
 // handleGetTags is the common logic for getting tags
-func (a *Api) handleGetTags(c echo.Context, tagID *int, query ListQueryParameters) error {
+func (a *Api) handleGetTags(c echo.Context, tagID *int, query ListQueryParameters, filters []cdb.ColumnFilter) error {
 	log := echolog.GetLogHandler(c, "handleGetTags")
 	odb := a.ODB
 	ctx := c.Request().Context()
 
-	tags, err := odb.GetTags(ctx, tagID, query.Page.Limit, query.Page.Offset)
+	tags, err := odb.GetTags(ctx, tagID, filters, query.Page.Limit, query.Page.Offset)
 	if err != nil {
 		log.Error("cannot get tags", logkey.TagID, tagID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get tags")
@@ -45,7 +46,7 @@ func (a *Api) handleGetTags(c echo.Context, tagID *int, query ListQueryParameter
 	if query.WithMeta && !query.WithStats {
 		total, known := totalFromPage(query.Page.Limit, query.Page.Offset, len(tags))
 		if !known {
-			if total, err = odb.CountTags(ctx); err != nil {
+			if total, err = odb.CountTags(ctx, filters); err != nil {
 				log.Error("cannot count tags", logkey.Error, err)
 			}
 		}
@@ -62,7 +63,11 @@ func (a *Api) GetTags(c echo.Context, params server.GetTagsParams) error {
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
+	filters, err := buildFilters(params.Filter, propsMapping["tag"])
+	if err != nil {
+		return JSONProblem(c, http.StatusBadRequest, err.Error())
+	}
 	log := echolog.GetLogHandler(c, "GetTags")
 	log.Info("called", "limit", query.Page.Limit, "offset", query.Page.Offset, "props", query.Props)
-	return a.handleGetTags(c, nil, query)
+	return a.handleGetTags(c, nil, query, filters)
 }
