@@ -68,6 +68,13 @@ func (oDb *DB) GetLogs(ctx context.Context, p ListParams, fset LogsFiltersetFilt
 	if fset.Active {
 		query, args = appendLogsFiltersetClause(query, args, fset.NodeIDs, fset.SvcIDs)
 	}
+	// Column filters of the request, the joined names included: the joins are
+	// always there.
+	conds, filterArgs := p.FilterConditions()
+	for _, cond := range conds {
+		query += " AND " + cond
+	}
+	args = append(args, filterArgs...)
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}

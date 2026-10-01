@@ -11,6 +11,10 @@ type propDef struct {
 	Col     *schema.Col
 	SQLExpr string
 	Kind    string
+	// FilterExpr is what a column filter on the prop compares, when it is not the
+	// column itself: the message of a log event, say, whose text is split between
+	// a format and the values filling it.
+	FilterExpr string
 }
 
 func (p propDef) selectExpr() string {
@@ -1129,10 +1133,18 @@ var propsMapping = map[string]propMapping{
 			"svc_id", "node_id", "log_level",
 		},
 		Props: map[string]propDef{
-			"id":             col(schema.LogID),
-			"log_action":     colStr(schema.LogLogAction),
-			"log_user":       colStr(schema.LogLogUser),
-			"log_fmt":        colStr(schema.LogLogFmt),
+			"id":         col(schema.LogID),
+			"log_action": colStr(schema.LogLogAction),
+			"log_user":   colStr(schema.LogLogUser),
+			// Filtered on the format and its values together: the message shown is
+			// the format filled with the values, and a node or tag name typed in the
+			// filter is among the values.
+			"log_fmt": {
+				Col:        schema.LogLogFmt,
+				SQLExpr:    "COALESCE(log.log_fmt, '')",
+				Kind:       "string",
+				FilterExpr: "CONCAT_WS(' ', log.log_fmt, log.log_dict)",
+			},
 			"log_dict":       colStr(schema.LogLogDict),
 			"log_date":       colStr(schema.LogLogDate),
 			"svc_id":         colStr(schema.LogSvcID),

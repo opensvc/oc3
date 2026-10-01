@@ -50,7 +50,11 @@ func buildFilters(filters *server.InQueryFilter, mapping propMapping) ([]cdb.Col
 			// An empty filter matches everything: nothing to add.
 			continue
 		}
-		cond, args, err := filterCondition(col.Qualified(), prop, expr)
+		column := col.Qualified()
+		if def, ok := mapping.Props[prop]; ok && def.FilterExpr != "" {
+			column = def.FilterExpr
+		}
+		cond, args, err := filterCondition(column, prop, expr)
 		if err != nil {
 			return nil, err
 		}
