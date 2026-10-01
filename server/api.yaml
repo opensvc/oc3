@@ -1366,6 +1366,164 @@ paths:
       tags:
         - auth
 
+  /charts:
+    get:
+      operationId: GetCharts
+      description: |
+        List the charts: time series of historized metrics, defined in YAML. A manager sees
+        every chart; the others see the charts published to one of their teams.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostCharts
+      description: |
+        Create a chart. Its name must be unique, and its definition, when given,
+        must be valid YAML. The chart is published to the primary team of its author,
+        which is also made responsible for it, as in the historical collector.
+        Requires the ReportsManager or Manager privilege, as for the reports.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - chart_name
+              properties:
+                chart_name:
+                  type: string
+                  description: Unique name of the chart.
+                chart_yaml:
+                  type: string
+                  description: Definition of the chart, in YAML.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}:
+    get:
+      operationId: GetChart
+      description: Display a chart, if the caller may see it (see GET /charts).
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart identifier (charts.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/samples:
+    get:
+      operationId: GetChartSamples
+      description: |
+        The series of the historized metrics a chart draws, for a caller who may see
+        the chart: one series per metric of its definition, or per instance of a
+        metric with instances, each a list of [unix time, value] points over the last
+        `days` days. `stack` is the chart's Options.stack. The series are those the
+        scheduler computes without a filterset (the historical collector read those of
+        the session's filterset, which oc3 does not have).
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart identifier (charts.id)
+          schema:
+            type: string
+        - in: query
+          name: days
+          description: Days of history, 365 by default, 1825 at most.
+          schema:
+            type: integer
+            minimum: 1
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartSamplesResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        422:
+          description: The chart definition is not valid YAML.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /disks:
     post:
       operationId: PostDisks
@@ -14967,6 +15125,85 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/ReportRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    ChartRow:
+      type: object
+      description: |
+        A chart: time series of historized metrics, defined in YAML. Every property is
+        optional: the `props` query parameter selects which columns the server
+        returns.
+      properties:
+        id:
+          type: integer
+        chart_name:
+          type: string
+        chart_yaml:
+          type: string
+
+    ChartSeries:
+      type: object
+      required:
+        - metric_id
+        - points
+      properties:
+        metric_id:
+          type: integer
+        label:
+          type: string
+          description: The label the chart definition gives the metric.
+        unit:
+          type: string
+        instance:
+          type: string
+          nullable: true
+          description: The instance of the metric, null for a metric without instances.
+        points:
+          type: array
+          description: The points, oldest first, each [unix time, value].
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+
+    ChartSamples:
+      type: object
+      required:
+        - stack
+        - series
+      properties:
+        stack:
+          type: boolean
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartSeries'
+
+    ChartSamplesResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/ChartSamples'
+
+    ChartListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ChartRow'
             - type: object
               additionalProperties:
                 type: object

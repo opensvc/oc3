@@ -1044,6 +1044,15 @@ var propsMapping = map[string]propMapping{
 			"rset_md5":   colStr(schema.CompStatusRsetMD5),
 		},
 	},
+	// The charts: time series of historized metrics, defined in YAML.
+	"chart": {
+		Available: []string{"id", "chart_name", "chart_yaml"},
+		Props: map[string]propDef{
+			"id":         col(schema.ChartsID),
+			"chart_name": colStr(schema.ChartsChartName),
+			"chart_yaml": colStr(schema.ChartsChartYaml),
+		},
+	},
 	// The reports: pages of charts and metrics, defined in YAML.
 	"report": {
 		Available: []string{"id", "report_name", "report_yaml"},

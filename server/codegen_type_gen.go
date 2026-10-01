@@ -675,6 +675,57 @@ type AppRow struct {
 	Updated     *string `json:"updated,omitempty"`
 }
 
+// ChartListResponse defines model for ChartListResponse.
+type ChartListResponse struct {
+	Data ChartListResponse_Data `json:"data"`
+	Meta *ListMeta              `json:"meta,omitempty"`
+}
+
+// ChartListResponseData0 defines model for .
+type ChartListResponseData0 = []ChartRow
+
+// ChartListResponseData1 defines model for .
+type ChartListResponseData1 map[string]map[string]int
+
+// ChartListResponse_Data defines model for ChartListResponse.Data.
+type ChartListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ChartRow A chart: time series of historized metrics, defined in YAML. Every property is
+// optional: the `props` query parameter selects which columns the server
+// returns.
+type ChartRow struct {
+	ChartName *string `json:"chart_name,omitempty"`
+	ChartYaml *string `json:"chart_yaml,omitempty"`
+	Id        *int    `json:"id,omitempty"`
+}
+
+// ChartSamples defines model for ChartSamples.
+type ChartSamples struct {
+	Series []ChartSeries `json:"series"`
+	Stack  bool          `json:"stack"`
+}
+
+// ChartSamplesResponse defines model for ChartSamplesResponse.
+type ChartSamplesResponse struct {
+	Data ChartSamples `json:"data"`
+}
+
+// ChartSeries defines model for ChartSeries.
+type ChartSeries struct {
+	// Instance The instance of the metric, null for a metric without instances.
+	Instance *string `json:"instance,omitempty"`
+
+	// Label The label the chart definition gives the metric.
+	Label    *string `json:"label,omitempty"`
+	MetricId int     `json:"metric_id"`
+
+	// Points The points, oldest first, each [unix time, value].
+	Points [][]float64 `json:"points"`
+	Unit   *string     `json:"unit,omitempty"`
+}
+
 // CompExportModule defines model for CompExportModule.
 type CompExportModule struct {
 	Autofix       *string `json:"autofix,omitempty"`
@@ -2814,6 +2865,70 @@ type GetArraysParams struct {
 type PostAuthNodeJSONBody struct {
 	App      *string `json:"app,omitempty"`
 	Nodename string  `json:"nodename"`
+}
+
+// GetChartsParams defines parameters for GetCharts.
+type GetChartsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostChartsJSONBody defines parameters for PostCharts.
+type PostChartsJSONBody struct {
+	// ChartName Unique name of the chart.
+	ChartName string `json:"chart_name"`
+
+	// ChartYaml Definition of the chart, in YAML.
+	ChartYaml *string `json:"chart_yaml,omitempty"`
+}
+
+// GetChartParams defines parameters for GetChart.
+type GetChartParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// GetChartSamplesParams defines parameters for GetChartSamples.
+type GetChartSamplesParams struct {
+	// Days Days of history, 365 by default, 1825 at most.
+	Days *int `form:"days,omitempty" json:"days,omitempty"`
 }
 
 // PostComplianceImportJSONBody defines parameters for PostComplianceImport.
@@ -7934,6 +8049,9 @@ type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
 
+// PostChartsJSONRequestBody defines body for PostCharts for application/json ContentType.
+type PostChartsJSONRequestBody PostChartsJSONBody
+
 // PostComplianceImportJSONRequestBody defines body for PostComplianceImport for application/json ContentType.
 type PostComplianceImportJSONRequestBody PostComplianceImportJSONBody
 
@@ -8333,6 +8451,68 @@ func (t AppListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *AppListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsChartListResponseData0 returns the union data inside the ChartListResponse_Data as a ChartListResponseData0
+func (t ChartListResponse_Data) AsChartListResponseData0() (ChartListResponseData0, error) {
+	var body ChartListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromChartListResponseData0 overwrites any union data inside the ChartListResponse_Data as the provided ChartListResponseData0
+func (t *ChartListResponse_Data) FromChartListResponseData0(v ChartListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeChartListResponseData0 performs a merge with any union data inside the ChartListResponse_Data, using the provided ChartListResponseData0
+func (t *ChartListResponse_Data) MergeChartListResponseData0(v ChartListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsChartListResponseData1 returns the union data inside the ChartListResponse_Data as a ChartListResponseData1
+func (t ChartListResponse_Data) AsChartListResponseData1() (ChartListResponseData1, error) {
+	var body ChartListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromChartListResponseData1 overwrites any union data inside the ChartListResponse_Data as the provided ChartListResponseData1
+func (t *ChartListResponse_Data) FromChartListResponseData1(v ChartListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeChartListResponseData1 performs a merge with any union data inside the ChartListResponse_Data, using the provided ChartListResponseData1
+func (t *ChartListResponse_Data) MergeChartListResponseData1(v ChartListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ChartListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ChartListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
