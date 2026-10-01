@@ -6715,6 +6715,58 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /nodes/{node_id}/stats:
+    get:
+      operationId: GetNodeStats
+      description: |
+        The performance statistics of a node for one group, over the last days: one
+        series per metric (and per device for netdev, netdev_err and blockdev), each
+        a list of [unix time, value] points, as the historical collector stored them
+        in whisper files under stats/nodes/<node_id> (cpu/all, mem_u, swap, proc,
+        block, netdev/<dev>, netdev_err/<dev>, blockdev/<dev>). The resolution is the
+        finest the files keep for the period: a minute over half an hour, ten minutes
+        over three days, an hour over ninety days, a day beyond. A node without
+        statistics returns an empty list.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID or nodename)
+          schema:
+            type: string
+        - in: query
+          name: group
+          required: true
+          schema:
+            type: string
+            enum: [cpu, mem, swap, proc, block, netdev, netdev_err, blockdev]
+        - in: query
+          name: days
+          description: Days of history, 1 by default, 1095 at most.
+          schema:
+            type: integer
+            minimum: 1
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeStatsResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /nodes/{node_id}/san:
     get:
       operationId: GetNodeSan
@@ -15193,6 +15245,37 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/ChartSamples'
+
+    NodeStatSeries:
+      type: object
+      required:
+        - metric
+        - points
+      properties:
+        metric:
+          type: string
+          description: The metric, as the agent names it (usr, pct_memused, rxkBps...).
+        device:
+          type: string
+          description: The network interface or block device, for the groups by device.
+        points:
+          type: array
+          description: The points, oldest first, each [unix time, value].
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+
+    NodeStatsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeStatSeries'
 
     ChartListResponse:
       type: object

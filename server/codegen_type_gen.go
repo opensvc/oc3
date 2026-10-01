@@ -569,6 +569,42 @@ func (e PostNodeJSONBodyActionType) Valid() bool {
 	}
 }
 
+// Defines values for GetNodeStatsParamsGroup.
+const (
+	Block     GetNodeStatsParamsGroup = "block"
+	Blockdev  GetNodeStatsParamsGroup = "blockdev"
+	Cpu       GetNodeStatsParamsGroup = "cpu"
+	Mem       GetNodeStatsParamsGroup = "mem"
+	Netdev    GetNodeStatsParamsGroup = "netdev"
+	NetdevErr GetNodeStatsParamsGroup = "netdev_err"
+	Proc      GetNodeStatsParamsGroup = "proc"
+	Swap      GetNodeStatsParamsGroup = "swap"
+)
+
+// Valid indicates whether the value is a known member of the GetNodeStatsParamsGroup enum.
+func (e GetNodeStatsParamsGroup) Valid() bool {
+	switch e {
+	case Block:
+		return true
+	case Blockdev:
+		return true
+	case Cpu:
+		return true
+	case Mem:
+		return true
+	case Netdev:
+		return true
+	case NetdevErr:
+		return true
+	case Proc:
+		return true
+	case Swap:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for GetWorkflowsParamsAssigned.
 const (
 	Team  GetWorkflowsParamsAssigned = "team"
@@ -1650,6 +1686,23 @@ type NodeRow struct {
 	Updated             *string `json:"updated,omitempty"`
 	Version             *string `json:"version,omitempty"`
 	WarrantyEnd         *string `json:"warranty_end,omitempty"`
+}
+
+// NodeStatSeries defines model for NodeStatSeries.
+type NodeStatSeries struct {
+	// Device The network interface or block device, for the groups by device.
+	Device *string `json:"device,omitempty"`
+
+	// Metric The metric, as the agent names it (usr, pct_memused, rxkBps...).
+	Metric string `json:"metric"`
+
+	// Points The points, oldest first, each [unix time, value].
+	Points [][]float64 `json:"points"`
+}
+
+// NodeStatsResponse defines model for NodeStatsResponse.
+type NodeStatsResponse struct {
+	Data []NodeStatSeries `json:"data"`
 }
 
 // ObsolescenceSettingListResponse defines model for ObsolescenceSettingListResponse.
@@ -6497,6 +6550,17 @@ type PostNodeSnoozeJSONBody struct {
 	// Duration Duration string (e.g. "1h", "30m", "2d"). Omit to unsnooze.
 	Duration *string `json:"duration,omitempty"`
 }
+
+// GetNodeStatsParams defines parameters for GetNodeStats.
+type GetNodeStatsParams struct {
+	Group GetNodeStatsParamsGroup `form:"group" json:"group"`
+
+	// Days Days of history, 1 by default, 1095 at most.
+	Days *int `form:"days,omitempty" json:"days,omitempty"`
+}
+
+// GetNodeStatsParamsGroup defines parameters for GetNodeStats.
+type GetNodeStatsParamsGroup string
 
 // GetNodeSysreportParams defines parameters for GetNodeSysreport.
 type GetNodeSysreportParams struct {
