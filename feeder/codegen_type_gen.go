@@ -135,6 +135,35 @@ type NodeDisks struct {
 	Data *[]Disk `json:"data,omitempty"`
 }
 
+// NodeStats defines model for NodeStats.
+type NodeStats struct {
+	// Data The statistics, by group: cpu, mem_u, swap, proc, block, blockdev,
+	// netdev, netdev_err, fs_u, svc. An unknown group is refused.
+	Data map[string]NodeStatsGroup `json:"data"`
+}
+
+// NodeStatsGroup defines model for NodeStatsGroup.
+type NodeStatsGroup struct {
+	// Columns The names of the values of each row. The "date" column dates the
+	// row; the cpu, dev, mntpt or svcname column, for the groups having
+	// one, says the directory it goes in; nodename is ignored; every other
+	// column is a metric.
+	Columns []string   `json:"columns"`
+	Rows    [][]string `json:"rows"`
+}
+
+// NodeStatsStored defines model for NodeStatsStored.
+type NodeStatsStored struct {
+	// Points The values written.
+	Points int `json:"points"`
+
+	// Series The whisper files written.
+	Series int `json:"series"`
+
+	// Skipped What was not stored, and why.
+	Skipped *[]string `json:"skipped,omitempty"`
+}
+
 // ObjectConfig defines model for ObjectConfig.
 type ObjectConfig struct {
 	App                    *string   `json:"app,omitempty"`
@@ -356,6 +385,9 @@ type PostNodeActionQueuedRunningJSONRequestBody = QueuedActionRunning
 
 // PostNodeDiskJSONRequestBody defines body for PostNodeDisk for application/json ContentType.
 type PostNodeDiskJSONRequestBody = NodeDisks
+
+// PostNodeStatsJSONRequestBody defines body for PostNodeStats for application/json ContentType.
+type PostNodeStatsJSONRequestBody = NodeStats
 
 // PostNodeSysReportMultipartRequestBody defines body for PostNodeSysReport for multipart/form-data ContentType.
 type PostNodeSysReportMultipartRequestBody = SysReport
