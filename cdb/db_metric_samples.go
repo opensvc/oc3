@@ -192,3 +192,19 @@ func sampleValue(value any, dbType string) any {
 		return v
 	}
 }
+
+// ChartVisible returns the definition of a chart the caller may see, and whether
+// there is one.
+func (oDb *DB) ChartVisible(ctx context.Context, id string, groups []string, isManager bool) (string, bool, error) {
+	visibility, args := chartsVisibility(groups, isManager)
+	var definition sql.NullString
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT chart_yaml FROM charts WHERE charts.id = ?"+visibility, append([]any{id}, args...)...).Scan(&definition)
+	if err == sql.ErrNoRows {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, fmt.Errorf("ChartVisible: %w", err)
+	}
+	return definition.String, true, nil
+}
