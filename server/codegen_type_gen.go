@@ -479,6 +479,42 @@ func (e PostFiltersetsFiltersetsJSONBodyFLogOp) Valid() bool {
 	}
 }
 
+// Defines values for PostMetricsJSONBodyMetricHistorize.
+const (
+	PostMetricsJSONBodyMetricHistorizeF PostMetricsJSONBodyMetricHistorize = "F"
+	PostMetricsJSONBodyMetricHistorizeT PostMetricsJSONBodyMetricHistorize = "T"
+)
+
+// Valid indicates whether the value is a known member of the PostMetricsJSONBodyMetricHistorize enum.
+func (e PostMetricsJSONBodyMetricHistorize) Valid() bool {
+	switch e {
+	case PostMetricsJSONBodyMetricHistorizeF:
+		return true
+	case PostMetricsJSONBodyMetricHistorizeT:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostMetricJSONBodyMetricHistorize.
+const (
+	PostMetricJSONBodyMetricHistorizeF PostMetricJSONBodyMetricHistorize = "F"
+	PostMetricJSONBodyMetricHistorizeT PostMetricJSONBodyMetricHistorize = "T"
+)
+
+// Valid indicates whether the value is a known member of the PostMetricJSONBodyMetricHistorize enum.
+func (e PostMetricJSONBodyMetricHistorize) Valid() bool {
+	switch e {
+	case PostMetricJSONBodyMetricHistorizeF:
+		return true
+	case PostMetricJSONBodyMetricHistorizeT:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PostNetworkSegmentsJSONBodySegType.
 const (
 	PostNetworkSegmentsJSONBodySegTypeDynamic PostNetworkSegmentsJSONBodySegType = "dynamic"
@@ -1240,6 +1276,38 @@ type LogRow struct {
 	NodesOsName     *string `json:"nodes.os_name,omitempty"`
 	ServicesSvcname *string `json:"services.svcname,omitempty"`
 	SvcId           *string `json:"svc_id,omitempty"`
+}
+
+// MetricListResponse defines model for MetricListResponse.
+type MetricListResponse struct {
+	Data MetricListResponse_Data `json:"data"`
+	Meta *ListMeta               `json:"meta,omitempty"`
+}
+
+// MetricListResponseData0 defines model for .
+type MetricListResponseData0 = []MetricRow
+
+// MetricListResponseData1 defines model for .
+type MetricListResponseData1 map[string]map[string]int
+
+// MetricListResponse_Data defines model for MetricListResponse.Data.
+type MetricListResponse_Data struct {
+	union json.RawMessage
+}
+
+// MetricRow A metric: an SQL request whose results feed the charts and the reports.
+// Every property is optional: the `props` query parameter selects which columns
+// the server returns.
+type MetricRow struct {
+	Id                     *int    `json:"id,omitempty"`
+	MetricAuthor           *string `json:"metric_author,omitempty"`
+	MetricColInstanceIndex *int    `json:"metric_col_instance_index,omitempty"`
+	MetricColInstanceLabel *string `json:"metric_col_instance_label,omitempty"`
+	MetricColValueIndex    *int    `json:"metric_col_value_index,omitempty"`
+	MetricCreated          *string `json:"metric_created,omitempty"`
+	MetricHistorize        *string `json:"metric_historize,omitempty"`
+	MetricName             *string `json:"metric_name,omitempty"`
+	MetricSql              *string `json:"metric_sql,omitempty"`
 }
 
 // ModulesetListResponse defines model for ModulesetListResponse.
@@ -5338,6 +5406,109 @@ type GetLogParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetMetricsParams defines parameters for GetMetrics.
+type GetMetricsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostMetricsJSONBody defines parameters for PostMetrics.
+type PostMetricsJSONBody struct {
+	// MetricColInstanceIndex Index of the result column naming the instance of each value,
+	// null when the request returns one value.
+	MetricColInstanceIndex *int `json:"metric_col_instance_index,omitempty"`
+
+	// MetricColInstanceLabel How the instances are named, the column header say.
+	MetricColInstanceLabel *string `json:"metric_col_instance_label,omitempty"`
+
+	// MetricColValueIndex Index of the result column holding the value.
+	MetricColValueIndex *int `json:"metric_col_value_index,omitempty"`
+
+	// MetricHistorize Whether the values are kept over time for the charts.
+	MetricHistorize *PostMetricsJSONBodyMetricHistorize `json:"metric_historize,omitempty"`
+
+	// MetricName Unique name of the metric.
+	MetricName string `json:"metric_name"`
+
+	// MetricSql The SQL request computing the metric. `%%fset_node_ids%%` and
+	// `%%fset_svc_ids%%` stand for the nodes and services of the
+	// filterset of the session where the metric is read.
+	MetricSql *string `json:"metric_sql,omitempty"`
+}
+
+// PostMetricsJSONBodyMetricHistorize defines parameters for PostMetrics.
+type PostMetricsJSONBodyMetricHistorize string
+
+// GetMetricParams defines parameters for GetMetric.
+type GetMetricParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// PostMetricJSONBody defines parameters for PostMetric.
+type PostMetricJSONBody struct {
+	// MetricColInstanceIndex Index of the result column naming the instance of each value,
+	// null when the request returns one value.
+	MetricColInstanceIndex *int `json:"metric_col_instance_index,omitempty"`
+
+	// MetricColInstanceLabel How the instances are named, the column header say.
+	MetricColInstanceLabel *string `json:"metric_col_instance_label,omitempty"`
+
+	// MetricColValueIndex Index of the result column holding the value.
+	MetricColValueIndex *int `json:"metric_col_value_index,omitempty"`
+
+	// MetricHistorize Whether the values are kept over time for the charts.
+	MetricHistorize *PostMetricJSONBodyMetricHistorize `json:"metric_historize,omitempty"`
+
+	// MetricName Unique name of the metric.
+	MetricName *string `json:"metric_name,omitempty"`
+
+	// MetricSql The SQL request computing the metric. `%%fset_node_ids%%` and
+	// `%%fset_svc_ids%%` stand for the nodes and services of the
+	// filterset of the session where the metric is read.
+	MetricSql *string `json:"metric_sql,omitempty"`
+}
+
+// PostMetricJSONBodyMetricHistorize defines parameters for PostMetric.
+type PostMetricJSONBodyMetricHistorize string
+
 // GetNetworksParams defines parameters for GetNetworks.
 type GetNetworksParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -7850,6 +8021,12 @@ type DeleteIpsJSONRequestBody DeleteIpsJSONBody
 // PostLogsJSONRequestBody defines body for PostLogs for application/json ContentType.
 type PostLogsJSONRequestBody PostLogsJSONBody
 
+// PostMetricsJSONRequestBody defines body for PostMetrics for application/json ContentType.
+type PostMetricsJSONRequestBody PostMetricsJSONBody
+
+// PostMetricJSONRequestBody defines body for PostMetric for application/json ContentType.
+type PostMetricJSONRequestBody PostMetricJSONBody
+
 // PostNetworksJSONRequestBody defines body for PostNetworks for application/json ContentType.
 type PostNetworksJSONRequestBody PostNetworksJSONBody
 
@@ -8860,6 +9037,68 @@ func (t LogListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *LogListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMetricListResponseData0 returns the union data inside the MetricListResponse_Data as a MetricListResponseData0
+func (t MetricListResponse_Data) AsMetricListResponseData0() (MetricListResponseData0, error) {
+	var body MetricListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMetricListResponseData0 overwrites any union data inside the MetricListResponse_Data as the provided MetricListResponseData0
+func (t *MetricListResponse_Data) FromMetricListResponseData0(v MetricListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMetricListResponseData0 performs a merge with any union data inside the MetricListResponse_Data, using the provided MetricListResponseData0
+func (t *MetricListResponse_Data) MergeMetricListResponseData0(v MetricListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMetricListResponseData1 returns the union data inside the MetricListResponse_Data as a MetricListResponseData1
+func (t MetricListResponse_Data) AsMetricListResponseData1() (MetricListResponseData1, error) {
+	var body MetricListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMetricListResponseData1 overwrites any union data inside the MetricListResponse_Data as the provided MetricListResponseData1
+func (t *MetricListResponse_Data) FromMetricListResponseData1(v MetricListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMetricListResponseData1 performs a merge with any union data inside the MetricListResponse_Data, using the provided MetricListResponseData1
+func (t *MetricListResponse_Data) MergeMetricListResponseData1(v MetricListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MetricListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MetricListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

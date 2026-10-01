@@ -1044,6 +1044,25 @@ var propsMapping = map[string]propMapping{
 			"rset_md5":   colStr(schema.CompStatusRsetMD5),
 		},
 	},
+	// The metrics: SQL requests feeding the charts and the reports.
+	"metric": {
+		Available: []string{
+			"id", "metric_name", "metric_sql", "metric_author", "metric_created",
+			"metric_col_value_index", "metric_col_instance_index",
+			"metric_col_instance_label", "metric_historize",
+		},
+		Props: map[string]propDef{
+			"id":                        col(schema.MetricsID),
+			"metric_name":               colStr(schema.MetricsMetricName),
+			"metric_sql":                colStr(schema.MetricsMetricSql),
+			"metric_author":             colStr(schema.MetricsMetricAuthor),
+			"metric_created":            colStr(schema.MetricsMetricCreated),
+			"metric_col_value_index":    col(schema.MetricsMetricColValueIndex),
+			"metric_col_instance_index": col(schema.MetricsMetricColInstanceIndex),
+			"metric_col_instance_label": colStr(schema.MetricsMetricColInstanceLabel),
+			"metric_historize":          colStr(schema.MetricsMetricHistorize),
+		},
+	},
 	"filter": {
 		Available: []string{
 			"id", "f_table", "f_field", "f_value", "f_op",

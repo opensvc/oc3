@@ -4619,6 +4619,208 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /metrics:
+    get:
+      operationId: GetMetrics
+      description: |
+        List the metrics: SQL requests whose results feed the charts and the
+        reports. A manager sees every metric; the others see the metrics published
+        to one of their teams.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostMetrics
+      description: |
+        Create a metric. Its name must be unique. The metric is published to the
+        primary team of its author, as in the historical collector. Requires the
+        Manager privilege.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - metric_name
+              properties:
+                metric_name:
+                  type: string
+                  description: Unique name of the metric.
+                metric_sql:
+                  type: string
+                  description: |
+                    The SQL request computing the metric. `%%fset_node_ids%%` and
+                    `%%fset_svc_ids%%` stand for the nodes and services of the
+                    filterset of the session where the metric is read.
+                metric_col_value_index:
+                  type: integer
+                  minimum: 0
+                  description: Index of the result column holding the value.
+                metric_col_instance_index:
+                  type: integer
+                  minimum: 0
+                  nullable: true
+                  description: |
+                    Index of the result column naming the instance of each value,
+                    null when the request returns one value.
+                metric_col_instance_label:
+                  type: string
+                  description: How the instances are named, the column header say.
+                metric_historize:
+                  type: string
+                  enum: ['T', 'F']
+                  description: Whether the values are kept over time for the charts.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}:
+    get:
+      operationId: GetMetric
+      description: Display a metric, if the caller may see it (see GET /metrics).
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric identifier (metrics.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostMetric
+      description: |
+        Modify a metric. Only the properties present in the body change; a null
+        `metric_col_instance_index` clears it. Requires the Manager privilege.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric identifier (metrics.id)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metric_name:
+                  type: string
+                  description: Unique name of the metric.
+                metric_sql:
+                  type: string
+                  description: |
+                    The SQL request computing the metric. `%%fset_node_ids%%` and
+                    `%%fset_svc_ids%%` stand for the nodes and services of the
+                    filterset of the session where the metric is read.
+                metric_col_value_index:
+                  type: integer
+                  minimum: 0
+                  description: Index of the result column holding the value.
+                metric_col_instance_index:
+                  type: integer
+                  minimum: 0
+                  nullable: true
+                  description: |
+                    Index of the result column naming the instance of each value,
+                    null when the request returns one value.
+                metric_col_instance_label:
+                  type: string
+                  description: How the instances are named, the column header say.
+                metric_historize:
+                  type: string
+                  enum: ['T', 'F']
+                  description: Whether the values are kept over time for the charts.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /realtime/token:
     post:
       operationId: PostRealtimeToken
@@ -14462,6 +14664,52 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/LogRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    MetricRow:
+      type: object
+      description: |
+        A metric: an SQL request whose results feed the charts and the reports.
+        Every property is optional: the `props` query parameter selects which columns
+        the server returns.
+      properties:
+        id:
+          type: integer
+        metric_name:
+          type: string
+        metric_sql:
+          type: string
+        metric_author:
+          type: string
+        metric_created:
+          type: string
+        metric_col_value_index:
+          type: integer
+          nullable: true
+        metric_col_instance_index:
+          type: integer
+          nullable: true
+        metric_col_instance_label:
+          type: string
+        metric_historize:
+          type: string
+
+    MetricListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/MetricRow'
             - type: object
               additionalProperties:
                 type: object
