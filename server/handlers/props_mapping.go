@@ -1044,6 +1044,15 @@ var propsMapping = map[string]propMapping{
 			"rset_md5":   colStr(schema.CompStatusRsetMD5),
 		},
 	},
+	// The reports: pages of charts and metrics, defined in YAML.
+	"report": {
+		Available: []string{"id", "report_name", "report_yaml"},
+		Props: map[string]propDef{
+			"id":          col(schema.ReportsID),
+			"report_name": colStr(schema.ReportsReportName),
+			"report_yaml": colStr(schema.ReportsReportYaml),
+		},
+	},
 	// The metrics: SQL requests feeding the charts and the reports.
 	"metric": {
 		Available: []string{

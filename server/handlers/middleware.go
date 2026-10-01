@@ -125,6 +125,10 @@ func IsAlertsManager(c echo.Context) bool {
 	return IsManager(c) || HasGroup(c, "AlertsManager")
 }
 
+func IsReportsManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "ReportsManager")
+}
+
 func IsObsManager(c echo.Context) bool {
 	return IsManager(c) || HasGroup(c, "ObsManager")
 }

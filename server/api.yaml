@@ -4861,6 +4861,116 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /reports:
+    get:
+      operationId: GetReports
+      description: |
+        List the reports: pages of charts and metrics, defined in YAML. A manager sees
+        every report; the others see the reports published to one of their teams.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostReports
+      description: |
+        Create a report. Its name must be unique, and its definition, when given,
+        must be valid YAML. The report is published to the primary team of its author,
+        which is also made responsible for it, as in the historical collector.
+        Requires the ReportsManager or Manager privilege.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - report_name
+              properties:
+                report_name:
+                  type: string
+                  description: Unique name of the report.
+                report_yaml:
+                  type: string
+                  description: Definition of the report, in YAML.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}:
+    get:
+      operationId: GetReport
+      description: Display a report, if the caller may see it (see GET /reports).
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report identifier (reports.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /san-switches:
     get:
       operationId: GetSanSwitches
@@ -14710,6 +14820,38 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/MetricRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    ReportRow:
+      type: object
+      description: |
+        A report: a page of charts and metrics, defined in YAML. Every property is
+        optional: the `props` query parameter selects which columns the server
+        returns.
+      properties:
+        id:
+          type: integer
+        report_name:
+          type: string
+        report_yaml:
+          type: string
+
+    ReportListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ReportRow'
             - type: object
               additionalProperties:
                 type: object
