@@ -4821,6 +4821,48 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /metrics/{metric_id}/samples:
+    get:
+      operationId: GetMetricSamples
+      description: |
+        Run the request of a metric now and return its result, for a caller who may
+        see the metric (see GET /metrics): the columns in order, then the rows, 1000
+        at most. The request runs read-only, for 10 seconds at most, and must be a
+        SELECT. Its %%fset_node_ids%% and %%fset_svc_ids%% placeholders stand for the
+        nodes and services the caller may see. A request that fails returns 422 with
+        the database error.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric identifier (metrics.id)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricSamplesResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        422:
+          description: The request is not a SELECT, or it failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /realtime/token:
     post:
       operationId: PostRealtimeToken
@@ -4965,6 +5007,51 @@ paths:
           $ref: '#/components/responses/401'
         404:
           $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/definition:
+    get:
+      operationId: GetReportDefinition
+      description: |
+        The definition of a report, report_yaml parsed, for a caller who may see the
+        report: Title, Desc, and Sections, each with a Title, a Desc, Metrics (by
+        metric_id) and Charts (by chart_id). An empty definition is an empty object.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report identifier (reports.id)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        422:
+          description: The definition is not valid YAML.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -14809,6 +14896,34 @@ components:
           type: string
         metric_historize:
           type: string
+
+    MetricSamples:
+      type: object
+      description: The result of a metric request, its columns in order.
+      required:
+        - columns
+        - rows
+      properties:
+        columns:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: array
+            items: {}
+        truncated:
+          type: boolean
+          description: More rows were returned than were kept.
+
+    MetricSamplesResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/MetricSamples'
 
     MetricListResponse:
       type: object

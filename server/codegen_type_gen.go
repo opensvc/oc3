@@ -1310,6 +1310,21 @@ type MetricRow struct {
 	MetricSql              *string `json:"metric_sql,omitempty"`
 }
 
+// MetricSamples The result of a metric request, its columns in order.
+type MetricSamples struct {
+	Columns []string        `json:"columns"`
+	Rows    [][]interface{} `json:"rows"`
+
+	// Truncated More rows were returned than were kept.
+	Truncated *bool `json:"truncated,omitempty"`
+}
+
+// MetricSamplesResponse defines model for MetricSamplesResponse.
+type MetricSamplesResponse struct {
+	// Data The result of a metric request, its columns in order.
+	Data MetricSamples `json:"data"`
+}
+
 // ModulesetListResponse defines model for ModulesetListResponse.
 type ModulesetListResponse struct {
 	Data ModulesetListResponse_Data `json:"data"`
