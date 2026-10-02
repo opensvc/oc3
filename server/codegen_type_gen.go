@@ -628,6 +628,9 @@ type ActionEnqueue struct {
 	// Action Agent action to run
 	Action string `json:"action"`
 
+	// ClusterId Target cluster (clusters.cluster_id), alone
+	ClusterId *string `json:"cluster_id,omitempty"`
+
 	// NodeId Target node (node_id or nodename)
 	NodeId *string `json:"node_id,omitempty"`
 

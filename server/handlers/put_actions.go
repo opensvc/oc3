@@ -22,11 +22,12 @@ import (
 // collector's PUT /actions (rest_put_action_queue). The keys it does not support
 // are kept to be refused rather than silently dropped.
 type actionEntry struct {
-	NodeID string `json:"node_id"`
-	SvcID  string `json:"svc_id"`
-	Action string `json:"action"`
-	Rid    string `json:"rid"`
-	VMName string `json:"vmname"`
+	NodeID    string `json:"node_id"`
+	SvcID     string `json:"svc_id"`
+	ClusterID string `json:"cluster_id"`
+	Action    string `json:"action"`
+	Rid       string `json:"rid"`
+	VMName    string `json:"vmname"`
 
 	unsupported []string
 }
@@ -56,7 +57,8 @@ func (e *actionEntry) UnmarshalJSON(data []byte) error {
 
 // queueActionEntry dispatches one entry as json_action_one() does: node and
 // service make an instance action, a service alone a service action, a node alone
-// a node action. vmname names the node in place of node_id.
+// a node action, a cluster alone a cluster action. vmname names the node in
+// place of node_id.
 func (a *Api) queueActionEntry(c echo.Context, log *slog.Logger, ctx context.Context, e actionEntry) (*queuedAction, error) {
 	if len(e.unsupported) > 0 {
 		return nil, refuseAction(http.StatusBadRequest, "unsupported keys: %s", strings.Join(e.unsupported, ", "))
@@ -68,6 +70,14 @@ func (a *Api) queueActionEntry(c echo.Context, log *slog.Logger, ctx context.Con
 	if e.VMName != "" {
 		nodeID = e.VMName
 	}
+	if e.ClusterID != "" {
+		// A cluster action names the cluster alone: the node it is posted for is
+		// chosen among the live ones.
+		if nodeID != "" || e.SvcID != "" || e.Rid != "" {
+			return nil, refuseAction(http.StatusBadRequest, "cluster_id excludes node_id, vmname, svc_id and rid")
+		}
+		return a.queueClusterAction(c, log, ctx, e.ClusterID, e.Action)
+	}
 	switch {
 	case e.SvcID != "" && nodeID != "":
 		return a.queueInstanceAction(c, log, ctx, nodeID, e.SvcID, e.Action, e.Rid)
@@ -78,7 +88,7 @@ func (a *Api) queueActionEntry(c echo.Context, log *slog.Logger, ctx context.Con
 	case e.SvcID != "":
 		return a.queueServiceAction(c, log, ctx, e.SvcID, e.Action)
 	}
-	return nil, refuseAction(http.StatusBadRequest, "node_id or svc_id must be specified")
+	return nil, refuseAction(http.StatusBadRequest, "node_id, svc_id or cluster_id must be specified")
 }
 
 // factorizeActionEntries merges the entries that target the same resources of an
@@ -94,7 +104,7 @@ func factorizeActionEntries(entries []actionEntry) []actionEntry {
 		if e.VMName != "" {
 			nodeID = e.VMName
 		}
-		if e.Rid == "" || e.SvcID == "" || nodeID == "" || len(e.unsupported) > 0 {
+		if e.Rid == "" || e.SvcID == "" || nodeID == "" || e.ClusterID != "" || len(e.unsupported) > 0 {
 			out = append(out, e)
 			continue
 		}
@@ -214,7 +224,7 @@ func (a *Api) PutActions(c echo.Context) error {
 func describeRefusal(e actionEntry, err error) string {
 	var target []string
 	for _, part := range []struct{ key, value string }{
-		{"node_id", e.NodeID}, {"vmname", e.VMName}, {"svc_id", e.SvcID}, {"rid", e.Rid},
+		{"node_id", e.NodeID}, {"vmname", e.VMName}, {"svc_id", e.SvcID}, {"cluster_id", e.ClusterID}, {"rid", e.Rid},
 	} {
 		if part.value != "" {
 			target = append(target, part.key+"="+part.value)

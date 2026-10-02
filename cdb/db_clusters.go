@@ -2,7 +2,10 @@ package cdb
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -86,4 +89,79 @@ func (oDb *DB) GetClusters(ctx context.Context, p ListParams) ([]map[string]any,
 // GetCluster returns one cluster, by its cluster_id, if the caller may see it.
 func (oDb *DB) GetCluster(ctx context.Context, clusterID string, p ListParams) ([]map[string]any, error) {
 	return oDb.queryClusters(ctx, clusterID, p)
+}
+
+// ClusterName returns the name of a cluster by its cluster_id, and whether the
+// collector knows it.
+func (oDb *DB) ClusterName(ctx context.Context, clusterID string) (string, bool, error) {
+	var name string
+	err := oDb.DB.QueryRowContext(ctx,
+		"SELECT cluster_name FROM clusters WHERE cluster_id = ? LIMIT 1", clusterID).Scan(&name)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", false, nil
+	case err != nil:
+		return "", false, fmt.Errorf("clusterName: %w", err)
+	}
+	return name, true, nil
+}
+
+// ClusterNodesResponsibility counts the nodes of the collector naming the
+// cluster, and names those the caller is not responsible for: their app is not
+// one their groups are responsible for. A manager is responsible for them all.
+func (oDb *DB) ClusterNodesResponsibility(ctx context.Context, clusterID string, groups []string, isManager bool) (int, []string, error) {
+	rows, err := oDb.DB.QueryContext(ctx,
+		"SELECT COALESCE(nodename, ''), COALESCE(app, '') FROM nodes WHERE cluster_id = ? ORDER BY nodename", clusterID)
+	if err != nil {
+		return 0, nil, fmt.Errorf("clusterNodesResponsibility: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	type member struct{ nodename, app string }
+	var members []member
+	for rows.Next() {
+		var m member
+		if err := rows.Scan(&m.nodename, &m.app); err != nil {
+			return 0, nil, fmt.Errorf("clusterNodesResponsibility: %w", err)
+		}
+		members = append(members, m)
+	}
+	if err := rows.Err(); err != nil {
+		return 0, nil, fmt.Errorf("clusterNodesResponsibility: %w", err)
+	}
+	if isManager {
+		return len(members), nil, nil
+	}
+	apps, err := oDb.AppsForGroups(ctx, groups)
+	if err != nil {
+		return 0, nil, fmt.Errorf("clusterNodesResponsibility: %w", err)
+	}
+	var out []string
+	for _, m := range members {
+		if !slices.ContainsFunc(apps, func(a string) bool { return strings.EqualFold(a, m.app) }) {
+			out = append(out, m.nodename)
+		}
+	}
+	return len(members), out, nil
+}
+
+// ClusterLiveNode returns a node of the cluster seen alive in the last 15
+// minutes, running the om3 agent ("v3." or "3." versions) and reading its own
+// queue (pull or feed), to post a cluster action for: nil when there is none.
+func (oDb *DB) ClusterLiveNode(ctx context.Context, clusterID string) (*NodeActionTarget, error) {
+	const query = "SELECT node_id, COALESCE(nodename, ''), COALESCE(os_name, ''), COALESCE(action_type, '')," +
+		" COALESCE(collector, ''), COALESCE(connect_to, '')" +
+		" FROM nodes WHERE cluster_id = ? AND last_comm > NOW() - INTERVAL 15 MINUTE" +
+		" AND (version LIKE 'v3.%' OR version LIKE '3.%')" +
+		" AND COALESCE(action_type, '') IN ('', 'pull', 'feed')" +
+		" ORDER BY nodename LIMIT 1"
+	var t NodeActionTarget
+	err := oDb.DB.QueryRowContext(ctx, query, clusterID).
+		Scan(&t.NodeID, &t.Nodename, &t.OSName, &t.ActionType, &t.Collector, &t.ConnectTo)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("clusterLiveNode: %w", err)
+	}
+	return &t, nil
 }
