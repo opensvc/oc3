@@ -7829,6 +7829,11 @@ paths:
                   type: string
                 svc_provisioned:
                   type: string
+                svc_sla:
+                  type: string
+                  description: |
+                    The availability target, a percent between 0 and 100, compared with
+                    the availability rate of the service; empty to remove it.
                 svc_placement:
                   type: string
                 svc_notifications:
@@ -14498,6 +14503,24 @@ components:
         query parameter selects which columns the server returns, so a row
         carries only the requested subset.
       properties:
+        svc_sla:
+          type: number
+          format: double
+          nullable: true
+          description: The availability target, in percent; null without SLA.
+        svc_availability:
+          type: number
+          format: double
+          nullable: true
+          description: |
+            The availability rate of the last 30 days, in percent, as the status
+            history of the service computes it, stored by the scheduler every 10
+            minutes and at once when a justification changes; sortable and
+            filterable. Null without status recorded.
+        svc_availability_updated:
+          type: string
+          nullable: true
+          description: When svc_availability was computed.
         id:
           type: integer
         svc_id:

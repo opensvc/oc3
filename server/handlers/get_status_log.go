@@ -10,6 +10,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/opensvc/oc3/availability"
 	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/util/echolog"
@@ -71,7 +72,7 @@ func (a *Api) GetServiceStatusLog(c echo.Context, svcId string, params server.Ge
 		}
 		data = append(data, period)
 	}
-	avail := serviceAvailability(periods, acks, days, time.Now())
+	avail := availability.Compute(periods, acks, days, time.Now())
 	return c.JSON(http.StatusOK, map[string]any{
 		"data": data,
 		"availability": server.ServiceAvailability{
@@ -113,8 +114,8 @@ func (a *Api) serviceForAck(c echo.Context, log *slog.Logger, svcId string) (*cd
 }
 
 func validBounds(begin, end string) bool {
-	b, ok1 := parseCollectorTime(begin)
-	e, ok2 := parseCollectorTime(end)
+	b, ok1 := availability.ParseCollectorTime(begin)
+	e, ok2 := availability.ParseCollectorTime(end)
 	return ok1 && ok2 && e.After(b)
 }
 
@@ -144,6 +145,7 @@ func (a *Api) PutServiceStatusLogAck(c echo.Context, svcId string) error {
 		log.Error("cannot store the justification", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot store the justification")
 	}
+	a.refreshAvailability(c, log, svc.SvcID)
 	a.logAck(c, log, svc, "acknowledged unavailability range: %(svcname)s (%(begin)s>%(end)s), accounted: %(account)s",
 		map[string]any{"svcname": svc.Svcname, "begin": body.Begin, "end": body.End, "account": body.Account, "comment": comment})
 	return c.JSON(http.StatusOK, map[string]string{"info": "period justified"})
@@ -167,9 +169,18 @@ func (a *Api) DeleteServiceStatusLogAck(c echo.Context, svcId string, params ser
 	if !found {
 		return JSONProblemf(c, http.StatusNotFound, "this period is not justified")
 	}
+	a.refreshAvailability(c, log, svc.SvcID)
 	a.logAck(c, log, svc, "removed the justification of %(svcname)s (%(begin)s>%(end)s)",
 		map[string]any{"svcname": svc.Svcname, "begin": params.Begin, "end": params.End})
 	return c.JSON(http.StatusOK, map[string]string{"info": "justification removed"})
+}
+
+// refreshAvailability stores at once the 30-day availability of a service whose
+// justifications changed, rather than at the next scheduler run.
+func (a *Api) refreshAvailability(c echo.Context, log *slog.Logger, svcID string) {
+	if err := availability.Refresh(c.Request().Context(), a.ODB, []string{svcID}, time.Now()); err != nil {
+		log.Error("cannot refresh the availability", logkey.Error, err)
+	}
 }
 
 func (a *Api) logAck(c echo.Context, log *slog.Logger, svc *cdb.DBService, format string, dict map[string]any) {

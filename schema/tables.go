@@ -1560,6 +1560,9 @@ var (
 	ServicesSvcSnoozeTill           = &Col{T: TServices, Name: "svc_snooze_till", Nullable: true}
 	ServicesClusterID               = &Col{T: TServices, Name: "cluster_id", Nullable: true}
 	ServicesSvcFlexTarget           = &Col{T: TServices, Name: "svc_flex_target", Nullable: true}
+	ServicesSvcSla                  = &Col{T: TServices, Name: "svc_sla", Nullable: true}
+	ServicesSvcAvailability         = &Col{T: TServices, Name: "svc_availability", Nullable: true}
+	ServicesSvcAvailabilityUpdated  = &Col{T: TServices, Name: "svc_availability_updated", Nullable: true}
 )
 
 // Columns of services_log
@@ -2886,6 +2889,9 @@ var AllCols = []*Col{
 	ServicesSvcSnoozeTill,
 	ServicesClusterID,
 	ServicesSvcFlexTarget,
+	ServicesSvcSla,
+	ServicesSvcAvailability,
+	ServicesSvcAvailabilityUpdated,
 	ServicesLogID,
 	ServicesLogSvcAvailstatus,
 	ServicesLogSvcBegin,

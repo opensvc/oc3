@@ -11,6 +11,7 @@
 !LICENSE
 !.gitignore
 !Makefile
+!migration.sql
 .idea
 core/version/version.go
 .trash

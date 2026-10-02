@@ -262,6 +262,9 @@ func (a *Api) handleItem(
 		Offset:      query.Page.Offset,
 		Props:       query.Props,
 		SelectExprs: selectExprs,
+		// Typed as the lists type them: a decimal or an integer column reads as a
+		// number, not as the text the driver gives.
+		TypeHints: buildTypeHints(query.Props, mapping),
 	}
 	if p.withUserID {
 		dbParams.UserID = authUserID(c)

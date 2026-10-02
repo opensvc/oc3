@@ -1,17 +1,21 @@
-package serverhandlers
+// Package availability computes the availability rate of a service from its
+// status log and its justified periods, as service_availability() of the
+// historical collector, and keeps the 30-day rate of the services stored.
+package availability
 
 import (
+	"context"
 	"sort"
 	"time"
 
 	"github.com/opensvc/oc3/cdb"
 )
 
-// availabilityFresh is how recent the last status of a service must be for its
+// Fresh is how recent the last status of a service must be for its
 // current period to run to now; an older one means the service stopped
 // reporting, which counts as unavailable, as a hole of the historical
 // availability did.
-const availabilityFresh = 15 * time.Minute
+const Fresh = 15 * time.Minute
 
 // availableStatuses are the availability statuses during which a service is
 // available, the "up" ranges of service_availability(); every other status, and
@@ -20,10 +24,10 @@ var availableStatuses = map[string]bool{"up": true, "stdby up": true}
 
 type interval struct{ from, to time.Time }
 
-// availabilityResult is the availability of a service over a window: the time it
-// was available, the downtime left out of the count by a justification marked
-// not to account, and the time counted.
-type availabilityResult struct {
+// Result is the availability of a service over a window: the time it was
+// available, the downtime left out of the count by a justification marked not
+// to account, and the time counted.
+type Result struct {
 	From, To  time.Time
 	Available time.Duration
 	Excluded  time.Duration
@@ -31,14 +35,16 @@ type availabilityResult struct {
 }
 
 // Rate is the available share of the counted time, in percent.
-func (r availabilityResult) Rate() float64 {
+func (r Result) Rate() float64 {
 	if r.Counted <= 0 {
 		return 100
 	}
 	return float64(r.Available) * 100 / float64(r.Counted)
 }
 
-func parseCollectorTime(s string) (time.Time, bool) {
+// ParseCollectorTime reads a "YYYY-MM-DD HH:MM:SS" date of the collector, in its
+// time zone.
+func ParseCollectorTime(s string) (time.Time, bool) {
 	t, err := time.ParseInLocation("2006-01-02 15:04:05", s, time.Local)
 	return t, err == nil
 }
@@ -106,26 +112,26 @@ func subtract(a, b []interval) []interval {
 	return out
 }
 
-// serviceAvailability computes the availability of a service from now-days to
+// Compute computes the availability of a service from now-days to
 // now, from the start of its history when that is later, as
 // service_availability() of the historical collector: the downtime is every
 // moment the service was neither up nor standby up, the time no status covers
 // included, but the parts justified with account off, which are left out of the
 // count.
-func serviceAvailability(periods []cdb.StatusPeriod, acks []cdb.StatusAck, days int, now time.Time) availabilityResult {
+func Compute(periods []cdb.StatusPeriod, acks []cdb.StatusAck, days int, now time.Time) Result {
 	from := now.Add(-time.Duration(days) * 24 * time.Hour)
 	var up []interval
 	var first time.Time
 	for i, p := range periods {
-		b, ok1 := parseCollectorTime(p.Begin)
-		e, ok2 := parseCollectorTime(p.End)
+		b, ok1 := ParseCollectorTime(p.Begin)
+		e, ok2 := ParseCollectorTime(p.End)
 		if !ok1 || !ok2 {
 			continue
 		}
 		if first.IsZero() || b.Before(first) {
 			first = b
 		}
-		if i == len(periods)-1 && now.Sub(e) < availabilityFresh {
+		if i == len(periods)-1 && now.Sub(e) < Fresh {
 			e = now
 		}
 		if availableStatuses[p.Avail] {
@@ -135,7 +141,7 @@ func serviceAvailability(periods []cdb.StatusPeriod, acks []cdb.StatusAck, days 
 	if !first.IsZero() && first.After(from) {
 		from = first
 	}
-	result := availabilityResult{From: from, To: now}
+	result := Result{From: from, To: now}
 	if !now.After(from) {
 		return result
 	}
@@ -148,8 +154,8 @@ func serviceAvailability(periods []cdb.StatusPeriod, acks []cdb.StatusAck, days 
 		if a.Account {
 			continue
 		}
-		b, ok1 := parseCollectorTime(a.Begin)
-		e, ok2 := parseCollectorTime(a.End)
+		b, ok1 := ParseCollectorTime(a.Begin)
+		e, ok2 := ParseCollectorTime(a.End)
 		if ok1 && ok2 {
 			excluded = append(excluded, clip(interval{b, e}, from, now))
 		}
@@ -159,4 +165,36 @@ func serviceAvailability(periods []cdb.StatusPeriod, acks []cdb.StatusAck, days 
 	result.Excluded = total(excluded)
 	result.Counted = now.Sub(from) - result.Excluded
 	return result
+}
+
+// Days is the period of the stored availability rate of a service.
+const Days = 30
+
+// refreshBatch is how many services are read and written at once.
+const refreshBatch = 200
+
+// Refresh computes the availability rate of the last Days of the given
+// services, and stores it in services.svc_availability: NULL for a service
+// with no status recorded.
+func Refresh(ctx context.Context, odb *cdb.DB, svcIDs []string, now time.Time) error {
+	for start := 0; start < len(svcIDs); start += refreshBatch {
+		ids := svcIDs[start:min(start+refreshBatch, len(svcIDs))]
+		periods, acks, err := odb.ServicesStatusLog(ctx, ids, Days)
+		if err != nil {
+			return err
+		}
+		rates := make(map[string]*float64, len(ids))
+		for _, id := range ids {
+			if len(periods[id]) == 0 {
+				rates[id] = nil
+				continue
+			}
+			rate := Compute(periods[id], acks[id], Days, now).Rate()
+			rates[id] = &rate
+		}
+		if err := odb.SetServicesAvailability(ctx, rates); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -1,4 +1,4 @@
-package serverhandlers
+package availability
 
 import (
 	"math"
@@ -18,7 +18,7 @@ func TestServiceAvailability(t *testing.T) {
 		{Avail: "up", Begin: f(-2 * time.Hour), End: f(-time.Minute)},
 	}
 	// The history starts 10 hours ago, within the 1 day asked: 8 of 10 hours up.
-	r := serviceAvailability(periods, nil, 1, now)
+	r := Compute(periods, nil, 1, now)
 	if r.From != now.Add(-10*time.Hour) || r.Available != 6*time.Hour || r.Counted != 10*time.Hour {
 		t.Fatalf("no ack: %+v", r)
 	}
@@ -28,26 +28,26 @@ func TestServiceAvailability(t *testing.T) {
 
 	// The down period justified and not accounted: 6 of 8 counted hours up.
 	acks := []cdb.StatusAck{{Begin: f(-6 * time.Hour), End: f(-4 * time.Hour), Account: false}}
-	r = serviceAvailability(periods, acks, 1, now)
+	r = Compute(periods, acks, 1, now)
 	if r.Excluded != 2*time.Hour || r.Counted != 8*time.Hour || math.Abs(r.Rate()-75) > 0.001 {
 		t.Errorf("not accounted: %+v rate %f", r, r.Rate())
 	}
 
 	// Justified but still accounted: no change.
 	acks[0].Account = true
-	if r = serviceAvailability(periods, acks, 1, now); r.Excluded != 0 {
+	if r = Compute(periods, acks, 1, now); r.Excluded != 0 {
 		t.Errorf("accounted: %+v", r)
 	}
 
 	// A justification overlapping an up period excludes only the downtime.
 	acks = []cdb.StatusAck{{Begin: f(-7 * time.Hour), End: f(-5 * time.Hour), Account: false}}
-	if r = serviceAvailability(periods, acks, 1, now); r.Excluded != time.Hour {
+	if r = Compute(periods, acks, 1, now); r.Excluded != time.Hour {
 		t.Errorf("overlap: %+v", r)
 	}
 
 	// A stale last status leaves the time since as downtime.
 	stale := []cdb.StatusPeriod{{Avail: "up", Begin: f(-4 * time.Hour), End: f(-2 * time.Hour)}}
-	if r = serviceAvailability(stale, nil, 1, now); r.Available != 2*time.Hour || r.Counted != 4*time.Hour {
+	if r = Compute(stale, nil, 1, now); r.Available != 2*time.Hour || r.Counted != 4*time.Hour {
 		t.Errorf("stale: %+v", r)
 	}
 }

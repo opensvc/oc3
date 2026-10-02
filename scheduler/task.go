@@ -66,6 +66,7 @@ var (
 		TaskAlert1H,
 		TaskAlert1D,
 		TaskMetrics,
+		TaskServicesAvailability,
 	}
 
 	taskExecCounter = promauto.NewCounterVec(

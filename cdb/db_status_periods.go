@@ -135,3 +135,98 @@ func (oDb *DB) DeleteServiceStatusAck(ctx context.Context, svcID, begin, end str
 	}
 	return n > 0, nil
 }
+
+// ServicesStatusLog returns, by service, the availability periods and the
+// justifications ending in the last days, for a page of services at once.
+func (oDb *DB) ServicesStatusLog(ctx context.Context, svcIDs []string, days int) (map[string][]StatusPeriod, map[string][]StatusAck, error) {
+	periods := make(map[string][]StatusPeriod, len(svcIDs))
+	acks := make(map[string][]StatusAck, len(svcIDs))
+	if len(svcIDs) == 0 {
+		return periods, acks, nil
+	}
+	in := Placeholders(len(svcIDs))
+	ids := make([]any, len(svcIDs))
+	for i, id := range svcIDs {
+		ids[i] = id
+	}
+	query := `SELECT svc_id, svc_availstatus, DATE_FORMAT(svc_begin, ` + periodDateFormat + `), DATE_FORMAT(svc_end, ` + periodDateFormat + `)
+		FROM (
+			SELECT svc_id, svc_availstatus, svc_begin, svc_end FROM services_log
+				WHERE svc_id IN (` + in + `) AND svc_end >= NOW() - INTERVAL ? DAY
+			UNION ALL
+			SELECT svc_id, svc_availstatus, svc_begin, svc_end FROM services_log_last
+				WHERE svc_id IN (` + in + `)
+		) t
+		ORDER BY svc_id, svc_begin`
+	args := append(append(append([]any{}, ids...), days), ids...)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, nil, fmt.Errorf("servicesStatusLog: %w", err)
+	}
+	for rows.Next() {
+		var svcID string
+		var p StatusPeriod
+		if err := rows.Scan(&svcID, &p.Avail, &p.Begin, &p.End); err != nil {
+			_ = rows.Close()
+			return nil, nil, fmt.Errorf("servicesStatusLog: %w", err)
+		}
+		periods[svcID] = append(periods[svcID], p)
+	}
+	_ = rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, nil, fmt.Errorf("servicesStatusLog: %w", err)
+	}
+
+	ackQuery := `SELECT svc_id, DATE_FORMAT(mon_begin, ` + periodDateFormat + `), DATE_FORMAT(mon_end, ` + periodDateFormat + `), mon_account
+		FROM svcmon_log_ack
+		WHERE svc_id IN (` + in + `) AND mon_end >= NOW() - INTERVAL ? DAY`
+	ackRows, err := oDb.DB.QueryContext(ctx, ackQuery, append(append([]any{}, ids...), days)...)
+	if err != nil {
+		return nil, nil, fmt.Errorf("servicesStatusLog acks: %w", err)
+	}
+	defer func() { _ = ackRows.Close() }()
+	for ackRows.Next() {
+		var svcID string
+		var a StatusAck
+		if err := ackRows.Scan(&svcID, &a.Begin, &a.End, &a.Account); err != nil {
+			return nil, nil, fmt.Errorf("servicesStatusLog acks: %w", err)
+		}
+		acks[svcID] = append(acks[svcID], a)
+	}
+	return periods, acks, ackRows.Err()
+}
+
+// SetServicesAvailability stores the availability rate of services, nil
+// clearing it, with the time it was computed.
+func (oDb *DB) SetServicesAvailability(ctx context.Context, rates map[string]*float64) error {
+	for svcID, rate := range rates {
+		var value any
+		if rate != nil {
+			value = *rate
+		}
+		if _, err := oDb.DB.ExecContext(ctx,
+			"UPDATE services SET svc_availability = ?, svc_availability_updated = NOW() WHERE svc_id = ?",
+			value, svcID); err != nil {
+			return fmt.Errorf("setServicesAvailability: %w", err)
+		}
+	}
+	return nil
+}
+
+// ServiceIDs returns the id of every service.
+func (oDb *DB) ServiceIDs(ctx context.Context) ([]string, error) {
+	rows, err := oDb.DB.QueryContext(ctx, "SELECT svc_id FROM services")
+	if err != nil {
+		return nil, fmt.Errorf("serviceIDs: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	ids := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("serviceIDs: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}

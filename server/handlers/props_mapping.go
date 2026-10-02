@@ -596,9 +596,16 @@ var propsMapping = map[string]propMapping{
 			"svc_hostid", "svc_wave", "svc_config", "svc_config_updated",
 			"svc_metrocluster", "svc_drnoaction",
 			"svc_notifications", "svc_snooze_till",
+			"svc_sla", "svc_availability", "svc_availability_updated",
 			"updated",
 		},
 		Props: map[string]propDef{
+			// The availability target in percent; null without SLA.
+			"svc_sla": {Col: schema.ServicesSvcSla, Kind: "float64"},
+			// The availability rate of the last 30 days in percent, stored by the
+			// scheduler; null without status recorded.
+			"svc_availability":            {Col: schema.ServicesSvcAvailability, Kind: "float64"},
+			"svc_availability_updated":    colStr(schema.ServicesSvcAvailabilityUpdated),
 			"id":                          col(schema.ServicesID),
 			"svc_id":                      colStr(schema.ServicesSvcID),
 			"svcname":                     colStr(schema.ServicesSvcname),

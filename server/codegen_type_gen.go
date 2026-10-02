@@ -2132,10 +2132,19 @@ type ServiceListResponse_Data struct {
 // query parameter selects which columns the server returns, so a row
 // carries only the requested subset.
 type ServiceRow struct {
-	ClusterId               *string `json:"cluster_id,omitempty"`
-	Id                      *int    `json:"id,omitempty"`
-	SvcApp                  *string `json:"svc_app,omitempty"`
-	SvcAutostart            *string `json:"svc_autostart,omitempty"`
+	ClusterId    *string `json:"cluster_id,omitempty"`
+	Id           *int    `json:"id,omitempty"`
+	SvcApp       *string `json:"svc_app,omitempty"`
+	SvcAutostart *string `json:"svc_autostart,omitempty"`
+
+	// SvcAvailability The availability rate of the last 30 days, in percent, as the status
+	// history of the service computes it, stored by the scheduler every 10
+	// minutes and at once when a justification changes; sortable and
+	// filterable. Null without status recorded.
+	SvcAvailability *float64 `json:"svc_availability,omitempty"`
+
+	// SvcAvailabilityUpdated When svc_availability was computed.
+	SvcAvailabilityUpdated  *string `json:"svc_availability_updated,omitempty"`
 	SvcAvailstatus          *string `json:"svc_availstatus,omitempty"`
 	SvcComment              *string `json:"svc_comment,omitempty"`
 	SvcConfig               *string `json:"svc_config,omitempty"`
@@ -2160,13 +2169,16 @@ type ServiceRow struct {
 	SvcNotifications        *string `json:"svc_notifications,omitempty"`
 	SvcPlacement            *string `json:"svc_placement,omitempty"`
 	SvcProvisioned          *string `json:"svc_provisioned,omitempty"`
-	SvcSnoozeTill           *string `json:"svc_snooze_till,omitempty"`
-	SvcStatus               *string `json:"svc_status,omitempty"`
-	SvcStatusUpdated        *string `json:"svc_status_updated,omitempty"`
-	SvcTopology             *string `json:"svc_topology,omitempty"`
-	SvcWave                 *int    `json:"svc_wave,omitempty"`
-	Svcname                 *string `json:"svcname,omitempty"`
-	Updated                 *string `json:"updated,omitempty"`
+
+	// SvcSla The availability target, in percent; null without SLA.
+	SvcSla           *float64 `json:"svc_sla,omitempty"`
+	SvcSnoozeTill    *string  `json:"svc_snooze_till,omitempty"`
+	SvcStatus        *string  `json:"svc_status,omitempty"`
+	SvcStatusUpdated *string  `json:"svc_status_updated,omitempty"`
+	SvcTopology      *string  `json:"svc_topology,omitempty"`
+	SvcWave          *int     `json:"svc_wave,omitempty"`
+	Svcname          *string  `json:"svcname,omitempty"`
+	Updated          *string  `json:"updated,omitempty"`
 }
 
 // ServiceStatusPeriod defines model for ServiceStatusPeriod.
@@ -7094,10 +7106,14 @@ type PostServiceJSONBody struct {
 	SvcNotifications        *bool   `json:"svc_notifications,omitempty"`
 	SvcPlacement            *string `json:"svc_placement,omitempty"`
 	SvcProvisioned          *string `json:"svc_provisioned,omitempty"`
-	SvcSnoozeTill           *string `json:"svc_snooze_till,omitempty"`
-	SvcTopology             *string `json:"svc_topology,omitempty"`
-	SvcWave                 *int    `json:"svc_wave,omitempty"`
-	Svcname                 *string `json:"svcname,omitempty"`
+
+	// SvcSla The availability target, a percent between 0 and 100, compared with
+	// the availability rate of the service; empty to remove it.
+	SvcSla        *string `json:"svc_sla,omitempty"`
+	SvcSnoozeTill *string `json:"svc_snooze_till,omitempty"`
+	SvcTopology   *string `json:"svc_topology,omitempty"`
+	SvcWave       *int    `json:"svc_wave,omitempty"`
+	Svcname       *string `json:"svcname,omitempty"`
 }
 
 // GetServiceAlertsParams defines parameters for GetServiceAlerts.
