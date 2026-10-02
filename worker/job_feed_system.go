@@ -486,6 +486,7 @@ func (d *jobFeedSystem) properties(ctx context.Context) error {
 			mariadb.Mapping{To: "os_arch", Get: get},
 			mariadb.Mapping{To: "os_kernel", Get: get},
 			mariadb.Mapping{To: "os_name", Get: get},
+			mariadb.Mapping{To: "os_release", Get: get},
 			mariadb.Mapping{To: "os_vendor", Get: get},
 			mariadb.Mapping{To: "sec_zone", Get: get, Optional: true},
 			mariadb.Mapping{To: "serial", Get: get},
