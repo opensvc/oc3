@@ -121,6 +121,10 @@ func IsCompManager(c echo.Context) bool {
 	return IsManager(c) || HasGroup(c, "CompManager")
 }
 
+func IsAppManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "AppManager")
+}
+
 func IsAlertsManager(c echo.Context) bool {
 	return IsManager(c) || HasGroup(c, "AlertsManager")
 }
