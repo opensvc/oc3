@@ -16,7 +16,7 @@ import (
 // GetAlerts handles GET /alerts
 func (a *Api) GetAlerts(c echo.Context, params server.GetAlertsParams) error {
 	return a.handleAlerts(c, "GetAlerts", "", false,
-		params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby,
+		params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, params.Filter,
 		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 			return a.ODB.GetAlerts(ctx, p)
 		})
@@ -25,7 +25,7 @@ func (a *Api) GetAlerts(c echo.Context, params server.GetAlertsParams) error {
 // GetAlert handles GET /alerts/{id}
 func (a *Api) GetAlert(c echo.Context, id string, params server.GetAlertParams) error {
 	return a.handleAlerts(c, "GetAlert", id, true,
-		params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby,
+		params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, nil,
 		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 			return a.ODB.GetAlert(ctx, id, p)
 		})
@@ -43,11 +43,16 @@ func (a *Api) handleAlerts(
 	stats *server.InQueryStats,
 	orderby *server.InQueryOrderby,
 	groupby *server.InQueryGroupby,
+	filter *server.InQueryFilter,
 	fetch listFetcher,
 ) error {
 	mapping := propsMapping["alert"]
 
 	query, err := buildListQueryParameters(props, limit, offset, meta, stats, orderby, groupby, mapping)
+	if err != nil {
+		return JSONProblem(c, http.StatusBadRequest, err.Error())
+	}
+	filters, err := buildFilters(filter, mapping)
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
@@ -77,6 +82,7 @@ func (a *Api) handleAlerts(
 		TypeHints:   buildTypeHints(fetchProps, mapping),
 		OrderBy:     query.OrderBy,
 		GroupBy:     query.GroupBy,
+		Filters:     filters,
 	}
 	items, err := fetch(c.Request().Context(), dbParams)
 	if err != nil {

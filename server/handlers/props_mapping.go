@@ -943,6 +943,15 @@ var propsMapping = map[string]propMapping{
 			"dash_dict_md5": colStr(schema.DashboardDashDictMD5),
 			"dash_env":      colStr(schema.DashboardDashEnv),
 			"dash_instance": colStr(schema.DashboardDashInstance),
+			// Filter-only expressions: the object of an entry is its service, or its
+			// node when it has none, as the Object column of the dashboard shows it;
+			// the message is built from its format and its values after the query,
+			// so it is filtered on both, as stored.
+			"services.svcname": {FilterExpr: "COALESCE(NULLIF(services.svcname, ''), nodes.nodename)"},
+			"alert": {
+				Col:        schema.DashboardDashFmt,
+				FilterExpr: "CONCAT(COALESCE(dashboard.dash_fmt, ''), ' ', COALESCE(dashboard.dash_dict, ''))",
+			},
 		},
 		// A dashboard entry points at a node or a service by id only. The names live
 		// in the joined tables, as in the historical collector's own alert query.

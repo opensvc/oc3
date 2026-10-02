@@ -2,7 +2,10 @@ package serverhandlers
 
 import (
 	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/opensvc/oc3/server"
 )
 
 func TestFilterCondition(t *testing.T) {
@@ -42,6 +45,22 @@ func TestFilterCondition(t *testing.T) {
 	for _, expr := range []string{"~(", "!~("} {
 		if _, _, err := filterCondition("n.name", "name", expr); err == nil {
 			t.Errorf("%q: expected an invalid regular expression error", expr)
+		}
+	}
+}
+
+func TestAlertFilters(t *testing.T) {
+	raw := server.InQueryFilter{"services.svcname:dev2n1", "alert:down", "dash_severity:gte:3"}
+	filters, err := buildFilters(&raw, propsMapping["alert"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(filters) != 3 {
+		t.Fatalf("filters: %v", filters)
+	}
+	for i, want := range []string{"COALESCE(NULLIF(services.svcname, ''), nodes.nodename)", "CONCAT(COALESCE(dashboard.dash_fmt, '')", "dashboard.dash_severity"} {
+		if !strings.Contains(filters[i].Expr, want) {
+			t.Errorf("filter %d: %q does not use %q", i, filters[i].Expr, want)
 		}
 	}
 }

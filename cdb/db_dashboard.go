@@ -72,6 +72,11 @@ func (oDb *DB) GetAlerts(ctx context.Context, p ListParams) ([]map[string]any, e
 	// a dashboard row only carries the ids.
 	cond, args := dashboardVisibleCond("dashboard", p.Groups, p.IsManager)
 	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard LEFT JOIN nodes ON nodes.node_id = dashboard.node_id LEFT JOIN services ON services.svc_id = dashboard.svc_id WHERE " + cond
+	filterConds, filterArgs := p.FilterConditions()
+	for _, fc := range filterConds {
+		query += " AND " + fc
+	}
+	args = append(args, filterArgs...)
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}
