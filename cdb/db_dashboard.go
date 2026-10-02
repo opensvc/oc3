@@ -33,6 +33,34 @@ type (
 	}
 )
 
+// dashboardVisibleCond restricts the rows of a dashboard table (dashboard,
+// dashboard_events) to those the caller may see, as the historical dashboard
+// does (init/controllers/dashboard.py, q_filter on the node, or on the service,
+// of a row): a row whose node or whose service belongs to an app published to
+// one of the caller's groups. A manager sees every row.
+func dashboardVisibleCond(table string, groups []string, isManager bool) (string, []any) {
+	if isManager {
+		return "1=1", nil
+	}
+	clean := cleanGroups(groups)
+	if len(clean) == 0 {
+		return "1=0", nil
+	}
+	published := "SELECT a.app FROM apps a" +
+		" JOIN apps_publications ap ON ap.app_id = a.id" +
+		" JOIN auth_group ag ON ag.id = ap.group_id" +
+		" WHERE ag.role IN (" + Placeholders(len(clean)) + ")"
+	cond := "(" + table + ".node_id IN (SELECT n.node_id FROM nodes n WHERE n.app IN (" + published + "))" +
+		" OR " + table + ".svc_id IN (SELECT s.svc_id FROM services s WHERE s.svc_app IN (" + published + ")))"
+	args := make([]any, 0, 2*len(clean))
+	for range 2 {
+		for _, g := range clean {
+			args = append(args, g)
+		}
+	}
+	return cond, args
+}
+
 func (oDb *DB) GetAlerts(ctx context.Context, p ListParams) ([]map[string]any, error) {
 	defer logDuration("getAlerts", time.Now())
 
@@ -42,8 +70,8 @@ func (oDb *DB) GetAlerts(ctx context.Context, p ListParams) ([]map[string]any, e
 
 	// Joined so that "nodes.nodename" and "services.svcname" can be selected:
 	// a dashboard row only carries the ids.
-	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard LEFT JOIN nodes ON nodes.node_id = dashboard.node_id LEFT JOIN services ON services.svc_id = dashboard.svc_id"
-	var args []any
+	cond, args := dashboardVisibleCond("dashboard", p.Groups, p.IsManager)
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard LEFT JOIN nodes ON nodes.node_id = dashboard.node_id LEFT JOIN services ON services.svc_id = dashboard.svc_id WHERE " + cond
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}
@@ -64,8 +92,9 @@ func (oDb *DB) GetAlert(ctx context.Context, id string, p ListParams) ([]map[str
 		return nil, fmt.Errorf("getAlert: no select expressions")
 	}
 
-	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard LEFT JOIN nodes ON nodes.node_id = dashboard.node_id LEFT JOIN services ON services.svc_id = dashboard.svc_id WHERE dashboard.id = ?"
-	args := []any{id}
+	cond, condArgs := dashboardVisibleCond("dashboard", p.Groups, p.IsManager)
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard LEFT JOIN nodes ON nodes.node_id = dashboard.node_id LEFT JOIN services ON services.svc_id = dashboard.svc_id WHERE dashboard.id = ? AND " + cond
+	args := append([]any{id}, condArgs...)
 	query += " " + p.OrderByClause("dashboard.id DESC")
 	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
 
@@ -131,40 +160,8 @@ func (oDb *DB) GetAlertEvents(ctx context.Context, p ListParams) ([]map[string]a
 		return nil, fmt.Errorf("getAlertEvents: no select expressions")
 	}
 
-	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard_events"
-	var args []any
-
-	if !p.IsManager {
-		clean := cleanGroups(p.Groups)
-		if len(clean) == 0 {
-			query += ` WHERE (
-				dashboard_events.node_id IN (SELECT n.node_id FROM nodes n WHERE n.team_responsible = 'Everybody')
-			)`
-		} else {
-			placeholders := Placeholders(len(clean))
-			query += ` WHERE (
-				dashboard_events.svc_id IN (
-					SELECT s.svc_id FROM services s
-					JOIN apps a ON s.svc_app = a.app
-					JOIN apps_responsibles ar ON ar.app_id = a.id
-					JOIN auth_group ag ON ag.id = ar.group_id
-					WHERE ag.role IN (` + placeholders + `)
-				)
-				OR
-				dashboard_events.node_id IN (
-					SELECT n.node_id FROM nodes n
-					WHERE n.team_responsible = 'Everybody'
-					   OR n.team_responsible IN (` + placeholders + `)
-				)
-			)`
-			for _, g := range clean {
-				args = append(args, g)
-			}
-			for _, g := range clean {
-				args = append(args, g)
-			}
-		}
-	}
+	cond, args := dashboardVisibleCond("dashboard_events", p.Groups, p.IsManager)
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard_events WHERE " + cond
 
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
