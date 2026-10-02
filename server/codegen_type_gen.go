@@ -2095,6 +2095,22 @@ type SearchResponse struct {
 	Data []SearchGroup `json:"data"`
 }
 
+// ServiceAvailability defines model for ServiceAvailability.
+type ServiceAvailability struct {
+	AvailableS int `json:"available_s"`
+	CountedS   int `json:"counted_s"`
+
+	// ExcludedS The justified downtime left out of the count.
+	ExcludedS int `json:"excluded_s"`
+
+	// From The start of the time counted, the start of the history when later than the days asked.
+	From string `json:"from"`
+
+	// Rate The available share of the counted time, in percent.
+	Rate float64 `json:"rate"`
+	To   string  `json:"to"`
+}
+
 // ServiceListResponse defines model for ServiceListResponse.
 type ServiceListResponse struct {
 	Data ServiceListResponse_Data `json:"data"`
@@ -2155,6 +2171,8 @@ type ServiceRow struct {
 
 // ServiceStatusPeriod defines model for ServiceStatusPeriod.
 type ServiceStatusPeriod struct {
+	Ack *StatusAck `json:"ack,omitempty"`
+
 	// Begin "YYYY-MM-DD HH:MM:SS" in the collector time zone.
 	Begin string `json:"begin"`
 
@@ -2163,6 +2181,15 @@ type ServiceStatusPeriod struct {
 
 	// Status The availability status of the service.
 	Status string `json:"status"`
+}
+
+// StatusAck defines model for StatusAck.
+type StatusAck struct {
+	// Account Whether the period still counts in the availability rate.
+	Account bool   `json:"account"`
+	AckedBy string `json:"acked_by"`
+	AckedOn string `json:"acked_on"`
+	Comment string `json:"comment"`
 }
 
 // SwitchPortListResponse defines model for SwitchPortListResponse.
@@ -7604,6 +7631,21 @@ type GetServiceStatusLogParams struct {
 	Days *int `form:"days,omitempty" json:"days,omitempty"`
 }
 
+// DeleteServiceStatusLogAckParams defines parameters for DeleteServiceStatusLogAck.
+type DeleteServiceStatusLogAckParams struct {
+	Begin string `form:"begin" json:"begin"`
+	End   string `form:"end" json:"end"`
+}
+
+// PutServiceStatusLogAckJSONBody defines parameters for PutServiceStatusLogAck.
+type PutServiceStatusLogAckJSONBody struct {
+	// Account False to leave the period out of the availability rate.
+	Account bool   `json:"account"`
+	Begin   string `json:"begin"`
+	Comment string `json:"comment"`
+	End     string `json:"end"`
+}
+
 // GetServiceTagsParams defines parameters for GetServiceTags.
 type GetServiceTagsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -8465,6 +8507,9 @@ type PostServicesJSONRequestBody PostServicesJSONBody
 
 // PostServiceJSONRequestBody defines body for PostService for application/json ContentType.
 type PostServiceJSONRequestBody PostServiceJSONBody
+
+// PutServiceStatusLogAckJSONRequestBody defines body for PutServiceStatusLogAck for application/json ContentType.
+type PutServiceStatusLogAckJSONRequestBody PutServiceStatusLogAckJSONBody
 
 // DeleteServicesInstancesJSONRequestBody defines body for DeleteServicesInstances for application/json ContentType.
 type DeleteServicesInstancesJSONRequestBody DeleteServicesInstancesJSONBody

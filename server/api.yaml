@@ -7909,6 +7909,11 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [data]
+                properties:
+                  data:
+                    type: boolean
+                    description: Whether one of the groups of the caller is responsible for the service, a Manager being responsible for all.
         401:
           $ref: '#/components/responses/401'
         403:
@@ -8221,8 +8226,12 @@ paths:
       description: |
         The availability of a service over the last days, as periods of one status:
         the closed ones of services_log and the current one of services_log_last,
-        oldest first, clipped to the period. The service must be visible to the
-        caller.
+        oldest first, with their justification when they have one. The availability
+        rate of the period follows, as the historical service availability computes
+        it: the time up or standby up over the time counted, from the start of the
+        history when that is later; the time no status covers is downtime, and the
+        justified downtime marked not to account is left out of the count. The
+        service must be visible to the caller.
       parameters:
         - in: path
           name: svc_id
@@ -8244,16 +8253,125 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [data]
+                required: [data, availability]
                 properties:
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/ServiceStatusPeriod'
+                  availability:
+                    $ref: '#/components/schemas/ServiceAvailability'
         400:
           $ref: '#/components/responses/400'
         401:
           $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /services/{svc_id}/status_log/ack:
+    put:
+      operationId: PutServiceStatusLogAck
+      description: |
+        Justify a period of the availability of a service, or change its
+        justification: a comment, and whether the period still counts in the
+        availability rate. The period is named by its bounds, as the status log
+        gives them. Requires the responsibility of the service. The change is
+        logged.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service id or name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [begin, end, comment, account]
+              properties:
+                begin:
+                  type: string
+                end:
+                  type: string
+                comment:
+                  type: string
+                account:
+                  type: boolean
+                  description: False to leave the period out of the availability rate.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteServiceStatusLogAck
+      description: |
+        Remove the justification of a period of the availability of a service,
+        named by its bounds. Requires the responsibility of the service. The
+        change is logged.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service id or name
+          schema:
+            type: string
+        - in: query
+          name: begin
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: end
+          required: true
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -14496,6 +14614,43 @@ components:
         end:
           type: string
           description: Its end; for the current period, the last status received.
+        ack:
+          $ref: '#/components/schemas/StatusAck'
+
+    StatusAck:
+      type: object
+      required: [comment, account, acked_by, acked_on]
+      properties:
+        comment:
+          type: string
+        account:
+          type: boolean
+          description: Whether the period still counts in the availability rate.
+        acked_by:
+          type: string
+        acked_on:
+          type: string
+
+    ServiceAvailability:
+      type: object
+      required: [from, to, rate, available_s, excluded_s, counted_s]
+      properties:
+        from:
+          type: string
+          description: The start of the time counted, the start of the history when later than the days asked.
+        to:
+          type: string
+        rate:
+          type: number
+          format: double
+          description: The available share of the counted time, in percent.
+        available_s:
+          type: integer
+        excluded_s:
+          type: integer
+          description: The justified downtime left out of the count.
+        counted_s:
+          type: integer
 
     InstanceStatusPeriod:
       type: object

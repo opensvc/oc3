@@ -68,3 +68,70 @@ func (oDb *DB) statusPeriods(ctx context.Context, query string, withOverall bool
 	}
 	return periods, rows.Err()
 }
+
+// StatusAck is the justification of a period of a service: why it was not
+// available, by whom and when, and whether it still counts in the availability.
+type StatusAck struct {
+	Begin   string
+	End     string
+	Comment string
+	Account bool
+	By      string
+	On      string
+}
+
+// ServiceStatusAcks returns the justified periods of a service ending in the
+// last days, oldest first.
+func (oDb *DB) ServiceStatusAcks(ctx context.Context, svcID string, days int) ([]StatusAck, error) {
+	query := `SELECT DATE_FORMAT(mon_begin, ` + periodDateFormat + `), DATE_FORMAT(mon_end, ` + periodDateFormat + `),
+			mon_comment, mon_account, mon_acked_by, DATE_FORMAT(mon_acked_on, ` + periodDateFormat + `)
+		FROM svcmon_log_ack
+		WHERE svc_id = ? AND mon_end >= NOW() - INTERVAL ? DAY
+		ORDER BY mon_begin`
+	rows, err := oDb.DB.QueryContext(ctx, query, svcID, days)
+	if err != nil {
+		return nil, fmt.Errorf("serviceStatusAcks: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	acks := []StatusAck{}
+	for rows.Next() {
+		var a StatusAck
+		if err := rows.Scan(&a.Begin, &a.End, &a.Comment, &a.Account, &a.By, &a.On); err != nil {
+			return nil, fmt.Errorf("serviceStatusAcks: %w", err)
+		}
+		acks = append(acks, a)
+	}
+	return acks, rows.Err()
+}
+
+// SetServiceStatusAck justifies a period of a service, or changes its
+// justification, the period being named by its bounds.
+func (oDb *DB) SetServiceStatusAck(ctx context.Context, svcID, begin, end, comment string, account bool, by string) error {
+	const query = `INSERT INTO svcmon_log_ack (svc_id, mon_begin, mon_end, mon_comment, mon_account, mon_acked_by, mon_acked_on)
+		VALUES (?, ?, ?, ?, ?, ?, NOW())
+		ON DUPLICATE KEY UPDATE mon_comment = VALUES(mon_comment), mon_account = VALUES(mon_account),
+			mon_acked_by = VALUES(mon_acked_by), mon_acked_on = NOW()`
+	if _, err := oDb.DB.ExecContext(ctx, query, svcID, begin, end, comment, account, by); err != nil {
+		return fmt.Errorf("setServiceStatusAck: %w", err)
+	}
+	oDb.SetChange("svcmon_log_ack")
+	return nil
+}
+
+// DeleteServiceStatusAck removes the justification of a period of a service;
+// found is false when the period was not justified.
+func (oDb *DB) DeleteServiceStatusAck(ctx context.Context, svcID, begin, end string) (bool, error) {
+	result, err := oDb.DB.ExecContext(ctx,
+		"DELETE FROM svcmon_log_ack WHERE svc_id = ? AND mon_begin = ? AND mon_end = ?", svcID, begin, end)
+	if err != nil {
+		return false, fmt.Errorf("deleteServiceStatusAck: %w", err)
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("deleteServiceStatusAck: %w", err)
+	}
+	if n > 0 {
+		oDb.SetChange("svcmon_log_ack")
+	}
+	return n > 0, nil
+}
