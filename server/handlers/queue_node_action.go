@@ -15,20 +15,45 @@ import (
 	"github.com/opensvc/oc3/util/logkey"
 )
 
-// nodeActions are the agent actions the API accepts, mirroring the node agent
-// entries of the historical collector action menu. Actions that interrupt service
-// (reboot, shutdown, drain, updatepkg...) are deliberately left out for now.
+// nodeActions are the agent actions the API accepts, the node agent entries of
+// the historical collector action menu (am_node_agent_leafs in action_menu.js),
+// but Wake On LAN, run through a proxy node of the same network, the
+// provisioning from a template, and the root password rotation, which is not
+// offered.
 var nodeActions = map[string]bool{
-	"pushasset": true,
-	"pushdisks": true,
-	"pushpkg":   true,
-	"pushpatch": true,
-	"pushstats": true,
-	"checks":    true,
-	"sysreport": true,
-	"scanscsi":  true,
-	"freeze":    true,
-	"thaw":      true,
+	"pushasset":         true,
+	"pushdisks":         true,
+	"pushpkg":           true,
+	"pushpatch":         true,
+	"pushstats":         true,
+	"checks":            true,
+	"sysreport":         true,
+	"updatecomp":        true,
+	"updatepkg":         true,
+	"scanscsi":          true,
+	"reboot":            true,
+	"schedule_reboot":   true,
+	"unschedule_reboot": true,
+	"shutdown":          true,
+	"drain":             true,
+	"compliance_check":  true,
+	"compliance_fix":    true,
+	"freeze":            true,
+	"thaw":              true,
+}
+
+// nodeActionWords are the agent commands of the actions whose name is not the
+// command: the compliance runs, on every module attached to the node, as the
+// agent runs them without a module or moduleset.
+var nodeActionWords = map[string][]string{
+	"compliance_check": {"compliance", "check"},
+	"compliance_fix":   {"compliance", "fix"},
+}
+
+// isCompAction tells the compliance runs, which need the CompExec privilege, as
+// do_node_comp_action() requires, rather than NodeExec.
+func isCompAction(action string) bool {
+	return action == "compliance_check" || action == "compliance_fix"
 }
 
 // sshCmd is the ssh invocation the python collector uses to reach a push node
@@ -50,7 +75,11 @@ func nodeActionCommand(action, actionType, connectTo string) string {
 		cmd = append(cmd, sshCmd...)
 		cmd = append(cmd, "opensvc@"+connectTo, "--", "sudo", "nodemgr")
 	}
-	cmd = append(cmd, action)
+	if words, ok := nodeActionWords[action]; ok {
+		cmd = append(cmd, words...)
+	} else {
+		cmd = append(cmd, action)
+	}
 	if action == "freeze" || action == "thaw" {
 		cmd = append(cmd, "--local")
 	}
@@ -98,13 +127,18 @@ func actionTypeOf(target *cdb.NodeActionTarget) string {
 }
 
 // queueNodeAction queues an agent action on a node, as do_node_action() does:
-// NodeExec privilege, responsibility for the node, and a command run by nodemgr.
+// NodeExec privilege (CompExec for a compliance run), responsibility for the
+// node, and a command run by nodemgr.
 func (a *Api) queueNodeAction(c echo.Context, log *slog.Logger, ctx context.Context, nodeID, action string) (*queuedAction, error) {
 	odb := a.ODB
 	if !nodeActions[action] {
 		return nil, refuseAction(http.StatusBadRequest, "unsupported action %q", action)
 	}
-	if !IsManager(c) && !HasGroup(c, "NodeExec") {
+	if isCompAction(action) {
+		if !IsManager(c) && !HasGroup(c, "CompExec") {
+			return nil, refuseAction(http.StatusForbidden, "user has no CompExec privilege")
+		}
+	} else if !IsManager(c) && !HasGroup(c, "NodeExec") {
 		return nil, refuseAction(http.StatusForbidden, "user has no NodeExec privilege")
 	}
 

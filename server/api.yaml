@@ -93,13 +93,17 @@ paths:
           Requires the NodeExec privilege and responsibility for the service.
         - svc_id alone: an action on the whole service, posted for a node of the
           service seen alive in the last 15 minutes. Same requirements.
-        - node_id alone: a node action. Requires the NodeExec privilege and
-          responsibility for the node.
+        - node_id alone: a node action. Requires the NodeExec privilege (CompExec
+          for compliance_check and compliance_fix) and responsibility for the node.
 
         Accepted actions: push resinfo, push config, freeze and thaw on a service
         or an instance; pushasset, pushdisks, pushpkg, pushpatch, pushstats,
-        checks, sysreport, scanscsi, freeze and thaw on a node. Compliance actions
-        (module, moduleset, ruleset) and agent options are not supported.
+        checks, sysreport, updatecomp, updatepkg, scanscsi,
+        reboot, schedule_reboot, unschedule_reboot, shutdown, drain,
+        compliance_check, compliance_fix (on every module attached to the node),
+        freeze and thaw on a node. Compliance actions on a given module, moduleset
+        or ruleset, Wake On LAN, the root password rotation and agent options are
+        not supported.
 
         One entry answers with the queued action, as GET /actions/{id} does, or
         with a problem. A list always answers 200, with the queued actions in
