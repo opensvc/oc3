@@ -137,11 +137,13 @@ func postNodeUpdate(c echo.Context, log interface{ Error(string, ...any) }, odb 
 		}
 		delete(fields, "team_responsible")
 	} else {
-		// Users need NodeManager privilege and must be responsible for the node
-		if !IsManager(c) {
+		// Users need NodeManager privilege and must be responsible for the node, as
+		// check_privilege("NodeManager") and node_responsible() of the historical
+		// collector: a Manager has every privilege and is responsible for all.
+		if !IsNodeManager(c) {
 			return JSONProblemf(c, http.StatusForbidden, "NodeManager privilege required")
 		}
-		responsible, err := odb.NodeResponsible(ctx, nodeID, UserGroupsFromContext(c), false)
+		responsible, err := odb.NodeResponsible(ctx, nodeID, UserGroupsFromContext(c), IsManager(c))
 		if err != nil {
 			log.Error("cannot check node responsibility", logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot check node responsibility")
@@ -206,6 +208,10 @@ func fetchAndReturnNode(c echo.Context, odb *cdb.DB, ctx context.Context, nodeID
 
 // resolveApp returns the app to use for a node create/update.
 func resolveApp(ctx context.Context, log interface{ Error(string, ...any) }, odb *cdb.DB, c echo.Context, app string) string {
+	// A Manager may give any app, as common_responsible() lets them.
+	if app != "" && IsManager(c) {
+		return app
+	}
 	allowedApps, err := odb.AppsForGroups(ctx, UserGroupsFromContext(c))
 	if err != nil {
 		log.Error("cannot fetch allowed apps", logkey.Error, err)
