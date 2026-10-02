@@ -1629,3 +1629,66 @@ func (oDb *DB) DashboardUpdateCompRsetDiffForSvc(ctx context.Context, svcID stri
 
 	return nil
 }
+
+// AlertEvent is an occurrence of an alert: when it began, and when it ended,
+// none while it is open.
+type AlertEvent struct {
+	ID    int64
+	Begin string
+	End   *string
+}
+
+// GetAlertEventsOf returns the occurrences of the alert visible to the caller:
+// the dashboard_events of its dash_md5, node and service, as alert_timeline()
+// of the historical collector selects them, the last limit of them, oldest
+// first. found is false when the alert does not exist or is not visible;
+// truncated tells that older ones were left out.
+func (oDb *DB) GetAlertEventsOf(ctx context.Context, id string, groups []string, isManager bool, limit int) (events []AlertEvent, found, truncated bool, err error) {
+	cond, args := dashboardVisibleCond("dashboard", groups, isManager)
+	var n int
+	if err := oDb.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM dashboard WHERE dashboard.id = ? AND "+cond,
+		append([]any{id}, args...)...).Scan(&n); err != nil {
+		return nil, false, false, fmt.Errorf("getAlertEventsOf: %w", err)
+	}
+	if n == 0 {
+		return nil, false, false, nil
+	}
+	// An open event is written without its end: the NOT NULL datetime then holds
+	// the zero date, which IS NULL matches, as the closing trigger relies on.
+	const query = `SELECT e.id, DATE_FORMAT(e.dash_begin, '%Y-%m-%d %H:%i:%s'),
+			IF(e.dash_end IS NULL, NULL, DATE_FORMAT(e.dash_end, '%Y-%m-%d %H:%i:%s'))
+		FROM dashboard d
+		JOIN dashboard_events e ON e.dash_md5 = d.dash_md5
+			AND COALESCE(e.node_id, '') = COALESCE(d.node_id, '')
+			AND COALESCE(e.svc_id, '') = COALESCE(d.svc_id, '')
+		WHERE d.id = ?
+		ORDER BY e.dash_begin DESC, e.id DESC
+		LIMIT ?`
+	rows, err := oDb.DB.QueryContext(ctx, query, id, limit+1)
+	if err != nil {
+		return nil, true, false, fmt.Errorf("getAlertEventsOf: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var e AlertEvent
+		var end sql.NullString
+		if err := rows.Scan(&e.ID, &e.Begin, &end); err != nil {
+			return nil, true, false, fmt.Errorf("getAlertEventsOf: %w", err)
+		}
+		if end.Valid {
+			e.End = &end.String
+		}
+		events = append(events, e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, true, false, fmt.Errorf("getAlertEventsOf: %w", err)
+	}
+	if len(events) > limit {
+		events, truncated = events[:limit], true
+	}
+	// Oldest first, as a timeline reads.
+	for i, j := 0, len(events)-1; i < j; i, j = i+1, j-1 {
+		events[i], events[j] = events[j], events[i]
+	}
+	return events, true, truncated, nil
+}

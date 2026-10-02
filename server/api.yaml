@@ -477,6 +477,59 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /alerts/{id}/events:
+    get:
+      operationId: GetAlertEvents
+      description: |
+        The past occurrences of an alert, as the timeline of the historical alert
+        properties shows them (alert_timeline): the dashboard_events of the same
+        dash_md5, node and service, oldest first, the last `limit` of them (1000
+        by default). The alert must be visible to the caller, by the dashboard rule.
+        An occurrence still open has no end. The current occurrence of an alert
+        the database did not record (no open event) is not listed: the alert
+        itself, active since dash_created, stands for it.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Alert id (dashboard.id)
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: The most recent occurrences to return, 1000 by default, 10000 at most.
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AlertEvent'
+                  truncated:
+                    type: boolean
+                    description: Older occurrences were left out.
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /alert_event:
     get:
       operationId: GetAlertEvent
@@ -14315,6 +14368,20 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    AlertEvent:
+      type: object
+      required: [id, begin]
+      properties:
+        id:
+          type: integer
+        begin:
+          type: string
+          description: The start of the occurrence, "YYYY-MM-DD HH:MM:SS" in the collector time zone.
+        end:
+          type: string
+          nullable: true
+          description: Its end; null while it is open.
 
     AlertRow:
       type: object

@@ -641,6 +641,16 @@ type ActionEnqueue struct {
 	Vmname *string `json:"vmname,omitempty"`
 }
 
+// AlertEvent defines model for AlertEvent.
+type AlertEvent struct {
+	// Begin The start of the occurrence, "YYYY-MM-DD HH:MM:SS" in the collector time zone.
+	Begin string `json:"begin"`
+
+	// End Its end; null while it is open.
+	End *string `json:"end,omitempty"`
+	Id  int     `json:"id"`
+}
+
 // AlertListResponse defines model for AlertListResponse.
 type AlertListResponse struct {
 	Data AlertListResponse_Data `json:"data"`
@@ -2658,6 +2668,12 @@ type PostAlertJSONBody struct {
 	DashType     *string                 `json:"dash_type,omitempty"`
 	NodeId       *string                 `json:"node_id,omitempty"`
 	SvcId        *string                 `json:"svc_id,omitempty"`
+}
+
+// GetAlertEventsParams defines parameters for GetAlertEvents.
+type GetAlertEventsParams struct {
+	// Limit The most recent occurrences to return, 1000 by default, 10000 at most.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // DeleteAppsJSONBody defines parameters for DeleteApps.
