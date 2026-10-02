@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc feeder api
-  version: 3.0.4
+  version: 3.0.5
 
 paths:
   /checks:
@@ -309,6 +309,16 @@ paths:
       responses:
         202:
           description: instance resource information will be refreshed
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
@@ -439,6 +449,14 @@ components:
         region:
           type: string
 
+    ReportedNodename:
+      type: string
+      description: |
+        The node the data is about, when the request is sent on its behalf
+        by another node of its cluster, as the om3 collector speaker does.
+        Defaults to the authenticated node. A node out of the cluster of the
+        authenticated node is refused.
+
     InstanceResourceInfo:
       type: object
       required:
@@ -447,6 +465,8 @@ components:
       properties:
         path:
           type: string
+        nodename:
+          $ref: '#/components/schemas/ReportedNodename'
         topology:
           type: string
         info:
@@ -517,6 +537,8 @@ components:
       properties:
         path:
           type: string
+        nodename:
+          $ref: '#/components/schemas/ReportedNodename'
         action:
           type: string
         argv:

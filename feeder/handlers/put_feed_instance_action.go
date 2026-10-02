@@ -49,6 +49,11 @@ func (a *Api) PutInstanceActionEnd(c echo.Context) error {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
 
+	nodeID, ok, err := a.reportedNodeIDOrProblem(c, log, nodeID, ClusterID, payload.Nodename)
+	if !ok {
+		return err
+	}
+
 	b, err := json.Marshal(payload)
 	if err != nil {
 		log.Error("Marshall", logkey.Error, err)

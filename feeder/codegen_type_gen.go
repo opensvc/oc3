@@ -41,10 +41,16 @@ type Action struct {
 	Cron  bool   `json:"cron"`
 
 	// End end action timestamp in RFC3339Nano format
-	End    string       `json:"end"`
-	Lines  []ActionLine `json:"lines"`
-	Origin string       `json:"origin"`
-	Path   string       `json:"path"`
+	End   string       `json:"end"`
+	Lines []ActionLine `json:"lines"`
+
+	// Nodename The node the data is about, when the request is sent on its behalf
+	// by another node of its cluster, as the om3 collector speaker does.
+	// Defaults to the authenticated node. A node out of the cluster of the
+	// authenticated node is refused.
+	Nodename *ReportedNodename `json:"nodename,omitempty"`
+	Origin   string            `json:"origin"`
+	Path     string            `json:"path"`
 
 	// Pid action pid
 	Pid string `json:"pid"`
@@ -105,8 +111,14 @@ type InstanceResourceInfo struct {
 		} `json:"keys"`
 		Rid string `json:"rid"`
 	} `json:"info"`
-	Path     string  `json:"path"`
-	Topology *string `json:"topology,omitempty"`
+
+	// Nodename The node the data is about, when the request is sent on its behalf
+	// by another node of its cluster, as the om3 collector speaker does.
+	// Defaults to the authenticated node. A node out of the cluster of the
+	// authenticated node is refused.
+	Nodename *ReportedNodename `json:"nodename,omitempty"`
+	Path     string            `json:"path"`
+	Topology *string           `json:"topology,omitempty"`
 }
 
 // InstanceStatus defines model for InstanceStatus.
@@ -209,6 +221,12 @@ type QueuedActions struct {
 	Actions []QueuedAction `json:"actions"`
 }
 
+// ReportedNodename The node the data is about, when the request is sent on its behalf
+// by another node of its cluster, as the om3 collector speaker does.
+// Defaults to the authenticated node. A node out of the cluster of the
+// authenticated node is refused.
+type ReportedNodename = string
+
 // SANSwitch defines model for SANSwitch.
 type SANSwitch struct {
 	// Data the raw output of each switch command, by command name. For a
@@ -273,6 +291,9 @@ type N401 = Problem
 
 // N403 defines model for 403.
 type N403 = Problem
+
+// N409 defines model for 409.
+type N409 = Problem
 
 // N500 defines model for 500.
 type N500 = Problem

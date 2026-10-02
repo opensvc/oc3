@@ -38,6 +38,10 @@ func (a *Api) PostInstanceResourceInfo(c echo.Context) error {
 		return JSONProblem(c, http.StatusBadRequest, "missing or empty instance path")
 	}
 	log = log.With(logkey.Object, data.Path)
+	nodeID, ok, err := a.reportedNodeIDOrProblem(c, log, nodeID, clusterID, data.Nodename)
+	if !ok {
+		return err
+	}
 	b, err := json.Marshal(data)
 	if err != nil {
 		log.Warn("Marshal", logkey.Error, err)
