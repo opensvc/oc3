@@ -1275,6 +1275,18 @@ type InstanceRow struct {
 	SvcId               *string `json:"svc_id,omitempty"`
 }
 
+// InstanceStatusPeriod defines model for InstanceStatusPeriod.
+type InstanceStatusPeriod struct {
+	Avail string `json:"avail"`
+
+	// Begin "YYYY-MM-DD HH:MM:SS" in the collector time zone.
+	Begin string `json:"begin"`
+
+	// End Its end; for the current period, the last status received.
+	End     string `json:"end"`
+	Overall string `json:"overall"`
+}
+
 // IpListResponse defines model for IpListResponse.
 type IpListResponse struct {
 	Data IpListResponse_Data `json:"data"`
@@ -2139,6 +2151,18 @@ type ServiceRow struct {
 	SvcWave                 *int    `json:"svc_wave,omitempty"`
 	Svcname                 *string `json:"svcname,omitempty"`
 	Updated                 *string `json:"updated,omitempty"`
+}
+
+// ServiceStatusPeriod defines model for ServiceStatusPeriod.
+type ServiceStatusPeriod struct {
+	// Begin "YYYY-MM-DD HH:MM:SS" in the collector time zone.
+	Begin string `json:"begin"`
+
+	// End Its end; for the current period, the last status received.
+	End string `json:"end"`
+
+	// Status The availability status of the service.
+	Status string `json:"status"`
 }
 
 // SwitchPortListResponse defines model for SwitchPortListResponse.
@@ -7379,6 +7403,12 @@ type GetServiceInstanceParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetServiceInstanceStatusLogParams defines parameters for GetServiceInstanceStatusLog.
+type GetServiceInstanceStatusLogParams struct {
+	// Days The days of history to return, 7 by default, 365 at most.
+	Days *int `form:"days,omitempty" json:"days,omitempty"`
+}
+
 // GetServiceNodesParams defines parameters for GetServiceNodes.
 type GetServiceNodesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -7566,6 +7596,12 @@ type GetServiceResourceLogsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceStatusLogParams defines parameters for GetServiceStatusLog.
+type GetServiceStatusLogParams struct {
+	// Days The days of history to return, 7 by default, 365 at most.
+	Days *int `form:"days,omitempty" json:"days,omitempty"`
 }
 
 // GetServiceTagsParams defines parameters for GetServiceTags.

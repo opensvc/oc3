@@ -8215,6 +8215,106 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /services/{svc_id}/status_log:
+    get:
+      operationId: GetServiceStatusLog
+      description: |
+        The availability of a service over the last days, as periods of one status:
+        the closed ones of services_log and the current one of services_log_last,
+        oldest first, clipped to the period. The service must be visible to the
+        caller.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service id or name
+          schema:
+            type: string
+        - in: query
+          name: days
+          description: The days of history to return, 7 by default, 365 at most.
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceStatusPeriod'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /services/{svc_id}/instances/{node_id}/status_log:
+    get:
+      operationId: GetServiceInstanceStatusLog
+      description: |
+        The availability and overall status of an instance over the last days, as
+        periods of one pair of statuses: the closed ones of svcmon_log and the
+        current one of svcmon_log_last, oldest first, clipped to the period. The
+        service must be visible to the caller.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service id or name
+          schema:
+            type: string
+        - in: path
+          name: node_id
+          required: true
+          description: Node id or name
+          schema:
+            type: string
+        - in: query
+          name: days
+          description: The days of history to return, 7 by default, 365 at most.
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InstanceStatusPeriod'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /services/{svc_id}/nodes/{node_id}/resources:
     get:
       operationId: GetServiceNodeResources
@@ -14382,6 +14482,35 @@ components:
           type: string
           nullable: true
           description: Its end; null while it is open.
+
+    ServiceStatusPeriod:
+      type: object
+      required: [status, begin, end]
+      properties:
+        status:
+          type: string
+          description: The availability status of the service.
+        begin:
+          type: string
+          description: '"YYYY-MM-DD HH:MM:SS" in the collector time zone.'
+        end:
+          type: string
+          description: Its end; for the current period, the last status received.
+
+    InstanceStatusPeriod:
+      type: object
+      required: [avail, overall, begin, end]
+      properties:
+        avail:
+          type: string
+        overall:
+          type: string
+        begin:
+          type: string
+          description: '"YYYY-MM-DD HH:MM:SS" in the collector time zone.'
+        end:
+          type: string
+          description: Its end; for the current period, the last status received.
 
     AlertRow:
       type: object
