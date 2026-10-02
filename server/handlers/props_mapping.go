@@ -27,6 +27,12 @@ func (p propDef) selectExpr() string {
 	return ""
 }
 
+// clusterListCol is a computed column of the clusters list, which names its derived
+// table after the clusters table.
+func clusterListCol(name string) *schema.Col {
+	return &schema.Col{T: schema.TClusters, Name: name, Nullable: true}
+}
+
 func col(c *schema.Col) propDef {
 	return propDef{Col: c}
 }
@@ -93,6 +99,30 @@ var propsMapping = map[string]propMapping{
 			"id":           col(schema.ClustersID),
 			"cluster_id":   colStr(schema.ClustersClusterID),
 			"cluster_name": colStr(schema.ClustersClusterName),
+		},
+	},
+	// The clusters as listed (GET /clusters): the columns of the derived table of
+	// cdb/db_clusters.go, some read from the daemon status the cluster pushed. Apart
+	// from "cluster", the props of the clusters joined to a node, which only has
+	// the table's own columns.
+	"clusterList": {
+		Available: []string{
+			"id", "cluster_id", "cluster_name", "node_count", "svc_count", "agent_versions",
+			"cluster_nodes", "quorum", "frozen", "compat", "listener_port", "cluster_updated",
+		},
+		Props: map[string]propDef{
+			"id":              col(schema.ClustersID),
+			"cluster_id":      colStr(schema.ClustersClusterID),
+			"cluster_name":    colStr(schema.ClustersClusterName),
+			"node_count":      colInt(clusterListCol("node_count")),
+			"svc_count":       colInt(clusterListCol("svc_count")),
+			"agent_versions":  colStr(clusterListCol("agent_versions")),
+			"cluster_nodes":   colStr(clusterListCol("cluster_nodes")),
+			"quorum":          colInt(clusterListCol("quorum")),
+			"frozen":          colInt(clusterListCol("frozen")),
+			"compat":          colInt(clusterListCol("compat")),
+			"listener_port":   colInt(clusterListCol("listener_port")),
+			"cluster_updated": colStr(clusterListCol("cluster_updated")),
 		},
 	},
 	"node": {

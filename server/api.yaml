@@ -5122,6 +5122,73 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /clusters:
+    get:
+      operationId: GetClusters
+      description: |
+        List the clusters the collector knows from their daemon status, with their
+        counts of nodes and services. A manager sees every cluster; the others see the
+        clusters holding a node or a service of an app their groups are responsible
+        for.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /clusters/{cluster_id}:
+    get:
+      operationId: GetCluster
+      description: Display a cluster, if the caller may see it (see GET /clusters).
+      parameters:
+        - in: path
+          name: cluster_id
+          required: true
+          description: Cluster identifier (clusters.cluster_id, a uuid)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /reports:
     get:
       operationId: GetReports
@@ -15725,6 +15792,63 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/MetricRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    ClusterRow:
+      type: object
+      description: |
+        A cluster, as its daemon last pushed its status. Every property is optional:
+        the `props` query parameter selects which columns the server returns.
+      properties:
+        id:
+          type: integer
+        cluster_id:
+          type: string
+        cluster_name:
+          type: string
+        node_count:
+          type: integer
+          description: Nodes of the collector naming the cluster.
+        svc_count:
+          type: integer
+          description: Services of the collector naming the cluster.
+        agent_versions:
+          type: string
+          description: Agent versions of its nodes, distinct, comma-separated.
+        cluster_nodes:
+          type: string
+          description: Node names of the cluster configuration, comma-separated.
+        quorum:
+          type: integer
+          description: 1 when the cluster configuration requires a quorum.
+        frozen:
+          type: integer
+          description: 1 when the cluster is frozen.
+        compat:
+          type: integer
+          description: 1 when the daemons of its nodes are compatible.
+        listener_port:
+          type: integer
+        cluster_updated:
+          type: string
+          description: When the daemon status was produced, RFC 3339.
+
+    ClusterListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ClusterRow'
             - type: object
               additionalProperties:
                 type: object

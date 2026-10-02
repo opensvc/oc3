@@ -772,6 +772,55 @@ type ChartSeries struct {
 	Unit   *string     `json:"unit,omitempty"`
 }
 
+// ClusterListResponse defines model for ClusterListResponse.
+type ClusterListResponse struct {
+	Data ClusterListResponse_Data `json:"data"`
+	Meta *ListMeta                `json:"meta,omitempty"`
+}
+
+// ClusterListResponseData0 defines model for .
+type ClusterListResponseData0 = []ClusterRow
+
+// ClusterListResponseData1 defines model for .
+type ClusterListResponseData1 map[string]map[string]int
+
+// ClusterListResponse_Data defines model for ClusterListResponse.Data.
+type ClusterListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ClusterRow A cluster, as its daemon last pushed its status. Every property is optional:
+// the `props` query parameter selects which columns the server returns.
+type ClusterRow struct {
+	// AgentVersions Agent versions of its nodes, distinct, comma-separated.
+	AgentVersions *string `json:"agent_versions,omitempty"`
+	ClusterId     *string `json:"cluster_id,omitempty"`
+	ClusterName   *string `json:"cluster_name,omitempty"`
+
+	// ClusterNodes Node names of the cluster configuration, comma-separated.
+	ClusterNodes *string `json:"cluster_nodes,omitempty"`
+
+	// ClusterUpdated When the daemon status was produced, RFC 3339.
+	ClusterUpdated *string `json:"cluster_updated,omitempty"`
+
+	// Compat 1 when the daemons of its nodes are compatible.
+	Compat *int `json:"compat,omitempty"`
+
+	// Frozen 1 when the cluster is frozen.
+	Frozen       *int `json:"frozen,omitempty"`
+	Id           *int `json:"id,omitempty"`
+	ListenerPort *int `json:"listener_port,omitempty"`
+
+	// NodeCount Nodes of the collector naming the cluster.
+	NodeCount *int `json:"node_count,omitempty"`
+
+	// Quorum 1 when the cluster configuration requires a quorum.
+	Quorum *int `json:"quorum,omitempty"`
+
+	// SvcCount Services of the collector naming the cluster.
+	SvcCount *int `json:"svc_count,omitempty"`
+}
+
 // CompExportModule defines model for CompExportModule.
 type CompExportModule struct {
 	Autofix       *string `json:"autofix,omitempty"`
@@ -3095,6 +3144,55 @@ type GetChartParams struct {
 type GetChartSamplesParams struct {
 	// Days Days of history, 365 by default, 1825 at most.
 	Days *int `form:"days,omitempty" json:"days,omitempty"`
+}
+
+// GetClustersParams defines parameters for GetClusters.
+type GetClustersParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetClusterParams defines parameters for GetCluster.
+type GetClusterParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
 
 // PostComplianceImportJSONBody defines parameters for PostComplianceImport.
@@ -8767,6 +8865,68 @@ func (t ChartListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ChartListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsClusterListResponseData0 returns the union data inside the ClusterListResponse_Data as a ClusterListResponseData0
+func (t ClusterListResponse_Data) AsClusterListResponseData0() (ClusterListResponseData0, error) {
+	var body ClusterListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromClusterListResponseData0 overwrites any union data inside the ClusterListResponse_Data as the provided ClusterListResponseData0
+func (t *ClusterListResponse_Data) FromClusterListResponseData0(v ClusterListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeClusterListResponseData0 performs a merge with any union data inside the ClusterListResponse_Data, using the provided ClusterListResponseData0
+func (t *ClusterListResponse_Data) MergeClusterListResponseData0(v ClusterListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsClusterListResponseData1 returns the union data inside the ClusterListResponse_Data as a ClusterListResponseData1
+func (t ClusterListResponse_Data) AsClusterListResponseData1() (ClusterListResponseData1, error) {
+	var body ClusterListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromClusterListResponseData1 overwrites any union data inside the ClusterListResponse_Data as the provided ClusterListResponseData1
+func (t *ClusterListResponse_Data) FromClusterListResponseData1(v ClusterListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeClusterListResponseData1 performs a merge with any union data inside the ClusterListResponse_Data, using the provided ClusterListResponseData1
+func (t *ClusterListResponse_Data) MergeClusterListResponseData1(v ClusterListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ClusterListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ClusterListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

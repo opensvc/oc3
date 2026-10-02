@@ -64,3 +64,24 @@ func TestAlertFilters(t *testing.T) {
 		}
 	}
 }
+
+func TestClusterListFilters(t *testing.T) {
+	raw := server.InQueryFilter{"node_count:>2", "frozen:1", "cluster_name:%leopard%"}
+	filters, err := buildFilters(&raw, propsMapping["clusterList"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, want := range []string{"clusters.node_count", "clusters.frozen", "clusters.cluster_name"} {
+		if !strings.Contains(filters[i].Expr, want) {
+			t.Errorf("filter %d: %q does not use %q", i, filters[i].Expr, want)
+		}
+	}
+	orderby := "-svc_count,cluster_name"
+	exprs, err := buildOrderBy(&orderby, propsMapping["clusterList"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(exprs, ",") != "clusters.svc_count DESC,clusters.cluster_name" {
+		t.Errorf("orderby: %v", exprs)
+	}
+}
