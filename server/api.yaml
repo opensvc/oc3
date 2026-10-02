@@ -9908,6 +9908,134 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /users/{user_id}/groups:
+    get:
+      operationId: GetUserGroups
+      description: |
+        List the groups the user is member of, organisational and privilege ones.
+        Managers and UserManager see every user's groups; other users only those
+        of the users sharing one of their organisational groups, and their own.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: |
+            User identifier: auth_user.id, the user email when it contains an
+            "@", or "self" for the authenticated user.
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /users/{user_id}/groups/{group_id}:
+    post:
+      operationId: PostUserGroup
+      description: |
+        Make the user a member of the group, as rest_post_user_group does.
+        Requires the GroupManager privilege; a caller who is not a Manager can only
+        attach a group they are member of. Attaching a user already member is not
+        an error. The change is logged.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: User identifier, auth_user.id or email.
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier, auth_group.id or role.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteUserGroup
+      description: |
+        Remove the user from the group, as rest_delete_user_group does, with the
+        same privilege rules as the attachment. Detaching a user who is not member
+        is not an error. The change is logged.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: User identifier, auth_user.id or email.
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier, auth_group.id or role.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /users/{user_id}/impersonate:
     post:
       operationId: PostUserImpersonate
