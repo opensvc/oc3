@@ -56,6 +56,11 @@ func (a *Api) PostInstanceAction(c echo.Context) error {
 		return JSONProblemf(c, http.StatusBadRequest, "unsupported data client version: %s", payload.Version)
 	}
 
+	nodeID, ok, err := a.reportedNodeIDOrProblem(c, log, nodeID, ClusterID, payload.Nodename)
+	if !ok {
+		return err
+	}
+
 	b, err := json.Marshal(payload)
 	if err != nil {
 		log.Error("json encode body", logkey.Error, err)
