@@ -10095,6 +10095,94 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /users/self/filterset:
+    get:
+      operationId: GetUserSelfFilterset
+      description: |
+        The session filterset of the signed-in user, or null data. As in the
+        historical collector, it narrows every list naming a node or a service to the
+        filterset's nodes and services (a row without a node, or without a service,
+        is judged on the other side), the dashboard and its counters included, and
+        it is what the %%fset_node_ids%% and %%fset_svc_ids%% placeholders of a
+        metric stand for. Single records read by their id are not narrowed.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionFiltersetResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutUserSelfFilterset
+      description: |
+        Choose the session filterset of the signed-in user, by id or name, in place
+        of the previous one. Refused while acting as another user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fset_id]
+              properties:
+                fset_id:
+                  type: string
+                  description: Filterset id (gen_filtersets.id) or name
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionFiltersetResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteUserSelfFilterset
+      description: |
+        Remove the session filterset of the signed-in user: the lists show everything
+        the user may see again. Refused while acting as another user.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionFiltersetResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /users/self/password:
     post:
       operationId: PostUserSelfPassword
@@ -15808,6 +15896,21 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    SessionFilterset:
+      type: object
+      required: [fset_id, fset_name]
+      properties:
+        fset_id:
+          type: integer
+        fset_name:
+          type: string
+
+    SessionFiltersetResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SessionFilterset'
 
     ClusterRow:
       type: object

@@ -2247,6 +2247,17 @@ type ServiceStatusPeriod struct {
 	Status string `json:"status"`
 }
 
+// SessionFilterset defines model for SessionFilterset.
+type SessionFilterset struct {
+	FsetId   int    `json:"fset_id"`
+	FsetName string `json:"fset_name"`
+}
+
+// SessionFiltersetResponse defines model for SessionFiltersetResponse.
+type SessionFiltersetResponse struct {
+	Data *SessionFilterset `json:"data,omitempty"`
+}
+
 // StatusAck defines model for StatusAck.
 type StatusAck struct {
 	// Account Whether the period still counts in the availability rate.
@@ -8214,6 +8225,12 @@ type PostUsersJSONBody struct {
 	Username  *string `json:"username,omitempty"`
 }
 
+// PutUserSelfFiltersetJSONBody defines parameters for PutUserSelfFilterset.
+type PutUserSelfFiltersetJSONBody struct {
+	// FsetId Filterset id (gen_filtersets.id) or name
+	FsetId string `json:"fset_id"`
+}
+
 // PostUserSelfPasswordJSONBody defines parameters for PostUserSelfPassword.
 type PostUserSelfPasswordJSONBody struct {
 	CurrentPassword string `json:"current_password"`
@@ -8676,6 +8693,9 @@ type PostTagServiceJSONRequestBody PostTagServiceJSONBody
 
 // PostUsersJSONRequestBody defines body for PostUsers for application/json ContentType.
 type PostUsersJSONRequestBody PostUsersJSONBody
+
+// PutUserSelfFiltersetJSONRequestBody defines body for PutUserSelfFilterset for application/json ContentType.
+type PutUserSelfFiltersetJSONRequestBody PutUserSelfFiltersetJSONBody
 
 // PostUserSelfPasswordJSONRequestBody defines body for PostUserSelfPassword for application/json ContentType.
 type PostUserSelfPasswordJSONRequestBody PostUserSelfPasswordJSONBody

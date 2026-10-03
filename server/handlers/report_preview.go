@@ -52,7 +52,8 @@ var selectRequest = regexp.MustCompile(`(?is)^\s*(?:(?:--[^\n]*\n|#[^\n]*\n|/\*.
 
 // GetMetricSamples handles GET /metrics/{metric_id}/samples: the result of the
 // metric request, run now, for a caller who may see the metric. The placeholders of
-// the request stand for the nodes and services the caller may see (MetricScope).
+// the request stand for the nodes and services the caller may see, those of their
+// session filterset when they have one (MetricScope).
 func (a *Api) GetMetricSamples(c echo.Context, metricId string) error {
 	log := echolog.GetLogHandler(c, "GetMetricSamples")
 	groups, isManager := UserGroupsFromContext(c), IsManager(c)
@@ -74,7 +75,12 @@ func (a *Api) GetMetricSamples(c echo.Context, metricId string) error {
 		return JSONProblemf(c, http.StatusUnprocessableEntity, "the metric request is not a SELECT")
 	}
 	if strings.Contains(request, "%%fset_node_ids%%") || strings.Contains(request, "%%fset_svc_ids%%") {
-		nodes, services, err := a.ODB.MetricScope(ctx, groups, isManager)
+		sessionNodes, sessionSvcs, err := a.sessionScope(c)
+		if err != nil {
+			log.Error("cannot resolve the session filterset", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot resolve the session filterset")
+		}
+		nodes, services, err := a.ODB.MetricScope(ctx, groups, isManager, sessionNodes, sessionSvcs)
 		if err != nil {
 			log.Error("cannot compute the metric scope", logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot compute the metric scope")

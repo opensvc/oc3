@@ -120,6 +120,14 @@ func (a *Api) handleList(
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
+	// The session filterset of the caller narrows every list naming a node or a
+	// service, on top of the filters of the request.
+	session, err := a.sessionFilters(c, mapping)
+	if err != nil {
+		echolog.GetLogHandler(c, handlerName).Error("cannot apply the session filterset", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot apply the session filterset")
+	}
+	filters = append(filters, session...)
 
 	log := echolog.GetLogHandler(c, handlerName)
 	groups := UserGroupsFromContext(c)

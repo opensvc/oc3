@@ -56,6 +56,16 @@ func (a *Api) handleAlerts(
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
+	if !isItem {
+		// The session filterset narrows the dashboard and its counters, not one
+		// alert opened by its id.
+		session, err := a.sessionFilters(c, mapping)
+		if err != nil {
+			echolog.GetLogHandler(c, handlerName).Error("cannot apply the session filterset", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot apply the session filterset")
+		}
+		filters = append(filters, session...)
+	}
 
 	log := echolog.GetLogHandler(c, handlerName)
 

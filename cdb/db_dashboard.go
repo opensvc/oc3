@@ -167,6 +167,11 @@ func (oDb *DB) GetAlertEvents(ctx context.Context, p ListParams) ([]map[string]a
 
 	cond, args := dashboardVisibleCond("dashboard_events", p.Groups, p.IsManager)
 	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard_events WHERE " + cond
+	filterConds, filterArgs := p.FilterConditions()
+	for _, fc := range filterConds {
+		query += " AND " + fc
+	}
+	args = append(args, filterArgs...)
 
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb

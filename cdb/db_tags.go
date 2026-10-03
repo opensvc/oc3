@@ -547,6 +547,8 @@ func (oDb *DB) GetTagsNodes(ctx context.Context, p ListParams) ([]map[string]any
 	} else {
 		q = q.Where(schema.NodeTagsID, ">", 0)
 	}
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(p.Filters)
 	query, args, err := q.Build()
 	if err != nil {
 		return nil, fmt.Errorf("GetTagsNodes build: %w", err)
@@ -585,6 +587,8 @@ func (oDb *DB) GetTagsServices(ctx context.Context, p ListParams) ([]map[string]
 	} else {
 		q = q.Where(schema.SvcTagsID, ">", 0)
 	}
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(p.Filters)
 	query, args, err := q.Build()
 	if err != nil {
 		return nil, fmt.Errorf("GetTagsServices build: %w", err)

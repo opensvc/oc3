@@ -7,7 +7,7 @@ import (
 	"github.com/opensvc/oc3/schema"
 )
 
-func buildServicesStatusLogQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
+func buildServicesStatusLogQuery(groups []string, isManager bool, selectExprs []string, filters []ColumnFilter) (string, []any, error) {
 	q := From(schema.TServicesLog).
 		Via(schema.TServices).
 		RawSelect(selectExprs...)
@@ -35,6 +35,9 @@ func buildServicesStatusLogQuery(groups []string, isManager bool, selectExprs []
 		q = q.Where(schema.ServicesLogID, ">", 0)
 	}
 
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(filters)
+
 	query, args, err := q.Build()
 	if err != nil {
 		return "", nil, fmt.Errorf("buildServicesStatusLogQuery: %w", err)
@@ -43,7 +46,7 @@ func buildServicesStatusLogQuery(groups []string, isManager bool, selectExprs []
 }
 
 func (oDb *DB) GetServicesStatusLog(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildServicesStatusLogQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildServicesStatusLogQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}

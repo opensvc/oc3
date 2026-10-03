@@ -94,10 +94,14 @@ func (oDb *DB) visibleIDs(ctx context.Context, query string, groups []string) ([
 }
 
 // MetricScope is what the %%fset_node_ids%% and %%fset_svc_ids%% placeholders of a
-// metric request stand for when the caller reads it: the historical collector used
-// the filterset of the session, which oc3 does not have; here they are the nodes and
-// services the caller may see — all of them for a manager.
-func (oDb *DB) MetricScope(ctx context.Context, groups []string, isManager bool) (nodes, services string, err error) {
+// metric request stand for when the caller reads it: the nodes and services the
+// caller may see — all of them for a manager. With a session filterset, as in the
+// historical collector, they are its nodes and services among those
+// (SessionNodeIDs, SessionSvcIDs non-nil).
+func (oDb *DB) MetricScope(ctx context.Context, groups []string, isManager bool, sessionNodeIDs, sessionSvcIDs []string) (nodes, services string, err error) {
+	if sessionNodeIDs != nil || sessionSvcIDs != nil {
+		return oDb.metricSessionScope(ctx, groups, isManager, sessionNodeIDs, sessionSvcIDs)
+	}
 	if isManager {
 		return "SELECT node_id FROM nodes", "SELECT svc_id FROM services", nil
 	}
@@ -114,6 +118,40 @@ func (oDb *DB) MetricScope(ctx context.Context, groups []string, isManager bool)
 		return "", "", fmt.Errorf("MetricScope services: %w", err)
 	}
 	return quotedIDs(nodeIDs), quotedIDs(svcIDs), nil
+}
+
+// metricSessionScope is the session filterset's nodes and services the caller may
+// see, as quoted id lists.
+func (oDb *DB) metricSessionScope(ctx context.Context, groups []string, isManager bool, nodeIDs, svcIDs []string) (string, string, error) {
+	if isManager {
+		return quotedIDs(nodeIDs), quotedIDs(svcIDs), nil
+	}
+	const responsibleApps = "SELECT a.app FROM apps a" +
+		" JOIN apps_responsibles ar ON ar.app_id = a.id" +
+		" JOIN auth_group ag ON ag.id = ar.group_id" +
+		" WHERE ag.role IN (%s)"
+	visibleNodes, err := oDb.visibleIDs(ctx, "SELECT node_id FROM nodes WHERE app IN ("+responsibleApps+")", groups)
+	if err != nil {
+		return "", "", fmt.Errorf("MetricScope nodes: %w", err)
+	}
+	visibleSvcs, err := oDb.visibleIDs(ctx, "SELECT svc_id FROM services WHERE svc_app IN ("+responsibleApps+")", groups)
+	if err != nil {
+		return "", "", fmt.Errorf("MetricScope services: %w", err)
+	}
+	within := func(ids, visible []string) []string {
+		seen := make(map[string]bool, len(visible))
+		for _, id := range visible {
+			seen[id] = true
+		}
+		var out []string
+		for _, id := range ids {
+			if seen[id] {
+				out = append(out, id)
+			}
+		}
+		return out
+	}
+	return quotedIDs(within(nodeIDs, visibleNodes)), quotedIDs(within(svcIDs, visibleSvcs)), nil
 }
 
 // RunMetricRequest runs a metric request in a read-only transaction and keeps at
