@@ -3881,7 +3881,7 @@ paths:
       operationId: GetFormsStore
       description: |
         List the forms stored by workflows, with the revision they were submitted
-        with.
+        with, among those of the requests the caller may see (see GET /workflows).
       parameters:
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
@@ -3914,7 +3914,8 @@ paths:
     get:
       operationId: GetFormStore
       description: |
-        Show a form stored by a workflow.
+        Show a form stored by a workflow, if the caller may see its request (see
+        GET /workflows): an empty list otherwise.
       parameters:
         - in: path
           name: store_id
@@ -3954,7 +3955,8 @@ paths:
       operationId: GetFormStoreDump
       description: |
         Show a form stored by a workflow, with its workflow, the workflow head and
-        tail stored forms.
+        tail stored forms, if the caller may see its request (see GET /workflows):
+        404 otherwise.
       parameters:
         - in: path
           name: store_id
@@ -10634,8 +10636,10 @@ paths:
       operationId: GetWorkflows
       description: |
         List the requests: the workflows started by the submission of a form with a
-        workflow output. As the historical API,
-        every workflow is listed to any authenticated user. `form_name`,
+        workflow output. A manager sees every request; the others see those they
+        or one of their teams take part in: created, are assigned, or submitted or
+        were assigned one of its steps (the historical API listed every workflow
+        to any authenticated user). `form_name`,
         `form_folder` and `form_yaml` are those of the form revision the request
         started from.
       parameters:

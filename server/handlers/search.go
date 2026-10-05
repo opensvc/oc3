@@ -242,8 +242,9 @@ func (a *Api) GetSearch(c echo.Context, params server.GetSearchParams) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), searchTimeout)
 	defer cancel()
 
-	base := cdb.ListParams{Groups: UserGroupsFromContext(c), IsManager: IsManager(c)}
 	userID := authUserID(c)
+	// The user id restricts the requests to those the caller takes part in.
+	base := cdb.ListParams{Groups: UserGroupsFromContext(c), IsManager: IsManager(c), UserID: userID}
 	pattern := "%" + likeEscaper.Replace(text) + "%"
 
 	kinds := make([]searchKind, 0, len(searchKinds))

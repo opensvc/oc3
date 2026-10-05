@@ -55,13 +55,21 @@ func (oDb *DB) GetFormsRevisions(ctx context.Context, idOrMD5 *string, p ListPar
 // with, as the v_forms_store view of the historical collector.
 const formsStoreFrom = "forms_store JOIN forms_revisions ON forms_revisions.form_md5 = forms_store.form_md5"
 
-// GetFormsStore lists the forms stored by workflows, one when storeID is set.
+// GetFormsStore lists the forms stored by workflows, one when storeID is set,
+// among those of the requests the caller may read (workflowsVisibility).
 func (oDb *DB) GetFormsStore(ctx context.Context, storeID *int64, p ListParams) ([]map[string]any, error) {
 	conds := []string{"forms_store.id > 0"}
 	var args []any
 	if storeID != nil {
 		conds = append(conds, "forms_store.id = ?")
 		args = append(args, *storeID)
+	}
+	// A stored form is read as its request is: the workflow it starts or follows.
+	if cond, condArgs := workflowsVisibility(p); cond != "" {
+		conds = append(conds, "EXISTS (SELECT 1 FROM workflows"+
+			" WHERE (workflows.form_head_id = forms_store.id OR workflows.form_head_id = forms_store.form_head_id)"+
+			" AND "+cond+")")
+		args = append(args, condArgs...)
 	}
 	return oDb.listQuery(ctx, "getFormsStore", formsStoreFrom, conds, args, "forms_store.id", p)
 }
@@ -77,6 +85,36 @@ const myTeamNames = "(SELECT CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last
 	" UNION SELECT auth_group.role FROM auth_group" +
 	" JOIN auth_membership ON auth_membership.group_id = auth_group.id" +
 	" WHERE auth_membership.user_id = ? AND auth_group.privilege = 'F')"
+
+// workflowInvolvedCond restricts the workflows (the requests) to those the caller
+// takes part in: they or one of their teams created it, are assigned it, or
+// submitted or were assigned one of its steps (its stored forms). The historical
+// collector restricted none, any user reading any request and its data.
+func workflowInvolvedCond(userID int64) (string, []any) {
+	cond := "(workflows.creator IN " + myTeamNames +
+		" OR workflows.last_assignee IN " + myTeamNames +
+		" OR EXISTS (SELECT 1 FROM forms_store step" +
+		" WHERE (step.id = workflows.form_head_id OR step.form_head_id = workflows.form_head_id)" +
+		" AND (step.form_submitter IN " + myTeamNames + " OR step.form_assignee IN " + myTeamNames + ")))"
+	args := make([]any, 8)
+	for i := range args {
+		args[i] = userID
+	}
+	return cond, args
+}
+
+// workflowsVisibility is the condition of the workflows a caller may read: all of
+// them for a manager, those they take part in otherwise, none without a user.
+func workflowsVisibility(p ListParams) (string, []any) {
+	switch {
+	case p.IsManager:
+		return "", nil
+	case p.UserID == nil:
+		return "1=0", nil
+	default:
+		return workflowInvolvedCond(*p.UserID)
+	}
+}
 
 // Workflows assigned to the caller's team, or started by it and awaiting a
 // tier, as the historical "Assigned to my team" and "Pending tiers action".
@@ -95,6 +133,10 @@ func (oDb *DB) GetWorkflows(ctx context.Context, id *int64, assigned string, p L
 	if id != nil {
 		conds = append(conds, "workflows.id = ?")
 		args = append(args, *id)
+	}
+	if cond, condArgs := workflowsVisibility(p); cond != "" {
+		conds = append(conds, cond)
+		args = append(args, condArgs...)
 	}
 	switch {
 	case assigned == "":

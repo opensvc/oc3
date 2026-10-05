@@ -48,7 +48,8 @@ func (a *Api) GetForm(c echo.Context, formId int, params server.GetFormParams) e
 // handlers answer a change with rest_get_form().handler(id). The caller has just
 // written it: it is read without the publication filter.
 func (a *Api) formResponse(ctx context.Context, formID int64) (map[string]any, error) {
-	items, err := a.defaultRows(ctx, "form", formDefinitionProp, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
+	// Form definitions: read whole, the caller's rights are checked by the caller.
+	items, err := a.defaultRows(ctx, "form", formDefinitionProp, cdb.ListParams{IsManager: true}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetForms(ctx, &formID, p)
 	})
 	if err != nil {

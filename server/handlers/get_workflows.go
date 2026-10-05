@@ -29,8 +29,10 @@ func (a *Api) GetWorkflows(c echo.Context, params server.GetWorkflowsParams) err
 	return a.handleList(c, "GetWorkflows", "workflow", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
-		filter:     params.Filter,
-		withUserID: assigned != "",
+		filter: params.Filter,
+		// The caller's user id: the requests they take part in, or the assignment
+		// filter, are found from it.
+		withUserID: true,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return odb.GetWorkflows(ctx, nil, assigned, p)
 	})
