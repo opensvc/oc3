@@ -14537,6 +14537,14 @@ components:
           type: integer
         distinct:
           type: object
+          description: With stats, the number of distinct values of each property.
+          additionalProperties:
+            type: integer
+        other:
+          type: object
+          description: |
+            With stats and a limit, the number of rows of each property whose value
+            is not among those returned.
           additionalProperties:
             type: integer
         total:
@@ -17571,7 +17579,18 @@ components:
       in: query
       name: stats
       required: false
-      description: Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+      description: |
+        With "1" or "true", the response counts the distinct values of each
+        selected property instead of listing the rows: `data` maps each property
+        to an object of value → number of rows ("empty" for a null or blank
+        value), over the whole selection (access control, filters and session
+        filterset applied, `offset` ignored). `limit`, when given, caps the
+        number of values returned per property, the most frequent first; without
+        it every value is returned. `meta.total` is the number of rows,
+        `meta.distinct` the number of distinct values of each property, and
+        `meta.other` the number of rows whose value was left out by the limit.
+        A count taking longer than 5 seconds is refused with a 400, asking to
+        narrow the selection.
       schema:
         type: string
 

@@ -20,6 +20,8 @@ func (a *Api) GetNodeIps(c echo.Context, nodeId string, params server.GetNodeIps
 	return a.handleList(c, "GetNodeIps", "node_ip", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
+		// The fetcher groups the rows itself: the stats count them as fetched.
+		statsInGo: true,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetNodeIps(ctx, node.NodeID, p)
 	})

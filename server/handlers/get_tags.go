@@ -17,7 +17,12 @@ func (a *Api) handleGetTags(c echo.Context, tagID *int, query ListQueryParameter
 	odb := a.ODB
 	ctx := c.Request().Context()
 
-	tags, err := odb.GetTags(ctx, tagID, filters, query.Page.Limit, query.Page.Offset)
+	limit, offset := query.Page.Limit, query.Page.Offset
+	if query.WithStats {
+		// The stats count the whole selection; the limit caps their values.
+		limit, offset = 0, 0
+	}
+	tags, err := odb.GetTags(ctx, tagID, filters, limit, offset)
 	if err != nil {
 		log.Error("cannot get tags", logkey.TagID, tagID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get tags")
@@ -42,8 +47,11 @@ func (a *Api) handleGetTags(c echo.Context, tagID *int, query ListQueryParameter
 		log.Error("cannot project tag props", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot project tag props")
 	}
+	if query.WithStats {
+		return c.JSON(http.StatusOK, newStatsResponse(filteredItems, query.Props, statsLimit(c, query)))
+	}
 	response := newListResponse(filteredItems, propsMapping["tag"], query)
-	if query.WithMeta && !query.WithStats {
+	if query.WithMeta {
 		total, known := totalFromPage(query.Page.Limit, query.Page.Offset, len(tags))
 		if !known {
 			if total, err = odb.CountTags(ctx, filters); err != nil {

@@ -94,6 +94,11 @@ func (a *Api) handleAlerts(
 		GroupBy:     query.GroupBy,
 		Filters:     filters,
 	}
+	if query.WithStats && !isItem {
+		// The stats count the whole selection; the limit caps their values.
+		dbParams.Limit, dbParams.Offset = 0, 0
+		dbParams.OrderBy = nil
+	}
 	items, err := fetch(c.Request().Context(), dbParams)
 	if err != nil {
 		log.Error("cannot fetch alerts", logkey.Error, err)
@@ -108,8 +113,11 @@ func (a *Api) handleAlerts(
 		return JSONProblemf(c, http.StatusNotFound, "alert %s not found", itemVal)
 	}
 
+	if query.WithStats && !isItem {
+		return c.JSON(http.StatusOK, newStatsResponse(items, query.Props, statsLimit(c, query)))
+	}
 	response := newListResponse(items, mapping, query)
-	if !isItem && query.WithMeta && !query.WithStats {
+	if !isItem && query.WithMeta {
 		response = response.withTotal(listTotal(c.Request().Context(), log, fetch, dbParams, len(items)))
 	}
 	return c.JSON(http.StatusOK, response)
