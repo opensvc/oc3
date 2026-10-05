@@ -16,6 +16,8 @@ func TestServiceActionCommand(t *testing.T) {
 		{"instance, cluster-wide action", "switch", "pull", "2.1", "", true, "switch"},
 		{"instance, resources", "freeze", "pull", "2.1", "fs#1,ip#0", true, "freeze --rid fs#1,ip#0"},
 		{"service", "freeze", "pull", "2.1", "", false, "freeze"},
+		{"instance, compliance", "compliance_check", "pull", "2.1", "", true, "compliance check"},
+		{"instance, restart", "restart", "pull", "2.1", "", true, "restart --local"},
 		{"push node", "thaw", "push", "2.1", "", true,
 			"ssh -o StrictHostKeyChecking=no -o CheckHostIP=no -o ForwardX11=no -o ConnectTimeout=5 -o PasswordAuthentication=no opensvc@10.0.0.1 -- sudo svcmgr --service svc1 thaw --local"},
 	}
@@ -59,5 +61,21 @@ func TestActionEntryUnsupportedKeys(t *testing.T) {
 	}
 	if len(e.unsupported) != 1 || e.unsupported[0] != "module" {
 		t.Errorf("module is kept to be refused: %+v", e.unsupported)
+	}
+}
+
+func TestServiceAndInstanceActions(t *testing.T) {
+	for action := range serviceActions {
+		if !instanceActions[action] {
+			t.Errorf("%s is accepted on a service, not on an instance", action)
+		}
+	}
+	for _, action := range []string{"restart", "syncall", "enable", "compliance_fix"} {
+		if serviceActions[action] {
+			t.Errorf("%s is accepted on a whole service", action)
+		}
+	}
+	if serviceActions["rotate_root_pw"] || instanceActions["rotate_root_pw"] {
+		t.Error("a node action is accepted on a service")
 	}
 }

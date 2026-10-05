@@ -93,13 +93,26 @@ paths:
           Requires the NodeExec privilege and responsibility for the service.
         - svc_id alone: an action on the whole service, posted for a node of the
           service seen alive in the last 15 minutes. Same requirements.
-        - node_id alone: a node action. Requires the NodeExec privilege and
-          responsibility for the node.
+        - node_id alone: a node action. Requires the NodeExec privilege (CompExec
+          for compliance_check and compliance_fix) and responsibility for the node.
+        - cluster_id alone: an action on the whole cluster, posted for a node of the
+          cluster seen alive in the last 15 minutes and running the om3 agent,
+          which runs it on every node of the cluster (`om node <action> --node *`).
+          Requires the NodeExec privilege and responsibility for every node of the
+          cluster.
 
-        Accepted actions: push resinfo, push config, freeze and thaw on a service
-        or an instance; pushasset, pushdisks, pushpkg, pushpatch, pushstats,
-        checks, sysreport, scanscsi, freeze and thaw on a node. Compliance actions
-        (module, moduleset, ruleset) and agent options are not supported.
+        Accepted actions: push resinfo, push config, start, stop, giveback,
+        switch, abort, clear, freeze and thaw on a service; the same, and restart,
+        takeover, syncall, syncnodes, syncdrp, enable, disable, compliance_check
+        and compliance_fix (CompExec privilege, on every module attached to the
+        service) on an instance or on its resources; pushasset, pushdisks, pushpkg, pushpatch, pushstats,
+        checks, sysreport, updatecomp, updatepkg, scanscsi,
+        reboot, schedule_reboot, unschedule_reboot, shutdown, drain,
+        compliance_check, compliance_fix (on every module attached to the node),
+        freeze and thaw on a node; freeze, thaw and abort (of the running
+        orchestration) on a cluster. Compliance actions on a given module, moduleset
+        or ruleset, Wake On LAN, the root password rotation and agent options are
+        not supported.
 
         One entry answers with the queued action, as GET /actions/{id} does, or
         with a problem. A list always answers 200, with the queued actions in
@@ -227,6 +240,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -462,6 +476,59 @@ paths:
           $ref: '#/components/responses/401'
         403:
           $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /alerts/{id}/events:
+    get:
+      operationId: GetAlertEvents
+      description: |
+        The past occurrences of an alert, as the timeline of the historical alert
+        properties shows them (alert_timeline): the dashboard_events of the same
+        dash_md5, node and service, oldest first, the last `limit` of them (1000
+        by default). The alert must be visible to the caller, by the dashboard rule.
+        An occurrence still open has no end. The current occurrence of an alert
+        the database did not record (no open event) is not listed: the alert
+        itself, active since dash_created, stands for it.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Alert id (dashboard.id)
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: The most recent occurrences to return, 1000 by default, 10000 at most.
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AlertEvent'
+                  truncated:
+                    type: boolean
+                    description: Older occurrences were left out.
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -1366,6 +1433,164 @@ paths:
       tags:
         - auth
 
+  /charts:
+    get:
+      operationId: GetCharts
+      description: |
+        List the charts: time series of historized metrics, defined in YAML. A manager sees
+        every chart; the others see the charts published to one of their teams.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostCharts
+      description: |
+        Create a chart. Its name must be unique, and its definition, when given,
+        must be valid YAML. The chart is published to the primary team of its author,
+        which is also made responsible for it, as in the historical collector.
+        Requires the ReportsManager or Manager privilege, as for the reports.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - chart_name
+              properties:
+                chart_name:
+                  type: string
+                  description: Unique name of the chart.
+                chart_yaml:
+                  type: string
+                  description: Definition of the chart, in YAML.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}:
+    get:
+      operationId: GetChart
+      description: Display a chart, if the caller may see it (see GET /charts).
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart identifier (charts.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/samples:
+    get:
+      operationId: GetChartSamples
+      description: |
+        The series of the historized metrics a chart draws, for a caller who may see
+        the chart: one series per metric of its definition, or per instance of a
+        metric with instances, each a list of [unix time, value] points over the last
+        `days` days. `stack` is the chart's Options.stack. The series are those the
+        scheduler computes without a filterset (the historical collector read those of
+        the session's filterset, which oc3 does not have).
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart identifier (charts.id)
+          schema:
+            type: string
+        - in: query
+          name: days
+          description: Days of history, 365 by default, 1825 at most.
+          schema:
+            type: integer
+            minimum: 1
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartSamplesResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        422:
+          description: The chart definition is not valid YAML.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /disks:
     post:
       operationId: PostDisks
@@ -1570,6 +1795,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -3655,7 +3881,7 @@ paths:
       operationId: GetFormsStore
       description: |
         List the forms stored by workflows, with the revision they were submitted
-        with.
+        with, among those of the requests the caller may see (see GET /workflows).
       parameters:
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
@@ -3688,7 +3914,8 @@ paths:
     get:
       operationId: GetFormStore
       description: |
-        Show a form stored by a workflow.
+        Show a form stored by a workflow, if the caller may see its request (see
+        GET /workflows): an empty list otherwise.
       parameters:
         - in: path
           name: store_id
@@ -3728,7 +3955,8 @@ paths:
       operationId: GetFormStoreDump
       description: |
         Show a form stored by a workflow, with its workflow, the workflow head and
-        tail stored forms.
+        tail stored forms, if the caller may see its request (see GET /workflows):
+        404 otherwise.
       parameters:
         - in: path
           name: store_id
@@ -4167,8 +4395,8 @@ paths:
       operationId: GetGroupUsers
       description: |
         List the users member of the group. Managers can see all groups; other
-        users only see the groups they belong to. The password and
-        registration_key columns are never exposed.
+        users only see the groups they belong to. The password, registration_key
+        and reset_password_key columns are never exposed.
       parameters:
         - in: path
           name: group_id
@@ -4566,6 +4794,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -4617,6 +4846,616 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /metrics:
+    get:
+      operationId: GetMetrics
+      description: |
+        List the metrics: SQL requests whose results feed the charts and the
+        reports. A manager sees every metric; the others see the metrics published
+        to one of their teams.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostMetrics
+      description: |
+        Create a metric. Its name must be unique. The metric is published to the
+        primary team of its author, as in the historical collector. Requires the
+        Manager privilege.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - metric_name
+              properties:
+                metric_name:
+                  type: string
+                  description: Unique name of the metric.
+                metric_sql:
+                  type: string
+                  description: |
+                    The SQL request computing the metric. `%%fset_node_ids%%` and
+                    `%%fset_svc_ids%%` stand for the nodes and services of the
+                    filterset of the session where the metric is read.
+                metric_col_value_index:
+                  type: integer
+                  minimum: 0
+                  description: Index of the result column holding the value.
+                metric_col_instance_index:
+                  type: integer
+                  minimum: 0
+                  nullable: true
+                  description: |
+                    Index of the result column naming the instance of each value,
+                    null when the request returns one value.
+                metric_col_instance_label:
+                  type: string
+                  description: How the instances are named, the column header say.
+                metric_historize:
+                  type: string
+                  enum: ['T', 'F']
+                  description: Whether the values are kept over time for the charts.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}:
+    get:
+      operationId: GetMetric
+      description: Display a metric, if the caller may see it (see GET /metrics).
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric identifier (metrics.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostMetric
+      description: |
+        Modify a metric. Only the properties present in the body change; a null
+        `metric_col_instance_index` clears it. Requires the Manager privilege.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric identifier (metrics.id)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metric_name:
+                  type: string
+                  description: Unique name of the metric.
+                metric_sql:
+                  type: string
+                  description: |
+                    The SQL request computing the metric. `%%fset_node_ids%%` and
+                    `%%fset_svc_ids%%` stand for the nodes and services of the
+                    filterset of the session where the metric is read.
+                metric_col_value_index:
+                  type: integer
+                  minimum: 0
+                  description: Index of the result column holding the value.
+                metric_col_instance_index:
+                  type: integer
+                  minimum: 0
+                  nullable: true
+                  description: |
+                    Index of the result column naming the instance of each value,
+                    null when the request returns one value.
+                metric_col_instance_label:
+                  type: string
+                  description: How the instances are named, the column header say.
+                metric_historize:
+                  type: string
+                  enum: ['T', 'F']
+                  description: Whether the values are kept over time for the charts.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/samples:
+    get:
+      operationId: GetMetricSamples
+      description: |
+        Run the request of a metric now and return its result, for a caller who may
+        see the metric (see GET /metrics): the columns in order, then the rows, 1000
+        at most. The request runs read-only, for 10 seconds at most, and must be a
+        SELECT. Its %%fset_node_ids%% and %%fset_svc_ids%% placeholders stand for the
+        nodes and services the caller may see. A request that fails returns 422 with
+        the database error.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric identifier (metrics.id)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricSamplesResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        422:
+          description: The request is not a SELECT, or it failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /realtime/token:
+    post:
+      operationId: PostRealtimeToken
+      description: |
+        Get a one-time token for the websocket of the messenger, which broadcasts a
+        "<table>_change" event each time a table of the collector changes. The client
+        connects to `/realtime/<group>/<token>` on the messenger. When the messenger
+        requires tokens, only those registered here are let in: only signed-in users
+        listen. The token is single use: a new one is asked for each connection.
+        Answers 503 when no messenger is configured or reachable.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [token, group]
+                    properties:
+                      token:
+                        type: string
+                      group:
+                        type: string
+                        description: The messenger group the change events are published to.
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+        503:
+          $ref: '#/components/responses/503'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /clusters:
+    get:
+      operationId: GetClusters
+      description: |
+        List the clusters the collector knows from their daemon status, with their
+        counts of nodes and services. A manager sees every cluster; the others see the
+        clusters holding a node or a service of an app their groups are responsible
+        for.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /clusters/{cluster_id}:
+    get:
+      operationId: GetCluster
+      description: Display a cluster, if the caller may see it (see GET /clusters).
+      parameters:
+        - in: path
+          name: cluster_id
+          required: true
+          description: Cluster identifier (clusters.cluster_id, a uuid)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /resources:
+    get:
+      operationId: GetResources
+      description: |
+        List the resources of the service instances, as the agents report them
+        (resmon), with the names of their service and node as joined props
+        (`services.svcname`, `nodes.nodename`). Sorted by service, node, container
+        and resource id by default. A manager sees every resource; the others see
+        those of the services of an app their groups are responsible for.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /resources/{resource_id}:
+    get:
+      operationId: GetResource
+      description: Display a resource, if the caller may see it (see GET /resources).
+      parameters:
+        - in: path
+          name: resource_id
+          required: true
+          description: Resource record identifier (resmon.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports:
+    get:
+      operationId: GetReports
+      description: |
+        List the reports: pages of charts and metrics, defined in YAML. A manager sees
+        every report; the others see the reports published to one of their teams.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostReports
+      description: |
+        Create a report. Its name must be unique, and its definition, when given,
+        must be valid YAML. The report is published to the primary team of its author,
+        which is also made responsible for it, as in the historical collector.
+        Requires the ReportsManager or Manager privilege.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - report_name
+              properties:
+                report_name:
+                  type: string
+                  description: Unique name of the report.
+                report_yaml:
+                  type: string
+                  description: Definition of the report, in YAML.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}:
+    get:
+      operationId: GetReport
+      description: Display a report, if the caller may see it (see GET /reports).
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report identifier (reports.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/definition:
+    get:
+      operationId: GetReportDefinition
+      description: |
+        The definition of a report, report_yaml parsed, for a caller who may see the
+        report: Title, Desc, and Sections, each with a Title, a Desc, Metrics (by
+        metric_id) and Charts (by chart_id). An empty definition is an empty object.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report identifier (reports.id)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    additionalProperties: true
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        422:
+          description: The definition is not valid YAML.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /san-switches:
+    get:
+      operationId: GetSanSwitches
+      description: |
+        List the ports of the SAN switches: one row per port, with the port plugged
+        on its other end (`sw_rportname`) and the name of what owns that port
+        (`sw_rname`: a node, a storage array or another switch). Any authenticated
+        user sees every port.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwitchPortListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /search:
     get:
       operationId: GetSearch
@@ -4626,7 +5465,11 @@ paths:
         users, teams, requests, modulesets, rulesets, filtersets and forms. For each
         kind, the objects whose name or another identifying prop contains the text,
         case-insensitively, are read through the kind's own list and its access
-        control. A request also matches by its number. Groups come in that order, one
+        control. A request also matches by its number. Then come, while `limit` leaves
+        room, the objects whose context contains the text: the props returned beside
+        the name to tell homonyms apart, such as the application, the environment and
+        the operating system of a node, the node of an instance, of an address or of
+        a disk, or the author of a moduleset. Groups come in that order, one
         per kind, with `more` set when other objects match beyond `limit`. A kind that
         cannot be searched reports it in its `error` without failing the others. A
         text shorter than 2 characters returns no group.
@@ -5366,7 +6209,7 @@ paths:
 
     delete:
       operationId: DeleteNode
-      description: Delete an OpenSVC node and cascade delete its related entries.
+      description: Delete an OpenSVC node and cascade delete its related entries. The user must hold the NodeManager privilege and be responsible for the node (a Manager is responsible for every node).
       parameters:
         - in: path
           name: node_id
@@ -5456,7 +6299,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/CheckListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -5813,6 +6656,349 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiskListResponse'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/sysreport:
+    get:
+      operationId: GetNodeSysreport
+      description: |
+        List the changes of the files and command outputs the node reports
+        (sysreport), newest first, as the historical collector's timeline: one entry
+        per report that changed something, with the files it changed and their added
+        and deleted line counts. Requires responsibility for the node. A node that
+        never reported has no change.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID)
+          schema:
+            type: string
+        - in: query
+          name: path
+          description: Keep the files whose path or command line contains this text, and the changes touching one.
+          schema:
+            type: string
+        - in: query
+          name: begin
+          description: Keep the changes made since this date, for example 2026-09-01 or 2026-09-01T10:00:00.
+          schema:
+            type: string
+        - in: query
+          name: end
+          description: Keep the changes made until this date.
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: The maximum number of changes to return, 50 by default. 0 means no limit.
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: offset
+          description: Skip the first changes.
+          schema:
+            type: integer
+            minimum: 0
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SysreportTimelineResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/sysreport/timediff:
+    get:
+      operationId: GetNodeSysreportTimediff
+      description: |
+        Show what changed in each file between two states of the node's sysreport, as
+        one unified diff per file. Each state is given as a date, which designates the
+        last report made at or before it, or as a revision of the timeline; the end
+        defaults to the latest report. A begin older than the first report compares
+        with nothing reported: every file is then added. Sensitive paths are withheld
+        as in a change.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID)
+          schema:
+            type: string
+        - in: query
+          name: begin
+          required: true
+          description: The state compared from, a date (2026-09-01T10:00:00Z) or a revision.
+          schema:
+            type: string
+        - in: query
+          name: end
+          description: The state compared to, a date or a revision; the latest report by default.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SysreportTimediffResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/sysreport/{cid}:
+    get:
+      operationId: GetNodeSysreportChange
+      description: |
+        Show the change a report made to each file, as a unified diff starting at its
+        first hunk. The paths matching a secure pattern are sensitive: their diff is
+        given only to managers, to the node's responsible team and to the groups an
+        authorization names for the path and a filterset holding the node; for the
+        others the file is listed with `restricted` set and no diff. Without any secure
+        pattern every path is sensitive.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID)
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Revision of the sysreport, a commit id of the timeline or HEAD for the latest.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SysreportChangeResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/sysreport/{cid}/tree:
+    get:
+      operationId: GetNodeSysreportTree
+      description: |
+        List the files and command outputs of the node's sysreport at a revision, with
+        the object id each content is read by, and whether the caller may read it.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID)
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Revision of the sysreport, a commit id of the timeline or HEAD for the latest.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SysreportTreeResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/sysreport/{cid}/tree/{oid}:
+    get:
+      operationId: GetNodeSysreportFile
+      description: |
+        Show the content of a file or command output of the node's sysreport at a
+        revision. The object must belong to that revision. A sensitive path the caller
+        may not read is refused with a 403. A content larger than 1 MiB is cut
+        (`truncated`), a binary one is not returned (`binary`).
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID)
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Revision of the sysreport, a commit id of the timeline or HEAD for the latest.
+          schema:
+            type: string
+        - in: path
+          name: oid
+          required: true
+          description: Object id of the file, as the tree lists it.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SysreportFileResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/stats:
+    get:
+      operationId: GetNodeStats
+      description: |
+        The performance statistics of a node for one group, over the last days: one
+        series per metric (and per device for netdev, netdev_err and blockdev), each
+        a list of [unix time, value] points, as the historical collector stored them
+        in whisper files under stats/nodes/<node_id> (cpu/all, mem_u, swap, proc,
+        block, netdev/<dev>, netdev_err/<dev>, blockdev/<dev>). The resolution is the
+        finest the files keep for the period: a minute over half an hour, ten minutes
+        over three days, an hour over ninety days, a day beyond. A node without
+        statistics returns an empty list.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID or nodename)
+          schema:
+            type: string
+        - in: query
+          name: group
+          required: true
+          schema:
+            type: string
+            enum: [cpu, mem, swap, proc, block, netdev, netdev_err, blockdev]
+        - in: query
+          name: days
+          description: Days of history, 1 by default, 1095 at most.
+          schema:
+            type: integer
+            minimum: 1
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeStatsResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/san:
+    get:
+      operationId: GetNodeSan
+      description: |
+        The SAN wiring of a node, as a graph: the node and its host bus adapters, the
+        switches their ports are plugged in, the inter-switch links followed from
+        there, and the storage arrays owning the target ports zoned to the adapters.
+        A switch reached through an inter-switch link is kept only when it leads to
+        one of those target ports. The graph has no link for a node without a
+        fibre channel wiring known to the collector.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID or nodename)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SanTopologyResponse'
+        401:
+          $ref: '#/components/responses/401'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -6193,6 +7379,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -6786,6 +7973,11 @@ paths:
                   type: string
                 svc_provisioned:
                   type: string
+                svc_sla:
+                  type: string
+                  description: |
+                    The availability target, a percent between 0 and 100, compared with
+                    the availability rate of the service; empty to remove it.
                 svc_placement:
                   type: string
                 svc_notifications:
@@ -6866,6 +8058,11 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [data]
+                properties:
+                  data:
+                    type: boolean
+                    description: Whether one of the groups of the caller is responsible for the service, a Manager being responsible for all.
         401:
           $ref: '#/components/responses/401'
         403:
@@ -6939,7 +8136,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/CheckListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -7164,6 +8361,219 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InstanceListResponse'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /services/{svc_id}/status_log:
+    get:
+      operationId: GetServiceStatusLog
+      description: |
+        The availability of a service over the last days, as periods of one status:
+        the closed ones of services_log and the current one of services_log_last,
+        oldest first, with their justification when they have one. The availability
+        rate of the period follows, as the historical service availability computes
+        it: the time up or standby up over the time counted, from the start of the
+        history when that is later; the time no status covers is downtime, and the
+        justified downtime marked not to account is left out of the count. The
+        service must be visible to the caller.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service id or name
+          schema:
+            type: string
+        - in: query
+          name: days
+          description: The days of history to return, 7 by default, 365 at most.
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, availability]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceStatusPeriod'
+                  availability:
+                    $ref: '#/components/schemas/ServiceAvailability'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /services/{svc_id}/status_log/ack:
+    put:
+      operationId: PutServiceStatusLogAck
+      description: |
+        Justify a period of the availability of a service, or change its
+        justification: a comment, and whether the period still counts in the
+        availability rate. The period is named by its bounds, as the status log
+        gives them. Requires the responsibility of the service. The change is
+        logged.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service id or name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [begin, end, comment, account]
+              properties:
+                begin:
+                  type: string
+                end:
+                  type: string
+                comment:
+                  type: string
+                account:
+                  type: boolean
+                  description: False to leave the period out of the availability rate.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteServiceStatusLogAck
+      description: |
+        Remove the justification of a period of the availability of a service,
+        named by its bounds. Requires the responsibility of the service. The
+        change is logged.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service id or name
+          schema:
+            type: string
+        - in: query
+          name: begin
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: end
+          required: true
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /services/{svc_id}/instances/{node_id}/status_log:
+    get:
+      operationId: GetServiceInstanceStatusLog
+      description: |
+        The availability and overall status of an instance over the last days, as
+        periods of one pair of statuses: the closed ones of svcmon_log and the
+        current one of svcmon_log_last, oldest first, clipped to the period. The
+        service must be visible to the caller.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service id or name
+          schema:
+            type: string
+        - in: path
+          name: node_id
+          required: true
+          description: Node id or name
+          schema:
+            type: string
+        - in: query
+          name: days
+          description: The days of history to return, 7 by default, 365 at most.
+          schema:
+            type: integer
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InstanceStatusPeriod'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -7961,6 +9371,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -8754,6 +10165,94 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /users/self/filterset:
+    get:
+      operationId: GetUserSelfFilterset
+      description: |
+        The session filterset of the signed-in user, or null data. As in the
+        historical collector, it narrows every list naming a node or a service to the
+        filterset's nodes and services (a row without a node, or without a service,
+        is judged on the other side), the dashboard and its counters included, and
+        it is what the %%fset_node_ids%% and %%fset_svc_ids%% placeholders of a
+        metric stand for. Single records read by their id are not narrowed.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionFiltersetResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutUserSelfFilterset
+      description: |
+        Choose the session filterset of the signed-in user, by id or name, in place
+        of the previous one. Refused while acting as another user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fset_id]
+              properties:
+                fset_id:
+                  type: string
+                  description: Filterset id (gen_filtersets.id) or name
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionFiltersetResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteUserSelfFilterset
+      description: |
+        Remove the session filterset of the signed-in user: the lists show everything
+        the user may see again. Refused while acting as another user.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionFiltersetResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /users/self/password:
     post:
       operationId: PostUserSelfPassword
@@ -8900,6 +10399,204 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /impersonation:
+    get:
+      operationId: GetImpersonation
+      description: |
+        Tell whether the user who signed in may impersonate other users (the
+        Manager privilege), and which user the request is made as when it
+        carries the OC3-Impersonate header. Requires user authentication.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImpersonationStatus'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /users/{user_id}/groups:
+    get:
+      operationId: GetUserGroups
+      description: |
+        List the groups the user is member of, organisational and privilege ones.
+        Managers and UserManager see every user's groups; other users only those
+        of the users sharing one of their organisational groups, and their own.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: |
+            User identifier: auth_user.id, the user email when it contains an
+            "@", or "self" for the authenticated user.
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /users/{user_id}/groups/{group_id}:
+    post:
+      operationId: PostUserGroup
+      description: |
+        Make the user a member of the group, as rest_post_user_group does.
+        Requires the GroupManager privilege; a caller who is not a Manager can only
+        attach a group they are member of. Attaching a user already member is not
+        an error. The change is logged.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: User identifier, auth_user.id or email.
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier, auth_group.id or role.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteUserGroup
+      description: |
+        Remove the user from the group, as rest_delete_user_group does, with the
+        same privilege rules as the attachment. Detaching a user who is not member
+        is not an error. The change is logged.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: User identifier, auth_user.id or email.
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier, auth_group.id or role.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  info:
+                    type: string
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /users/{user_id}/impersonate:
+    post:
+      operationId: PostUserImpersonate
+      description: |
+        Start acting as another user, as the impersonation of the historical
+        collector does. Checks that the caller may impersonate that user and logs
+        the start ("User %(id)s is impersonating %(other_id)s"). The requests made
+        as that user then carry its id in the OC3-Impersonate header: the server
+        handles them with the identity, the groups and the visibility of that
+        user, checks the privilege again on every request, and answers with the
+        OC3-Impersonated-By header naming the user who signed in. A refusal due to
+        the impersonation itself carries OC3-Impersonation-Refused. Stopping is
+        dropping the header. Requires the Manager privilege, and a request not
+        already made as another user.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: User identifier, auth_user.id or email.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Impersonation'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /users/{user_id}/prefs:
     get:
       operationId: GetUserPrefs
@@ -9007,8 +10704,10 @@ paths:
       operationId: GetWorkflows
       description: |
         List the requests: the workflows started by the submission of a form with a
-        workflow output. As the historical API,
-        every workflow is listed to any authenticated user. `form_name`,
+        workflow output. A manager sees every request; the others see those they
+        or one of their teams take part in: created, are assigned, or submitted or
+        were assigned one of its steps (the historical API listed every workflow
+        to any authenticated user). `form_name`,
         `form_folder` and `form_yaml` are those of the form revision the request
         started from.
       parameters:
@@ -12838,6 +14537,14 @@ components:
           type: integer
         distinct:
           type: object
+          description: With stats, the number of distinct values of each property.
+          additionalProperties:
+            type: integer
+        other:
+          type: object
+          description: |
+            With stats and a limit, the number of rows of each property whose value
+            is not among those returned.
           additionalProperties:
             type: integer
         total:
@@ -13038,6 +14745,24 @@ components:
         query parameter selects which columns the server returns, so a row
         carries only the requested subset.
       properties:
+        svc_sla:
+          type: number
+          format: double
+          nullable: true
+          description: The availability target, in percent; null without SLA.
+        svc_availability:
+          type: number
+          format: double
+          nullable: true
+          description: |
+            The availability rate of the last 30 days, in percent, as the status
+            history of the service computes it, stored by the scheduler every 10
+            minutes and at once when a justification changes; sortable and
+            filterable. Null without status recorded.
+        svc_availability_updated:
+          type: string
+          nullable: true
+          description: When svc_availability was computed.
         id:
           type: integer
         svc_id:
@@ -13127,6 +14852,86 @@ components:
         meta:
           $ref: '#/components/schemas/ListMeta'
 
+    AlertEvent:
+      type: object
+      required: [id, begin]
+      properties:
+        id:
+          type: integer
+        begin:
+          type: string
+          description: The start of the occurrence, "YYYY-MM-DD HH:MM:SS" in the collector time zone.
+        end:
+          type: string
+          nullable: true
+          description: Its end; null while it is open.
+
+    ServiceStatusPeriod:
+      type: object
+      required: [status, begin, end]
+      properties:
+        status:
+          type: string
+          description: The availability status of the service.
+        begin:
+          type: string
+          description: '"YYYY-MM-DD HH:MM:SS" in the collector time zone.'
+        end:
+          type: string
+          description: Its end; for the current period, the last status received.
+        ack:
+          $ref: '#/components/schemas/StatusAck'
+
+    StatusAck:
+      type: object
+      required: [comment, account, acked_by, acked_on]
+      properties:
+        comment:
+          type: string
+        account:
+          type: boolean
+          description: Whether the period still counts in the availability rate.
+        acked_by:
+          type: string
+        acked_on:
+          type: string
+
+    ServiceAvailability:
+      type: object
+      required: [from, to, rate, available_s, excluded_s, counted_s]
+      properties:
+        from:
+          type: string
+          description: The start of the time counted, the start of the history when later than the days asked.
+        to:
+          type: string
+        rate:
+          type: number
+          format: double
+          description: The available share of the counted time, in percent.
+        available_s:
+          type: integer
+        excluded_s:
+          type: integer
+          description: The justified downtime left out of the count.
+        counted_s:
+          type: integer
+
+    InstanceStatusPeriod:
+      type: object
+      required: [avail, overall, begin, end]
+      properties:
+        avail:
+          type: string
+        overall:
+          type: string
+        begin:
+          type: string
+          description: '"YYYY-MM-DD HH:MM:SS" in the collector time zone.'
+        end:
+          type: string
+          description: Its end; for the current period, the last status received.
+
     AlertRow:
       type: object
       description: |
@@ -13187,6 +14992,9 @@ components:
         svc_id:
           type: string
           description: Target service (svc_id or svcname)
+        cluster_id:
+          type: string
+          description: Target cluster (clusters.cluster_id), alone
         rid:
           type: string
           description: Resource ids to limit an instance action to, comma separated
@@ -14045,6 +15853,11 @@ components:
           type: string
         log_user:
           type: string
+        log_impersonator:
+          type: string
+          description: |
+            The user who really signed in when the action was made as log_user
+            (impersonation); empty otherwise.
         log_fmt:
           type: string
         log_dict:
@@ -14087,6 +15900,359 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/LogRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    MetricRow:
+      type: object
+      description: |
+        A metric: an SQL request whose results feed the charts and the reports.
+        Every property is optional: the `props` query parameter selects which columns
+        the server returns.
+      properties:
+        id:
+          type: integer
+        metric_name:
+          type: string
+        metric_sql:
+          type: string
+        metric_author:
+          type: string
+        metric_created:
+          type: string
+        metric_col_value_index:
+          type: integer
+          nullable: true
+        metric_col_instance_index:
+          type: integer
+          nullable: true
+        metric_col_instance_label:
+          type: string
+        metric_historize:
+          type: string
+
+    MetricSamples:
+      type: object
+      description: The result of a metric request, its columns in order.
+      required:
+        - columns
+        - rows
+      properties:
+        columns:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: array
+            items: {}
+        truncated:
+          type: boolean
+          description: More rows were returned than were kept.
+
+    MetricSamplesResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/MetricSamples'
+
+    MetricListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/MetricRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    SessionFilterset:
+      type: object
+      required: [fset_id, fset_name]
+      properties:
+        fset_id:
+          type: integer
+        fset_name:
+          type: string
+
+    SessionFiltersetResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SessionFilterset'
+
+    ResourceRow:
+      type: object
+      description: |
+        A resource of a service instance, as its agent reports it. Every property
+        is optional: the `props` query parameter selects which columns the server
+        returns. The `services.` and `nodes.` props come from joined tables.
+      properties:
+        id:
+          type: integer
+        svc_id:
+          type: string
+        node_id:
+          type: string
+        vmname:
+          type: string
+          description: Container of an encapsulated service, empty otherwise.
+        rid:
+          type: string
+          description: Resource id in the service configuration (fs#1, ip#0…).
+        res_type:
+          type: string
+        res_status:
+          type: string
+        res_desc:
+          type: string
+        res_log:
+          type: string
+        res_monitor:
+          type: string
+          description: T when the resource is monitored.
+        res_disable:
+          type: string
+          description: T when the resource is disabled.
+        res_optional:
+          type: string
+          description: T when the resource is optional.
+        changed:
+          type: string
+        updated:
+          type: string
+        services.svcname:
+          type: string
+          nullable: true
+        nodes.nodename:
+          type: string
+          nullable: true
+
+    ResourceListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ResourceRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    ClusterRow:
+      type: object
+      description: |
+        A cluster, as its daemon last pushed its status. Every property is optional:
+        the `props` query parameter selects which columns the server returns.
+      properties:
+        id:
+          type: integer
+        cluster_id:
+          type: string
+        cluster_name:
+          type: string
+        node_count:
+          type: integer
+          description: Nodes of the collector naming the cluster.
+        svc_count:
+          type: integer
+          description: Services of the collector naming the cluster.
+        agent_versions:
+          type: string
+          description: Agent versions of its nodes, distinct, comma-separated.
+        cluster_nodes:
+          type: string
+          description: Node names of the cluster configuration, comma-separated.
+        quorum:
+          type: integer
+          description: 1 when the cluster configuration requires a quorum.
+        frozen:
+          type: integer
+          description: 1 when the cluster is frozen.
+        compat:
+          type: integer
+          description: 1 when the daemons of its nodes are compatible.
+        listener_port:
+          type: integer
+        cluster_updated:
+          type: string
+          description: When the daemon status was produced, RFC 3339.
+
+    ClusterListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ClusterRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    ReportRow:
+      type: object
+      description: |
+        A report: a page of charts and metrics, defined in YAML. Every property is
+        optional: the `props` query parameter selects which columns the server
+        returns.
+      properties:
+        id:
+          type: integer
+        report_name:
+          type: string
+        report_yaml:
+          type: string
+
+    ReportListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ReportRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    ChartRow:
+      type: object
+      description: |
+        A chart: time series of historized metrics, defined in YAML. Every property is
+        optional: the `props` query parameter selects which columns the server
+        returns.
+      properties:
+        id:
+          type: integer
+        chart_name:
+          type: string
+        chart_yaml:
+          type: string
+
+    ChartSeries:
+      type: object
+      required:
+        - metric_id
+        - points
+      properties:
+        metric_id:
+          type: integer
+        label:
+          type: string
+          description: The label the chart definition gives the metric.
+        unit:
+          type: string
+        instance:
+          type: string
+          nullable: true
+          description: The instance of the metric, null for a metric without instances.
+        points:
+          type: array
+          description: The points, oldest first, each [unix time, value].
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+
+    ChartSamples:
+      type: object
+      required:
+        - stack
+        - series
+      properties:
+        stack:
+          type: boolean
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartSeries'
+
+    ChartSamplesResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/ChartSamples'
+
+    NodeStatSeries:
+      type: object
+      required:
+        - metric
+        - points
+      properties:
+        metric:
+          type: string
+          description: The metric, as the agent names it (usr, pct_memused, rxkBps...).
+        device:
+          type: string
+          description: The network interface or block device, for the groups by device.
+        points:
+          type: array
+          description: The points, oldest first, each [unix time, value].
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+
+    NodeStatsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeStatSeries'
+
+    ChartListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ChartRow'
             - type: object
               additionalProperties:
                 type: object
@@ -14429,6 +16595,154 @@ components:
         meta:
           $ref: '#/components/schemas/ListMeta'
 
+    SanTopologyNode:
+      type: object
+      description: |
+        A device of a SAN wiring graph. `rank` is its column from the node to the
+        arrays: 0 for the node, 1 for the switches its adapters are plugged in, one
+        more per inter-switch link followed, and the last one for the arrays.
+        `ports` are the ports the links of the graph use: adapter ports for the node,
+        target ports for an array, port indexes for a switch, several of them joined
+        by commas for the members of a trunk.
+      required:
+        - id
+        - kind
+        - label
+        - rank
+        - ports
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [server, switch, array]
+        label:
+          type: string
+          description: Node name, switch name or array name; empty for an unknown array.
+        fabric:
+          type: string
+          description: Fabric of a switch.
+        rank:
+          type: integer
+        ports:
+          type: array
+          items:
+            type: string
+
+    SanTopologyLink:
+      type: object
+      description: |
+        A link of a SAN wiring graph, from the device nearer to the node (`tail`) to
+        the one nearer to the arrays (`head`), each with the port it uses. `speeds`
+        holds the speed in Gb/s of each physical link: one, or one per member of a
+        trunk between two switches; 0 when the switch does not report it.
+      required:
+        - tail
+        - tail_port
+        - head
+        - head_port
+        - speeds
+      properties:
+        tail:
+          type: string
+        tail_port:
+          type: string
+        head:
+          type: string
+        head_port:
+          type: string
+        speeds:
+          type: array
+          items:
+            type: integer
+
+    SanTopology:
+      type: object
+      required:
+        - nodes
+        - links
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SanTopologyNode'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/SanTopologyLink'
+
+    SanTopologyResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/SanTopology'
+
+    SwitchPortRow:
+      type: object
+      description: |
+        A port of a SAN switch. `sw_portname` is its own port name (WWPN),
+        `sw_rportname` the port plugged on its other end and `sw_rname` the name of
+        what owns that port: a node, a storage array or another switch; empty when
+        the collector does not know it. `node_id` is set when it is a node. The
+        numbers are null when the switch does not report them. Every property is
+        optional: the `props` query parameter selects which columns the server
+        returns.
+      properties:
+        id:
+          type: integer
+        sw_fabric:
+          type: string
+        sw_name:
+          type: string
+        sw_index:
+          type: integer
+          nullable: true
+        sw_slot:
+          type: integer
+          nullable: true
+        sw_port:
+          type: integer
+          nullable: true
+        sw_portspeed:
+          type: integer
+          nullable: true
+        sw_portnego:
+          type: string
+        sw_porttype:
+          type: string
+        sw_portstate:
+          type: string
+        sw_portname:
+          type: string
+        sw_rportname:
+          type: string
+        sw_rname:
+          type: string
+        node_id:
+          type: string
+        sw_updated:
+          type: string
+
+    SwitchPortListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/SwitchPortRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
     HbaRow:
       type: object
       description: |
@@ -14533,7 +16847,7 @@ components:
             svc_env, cluster_id, svc_availstatus, svc_topology for a service; svc_id,
             node_id, mon_vmname, mon_availstatus, services.svcname, nodes.nodename for
             an instance; id, app, app_domain, description for an application; id, addr,
-            mask, intf, node_id, nodename, net_name for a node address; disk_id,
+            mask, mac, intf, node_id, nodename, net_name for a node address; disk_id,
             disk_name, disk_size, disk_arrayid, nodename, svcname for a disk; tag_id,
             tag_name, tag_exclude for a tag; id, email, first_name, last_name, username
             for a user; id, role, privilege, description for a team; id, form_name,
@@ -14560,6 +16874,189 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SearchGroup'
+
+    SysreportFileStat:
+      type: object
+      description: A file or command output changed by a report.
+      required: [path, kind, added, deleted, binary]
+      properties:
+        path:
+          type: string
+          description: Absolute path of a tracked file, or command line of a tracked command.
+        kind:
+          type: string
+          enum: [file, command]
+        added:
+          type: integer
+        deleted:
+          type: integer
+        binary:
+          type: boolean
+
+    SysreportChange:
+      type: object
+      description: A report that changed something.
+      required: [cid, date, initial, files]
+      properties:
+        cid:
+          type: string
+        date:
+          type: string
+          description: Date of the report, ISO 8601 with its offset.
+        initial:
+          type: boolean
+          description: The first report of the node, which adds every file.
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/SysreportFileStat'
+
+    SysreportTimelineResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SysreportChange'
+        meta:
+          type: object
+          required: [total, limit, offset, count]
+          properties:
+            total:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+            count:
+              type: integer
+
+    SysreportFileDiff:
+      type: object
+      required: [path, kind, added, deleted, binary, secure, restricted, truncated]
+      properties:
+        path:
+          type: string
+        kind:
+          type: string
+          enum: [file, command]
+        added:
+          type: integer
+        deleted:
+          type: integer
+        binary:
+          type: boolean
+        secure:
+          type: boolean
+          description: The path matches a secure pattern.
+        restricted:
+          type: boolean
+          description: The caller may not read this sensitive path, the diff is withheld.
+        truncated:
+          type: boolean
+          description: The diff was cut at the size limit.
+        diff:
+          type: string
+          description: Unified diff from its first hunk; absent when restricted or binary.
+
+    SysreportChangeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [cid, date, files]
+          properties:
+            cid:
+              type: string
+            date:
+              type: string
+            files:
+              type: array
+              items:
+                $ref: '#/components/schemas/SysreportFileDiff'
+
+    SysreportPoint:
+      type: object
+      description: A state of the sysreport, the report it was left in; empty before the first report.
+      required: [cid, date]
+      properties:
+        cid:
+          type: string
+        date:
+          type: string
+
+    SysreportTimediffResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [begin, end, files]
+          properties:
+            begin:
+              $ref: '#/components/schemas/SysreportPoint'
+            end:
+              $ref: '#/components/schemas/SysreportPoint'
+            files:
+              type: array
+              items:
+                $ref: '#/components/schemas/SysreportFileDiff'
+
+    SysreportEntry:
+      type: object
+      required: [oid, path, kind, size, secure, restricted]
+      properties:
+        oid:
+          type: string
+        path:
+          type: string
+        kind:
+          type: string
+          enum: [file, command]
+        size:
+          type: integer
+        secure:
+          type: boolean
+        restricted:
+          type: boolean
+
+    SysreportTreeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SysreportEntry'
+
+    SysreportFileResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [oid, path, kind, size, secure, truncated, binary]
+          properties:
+            oid:
+              type: string
+            path:
+              type: string
+            kind:
+              type: string
+              enum: [file, command]
+            size:
+              type: integer
+            secure:
+              type: boolean
+            truncated:
+              type: boolean
+            binary:
+              type: boolean
+            content:
+              type: string
+              description: Absent for a binary content.
 
     NetworkSegmentRow:
       type: object
@@ -14588,6 +17085,70 @@ components:
             $ref: '#/components/schemas/NetworkSegmentRow'
         info:
           type: string
+
+    CheckRow:
+      type: object
+      description: |
+        A check of a node, as its check drivers report it, with the
+        thresholds the collector sets. Every property is optional: the
+        `props` query parameter selects which columns the server returns.
+        `chk_low`, `chk_high` and `chk_err` are null for a check without
+        thresholds. `chk_err` is 0 within the thresholds, 1 under the low
+        one, 2 over the high one.
+      properties:
+        id:
+          type: integer
+        node_id:
+          type: string
+        svc_id:
+          type: string
+          description: The object the check is attributed to, empty for the node.
+        chk_type:
+          type: string
+        chk_instance:
+          type: string
+        chk_value:
+          type: integer
+          format: int64
+        chk_low:
+          type: integer
+          format: int64
+          nullable: true
+        chk_high:
+          type: integer
+          format: int64
+          nullable: true
+        chk_err:
+          type: integer
+          nullable: true
+        chk_threshold_provider:
+          type: string
+          description: Where the thresholds come from, settings, fset:<filterset> or defaults.
+        chk_created:
+          type: string
+        chk_updated:
+          type: string
+        services.svcname:
+          type: string
+          nullable: true
+
+    CheckListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/CheckRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     AlertListResponse:
       type: object
@@ -14821,10 +17382,37 @@ components:
         meta:
           $ref: '#/components/schemas/ListMeta'
 
+    Impersonation:
+      type: object
+      required: [user_id, email, groups]
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          description: auth_user.id to send in the OC3-Impersonate header.
+        email:
+          type: string
+        groups:
+          type: array
+          description: The groups of the impersonated user.
+          items:
+            type: string
+
+    ImpersonationStatus:
+      type: object
+      required: [allowed]
+      properties:
+        allowed:
+          type: boolean
+          description: Whether the user who signed in holds the Manager privilege, which impersonating requires.
+        impersonating:
+          $ref: '#/components/schemas/Impersonation'
+
     UserRow:
       type: object
       description: |
-        A user of the users list. `password` and `registration_key` are never
+        A user of the users list. `password`, `registration_key` and
+        `reset_password_key` are never
         returned. The boolean-like columns (`email_notifications`,
         `im_notifications`, `lock_filter`) carry the collector's "T"/"F"
         convention, and the delay and quota columns are returned as strings.
@@ -14862,8 +17450,6 @@ components:
         lock_filter:
           type: string
         registration_id:
-          type: string
-        reset_password_key:
           type: string
         quota_app:
           type: string
@@ -15033,7 +17619,10 @@ components:
           - `in:a,b,c`: one of the listed values;
           - `eq:v`, `ne:v`: equal, not equal;
           - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-          - `empty`, `!empty`: no value, any value.
+          - `empty`: no value;
+          - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+            out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+            `!empty` (any value).
         An unknown property, a property without a column, or an invalid regular
         expression is answered with 400.
       explode: true
@@ -15054,7 +17643,18 @@ components:
       in: query
       name: stats
       required: false
-      description: Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+      description: |
+        With "1" or "true", the response counts the distinct values of each
+        selected property instead of listing the rows: `data` maps each property
+        to an object of value → number of rows ("empty" for a null or blank
+        value), over the whole selection (access control, filters and session
+        filterset applied, `offset` ignored). `limit`, when given, caps the
+        number of values returned per property, the most frequent first; without
+        it every value is returned. `meta.total` is the number of rows,
+        `meta.distinct` the number of distinct values of each property, and
+        `meta.other` the number of rows whose value was left out by the limit.
+        A count taking longer than 5 seconds is refused with a 400, asking to
+        narrow the selection.
       schema:
         type: string
 

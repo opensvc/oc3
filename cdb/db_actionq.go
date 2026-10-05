@@ -209,6 +209,9 @@ func (oDb *DB) ActionQSetSent(ctx context.Context, ids ...int) error {
 
 	query := fmt.Sprintf("UPDATE action_queue SET status='S' WHERE id in (%s)", placeholders)
 	_, err := oDb.ExecContext(ctx, query, args...)
+	if err == nil {
+		oDb.SetChange("action_queue")
+	}
 	return err
 }
 
@@ -229,6 +232,9 @@ func (oDb *DB) ActionQSetRunningForClusterID(ctx context.Context, clusterID stri
 
 	query := fmt.Sprintf("UPDATE action_queue SET status='R' WHERE node_id IN (SELECT node_id FROM nodes n WHERE n.cluster_id = ?) AND id in (%s)", placeholders)
 	_, err := oDb.ExecContext(ctx, query, args...)
+	if err == nil {
+		oDb.SetChange("action_queue")
+	}
 	return err
 }
 
@@ -242,6 +248,9 @@ func (oDb *DB) ActionQSetDoneForNodeID(ctx context.Context, nodeID string, a Act
 			date_dequeued = ?
         WHERE id = ? AND node_id = ?`
 	_, err := oDb.ExecContext(ctx, query, a.Stdout, a.Stderr, a.Ret, a.DateDequeued, a.ID, nodeID)
+	if err == nil {
+		oDb.SetChange("action_queue")
+	}
 	return err
 }
 

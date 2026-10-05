@@ -33,6 +33,34 @@ type (
 	}
 )
 
+// dashboardVisibleCond restricts the rows of a dashboard table (dashboard,
+// dashboard_events) to those the caller may see, as the historical dashboard
+// does (init/controllers/dashboard.py, q_filter on the node, or on the service,
+// of a row): a row whose node or whose service belongs to an app published to
+// one of the caller's groups. A manager sees every row.
+func dashboardVisibleCond(table string, groups []string, isManager bool) (string, []any) {
+	if isManager {
+		return "1=1", nil
+	}
+	clean := cleanGroups(groups)
+	if len(clean) == 0 {
+		return "1=0", nil
+	}
+	published := "SELECT a.app FROM apps a" +
+		" JOIN apps_publications ap ON ap.app_id = a.id" +
+		" JOIN auth_group ag ON ag.id = ap.group_id" +
+		" WHERE ag.role IN (" + Placeholders(len(clean)) + ")"
+	cond := "(" + table + ".node_id IN (SELECT n.node_id FROM nodes n WHERE n.app IN (" + published + "))" +
+		" OR " + table + ".svc_id IN (SELECT s.svc_id FROM services s WHERE s.svc_app IN (" + published + ")))"
+	args := make([]any, 0, 2*len(clean))
+	for range 2 {
+		for _, g := range clean {
+			args = append(args, g)
+		}
+	}
+	return cond, args
+}
+
 func (oDb *DB) GetAlerts(ctx context.Context, p ListParams) ([]map[string]any, error) {
 	defer logDuration("getAlerts", time.Now())
 
@@ -42,8 +70,13 @@ func (oDb *DB) GetAlerts(ctx context.Context, p ListParams) ([]map[string]any, e
 
 	// Joined so that "nodes.nodename" and "services.svcname" can be selected:
 	// a dashboard row only carries the ids.
-	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard LEFT JOIN nodes ON nodes.node_id = dashboard.node_id LEFT JOIN services ON services.svc_id = dashboard.svc_id"
-	var args []any
+	cond, args := dashboardVisibleCond("dashboard", p.Groups, p.IsManager)
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard LEFT JOIN nodes ON nodes.node_id = dashboard.node_id LEFT JOIN services ON services.svc_id = dashboard.svc_id WHERE " + cond
+	filterConds, filterArgs := p.FilterConditions()
+	for _, fc := range filterConds {
+		query += " AND " + fc
+	}
+	args = append(args, filterArgs...)
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}
@@ -64,8 +97,9 @@ func (oDb *DB) GetAlert(ctx context.Context, id string, p ListParams) ([]map[str
 		return nil, fmt.Errorf("getAlert: no select expressions")
 	}
 
-	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard LEFT JOIN nodes ON nodes.node_id = dashboard.node_id LEFT JOIN services ON services.svc_id = dashboard.svc_id WHERE dashboard.id = ?"
-	args := []any{id}
+	cond, condArgs := dashboardVisibleCond("dashboard", p.Groups, p.IsManager)
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard LEFT JOIN nodes ON nodes.node_id = dashboard.node_id LEFT JOIN services ON services.svc_id = dashboard.svc_id WHERE dashboard.id = ? AND " + cond
+	args := append([]any{id}, condArgs...)
 	query += " " + p.OrderByClause("dashboard.id DESC")
 	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
 
@@ -131,40 +165,13 @@ func (oDb *DB) GetAlertEvents(ctx context.Context, p ListParams) ([]map[string]a
 		return nil, fmt.Errorf("getAlertEvents: no select expressions")
 	}
 
-	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard_events"
-	var args []any
-
-	if !p.IsManager {
-		clean := cleanGroups(p.Groups)
-		if len(clean) == 0 {
-			query += ` WHERE (
-				dashboard_events.node_id IN (SELECT n.node_id FROM nodes n WHERE n.team_responsible = 'Everybody')
-			)`
-		} else {
-			placeholders := Placeholders(len(clean))
-			query += ` WHERE (
-				dashboard_events.svc_id IN (
-					SELECT s.svc_id FROM services s
-					JOIN apps a ON s.svc_app = a.app
-					JOIN apps_responsibles ar ON ar.app_id = a.id
-					JOIN auth_group ag ON ag.id = ar.group_id
-					WHERE ag.role IN (` + placeholders + `)
-				)
-				OR
-				dashboard_events.node_id IN (
-					SELECT n.node_id FROM nodes n
-					WHERE n.team_responsible = 'Everybody'
-					   OR n.team_responsible IN (` + placeholders + `)
-				)
-			)`
-			for _, g := range clean {
-				args = append(args, g)
-			}
-			for _, g := range clean {
-				args = append(args, g)
-			}
-		}
+	cond, args := dashboardVisibleCond("dashboard_events", p.Groups, p.IsManager)
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard_events WHERE " + cond
+	filterConds, filterArgs := p.FilterConditions()
+	for _, fc := range filterConds {
+		query += " AND " + fc
 	}
+	args = append(args, filterArgs...)
 
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
@@ -685,13 +692,7 @@ func (oDb *DB) DashboardUpdateChecksNotUpdated(ctx context.Context, maxAge time.
 		    -- Suppression des "check out of bounds" non correspondants
 		    SELECT d.id FROM dashboard d
 		    LEFT JOIN checks_live c ON
-			d.dash_dict_md5 = MD5(CONCAT(
-			    '{"ctype": "', c.chk_type,
-			    '", "inst": "', c.chk_instance,
-			    '", "ttype": "', c.chk_threshold_provider,
-			    '", "val": ', c.chk_value,
-			    ', "min": ', c.chk_low,
-			    ', "max": ', c.chk_high, '}'))
+			d.dash_dict_md5 = MD5(` + checkOutOfBoundsDictSQL("c") + `)
 			AND d.node_id = c.node_id
 		    WHERE
 			d.dash_type = "check out of bounds"
@@ -1631,4 +1632,67 @@ func (oDb *DB) DashboardUpdateCompRsetDiffForSvc(ctx context.Context, svcID stri
 	}
 
 	return nil
+}
+
+// AlertEvent is an occurrence of an alert: when it began, and when it ended,
+// none while it is open.
+type AlertEvent struct {
+	ID    int64
+	Begin string
+	End   *string
+}
+
+// GetAlertEventsOf returns the occurrences of the alert visible to the caller:
+// the dashboard_events of its dash_md5, node and service, as alert_timeline()
+// of the historical collector selects them, the last limit of them, oldest
+// first. found is false when the alert does not exist or is not visible;
+// truncated tells that older ones were left out.
+func (oDb *DB) GetAlertEventsOf(ctx context.Context, id string, groups []string, isManager bool, limit int) (events []AlertEvent, found, truncated bool, err error) {
+	cond, args := dashboardVisibleCond("dashboard", groups, isManager)
+	var n int
+	if err := oDb.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM dashboard WHERE dashboard.id = ? AND "+cond,
+		append([]any{id}, args...)...).Scan(&n); err != nil {
+		return nil, false, false, fmt.Errorf("getAlertEventsOf: %w", err)
+	}
+	if n == 0 {
+		return nil, false, false, nil
+	}
+	// An open event is written without its end: the NOT NULL datetime then holds
+	// the zero date, which IS NULL matches, as the closing trigger relies on.
+	const query = `SELECT e.id, DATE_FORMAT(e.dash_begin, '%Y-%m-%d %H:%i:%s'),
+			IF(e.dash_end IS NULL, NULL, DATE_FORMAT(e.dash_end, '%Y-%m-%d %H:%i:%s'))
+		FROM dashboard d
+		JOIN dashboard_events e ON e.dash_md5 = d.dash_md5
+			AND COALESCE(e.node_id, '') = COALESCE(d.node_id, '')
+			AND COALESCE(e.svc_id, '') = COALESCE(d.svc_id, '')
+		WHERE d.id = ?
+		ORDER BY e.dash_begin DESC, e.id DESC
+		LIMIT ?`
+	rows, err := oDb.DB.QueryContext(ctx, query, id, limit+1)
+	if err != nil {
+		return nil, true, false, fmt.Errorf("getAlertEventsOf: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var e AlertEvent
+		var end sql.NullString
+		if err := rows.Scan(&e.ID, &e.Begin, &end); err != nil {
+			return nil, true, false, fmt.Errorf("getAlertEventsOf: %w", err)
+		}
+		if end.Valid {
+			e.End = &end.String
+		}
+		events = append(events, e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, true, false, fmt.Errorf("getAlertEventsOf: %w", err)
+	}
+	if len(events) > limit {
+		events, truncated = events[:limit], true
+	}
+	// Oldest first, as a timeline reads.
+	for i, j := 0, len(events)-1; i < j; i, j = i+1, j-1 {
+		events[i], events[j] = events[j], events[i]
+	}
+	return events, true, truncated, nil
 }

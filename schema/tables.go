@@ -985,18 +985,19 @@ var (
 
 // Columns of log
 var (
-	LogID           = &Col{T: TLog, Name: "id", Nullable: false}
-	LogLogAction    = &Col{T: TLog, Name: "log_action", Nullable: false}
-	LogLogUser      = &Col{T: TLog, Name: "log_user", Nullable: false}
-	LogLogFmt       = &Col{T: TLog, Name: "log_fmt", Nullable: true}
-	LogLogDict      = &Col{T: TLog, Name: "log_dict", Nullable: true}
-	LogLogDate      = &Col{T: TLog, Name: "log_date", Nullable: false}
-	LogSvcID        = &Col{T: TLog, Name: "svc_id", Nullable: true}
-	LogLogGtalkSent = &Col{T: TLog, Name: "log_gtalk_sent", Nullable: true}
-	LogLogEmailSent = &Col{T: TLog, Name: "log_email_sent", Nullable: true}
-	LogLogEntryID   = &Col{T: TLog, Name: "log_entry_id", Nullable: true}
-	LogLogLevel     = &Col{T: TLog, Name: "log_level", Nullable: true}
-	LogNodeID       = &Col{T: TLog, Name: "node_id", Nullable: true}
+	LogID              = &Col{T: TLog, Name: "id", Nullable: false}
+	LogLogAction       = &Col{T: TLog, Name: "log_action", Nullable: false}
+	LogLogUser         = &Col{T: TLog, Name: "log_user", Nullable: false}
+	LogLogImpersonator = &Col{T: TLog, Name: "log_impersonator", Nullable: true}
+	LogLogFmt          = &Col{T: TLog, Name: "log_fmt", Nullable: true}
+	LogLogDict         = &Col{T: TLog, Name: "log_dict", Nullable: true}
+	LogLogDate         = &Col{T: TLog, Name: "log_date", Nullable: false}
+	LogSvcID           = &Col{T: TLog, Name: "svc_id", Nullable: true}
+	LogLogGtalkSent    = &Col{T: TLog, Name: "log_gtalk_sent", Nullable: true}
+	LogLogEmailSent    = &Col{T: TLog, Name: "log_email_sent", Nullable: true}
+	LogLogEntryID      = &Col{T: TLog, Name: "log_entry_id", Nullable: true}
+	LogLogLevel        = &Col{T: TLog, Name: "log_level", Nullable: true}
+	LogNodeID          = &Col{T: TLog, Name: "node_id", Nullable: true}
 )
 
 // Columns of metrics
@@ -1560,6 +1561,9 @@ var (
 	ServicesSvcSnoozeTill           = &Col{T: TServices, Name: "svc_snooze_till", Nullable: true}
 	ServicesClusterID               = &Col{T: TServices, Name: "cluster_id", Nullable: true}
 	ServicesSvcFlexTarget           = &Col{T: TServices, Name: "svc_flex_target", Nullable: true}
+	ServicesSvcSla                  = &Col{T: TServices, Name: "svc_sla", Nullable: true}
+	ServicesSvcAvailability         = &Col{T: TServices, Name: "svc_availability", Nullable: true}
+	ServicesSvcAvailabilityUpdated  = &Col{T: TServices, Name: "svc_availability_updated", Nullable: true}
 )
 
 // Columns of services_log
@@ -2486,6 +2490,7 @@ var AllCols = []*Col{
 	LogID,
 	LogLogAction,
 	LogLogUser,
+	LogLogImpersonator,
 	LogLogFmt,
 	LogLogDict,
 	LogLogDate,
@@ -2886,6 +2891,9 @@ var AllCols = []*Col{
 	ServicesSvcSnoozeTill,
 	ServicesClusterID,
 	ServicesSvcFlexTarget,
+	ServicesSvcSla,
+	ServicesSvcAvailability,
+	ServicesSvcAvailabilityUpdated,
 	ServicesLogID,
 	ServicesLogSvcAvailstatus,
 	ServicesLogSvcBegin,

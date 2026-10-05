@@ -35,7 +35,13 @@ func (t *feeder) Section() string { return t.section }
 
 func (t *feeder) apiRegister(e *echo.Echo) {
 	odb := cdb.New(t.db)
-	odb.CreateSession(nil)
+	// With a messenger, what the agents change through the feeder — the progress
+	// of the queued actions — is announced like the changes of the workers.
+	if viper.GetString("messenger.url") != "" {
+		odb.CreateSession(newEv())
+	} else {
+		odb.CreateSession(nil)
+	}
 
 	api.RegisterHandlersWithBaseURL(e, &handlers.Api{
 		DB:  t.db,

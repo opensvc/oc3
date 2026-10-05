@@ -37,6 +37,9 @@ func (a *Api) PostUserSelfPassword(c echo.Context) error {
 	if userID == nil {
 		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
 	}
+	if IsImpersonating(c) {
+		return JSONProblemf(c, http.StatusForbidden, "a password cannot be changed while impersonating")
+	}
 
 	var body server.PostUserSelfPasswordJSONRequestBody
 	if err := c.Bind(&body); err != nil {

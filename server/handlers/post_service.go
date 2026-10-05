@@ -40,6 +40,11 @@ func (a *Api) PostService(c echo.Context, svcId string) error {
 		return JSONProblemf(c, http.StatusNotFound, "service %s not found", svcId)
 	}
 
+	if body.SvcSla != nil {
+		if _, err := parseSLA(*body.SvcSla); err != nil {
+			return JSONProblem(c, http.StatusBadRequest, err.Error())
+		}
+	}
 	return postServiceUpdate(c, log, odb, ctx, svc.SvcID, serviceBodyFieldsFromPostService(body).toFields())
 }
 
@@ -94,6 +99,7 @@ func fetchAndReturnService(c echo.Context, odb *cdb.DB, ctx context.Context, svc
 		IsManager:   true,
 		Props:       props,
 		SelectExprs: selectExprs,
+		TypeHints:   buildTypeHints(props, mapping),
 	})
 	if err != nil || len(rows) == 0 {
 		return JSONProblemf(c, http.StatusInternalServerError, "%s", errMsg)

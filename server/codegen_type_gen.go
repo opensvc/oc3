@@ -50,6 +50,27 @@ func (e ObsolescenceSettingRowObsType) Valid() bool {
 	}
 }
 
+// Defines values for SanTopologyNodeKind.
+const (
+	Array  SanTopologyNodeKind = "array"
+	Server SanTopologyNodeKind = "server"
+	Switch SanTopologyNodeKind = "switch"
+)
+
+// Valid indicates whether the value is a known member of the SanTopologyNodeKind enum.
+func (e SanTopologyNodeKind) Valid() bool {
+	switch e {
+	case Array:
+		return true
+	case Server:
+		return true
+	case Switch:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SearchGroupKind.
 const (
 	App       SearchGroupKind = "app"
@@ -98,6 +119,78 @@ func (e SearchGroupKind) Valid() bool {
 	case Tag:
 		return true
 	case User:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SysreportEntryKind.
+const (
+	SysreportEntryKindCommand SysreportEntryKind = "command"
+	SysreportEntryKindFile    SysreportEntryKind = "file"
+)
+
+// Valid indicates whether the value is a known member of the SysreportEntryKind enum.
+func (e SysreportEntryKind) Valid() bool {
+	switch e {
+	case SysreportEntryKindCommand:
+		return true
+	case SysreportEntryKindFile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SysreportFileDiffKind.
+const (
+	SysreportFileDiffKindCommand SysreportFileDiffKind = "command"
+	SysreportFileDiffKindFile    SysreportFileDiffKind = "file"
+)
+
+// Valid indicates whether the value is a known member of the SysreportFileDiffKind enum.
+func (e SysreportFileDiffKind) Valid() bool {
+	switch e {
+	case SysreportFileDiffKindCommand:
+		return true
+	case SysreportFileDiffKindFile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SysreportFileResponseDataKind.
+const (
+	SysreportFileResponseDataKindCommand SysreportFileResponseDataKind = "command"
+	SysreportFileResponseDataKindFile    SysreportFileResponseDataKind = "file"
+)
+
+// Valid indicates whether the value is a known member of the SysreportFileResponseDataKind enum.
+func (e SysreportFileResponseDataKind) Valid() bool {
+	switch e {
+	case SysreportFileResponseDataKindCommand:
+		return true
+	case SysreportFileResponseDataKindFile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SysreportFileStatKind.
+const (
+	SysreportFileStatKindCommand SysreportFileStatKind = "command"
+	SysreportFileStatKindFile    SysreportFileStatKind = "file"
+)
+
+// Valid indicates whether the value is a known member of the SysreportFileStatKind enum.
+func (e SysreportFileStatKind) Valid() bool {
+	switch e {
+	case SysreportFileStatKindCommand:
+		return true
+	case SysreportFileStatKindFile:
 		return true
 	default:
 		return false
@@ -386,6 +479,42 @@ func (e PostFiltersetsFiltersetsJSONBodyFLogOp) Valid() bool {
 	}
 }
 
+// Defines values for PostMetricsJSONBodyMetricHistorize.
+const (
+	PostMetricsJSONBodyMetricHistorizeF PostMetricsJSONBodyMetricHistorize = "F"
+	PostMetricsJSONBodyMetricHistorizeT PostMetricsJSONBodyMetricHistorize = "T"
+)
+
+// Valid indicates whether the value is a known member of the PostMetricsJSONBodyMetricHistorize enum.
+func (e PostMetricsJSONBodyMetricHistorize) Valid() bool {
+	switch e {
+	case PostMetricsJSONBodyMetricHistorizeF:
+		return true
+	case PostMetricsJSONBodyMetricHistorizeT:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostMetricJSONBodyMetricHistorize.
+const (
+	PostMetricJSONBodyMetricHistorizeF PostMetricJSONBodyMetricHistorize = "F"
+	PostMetricJSONBodyMetricHistorizeT PostMetricJSONBodyMetricHistorize = "T"
+)
+
+// Valid indicates whether the value is a known member of the PostMetricJSONBodyMetricHistorize enum.
+func (e PostMetricJSONBodyMetricHistorize) Valid() bool {
+	switch e {
+	case PostMetricJSONBodyMetricHistorizeF:
+		return true
+	case PostMetricJSONBodyMetricHistorizeT:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PostNetworkSegmentsJSONBodySegType.
 const (
 	PostNetworkSegmentsJSONBodySegTypeDynamic PostNetworkSegmentsJSONBodySegType = "dynamic"
@@ -440,6 +569,42 @@ func (e PostNodeJSONBodyActionType) Valid() bool {
 	}
 }
 
+// Defines values for GetNodeStatsParamsGroup.
+const (
+	Block     GetNodeStatsParamsGroup = "block"
+	Blockdev  GetNodeStatsParamsGroup = "blockdev"
+	Cpu       GetNodeStatsParamsGroup = "cpu"
+	Mem       GetNodeStatsParamsGroup = "mem"
+	Netdev    GetNodeStatsParamsGroup = "netdev"
+	NetdevErr GetNodeStatsParamsGroup = "netdev_err"
+	Proc      GetNodeStatsParamsGroup = "proc"
+	Swap      GetNodeStatsParamsGroup = "swap"
+)
+
+// Valid indicates whether the value is a known member of the GetNodeStatsParamsGroup enum.
+func (e GetNodeStatsParamsGroup) Valid() bool {
+	switch e {
+	case Block:
+		return true
+	case Blockdev:
+		return true
+	case Cpu:
+		return true
+	case Mem:
+		return true
+	case Netdev:
+		return true
+	case NetdevErr:
+		return true
+	case Proc:
+		return true
+	case Swap:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for GetWorkflowsParamsAssigned.
 const (
 	Team  GetWorkflowsParamsAssigned = "team"
@@ -463,6 +628,9 @@ type ActionEnqueue struct {
 	// Action Agent action to run
 	Action string `json:"action"`
 
+	// ClusterId Target cluster (clusters.cluster_id), alone
+	ClusterId *string `json:"cluster_id,omitempty"`
+
 	// NodeId Target node (node_id or nodename)
 	NodeId *string `json:"node_id,omitempty"`
 
@@ -474,6 +642,16 @@ type ActionEnqueue struct {
 
 	// Vmname Target node by name, in place of node_id, for an encapsulated node
 	Vmname *string `json:"vmname,omitempty"`
+}
+
+// AlertEvent defines model for AlertEvent.
+type AlertEvent struct {
+	// Begin The start of the occurrence, "YYYY-MM-DD HH:MM:SS" in the collector time zone.
+	Begin string `json:"begin"`
+
+	// End Its end; null while it is open.
+	End *string `json:"end,omitempty"`
+	Id  int     `json:"id"`
 }
 
 // AlertListResponse defines model for AlertListResponse.
@@ -544,6 +722,149 @@ type AppRow struct {
 	Description *string `json:"description,omitempty"`
 	Id          *int    `json:"id,omitempty"`
 	Updated     *string `json:"updated,omitempty"`
+}
+
+// ChartListResponse defines model for ChartListResponse.
+type ChartListResponse struct {
+	Data ChartListResponse_Data `json:"data"`
+	Meta *ListMeta              `json:"meta,omitempty"`
+}
+
+// ChartListResponseData0 defines model for .
+type ChartListResponseData0 = []ChartRow
+
+// ChartListResponseData1 defines model for .
+type ChartListResponseData1 map[string]map[string]int
+
+// ChartListResponse_Data defines model for ChartListResponse.Data.
+type ChartListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ChartRow A chart: time series of historized metrics, defined in YAML. Every property is
+// optional: the `props` query parameter selects which columns the server
+// returns.
+type ChartRow struct {
+	ChartName *string `json:"chart_name,omitempty"`
+	ChartYaml *string `json:"chart_yaml,omitempty"`
+	Id        *int    `json:"id,omitempty"`
+}
+
+// ChartSamples defines model for ChartSamples.
+type ChartSamples struct {
+	Series []ChartSeries `json:"series"`
+	Stack  bool          `json:"stack"`
+}
+
+// ChartSamplesResponse defines model for ChartSamplesResponse.
+type ChartSamplesResponse struct {
+	Data ChartSamples `json:"data"`
+}
+
+// ChartSeries defines model for ChartSeries.
+type ChartSeries struct {
+	// Instance The instance of the metric, null for a metric without instances.
+	Instance *string `json:"instance,omitempty"`
+
+	// Label The label the chart definition gives the metric.
+	Label    *string `json:"label,omitempty"`
+	MetricId int     `json:"metric_id"`
+
+	// Points The points, oldest first, each [unix time, value].
+	Points [][]float64 `json:"points"`
+	Unit   *string     `json:"unit,omitempty"`
+}
+
+// CheckListResponse defines model for CheckListResponse.
+type CheckListResponse struct {
+	Data CheckListResponse_Data `json:"data"`
+	Meta *ListMeta              `json:"meta,omitempty"`
+}
+
+// CheckListResponseData0 defines model for .
+type CheckListResponseData0 = []CheckRow
+
+// CheckListResponseData1 defines model for .
+type CheckListResponseData1 map[string]map[string]int
+
+// CheckListResponse_Data defines model for CheckListResponse.Data.
+type CheckListResponse_Data struct {
+	union json.RawMessage
+}
+
+// CheckRow A check of a node, as its check drivers report it, with the
+// thresholds the collector sets. Every property is optional: the
+// `props` query parameter selects which columns the server returns.
+// `chk_low`, `chk_high` and `chk_err` are null for a check without
+// thresholds. `chk_err` is 0 within the thresholds, 1 under the low
+// one, 2 over the high one.
+type CheckRow struct {
+	ChkCreated  *string `json:"chk_created,omitempty"`
+	ChkErr      *int    `json:"chk_err,omitempty"`
+	ChkHigh     *int64  `json:"chk_high,omitempty"`
+	ChkInstance *string `json:"chk_instance,omitempty"`
+	ChkLow      *int64  `json:"chk_low,omitempty"`
+
+	// ChkThresholdProvider Where the thresholds come from, settings, fset:<filterset> or defaults.
+	ChkThresholdProvider *string `json:"chk_threshold_provider,omitempty"`
+	ChkType              *string `json:"chk_type,omitempty"`
+	ChkUpdated           *string `json:"chk_updated,omitempty"`
+	ChkValue             *int64  `json:"chk_value,omitempty"`
+	Id                   *int    `json:"id,omitempty"`
+	NodeId               *string `json:"node_id,omitempty"`
+	ServicesSvcname      *string `json:"services.svcname,omitempty"`
+
+	// SvcId The object the check is attributed to, empty for the node.
+	SvcId *string `json:"svc_id,omitempty"`
+}
+
+// ClusterListResponse defines model for ClusterListResponse.
+type ClusterListResponse struct {
+	Data ClusterListResponse_Data `json:"data"`
+	Meta *ListMeta                `json:"meta,omitempty"`
+}
+
+// ClusterListResponseData0 defines model for .
+type ClusterListResponseData0 = []ClusterRow
+
+// ClusterListResponseData1 defines model for .
+type ClusterListResponseData1 map[string]map[string]int
+
+// ClusterListResponse_Data defines model for ClusterListResponse.Data.
+type ClusterListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ClusterRow A cluster, as its daemon last pushed its status. Every property is optional:
+// the `props` query parameter selects which columns the server returns.
+type ClusterRow struct {
+	// AgentVersions Agent versions of its nodes, distinct, comma-separated.
+	AgentVersions *string `json:"agent_versions,omitempty"`
+	ClusterId     *string `json:"cluster_id,omitempty"`
+	ClusterName   *string `json:"cluster_name,omitempty"`
+
+	// ClusterNodes Node names of the cluster configuration, comma-separated.
+	ClusterNodes *string `json:"cluster_nodes,omitempty"`
+
+	// ClusterUpdated When the daemon status was produced, RFC 3339.
+	ClusterUpdated *string `json:"cluster_updated,omitempty"`
+
+	// Compat 1 when the daemons of its nodes are compatible.
+	Compat *int `json:"compat,omitempty"`
+
+	// Frozen 1 when the cluster is frozen.
+	Frozen       *int `json:"frozen,omitempty"`
+	Id           *int `json:"id,omitempty"`
+	ListenerPort *int `json:"listener_port,omitempty"`
+
+	// NodeCount Nodes of the collector naming the cluster.
+	NodeCount *int `json:"node_count,omitempty"`
+
+	// Quorum 1 when the cluster configuration requires a quorum.
+	Quorum *int `json:"quorum,omitempty"`
+
+	// SvcCount Services of the collector naming the cluster.
+	SvcCount *int `json:"svc_count,omitempty"`
 }
 
 // CompExportModule defines model for CompExportModule.
@@ -974,6 +1295,24 @@ type HbaRow struct {
 	Updated *string `json:"updated,omitempty"`
 }
 
+// Impersonation defines model for Impersonation.
+type Impersonation struct {
+	Email string `json:"email"`
+
+	// Groups The groups of the impersonated user.
+	Groups []string `json:"groups"`
+
+	// UserId auth_user.id to send in the OC3-Impersonate header.
+	UserId int64 `json:"user_id"`
+}
+
+// ImpersonationStatus defines model for ImpersonationStatus.
+type ImpersonationStatus struct {
+	// Allowed Whether the user who signed in holds the Manager privilege, which impersonating requires.
+	Allowed       bool           `json:"allowed"`
+	Impersonating *Impersonation `json:"impersonating,omitempty"`
+}
+
 // InfoResponse Outcome message of a write that returns no record.
 type InfoResponse struct {
 	Info *string `json:"info,omitempty"`
@@ -1031,6 +1370,18 @@ type InstanceRow struct {
 	SvcId               *string `json:"svc_id,omitempty"`
 }
 
+// InstanceStatusPeriod defines model for InstanceStatusPeriod.
+type InstanceStatusPeriod struct {
+	Avail string `json:"avail"`
+
+	// Begin "YYYY-MM-DD HH:MM:SS" in the collector time zone.
+	Begin string `json:"begin"`
+
+	// End Its end; for the current period, the last status received.
+	End     string `json:"end"`
+	Overall string `json:"overall"`
+}
+
 // IpListResponse defines model for IpListResponse.
 type IpListResponse struct {
 	Data IpListResponse_Data `json:"data"`
@@ -1078,12 +1429,18 @@ type IpRow struct {
 
 // ListMeta defines model for ListMeta.
 type ListMeta struct {
-	AvailableProps *[]string       `json:"available_props,omitempty"`
-	Count          *int            `json:"count,omitempty"`
-	Distinct       *map[string]int `json:"distinct,omitempty"`
-	IncludedProps  *[]string       `json:"included_props,omitempty"`
-	Limit          *int            `json:"limit,omitempty"`
-	Offset         *int            `json:"offset,omitempty"`
+	AvailableProps *[]string `json:"available_props,omitempty"`
+	Count          *int      `json:"count,omitempty"`
+
+	// Distinct With stats, the number of distinct values of each property.
+	Distinct      *map[string]int `json:"distinct,omitempty"`
+	IncludedProps *[]string       `json:"included_props,omitempty"`
+	Limit         *int            `json:"limit,omitempty"`
+	Offset        *int            `json:"offset,omitempty"`
+
+	// Other With stats and a limit, the number of rows of each property whose value
+	// is not among those returned.
+	Other *map[string]int `json:"other,omitempty"`
 
 	// Total Number of rows of the list without pagination, the filters applied; for
 	// a grouped list, the number of groups. With stats, the number of rows the
@@ -1132,14 +1489,18 @@ type LogListResponse_Data struct {
 // empty strings when the event names no node or service; the `nodes.` and
 // `services.` properties come from LEFT JOINs and are then null.
 type LogRow struct {
-	Id              *int    `json:"id,omitempty"`
-	LogAction       *string `json:"log_action,omitempty"`
-	LogDate         *string `json:"log_date,omitempty"`
-	LogDict         *string `json:"log_dict,omitempty"`
-	LogEmailSent    *int    `json:"log_email_sent,omitempty"`
-	LogEntryId      *int    `json:"log_entry_id,omitempty"`
-	LogFmt          *string `json:"log_fmt,omitempty"`
-	LogGtalkSent    *int    `json:"log_gtalk_sent,omitempty"`
+	Id           *int    `json:"id,omitempty"`
+	LogAction    *string `json:"log_action,omitempty"`
+	LogDate      *string `json:"log_date,omitempty"`
+	LogDict      *string `json:"log_dict,omitempty"`
+	LogEmailSent *int    `json:"log_email_sent,omitempty"`
+	LogEntryId   *int    `json:"log_entry_id,omitempty"`
+	LogFmt       *string `json:"log_fmt,omitempty"`
+	LogGtalkSent *int    `json:"log_gtalk_sent,omitempty"`
+
+	// LogImpersonator The user who really signed in when the action was made as log_user
+	// (impersonation); empty otherwise.
+	LogImpersonator *string `json:"log_impersonator,omitempty"`
 	LogLevel        *string `json:"log_level,omitempty"`
 	LogUser         *string `json:"log_user,omitempty"`
 	NodeId          *string `json:"node_id,omitempty"`
@@ -1147,6 +1508,53 @@ type LogRow struct {
 	NodesOsName     *string `json:"nodes.os_name,omitempty"`
 	ServicesSvcname *string `json:"services.svcname,omitempty"`
 	SvcId           *string `json:"svc_id,omitempty"`
+}
+
+// MetricListResponse defines model for MetricListResponse.
+type MetricListResponse struct {
+	Data MetricListResponse_Data `json:"data"`
+	Meta *ListMeta               `json:"meta,omitempty"`
+}
+
+// MetricListResponseData0 defines model for .
+type MetricListResponseData0 = []MetricRow
+
+// MetricListResponseData1 defines model for .
+type MetricListResponseData1 map[string]map[string]int
+
+// MetricListResponse_Data defines model for MetricListResponse.Data.
+type MetricListResponse_Data struct {
+	union json.RawMessage
+}
+
+// MetricRow A metric: an SQL request whose results feed the charts and the reports.
+// Every property is optional: the `props` query parameter selects which columns
+// the server returns.
+type MetricRow struct {
+	Id                     *int    `json:"id,omitempty"`
+	MetricAuthor           *string `json:"metric_author,omitempty"`
+	MetricColInstanceIndex *int    `json:"metric_col_instance_index,omitempty"`
+	MetricColInstanceLabel *string `json:"metric_col_instance_label,omitempty"`
+	MetricColValueIndex    *int    `json:"metric_col_value_index,omitempty"`
+	MetricCreated          *string `json:"metric_created,omitempty"`
+	MetricHistorize        *string `json:"metric_historize,omitempty"`
+	MetricName             *string `json:"metric_name,omitempty"`
+	MetricSql              *string `json:"metric_sql,omitempty"`
+}
+
+// MetricSamples The result of a metric request, its columns in order.
+type MetricSamples struct {
+	Columns []string        `json:"columns"`
+	Rows    [][]interface{} `json:"rows"`
+
+	// Truncated More rows were returned than were kept.
+	Truncated *bool `json:"truncated,omitempty"`
+}
+
+// MetricSamplesResponse defines model for MetricSamplesResponse.
+type MetricSamplesResponse struct {
+	// Data The result of a metric request, its columns in order.
+	Data MetricSamples `json:"data"`
 }
 
 // ModulesetListResponse defines model for ModulesetListResponse.
@@ -1425,6 +1833,23 @@ type NodeRow struct {
 	WarrantyEnd         *string `json:"warranty_end,omitempty"`
 }
 
+// NodeStatSeries defines model for NodeStatSeries.
+type NodeStatSeries struct {
+	// Device The network interface or block device, for the groups by device.
+	Device *string `json:"device,omitempty"`
+
+	// Metric The metric, as the agent names it (usr, pct_memused, rxkBps...).
+	Metric string `json:"metric"`
+
+	// Points The points, oldest first, each [unix time, value].
+	Points [][]float64 `json:"points"`
+}
+
+// NodeStatsResponse defines model for NodeStatsResponse.
+type NodeStatsResponse struct {
+	Data []NodeStatSeries `json:"data"`
+}
+
 // ObsolescenceSettingListResponse defines model for ObsolescenceSettingListResponse.
 type ObsolescenceSettingListResponse struct {
 	Data ObsolescenceSettingListResponse_Data `json:"data"`
@@ -1534,6 +1959,81 @@ type Problem struct {
 	// Text A human-readable explanation specific to this occurrence of the
 	// problem.
 	Text string `json:"text"`
+}
+
+// ReportListResponse defines model for ReportListResponse.
+type ReportListResponse struct {
+	Data ReportListResponse_Data `json:"data"`
+	Meta *ListMeta               `json:"meta,omitempty"`
+}
+
+// ReportListResponseData0 defines model for .
+type ReportListResponseData0 = []ReportRow
+
+// ReportListResponseData1 defines model for .
+type ReportListResponseData1 map[string]map[string]int
+
+// ReportListResponse_Data defines model for ReportListResponse.Data.
+type ReportListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ReportRow A report: a page of charts and metrics, defined in YAML. Every property is
+// optional: the `props` query parameter selects which columns the server
+// returns.
+type ReportRow struct {
+	Id         *int    `json:"id,omitempty"`
+	ReportName *string `json:"report_name,omitempty"`
+	ReportYaml *string `json:"report_yaml,omitempty"`
+}
+
+// ResourceListResponse defines model for ResourceListResponse.
+type ResourceListResponse struct {
+	Data ResourceListResponse_Data `json:"data"`
+	Meta *ListMeta                 `json:"meta,omitempty"`
+}
+
+// ResourceListResponseData0 defines model for .
+type ResourceListResponseData0 = []ResourceRow
+
+// ResourceListResponseData1 defines model for .
+type ResourceListResponseData1 map[string]map[string]int
+
+// ResourceListResponse_Data defines model for ResourceListResponse.Data.
+type ResourceListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ResourceRow A resource of a service instance, as its agent reports it. Every property
+// is optional: the `props` query parameter selects which columns the server
+// returns. The `services.` and `nodes.` props come from joined tables.
+type ResourceRow struct {
+	Changed       *string `json:"changed,omitempty"`
+	Id            *int    `json:"id,omitempty"`
+	NodeId        *string `json:"node_id,omitempty"`
+	NodesNodename *string `json:"nodes.nodename,omitempty"`
+	ResDesc       *string `json:"res_desc,omitempty"`
+
+	// ResDisable T when the resource is disabled.
+	ResDisable *string `json:"res_disable,omitempty"`
+	ResLog     *string `json:"res_log,omitempty"`
+
+	// ResMonitor T when the resource is monitored.
+	ResMonitor *string `json:"res_monitor,omitempty"`
+
+	// ResOptional T when the resource is optional.
+	ResOptional *string `json:"res_optional,omitempty"`
+	ResStatus   *string `json:"res_status,omitempty"`
+	ResType     *string `json:"res_type,omitempty"`
+
+	// Rid Resource id in the service configuration (fs#1, ip#0…).
+	Rid             *string `json:"rid,omitempty"`
+	ServicesSvcname *string `json:"services.svcname,omitempty"`
+	SvcId           *string `json:"svc_id,omitempty"`
+	Updated         *string `json:"updated,omitempty"`
+
+	// Vmname Container of an encapsulated service, empty otherwise.
+	Vmname *string `json:"vmname,omitempty"`
 }
 
 // RulesetListResponse defines model for RulesetListResponse.
@@ -1672,6 +2172,50 @@ type RulesetsVariableRow struct {
 	VarValue         *string `json:"var_value,omitempty"`
 }
 
+// SanTopology defines model for SanTopology.
+type SanTopology struct {
+	Links []SanTopologyLink `json:"links"`
+	Nodes []SanTopologyNode `json:"nodes"`
+}
+
+// SanTopologyLink A link of a SAN wiring graph, from the device nearer to the node (`tail`) to
+// the one nearer to the arrays (`head`), each with the port it uses. `speeds`
+// holds the speed in Gb/s of each physical link: one, or one per member of a
+// trunk between two switches; 0 when the switch does not report it.
+type SanTopologyLink struct {
+	Head     string `json:"head"`
+	HeadPort string `json:"head_port"`
+	Speeds   []int  `json:"speeds"`
+	Tail     string `json:"tail"`
+	TailPort string `json:"tail_port"`
+}
+
+// SanTopologyNode A device of a SAN wiring graph. `rank` is its column from the node to the
+// arrays: 0 for the node, 1 for the switches its adapters are plugged in, one
+// more per inter-switch link followed, and the last one for the arrays.
+// `ports` are the ports the links of the graph use: adapter ports for the node,
+// target ports for an array, port indexes for a switch, several of them joined
+// by commas for the members of a trunk.
+type SanTopologyNode struct {
+	// Fabric Fabric of a switch.
+	Fabric *string             `json:"fabric,omitempty"`
+	Id     string              `json:"id"`
+	Kind   SanTopologyNodeKind `json:"kind"`
+
+	// Label Node name, switch name or array name; empty for an unknown array.
+	Label string   `json:"label"`
+	Ports []string `json:"ports"`
+	Rank  int      `json:"rank"`
+}
+
+// SanTopologyNodeKind defines model for SanTopologyNode.Kind.
+type SanTopologyNodeKind string
+
+// SanTopologyResponse defines model for SanTopologyResponse.
+type SanTopologyResponse struct {
+	Data SanTopology `json:"data"`
+}
+
 // SearchGroup The objects of one kind matching a search.
 type SearchGroup struct {
 	// Error Set when the kind could not be searched.
@@ -1682,7 +2226,7 @@ type SearchGroup struct {
 	// svc_env, cluster_id, svc_availstatus, svc_topology for a service; svc_id,
 	// node_id, mon_vmname, mon_availstatus, services.svcname, nodes.nodename for
 	// an instance; id, app, app_domain, description for an application; id, addr,
-	// mask, intf, node_id, nodename, net_name for a node address; disk_id,
+	// mask, mac, intf, node_id, nodename, net_name for a node address; disk_id,
 	// disk_name, disk_size, disk_arrayid, nodename, svcname for a disk; tag_id,
 	// tag_name, tag_exclude for a tag; id, email, first_name, last_name, username
 	// for a user; id, role, privilege, description for a team; id, form_name,
@@ -1703,6 +2247,22 @@ type SearchGroupKind string
 // SearchResponse defines model for SearchResponse.
 type SearchResponse struct {
 	Data []SearchGroup `json:"data"`
+}
+
+// ServiceAvailability defines model for ServiceAvailability.
+type ServiceAvailability struct {
+	AvailableS int `json:"available_s"`
+	CountedS   int `json:"counted_s"`
+
+	// ExcludedS The justified downtime left out of the count.
+	ExcludedS int `json:"excluded_s"`
+
+	// From The start of the time counted, the start of the history when later than the days asked.
+	From string `json:"from"`
+
+	// Rate The available share of the counted time, in percent.
+	Rate float64 `json:"rate"`
+	To   string  `json:"to"`
 }
 
 // ServiceListResponse defines model for ServiceListResponse.
@@ -1726,10 +2286,19 @@ type ServiceListResponse_Data struct {
 // query parameter selects which columns the server returns, so a row
 // carries only the requested subset.
 type ServiceRow struct {
-	ClusterId               *string `json:"cluster_id,omitempty"`
-	Id                      *int    `json:"id,omitempty"`
-	SvcApp                  *string `json:"svc_app,omitempty"`
-	SvcAutostart            *string `json:"svc_autostart,omitempty"`
+	ClusterId    *string `json:"cluster_id,omitempty"`
+	Id           *int    `json:"id,omitempty"`
+	SvcApp       *string `json:"svc_app,omitempty"`
+	SvcAutostart *string `json:"svc_autostart,omitempty"`
+
+	// SvcAvailability The availability rate of the last 30 days, in percent, as the status
+	// history of the service computes it, stored by the scheduler every 10
+	// minutes and at once when a justification changes; sortable and
+	// filterable. Null without status recorded.
+	SvcAvailability *float64 `json:"svc_availability,omitempty"`
+
+	// SvcAvailabilityUpdated When svc_availability was computed.
+	SvcAvailabilityUpdated  *string `json:"svc_availability_updated,omitempty"`
 	SvcAvailstatus          *string `json:"svc_availstatus,omitempty"`
 	SvcComment              *string `json:"svc_comment,omitempty"`
 	SvcConfig               *string `json:"svc_config,omitempty"`
@@ -1754,13 +2323,217 @@ type ServiceRow struct {
 	SvcNotifications        *string `json:"svc_notifications,omitempty"`
 	SvcPlacement            *string `json:"svc_placement,omitempty"`
 	SvcProvisioned          *string `json:"svc_provisioned,omitempty"`
-	SvcSnoozeTill           *string `json:"svc_snooze_till,omitempty"`
-	SvcStatus               *string `json:"svc_status,omitempty"`
-	SvcStatusUpdated        *string `json:"svc_status_updated,omitempty"`
-	SvcTopology             *string `json:"svc_topology,omitempty"`
-	SvcWave                 *int    `json:"svc_wave,omitempty"`
-	Svcname                 *string `json:"svcname,omitempty"`
-	Updated                 *string `json:"updated,omitempty"`
+
+	// SvcSla The availability target, in percent; null without SLA.
+	SvcSla           *float64 `json:"svc_sla,omitempty"`
+	SvcSnoozeTill    *string  `json:"svc_snooze_till,omitempty"`
+	SvcStatus        *string  `json:"svc_status,omitempty"`
+	SvcStatusUpdated *string  `json:"svc_status_updated,omitempty"`
+	SvcTopology      *string  `json:"svc_topology,omitempty"`
+	SvcWave          *int     `json:"svc_wave,omitempty"`
+	Svcname          *string  `json:"svcname,omitempty"`
+	Updated          *string  `json:"updated,omitempty"`
+}
+
+// ServiceStatusPeriod defines model for ServiceStatusPeriod.
+type ServiceStatusPeriod struct {
+	Ack *StatusAck `json:"ack,omitempty"`
+
+	// Begin "YYYY-MM-DD HH:MM:SS" in the collector time zone.
+	Begin string `json:"begin"`
+
+	// End Its end; for the current period, the last status received.
+	End string `json:"end"`
+
+	// Status The availability status of the service.
+	Status string `json:"status"`
+}
+
+// SessionFilterset defines model for SessionFilterset.
+type SessionFilterset struct {
+	FsetId   int    `json:"fset_id"`
+	FsetName string `json:"fset_name"`
+}
+
+// SessionFiltersetResponse defines model for SessionFiltersetResponse.
+type SessionFiltersetResponse struct {
+	Data *SessionFilterset `json:"data,omitempty"`
+}
+
+// StatusAck defines model for StatusAck.
+type StatusAck struct {
+	// Account Whether the period still counts in the availability rate.
+	Account bool   `json:"account"`
+	AckedBy string `json:"acked_by"`
+	AckedOn string `json:"acked_on"`
+	Comment string `json:"comment"`
+}
+
+// SwitchPortListResponse defines model for SwitchPortListResponse.
+type SwitchPortListResponse struct {
+	Data SwitchPortListResponse_Data `json:"data"`
+	Meta *ListMeta                   `json:"meta,omitempty"`
+}
+
+// SwitchPortListResponseData0 defines model for .
+type SwitchPortListResponseData0 = []SwitchPortRow
+
+// SwitchPortListResponseData1 defines model for .
+type SwitchPortListResponseData1 map[string]map[string]int
+
+// SwitchPortListResponse_Data defines model for SwitchPortListResponse.Data.
+type SwitchPortListResponse_Data struct {
+	union json.RawMessage
+}
+
+// SwitchPortRow A port of a SAN switch. `sw_portname` is its own port name (WWPN),
+// `sw_rportname` the port plugged on its other end and `sw_rname` the name of
+// what owns that port: a node, a storage array or another switch; empty when
+// the collector does not know it. `node_id` is set when it is a node. The
+// numbers are null when the switch does not report them. Every property is
+// optional: the `props` query parameter selects which columns the server
+// returns.
+type SwitchPortRow struct {
+	Id          *int    `json:"id,omitempty"`
+	NodeId      *string `json:"node_id,omitempty"`
+	SwFabric    *string `json:"sw_fabric,omitempty"`
+	SwIndex     *int    `json:"sw_index,omitempty"`
+	SwName      *string `json:"sw_name,omitempty"`
+	SwPort      *int    `json:"sw_port,omitempty"`
+	SwPortname  *string `json:"sw_portname,omitempty"`
+	SwPortnego  *string `json:"sw_portnego,omitempty"`
+	SwPortspeed *int    `json:"sw_portspeed,omitempty"`
+	SwPortstate *string `json:"sw_portstate,omitempty"`
+	SwPorttype  *string `json:"sw_porttype,omitempty"`
+	SwRname     *string `json:"sw_rname,omitempty"`
+	SwRportname *string `json:"sw_rportname,omitempty"`
+	SwSlot      *int    `json:"sw_slot,omitempty"`
+	SwUpdated   *string `json:"sw_updated,omitempty"`
+}
+
+// SysreportChange A report that changed something.
+type SysreportChange struct {
+	Cid string `json:"cid"`
+
+	// Date Date of the report, ISO 8601 with its offset.
+	Date  string              `json:"date"`
+	Files []SysreportFileStat `json:"files"`
+
+	// Initial The first report of the node, which adds every file.
+	Initial bool `json:"initial"`
+}
+
+// SysreportChangeResponse defines model for SysreportChangeResponse.
+type SysreportChangeResponse struct {
+	Data struct {
+		Cid   string              `json:"cid"`
+		Date  string              `json:"date"`
+		Files []SysreportFileDiff `json:"files"`
+	} `json:"data"`
+}
+
+// SysreportEntry defines model for SysreportEntry.
+type SysreportEntry struct {
+	Kind       SysreportEntryKind `json:"kind"`
+	Oid        string             `json:"oid"`
+	Path       string             `json:"path"`
+	Restricted bool               `json:"restricted"`
+	Secure     bool               `json:"secure"`
+	Size       int                `json:"size"`
+}
+
+// SysreportEntryKind defines model for SysreportEntry.Kind.
+type SysreportEntryKind string
+
+// SysreportFileDiff defines model for SysreportFileDiff.
+type SysreportFileDiff struct {
+	Added   int  `json:"added"`
+	Binary  bool `json:"binary"`
+	Deleted int  `json:"deleted"`
+
+	// Diff Unified diff from its first hunk; absent when restricted or binary.
+	Diff *string               `json:"diff,omitempty"`
+	Kind SysreportFileDiffKind `json:"kind"`
+	Path string                `json:"path"`
+
+	// Restricted The caller may not read this sensitive path, the diff is withheld.
+	Restricted bool `json:"restricted"`
+
+	// Secure The path matches a secure pattern.
+	Secure bool `json:"secure"`
+
+	// Truncated The diff was cut at the size limit.
+	Truncated bool `json:"truncated"`
+}
+
+// SysreportFileDiffKind defines model for SysreportFileDiff.Kind.
+type SysreportFileDiffKind string
+
+// SysreportFileResponse defines model for SysreportFileResponse.
+type SysreportFileResponse struct {
+	Data struct {
+		Binary bool `json:"binary"`
+
+		// Content Absent for a binary content.
+		Content   *string                       `json:"content,omitempty"`
+		Kind      SysreportFileResponseDataKind `json:"kind"`
+		Oid       string                        `json:"oid"`
+		Path      string                        `json:"path"`
+		Secure    bool                          `json:"secure"`
+		Size      int                           `json:"size"`
+		Truncated bool                          `json:"truncated"`
+	} `json:"data"`
+}
+
+// SysreportFileResponseDataKind defines model for SysreportFileResponse.Data.Kind.
+type SysreportFileResponseDataKind string
+
+// SysreportFileStat A file or command output changed by a report.
+type SysreportFileStat struct {
+	Added   int                   `json:"added"`
+	Binary  bool                  `json:"binary"`
+	Deleted int                   `json:"deleted"`
+	Kind    SysreportFileStatKind `json:"kind"`
+
+	// Path Absolute path of a tracked file, or command line of a tracked command.
+	Path string `json:"path"`
+}
+
+// SysreportFileStatKind defines model for SysreportFileStat.Kind.
+type SysreportFileStatKind string
+
+// SysreportPoint A state of the sysreport, the report it was left in; empty before the first report.
+type SysreportPoint struct {
+	Cid  string `json:"cid"`
+	Date string `json:"date"`
+}
+
+// SysreportTimediffResponse defines model for SysreportTimediffResponse.
+type SysreportTimediffResponse struct {
+	Data struct {
+		// Begin A state of the sysreport, the report it was left in; empty before the first report.
+		Begin SysreportPoint `json:"begin"`
+
+		// End A state of the sysreport, the report it was left in; empty before the first report.
+		End   SysreportPoint      `json:"end"`
+		Files []SysreportFileDiff `json:"files"`
+	} `json:"data"`
+}
+
+// SysreportTimelineResponse defines model for SysreportTimelineResponse.
+type SysreportTimelineResponse struct {
+	Data []SysreportChange `json:"data"`
+	Meta struct {
+		Count  int `json:"count"`
+		Limit  int `json:"limit"`
+		Offset int `json:"offset"`
+		Total  int `json:"total"`
+	} `json:"meta"`
+}
+
+// SysreportTreeResponse defines model for SysreportTreeResponse.
+type SysreportTreeResponse struct {
+	Data []SysreportEntry `json:"data"`
 }
 
 // UserListResponse defines model for UserListResponse.
@@ -1787,7 +2560,8 @@ type UserPrefsResponse struct {
 	Data map[string]interface{} `json:"data"`
 }
 
-// UserRow A user of the users list. `password` and `registration_key` are never
+// UserRow A user of the users list. `password`, `registration_key` and
+// `reset_password_key` are never
 // returned. The boolean-like columns (`email_notifications`,
 // `im_notifications`, `lock_filter`) carry the collector's "T"/"F"
 // convention, and the delay and quota columns are returned as strings.
@@ -1812,7 +2586,6 @@ type UserRow struct {
 	QuotaDockerRegistries   *string `json:"quota_docker_registries,omitempty"`
 	QuotaOrgGroup           *string `json:"quota_org_group,omitempty"`
 	RegistrationId          *string `json:"registration_id,omitempty"`
-	ResetPasswordKey        *string `json:"reset_password_key,omitempty"`
 	Username                *string `json:"username,omitempty"`
 }
 
@@ -1913,6 +2686,9 @@ type N409 = Problem
 // N500 defines model for 500.
 type N500 = Problem
 
+// N503 defines model for 503.
+type N503 = Problem
+
 // basicAuthContextKey is the context key for basicAuth security scheme
 type basicAuthContextKey string
 
@@ -1936,7 +2712,17 @@ type GetActionsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -1950,7 +2736,10 @@ type GetActionsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -1993,7 +2782,17 @@ type GetActionParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2020,7 +2819,17 @@ type GetAlertEventParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2057,11 +2866,37 @@ type GetAlertsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
 	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
@@ -2097,7 +2932,17 @@ type GetAlertParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2117,6 +2962,12 @@ type PostAlertJSONBody struct {
 	DashType     *string                 `json:"dash_type,omitempty"`
 	NodeId       *string                 `json:"node_id,omitempty"`
 	SvcId        *string                 `json:"svc_id,omitempty"`
+}
+
+// GetAlertEventsParams defines parameters for GetAlertEvents.
+type GetAlertEventsParams struct {
+	// Limit The most recent occurrences to return, 1000 by default, 10000 at most.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // DeleteAppsJSONBody defines parameters for DeleteApps.
@@ -2145,7 +2996,17 @@ type GetAppsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2162,7 +3023,10 @@ type GetAppsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2207,7 +3071,17 @@ type GetAppNodesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2234,7 +3108,17 @@ type GetAppPublicationsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2261,7 +3145,17 @@ type GetAppQuotasParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2288,7 +3182,17 @@ type GetAppResponsiblesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2315,7 +3219,17 @@ type GetAppServicesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2378,7 +3292,17 @@ type GetArraysParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2392,6 +3316,139 @@ type GetArraysParams struct {
 type PostAuthNodeJSONBody struct {
 	App      *string `json:"app,omitempty"`
 	Nodename string  `json:"nodename"`
+}
+
+// GetChartsParams defines parameters for GetCharts.
+type GetChartsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostChartsJSONBody defines parameters for PostCharts.
+type PostChartsJSONBody struct {
+	// ChartName Unique name of the chart.
+	ChartName string `json:"chart_name"`
+
+	// ChartYaml Definition of the chart, in YAML.
+	ChartYaml *string `json:"chart_yaml,omitempty"`
+}
+
+// GetChartParams defines parameters for GetChart.
+type GetChartParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// GetChartSamplesParams defines parameters for GetChartSamples.
+type GetChartSamplesParams struct {
+	// Days Days of history, 365 by default, 1825 at most.
+	Days *int `form:"days,omitempty" json:"days,omitempty"`
+}
+
+// GetClustersParams defines parameters for GetClusters.
+type GetClustersParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetClusterParams defines parameters for GetCluster.
+type GetClusterParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
 
 // PostComplianceImportJSONBody defines parameters for PostComplianceImport.
@@ -2421,7 +3478,17 @@ type GetComplianceLogsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2435,7 +3502,10 @@ type GetComplianceLogsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2473,7 +3543,17 @@ type GetComplianceModulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2487,7 +3567,10 @@ type GetComplianceModulesetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2537,7 +3620,17 @@ type GetComplianceModulesetCandidateNodesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2551,7 +3644,10 @@ type GetComplianceModulesetCandidateNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2580,7 +3676,17 @@ type GetComplianceModulesetCandidateServicesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2594,7 +3700,10 @@ type GetComplianceModulesetCandidateServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2620,7 +3729,17 @@ type GetComplianceModulesetModulesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2634,7 +3753,10 @@ type GetComplianceModulesetModulesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2680,7 +3802,17 @@ type GetComplianceModulesetNodesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2694,7 +3826,10 @@ type GetComplianceModulesetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2720,7 +3855,17 @@ type GetComplianceModulesetPublicationsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2734,7 +3879,10 @@ type GetComplianceModulesetPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2760,7 +3908,17 @@ type GetComplianceModulesetResponsiblesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2774,7 +3932,10 @@ type GetComplianceModulesetResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2803,7 +3964,17 @@ type GetComplianceModulesetServicesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2817,7 +3988,10 @@ type GetComplianceModulesetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2843,7 +4017,17 @@ type GetComplianceModulesetsModulesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2857,7 +4041,10 @@ type GetComplianceModulesetsModulesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -2963,7 +4150,17 @@ type GetComplianceRulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -2977,7 +4174,10 @@ type GetComplianceRulesetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3041,7 +4241,17 @@ type GetComplianceRulesetCandidateNodesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3055,7 +4265,10 @@ type GetComplianceRulesetCandidateNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3084,7 +4297,17 @@ type GetComplianceRulesetCandidateServicesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3098,7 +4321,10 @@ type GetComplianceRulesetCandidateServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3124,7 +4350,17 @@ type GetComplianceRulesetNodesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3138,7 +4374,10 @@ type GetComplianceRulesetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3164,7 +4403,17 @@ type GetComplianceRulesetPublicationsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3178,7 +4427,10 @@ type GetComplianceRulesetPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3204,7 +4456,17 @@ type GetComplianceRulesetResponsiblesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3218,7 +4480,10 @@ type GetComplianceRulesetResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3247,7 +4512,17 @@ type GetComplianceRulesetServicesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3261,7 +4536,10 @@ type GetComplianceRulesetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3287,7 +4565,17 @@ type GetComplianceRulesetVariablesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3301,7 +4589,10 @@ type GetComplianceRulesetVariablesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3440,7 +4731,17 @@ type GetComplianceRulesetsVariablesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3454,7 +4755,10 @@ type GetComplianceRulesetsVariablesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3497,7 +4801,17 @@ type GetComplianceStatusParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3511,7 +4825,10 @@ type GetComplianceStatusParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3549,7 +4866,17 @@ type GetDisksParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3566,7 +4893,10 @@ type GetDisksParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3604,7 +4934,17 @@ type GetDiskParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3637,11 +4977,37 @@ type GetFiltersParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
 	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
@@ -3682,7 +5048,17 @@ type GetFilterParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3729,7 +5105,17 @@ type GetFiltersetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3746,7 +5132,10 @@ type GetFiltersetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3784,7 +5173,17 @@ type GetFiltersetParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3820,7 +5219,17 @@ type GetFiltersetFiltersParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3856,7 +5265,17 @@ type GetFiltersetFiltersetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3892,7 +5311,17 @@ type GetFiltersetNodesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3906,7 +5335,10 @@ type GetFiltersetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -3932,7 +5364,17 @@ type GetFiltersetServicesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -3946,7 +5388,10 @@ type GetFiltersetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4049,7 +5494,17 @@ type GetFormsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4066,7 +5521,10 @@ type GetFormsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4100,7 +5558,17 @@ type GetFormParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4117,7 +5585,10 @@ type GetFormParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4158,7 +5629,17 @@ type GetFormPublicationsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4175,7 +5656,10 @@ type GetFormPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4198,7 +5682,17 @@ type GetFormResponsiblesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4215,7 +5709,10 @@ type GetFormResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4282,7 +5779,17 @@ type GetFormsRevisionsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4299,7 +5806,10 @@ type GetFormsRevisionsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4322,7 +5832,17 @@ type GetFormsRevisionParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4339,7 +5859,10 @@ type GetFormsRevisionParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4362,7 +5885,17 @@ type GetFormsStoreParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4379,7 +5912,10 @@ type GetFormsStoreParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4402,7 +5938,17 @@ type GetFormStoreParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4419,7 +5965,10 @@ type GetFormStoreParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4442,7 +5991,17 @@ type GetFrontendHiddenMenuEntriesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4478,7 +6037,17 @@ type GetGroupsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4495,7 +6064,10 @@ type GetGroupsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4532,7 +6104,17 @@ type GetGroupParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4568,7 +6150,17 @@ type GetGroupAppsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4601,7 +6193,17 @@ type GetGroupHiddenMenuEntriesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4634,7 +6236,17 @@ type GetGroupModulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4661,7 +6273,17 @@ type GetGroupNodesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4688,7 +6310,17 @@ type GetGroupRulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4715,7 +6347,17 @@ type GetGroupServicesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4742,7 +6384,17 @@ type GetGroupUsersParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4775,7 +6427,17 @@ type GetIpsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4789,7 +6451,10 @@ type GetIpsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4815,7 +6480,17 @@ type GetIpParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4845,11 +6520,37 @@ type GetLogsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
 	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
@@ -4881,7 +6582,17 @@ type GetLogParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4890,6 +6601,119 @@ type GetLogParams struct {
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
+
+// GetMetricsParams defines parameters for GetMetrics.
+type GetMetricsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostMetricsJSONBody defines parameters for PostMetrics.
+type PostMetricsJSONBody struct {
+	// MetricColInstanceIndex Index of the result column naming the instance of each value,
+	// null when the request returns one value.
+	MetricColInstanceIndex *int `json:"metric_col_instance_index,omitempty"`
+
+	// MetricColInstanceLabel How the instances are named, the column header say.
+	MetricColInstanceLabel *string `json:"metric_col_instance_label,omitempty"`
+
+	// MetricColValueIndex Index of the result column holding the value.
+	MetricColValueIndex *int `json:"metric_col_value_index,omitempty"`
+
+	// MetricHistorize Whether the values are kept over time for the charts.
+	MetricHistorize *PostMetricsJSONBodyMetricHistorize `json:"metric_historize,omitempty"`
+
+	// MetricName Unique name of the metric.
+	MetricName string `json:"metric_name"`
+
+	// MetricSql The SQL request computing the metric. `%%fset_node_ids%%` and
+	// `%%fset_svc_ids%%` stand for the nodes and services of the
+	// filterset of the session where the metric is read.
+	MetricSql *string `json:"metric_sql,omitempty"`
+}
+
+// PostMetricsJSONBodyMetricHistorize defines parameters for PostMetrics.
+type PostMetricsJSONBodyMetricHistorize string
+
+// GetMetricParams defines parameters for GetMetric.
+type GetMetricParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// PostMetricJSONBody defines parameters for PostMetric.
+type PostMetricJSONBody struct {
+	// MetricColInstanceIndex Index of the result column naming the instance of each value,
+	// null when the request returns one value.
+	MetricColInstanceIndex *int `json:"metric_col_instance_index,omitempty"`
+
+	// MetricColInstanceLabel How the instances are named, the column header say.
+	MetricColInstanceLabel *string `json:"metric_col_instance_label,omitempty"`
+
+	// MetricColValueIndex Index of the result column holding the value.
+	MetricColValueIndex *int `json:"metric_col_value_index,omitempty"`
+
+	// MetricHistorize Whether the values are kept over time for the charts.
+	MetricHistorize *PostMetricJSONBodyMetricHistorize `json:"metric_historize,omitempty"`
+
+	// MetricName Unique name of the metric.
+	MetricName *string `json:"metric_name,omitempty"`
+
+	// MetricSql The SQL request computing the metric. `%%fset_node_ids%%` and
+	// `%%fset_svc_ids%%` stand for the nodes and services of the
+	// filterset of the session where the metric is read.
+	MetricSql *string `json:"metric_sql,omitempty"`
+}
+
+// PostMetricJSONBodyMetricHistorize defines parameters for PostMetric.
+type PostMetricJSONBodyMetricHistorize string
 
 // GetNetworksParams defines parameters for GetNetworks.
 type GetNetworksParams struct {
@@ -4908,7 +6732,17 @@ type GetNetworksParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -4922,7 +6756,10 @@ type GetNetworksParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -4993,7 +6830,17 @@ type GetNodesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5007,7 +6854,10 @@ type GetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -5114,7 +6964,17 @@ type GetNodesHardwareParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5128,7 +6988,10 @@ type GetNodesHardwareParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -5154,7 +7017,17 @@ type GetNodesHbasParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5181,7 +7054,17 @@ type GetNodeParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5288,7 +7171,17 @@ type GetNodeAlertsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5315,7 +7208,17 @@ type GetNodeCandidateTagsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5342,7 +7245,17 @@ type GetNodeChecksParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5369,7 +7282,17 @@ type GetNodeComplianceCandidateModulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5396,7 +7319,17 @@ type GetNodeComplianceCandidateRulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5423,7 +7356,17 @@ type GetNodeComplianceLogsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5450,7 +7393,17 @@ type GetNodeComplianceModulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5480,7 +7433,17 @@ type GetNodeComplianceRulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5510,7 +7473,17 @@ type GetNodeComplianceStatusParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5537,7 +7510,17 @@ type GetNodeDisksParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5564,7 +7547,17 @@ type GetNodeHardwareParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5591,7 +7584,17 @@ type GetNodeHbasParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5618,7 +7621,17 @@ type GetNodeInterfacesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5645,7 +7658,17 @@ type GetNodeIpsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5672,7 +7695,17 @@ type GetNodeServicesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5699,7 +7732,17 @@ type GetNodeServiceParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5713,6 +7756,44 @@ type GetNodeServiceParams struct {
 type PostNodeSnoozeJSONBody struct {
 	// Duration Duration string (e.g. "1h", "30m", "2d"). Omit to unsnooze.
 	Duration *string `json:"duration,omitempty"`
+}
+
+// GetNodeStatsParams defines parameters for GetNodeStats.
+type GetNodeStatsParams struct {
+	Group GetNodeStatsParamsGroup `form:"group" json:"group"`
+
+	// Days Days of history, 1 by default, 1095 at most.
+	Days *int `form:"days,omitempty" json:"days,omitempty"`
+}
+
+// GetNodeStatsParamsGroup defines parameters for GetNodeStats.
+type GetNodeStatsParamsGroup string
+
+// GetNodeSysreportParams defines parameters for GetNodeSysreport.
+type GetNodeSysreportParams struct {
+	// Path Keep the files whose path or command line contains this text, and the changes touching one.
+	Path *string `form:"path,omitempty" json:"path,omitempty"`
+
+	// Begin Keep the changes made since this date, for example 2026-09-01 or 2026-09-01T10:00:00.
+	Begin *string `form:"begin,omitempty" json:"begin,omitempty"`
+
+	// End Keep the changes made until this date.
+	End *string `form:"end,omitempty" json:"end,omitempty"`
+
+	// Limit The maximum number of changes to return, 50 by default. 0 means no limit.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first changes.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// GetNodeSysreportTimediffParams defines parameters for GetNodeSysreportTimediff.
+type GetNodeSysreportTimediffParams struct {
+	// Begin The state compared from, a date (2026-09-01T10:00:00Z) or a revision.
+	Begin string `form:"begin" json:"begin"`
+
+	// End The state compared to, a date or a revision; the latest report by default.
+	End *string `form:"end,omitempty" json:"end,omitempty"`
 }
 
 // GetNodeTagsParams defines parameters for GetNodeTags.
@@ -5732,7 +7813,17 @@ type GetNodeTagsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5765,11 +7856,37 @@ type GetObsolescenceSettingsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
 	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
@@ -5804,7 +7921,17 @@ type GetObsolescenceSettingParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5840,7 +7967,17 @@ type GetPackagesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5854,7 +7991,10 @@ type GetPackagesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -5873,6 +8013,186 @@ type GetPackagesDiffParams struct {
 
 	// Encap With svc_ids, compare the services' encapsulated nodes instead of their hosts
 	Encap *bool `form:"encap,omitempty" json:"encap,omitempty"`
+}
+
+// GetReportsParams defines parameters for GetReports.
+type GetReportsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostReportsJSONBody defines parameters for PostReports.
+type PostReportsJSONBody struct {
+	// ReportName Unique name of the report.
+	ReportName string `json:"report_name"`
+
+	// ReportYaml Definition of the report, in YAML.
+	ReportYaml *string `json:"report_yaml,omitempty"`
+}
+
+// GetReportParams defines parameters for GetReport.
+type GetReportParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// GetResourcesParams defines parameters for GetResources.
+type GetResourcesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetResourceParams defines parameters for GetResource.
+type GetResourceParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// GetSanSwitchesParams defines parameters for GetSanSwitches.
+type GetSanSwitchesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
 // GetSearchParams defines parameters for GetSearch.
@@ -5912,7 +8232,17 @@ type GetServicesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -5926,7 +8256,10 @@ type GetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -5981,7 +8314,17 @@ type GetServiceParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6012,10 +8355,14 @@ type PostServiceJSONBody struct {
 	SvcNotifications        *bool   `json:"svc_notifications,omitempty"`
 	SvcPlacement            *string `json:"svc_placement,omitempty"`
 	SvcProvisioned          *string `json:"svc_provisioned,omitempty"`
-	SvcSnoozeTill           *string `json:"svc_snooze_till,omitempty"`
-	SvcTopology             *string `json:"svc_topology,omitempty"`
-	SvcWave                 *int    `json:"svc_wave,omitempty"`
-	Svcname                 *string `json:"svcname,omitempty"`
+
+	// SvcSla The availability target, a percent between 0 and 100, compared with
+	// the availability rate of the service; empty to remove it.
+	SvcSla        *string `json:"svc_sla,omitempty"`
+	SvcSnoozeTill *string `json:"svc_snooze_till,omitempty"`
+	SvcTopology   *string `json:"svc_topology,omitempty"`
+	SvcWave       *int    `json:"svc_wave,omitempty"`
+	Svcname       *string `json:"svcname,omitempty"`
 }
 
 // GetServiceAlertsParams defines parameters for GetServiceAlerts.
@@ -6035,7 +8382,17 @@ type GetServiceAlertsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6062,7 +8419,17 @@ type GetServiceCandidateTagsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6089,7 +8456,17 @@ type GetServiceChecksParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6116,7 +8493,17 @@ type GetServiceComplianceCandidateModulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6146,7 +8533,17 @@ type GetServiceComplianceCandidateRulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6173,7 +8570,17 @@ type GetServiceComplianceLogsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6203,7 +8610,17 @@ type GetServiceComplianceModulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6245,7 +8662,17 @@ type GetServiceComplianceRulesetsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6284,7 +8711,17 @@ type GetServiceComplianceStatusParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6311,7 +8748,17 @@ type GetServiceDisksParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6338,7 +8785,17 @@ type GetServiceInstanceParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6346,6 +8803,12 @@ type GetServiceInstanceParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceInstanceStatusLogParams defines parameters for GetServiceInstanceStatusLog.
+type GetServiceInstanceStatusLogParams struct {
+	// Days The days of history to return, 7 by default, 365 at most.
+	Days *int `form:"days,omitempty" json:"days,omitempty"`
 }
 
 // GetServiceNodesParams defines parameters for GetServiceNodes.
@@ -6365,7 +8828,17 @@ type GetServiceNodesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6392,7 +8865,17 @@ type GetServiceNodeParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6419,7 +8902,17 @@ type GetServiceNodeResourcesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6446,7 +8939,17 @@ type GetServiceNodeResourceLogsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6473,7 +8976,17 @@ type GetServiceResinfoParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6500,7 +9013,17 @@ type GetServiceResourcesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6527,7 +9050,17 @@ type GetServiceResourceLogsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6535,6 +9068,27 @@ type GetServiceResourceLogsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceStatusLogParams defines parameters for GetServiceStatusLog.
+type GetServiceStatusLogParams struct {
+	// Days The days of history to return, 7 by default, 365 at most.
+	Days *int `form:"days,omitempty" json:"days,omitempty"`
+}
+
+// DeleteServiceStatusLogAckParams defines parameters for DeleteServiceStatusLogAck.
+type DeleteServiceStatusLogAckParams struct {
+	Begin string `form:"begin" json:"begin"`
+	End   string `form:"end" json:"end"`
+}
+
+// PutServiceStatusLogAckJSONBody defines parameters for PutServiceStatusLogAck.
+type PutServiceStatusLogAckJSONBody struct {
+	// Account False to leave the period out of the availability rate.
+	Account bool   `json:"account"`
+	Begin   string `json:"begin"`
+	Comment string `json:"comment"`
+	End     string `json:"end"`
 }
 
 // GetServiceTagsParams defines parameters for GetServiceTags.
@@ -6554,7 +9108,17 @@ type GetServiceTagsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6593,7 +9157,17 @@ type GetServicesInstancesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6607,7 +9181,10 @@ type GetServicesInstancesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -6633,7 +9210,17 @@ type GetServicesInstanceParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6660,7 +9247,17 @@ type GetServicesInstancesStatusLogParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6687,7 +9284,17 @@ type GetServicesStatusLogParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6720,11 +9327,37 @@ type GetTagsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
 	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
@@ -6766,7 +9399,17 @@ type GetTagsNodesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6814,7 +9457,17 @@ type GetTagsServicesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6883,7 +9536,17 @@ type GetTagServicesParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6915,7 +9578,17 @@ type GetUsersParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6932,7 +9605,10 @@ type GetUsersParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -6948,6 +9624,12 @@ type PostUsersJSONBody struct {
 	Password  *string `json:"password,omitempty"`
 	PhoneWork *string `json:"phone_work,omitempty"`
 	Username  *string `json:"username,omitempty"`
+}
+
+// PutUserSelfFiltersetJSONBody defines parameters for PutUserSelfFilterset.
+type PutUserSelfFiltersetJSONBody struct {
+	// FsetId Filterset id (gen_filtersets.id) or name
+	FsetId string `json:"fset_id"`
 }
 
 // PostUserSelfPasswordJSONBody defines parameters for PostUserSelfPassword.
@@ -6975,7 +9657,17 @@ type GetUserParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -6990,6 +9682,59 @@ type PostUserJSONBody struct {
 	Email     *string `json:"email,omitempty"`
 	FirstName *string `json:"first_name,omitempty"`
 	LastName  *string `json:"last_name,omitempty"`
+}
+
+// GetUserGroupsParams defines parameters for GetUserGroups.
+type GetUserGroupsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
 // PostUserPrefsJSONBody defines parameters for PostUserPrefs.
@@ -7019,7 +9764,17 @@ type GetWorkflowsParams struct {
 	// and the limit.
 	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
 
-	// Stats Controls the inclusion in the returned dictionnary of a "stats" key, containing the selected properties distinct values counts.
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
@@ -7033,7 +9788,10 @@ type GetWorkflowsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
-	//   - `empty`, `!empty`: no value, any value.
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
 	// An unknown property, a property without a column, or an invalid regular
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
@@ -7090,6 +9848,9 @@ type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
 
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
+
+// PostChartsJSONRequestBody defines body for PostCharts for application/json ContentType.
+type PostChartsJSONRequestBody PostChartsJSONBody
 
 // PostComplianceImportJSONRequestBody defines body for PostComplianceImport for application/json ContentType.
 type PostComplianceImportJSONRequestBody PostComplianceImportJSONBody
@@ -7277,6 +10038,12 @@ type DeleteIpsJSONRequestBody DeleteIpsJSONBody
 // PostLogsJSONRequestBody defines body for PostLogs for application/json ContentType.
 type PostLogsJSONRequestBody PostLogsJSONBody
 
+// PostMetricsJSONRequestBody defines body for PostMetrics for application/json ContentType.
+type PostMetricsJSONRequestBody PostMetricsJSONBody
+
+// PostMetricJSONRequestBody defines body for PostMetric for application/json ContentType.
+type PostMetricJSONRequestBody PostMetricJSONBody
+
 // PostNetworksJSONRequestBody defines body for PostNetworks for application/json ContentType.
 type PostNetworksJSONRequestBody PostNetworksJSONBody
 
@@ -7310,6 +10077,9 @@ type PostObsolescenceSettingsJSONRequestBody PostObsolescenceSettingsJSONBody
 // PostObsolescenceSettingJSONRequestBody defines body for PostObsolescenceSetting for application/json ContentType.
 type PostObsolescenceSettingJSONRequestBody PostObsolescenceSettingJSONBody
 
+// PostReportsJSONRequestBody defines body for PostReports for application/json ContentType.
+type PostReportsJSONRequestBody PostReportsJSONBody
+
 // DeleteServicesJSONRequestBody defines body for DeleteServices for application/json ContentType.
 type DeleteServicesJSONRequestBody DeleteServicesJSONBody
 
@@ -7318,6 +10088,9 @@ type PostServicesJSONRequestBody PostServicesJSONBody
 
 // PostServiceJSONRequestBody defines body for PostService for application/json ContentType.
 type PostServiceJSONRequestBody PostServiceJSONBody
+
+// PutServiceStatusLogAckJSONRequestBody defines body for PutServiceStatusLogAck for application/json ContentType.
+type PutServiceStatusLogAckJSONRequestBody PutServiceStatusLogAckJSONBody
 
 // DeleteServicesInstancesJSONRequestBody defines body for DeleteServicesInstances for application/json ContentType.
 type DeleteServicesInstancesJSONRequestBody DeleteServicesInstancesJSONBody
@@ -7351,6 +10124,9 @@ type PostTagServiceJSONRequestBody PostTagServiceJSONBody
 
 // PostUsersJSONRequestBody defines body for PostUsers for application/json ContentType.
 type PostUsersJSONRequestBody PostUsersJSONBody
+
+// PutUserSelfFiltersetJSONRequestBody defines body for PutUserSelfFilterset for application/json ContentType.
+type PutUserSelfFiltersetJSONRequestBody PutUserSelfFiltersetJSONBody
 
 // PostUserSelfPasswordJSONRequestBody defines body for PostUserSelfPassword for application/json ContentType.
 type PostUserSelfPasswordJSONRequestBody PostUserSelfPasswordJSONBody
@@ -7481,6 +10257,192 @@ func (t AppListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *AppListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsChartListResponseData0 returns the union data inside the ChartListResponse_Data as a ChartListResponseData0
+func (t ChartListResponse_Data) AsChartListResponseData0() (ChartListResponseData0, error) {
+	var body ChartListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromChartListResponseData0 overwrites any union data inside the ChartListResponse_Data as the provided ChartListResponseData0
+func (t *ChartListResponse_Data) FromChartListResponseData0(v ChartListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeChartListResponseData0 performs a merge with any union data inside the ChartListResponse_Data, using the provided ChartListResponseData0
+func (t *ChartListResponse_Data) MergeChartListResponseData0(v ChartListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsChartListResponseData1 returns the union data inside the ChartListResponse_Data as a ChartListResponseData1
+func (t ChartListResponse_Data) AsChartListResponseData1() (ChartListResponseData1, error) {
+	var body ChartListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromChartListResponseData1 overwrites any union data inside the ChartListResponse_Data as the provided ChartListResponseData1
+func (t *ChartListResponse_Data) FromChartListResponseData1(v ChartListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeChartListResponseData1 performs a merge with any union data inside the ChartListResponse_Data, using the provided ChartListResponseData1
+func (t *ChartListResponse_Data) MergeChartListResponseData1(v ChartListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ChartListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ChartListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsCheckListResponseData0 returns the union data inside the CheckListResponse_Data as a CheckListResponseData0
+func (t CheckListResponse_Data) AsCheckListResponseData0() (CheckListResponseData0, error) {
+	var body CheckListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckListResponseData0 overwrites any union data inside the CheckListResponse_Data as the provided CheckListResponseData0
+func (t *CheckListResponse_Data) FromCheckListResponseData0(v CheckListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckListResponseData0 performs a merge with any union data inside the CheckListResponse_Data, using the provided CheckListResponseData0
+func (t *CheckListResponse_Data) MergeCheckListResponseData0(v CheckListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCheckListResponseData1 returns the union data inside the CheckListResponse_Data as a CheckListResponseData1
+func (t CheckListResponse_Data) AsCheckListResponseData1() (CheckListResponseData1, error) {
+	var body CheckListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckListResponseData1 overwrites any union data inside the CheckListResponse_Data as the provided CheckListResponseData1
+func (t *CheckListResponse_Data) FromCheckListResponseData1(v CheckListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckListResponseData1 performs a merge with any union data inside the CheckListResponse_Data, using the provided CheckListResponseData1
+func (t *CheckListResponse_Data) MergeCheckListResponseData1(v CheckListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CheckListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CheckListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsClusterListResponseData0 returns the union data inside the ClusterListResponse_Data as a ClusterListResponseData0
+func (t ClusterListResponse_Data) AsClusterListResponseData0() (ClusterListResponseData0, error) {
+	var body ClusterListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromClusterListResponseData0 overwrites any union data inside the ClusterListResponse_Data as the provided ClusterListResponseData0
+func (t *ClusterListResponse_Data) FromClusterListResponseData0(v ClusterListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeClusterListResponseData0 performs a merge with any union data inside the ClusterListResponse_Data, using the provided ClusterListResponseData0
+func (t *ClusterListResponse_Data) MergeClusterListResponseData0(v ClusterListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsClusterListResponseData1 returns the union data inside the ClusterListResponse_Data as a ClusterListResponseData1
+func (t ClusterListResponse_Data) AsClusterListResponseData1() (ClusterListResponseData1, error) {
+	var body ClusterListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromClusterListResponseData1 overwrites any union data inside the ClusterListResponse_Data as the provided ClusterListResponseData1
+func (t *ClusterListResponse_Data) FromClusterListResponseData1(v ClusterListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeClusterListResponseData1 performs a merge with any union data inside the ClusterListResponse_Data, using the provided ClusterListResponseData1
+func (t *ClusterListResponse_Data) MergeClusterListResponseData1(v ClusterListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ClusterListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ClusterListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -8291,6 +11253,68 @@ func (t *LogListResponse_Data) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsMetricListResponseData0 returns the union data inside the MetricListResponse_Data as a MetricListResponseData0
+func (t MetricListResponse_Data) AsMetricListResponseData0() (MetricListResponseData0, error) {
+	var body MetricListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMetricListResponseData0 overwrites any union data inside the MetricListResponse_Data as the provided MetricListResponseData0
+func (t *MetricListResponse_Data) FromMetricListResponseData0(v MetricListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMetricListResponseData0 performs a merge with any union data inside the MetricListResponse_Data, using the provided MetricListResponseData0
+func (t *MetricListResponse_Data) MergeMetricListResponseData0(v MetricListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMetricListResponseData1 returns the union data inside the MetricListResponse_Data as a MetricListResponseData1
+func (t MetricListResponse_Data) AsMetricListResponseData1() (MetricListResponseData1, error) {
+	var body MetricListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMetricListResponseData1 overwrites any union data inside the MetricListResponse_Data as the provided MetricListResponseData1
+func (t *MetricListResponse_Data) FromMetricListResponseData1(v MetricListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMetricListResponseData1 performs a merge with any union data inside the MetricListResponse_Data, using the provided MetricListResponseData1
+func (t *MetricListResponse_Data) MergeMetricListResponseData1(v MetricListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MetricListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MetricListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsModulesetListResponseData0 returns the union data inside the ModulesetListResponse_Data as a ModulesetListResponseData0
 func (t ModulesetListResponse_Data) AsModulesetListResponseData0() (ModulesetListResponseData0, error) {
 	var body ModulesetListResponseData0
@@ -8725,6 +11749,130 @@ func (t *PackageListResponse_Data) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsReportListResponseData0 returns the union data inside the ReportListResponse_Data as a ReportListResponseData0
+func (t ReportListResponse_Data) AsReportListResponseData0() (ReportListResponseData0, error) {
+	var body ReportListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromReportListResponseData0 overwrites any union data inside the ReportListResponse_Data as the provided ReportListResponseData0
+func (t *ReportListResponse_Data) FromReportListResponseData0(v ReportListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeReportListResponseData0 performs a merge with any union data inside the ReportListResponse_Data, using the provided ReportListResponseData0
+func (t *ReportListResponse_Data) MergeReportListResponseData0(v ReportListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsReportListResponseData1 returns the union data inside the ReportListResponse_Data as a ReportListResponseData1
+func (t ReportListResponse_Data) AsReportListResponseData1() (ReportListResponseData1, error) {
+	var body ReportListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromReportListResponseData1 overwrites any union data inside the ReportListResponse_Data as the provided ReportListResponseData1
+func (t *ReportListResponse_Data) FromReportListResponseData1(v ReportListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeReportListResponseData1 performs a merge with any union data inside the ReportListResponse_Data, using the provided ReportListResponseData1
+func (t *ReportListResponse_Data) MergeReportListResponseData1(v ReportListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ReportListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ReportListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsResourceListResponseData0 returns the union data inside the ResourceListResponse_Data as a ResourceListResponseData0
+func (t ResourceListResponse_Data) AsResourceListResponseData0() (ResourceListResponseData0, error) {
+	var body ResourceListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResourceListResponseData0 overwrites any union data inside the ResourceListResponse_Data as the provided ResourceListResponseData0
+func (t *ResourceListResponse_Data) FromResourceListResponseData0(v ResourceListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResourceListResponseData0 performs a merge with any union data inside the ResourceListResponse_Data, using the provided ResourceListResponseData0
+func (t *ResourceListResponse_Data) MergeResourceListResponseData0(v ResourceListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsResourceListResponseData1 returns the union data inside the ResourceListResponse_Data as a ResourceListResponseData1
+func (t ResourceListResponse_Data) AsResourceListResponseData1() (ResourceListResponseData1, error) {
+	var body ResourceListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResourceListResponseData1 overwrites any union data inside the ResourceListResponse_Data as the provided ResourceListResponseData1
+func (t *ResourceListResponse_Data) FromResourceListResponseData1(v ResourceListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResourceListResponseData1 performs a merge with any union data inside the ResourceListResponse_Data, using the provided ResourceListResponseData1
+func (t *ResourceListResponse_Data) MergeResourceListResponseData1(v ResourceListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ResourceListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ResourceListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsRulesetListResponseData0 returns the union data inside the RulesetListResponse_Data as a RulesetListResponseData0
 func (t RulesetListResponse_Data) AsRulesetListResponseData0() (RulesetListResponseData0, error) {
 	var body RulesetListResponseData0
@@ -8969,6 +12117,68 @@ func (t ServiceListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ServiceListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsSwitchPortListResponseData0 returns the union data inside the SwitchPortListResponse_Data as a SwitchPortListResponseData0
+func (t SwitchPortListResponse_Data) AsSwitchPortListResponseData0() (SwitchPortListResponseData0, error) {
+	var body SwitchPortListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSwitchPortListResponseData0 overwrites any union data inside the SwitchPortListResponse_Data as the provided SwitchPortListResponseData0
+func (t *SwitchPortListResponse_Data) FromSwitchPortListResponseData0(v SwitchPortListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSwitchPortListResponseData0 performs a merge with any union data inside the SwitchPortListResponse_Data, using the provided SwitchPortListResponseData0
+func (t *SwitchPortListResponse_Data) MergeSwitchPortListResponseData0(v SwitchPortListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSwitchPortListResponseData1 returns the union data inside the SwitchPortListResponse_Data as a SwitchPortListResponseData1
+func (t SwitchPortListResponse_Data) AsSwitchPortListResponseData1() (SwitchPortListResponseData1, error) {
+	var body SwitchPortListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSwitchPortListResponseData1 overwrites any union data inside the SwitchPortListResponse_Data as the provided SwitchPortListResponseData1
+func (t *SwitchPortListResponse_Data) FromSwitchPortListResponseData1(v SwitchPortListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSwitchPortListResponseData1 performs a merge with any union data inside the SwitchPortListResponse_Data, using the provided SwitchPortListResponseData1
+func (t *SwitchPortListResponse_Data) MergeSwitchPortListResponseData1(v SwitchPortListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SwitchPortListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *SwitchPortListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

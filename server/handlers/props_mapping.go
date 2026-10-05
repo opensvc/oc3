@@ -11,6 +11,10 @@ type propDef struct {
 	Col     *schema.Col
 	SQLExpr string
 	Kind    string
+	// FilterExpr is what a column filter on the prop compares, when it is not the
+	// column itself: the message of a log event, say, whose text is split between
+	// a format and the values filling it.
+	FilterExpr string
 }
 
 func (p propDef) selectExpr() string {
@@ -21,6 +25,12 @@ func (p propDef) selectExpr() string {
 		return p.Col.Qualified()
 	}
 	return ""
+}
+
+// clusterListCol is a computed column of the clusters list, which names its derived
+// table after the clusters table.
+func clusterListCol(name string) *schema.Col {
+	return &schema.Col{T: schema.TClusters, Name: name, Nullable: true}
 }
 
 func col(c *schema.Col) propDef {
@@ -51,6 +61,23 @@ type propMapping struct {
 	// Joins declares joinable tables. A prop "table.column" is valid when "table"
 	// is a key in Joins and "column" is listed in JoinDef.Columns.
 	Joins map[string]JoinDef
+	// PrimaryKey is the primary key of the main table of the queries, which
+	// buildOrderBy appends to a requested sort so that rows with equal sort values
+	// keep one order and pages neither repeat nor skip rows. Several columns when a
+	// row joins two tables. When nil, the column of the "id" prop, if any.
+	PrimaryKey []*schema.Col
+}
+
+// primaryKey returns the columns ending a requested sort: PrimaryKey, or else the
+// column of the "id" prop; none when the mapping has neither.
+func (m propMapping) primaryKey() []*schema.Col {
+	if len(m.PrimaryKey) > 0 {
+		return m.PrimaryKey
+	}
+	if def, ok := m.Props["id"]; ok && def.Col != nil {
+		return []*schema.Col{def.Col}
+	}
+	return nil
 }
 
 var propsMapping = map[string]propMapping{
@@ -91,7 +118,33 @@ var propsMapping = map[string]propMapping{
 			"cluster_name": colStr(schema.ClustersClusterName),
 		},
 	},
+	// The clusters as listed (GET /clusters): the columns of the derived table of
+	// cdb/db_clusters.go, some read from the daemon status the cluster pushed. Apart
+	// from "cluster", the props of the clusters joined to a node, which only has
+	// the table's own columns.
+	"clusterList": {
+		Available: []string{
+			"id", "cluster_id", "cluster_name", "node_count", "svc_count", "agent_versions",
+			"cluster_nodes", "quorum", "frozen", "compat", "listener_port", "cluster_updated",
+		},
+		Props: map[string]propDef{
+			"id":              col(schema.ClustersID),
+			"cluster_id":      colStr(schema.ClustersClusterID),
+			"cluster_name":    colStr(schema.ClustersClusterName),
+			"node_count":      colInt(clusterListCol("node_count")),
+			"svc_count":       colInt(clusterListCol("svc_count")),
+			"agent_versions":  colStr(clusterListCol("agent_versions")),
+			"cluster_nodes":   colStr(clusterListCol("cluster_nodes")),
+			"quorum":          colInt(clusterListCol("quorum")),
+			"frozen":          colInt(clusterListCol("frozen")),
+			"compat":          colInt(clusterListCol("compat")),
+			"listener_port":   colInt(clusterListCol("listener_port")),
+			"cluster_updated": colStr(clusterListCol("cluster_updated")),
+		},
+	},
 	"node": {
+		// node_id is unique too, but id is the key of the table.
+		PrimaryKey: []*schema.Col{schema.NodesID},
 		Available: []string{
 			"node_id", "nodename", "app", "node_env", "cluster_id",
 			"loc_country", "loc_city", "loc_addr", "loc_building", "loc_floor", "loc_room", "loc_rack", "loc_zip",
@@ -198,6 +251,8 @@ var propsMapping = map[string]propMapping{
 		},
 	},
 	"disk": {
+		// A disk used by several services is one row per service (svcdisks).
+		PrimaryKey: []*schema.Col{schema.DiskinfoID, schema.SvcdisksID},
 		Available: []string{
 			"disk_id", "disk_name", "disk_devid", "disk_vendor", "disk_model",
 			"disk_size", "disk_used", "disk_alloc", "disk_raid", "disk_group",
@@ -325,6 +380,34 @@ var propsMapping = map[string]propMapping{
 			"nodes": {MappingKey: "node"},
 		},
 	},
+	// The ports of the SAN switches, read from the v_switches view, which adds to the
+	// switches table what is plugged on the other end of each port: sw_rname, the
+	// name of a node, an array or another switch, and node_id when it is a node. The
+	// numbers stay null when the switch does not report them: slot 0 is a slot.
+	"switch": {
+		Available: []string{
+			"id", "sw_fabric", "sw_name", "sw_index", "sw_slot", "sw_port", "sw_portspeed",
+			"sw_portnego", "sw_porttype", "sw_portstate", "sw_portname", "sw_rportname",
+			"sw_rname", "node_id", "sw_updated",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.VSwitchesID),
+			"sw_fabric":    colStr(schema.VSwitchesSwFabric),
+			"sw_name":      colStr(schema.VSwitchesSwName),
+			"sw_index":     col(schema.VSwitchesSwIndex),
+			"sw_slot":      col(schema.VSwitchesSwSlot),
+			"sw_port":      col(schema.VSwitchesSwPort),
+			"sw_portspeed": col(schema.VSwitchesSwPortspeed),
+			"sw_portnego":  colStr(schema.VSwitchesSwPortnego),
+			"sw_porttype":  colStr(schema.VSwitchesSwPorttype),
+			"sw_portstate": colStr(schema.VSwitchesSwPortstate),
+			"sw_portname":  colStr(schema.VSwitchesSwPortname),
+			"sw_rportname": colStr(schema.VSwitchesSwRportname),
+			"sw_rname":     colStr(schema.VSwitchesSwRname),
+			"node_id":      colStr(schema.VSwitchesNodeID),
+			"sw_updated":   colStr(schema.VSwitchesSwUpdated),
+		},
+	},
 	"hba": {
 		Available: []string{"id", "node_id", "hba_id", "hba_type", "updated"},
 		Props: map[string]propDef{
@@ -362,6 +445,8 @@ var propsMapping = map[string]propMapping{
 			"description":  colStr(schema.AppsDescription),
 		},
 	},
+	// Read from the v_obsolescence view, declared in schema/views.go: its columns
+	// give the props a column to sort and filter on.
 	"obsolescence": {
 		Available: []string{
 			"id", "obs_type", "obs_name", "obs_warn_date", "obs_alert_date",
@@ -369,16 +454,16 @@ var propsMapping = map[string]propMapping{
 			"obs_warn_date_updated", "obs_alert_date_updated", "obs_count",
 		},
 		Props: map[string]propDef{
-			"id":                        {SQLExpr: "v_obsolescence.id", Kind: "int64"},
-			"obs_type":                  {SQLExpr: "v_obsolescence.obs_type", Kind: "string"},
-			"obs_name":                  {SQLExpr: "v_obsolescence.obs_name", Kind: "string"},
-			"obs_warn_date":             {SQLExpr: "COALESCE(v_obsolescence.obs_warn_date, '')", Kind: "string"},
-			"obs_alert_date":            {SQLExpr: "COALESCE(v_obsolescence.obs_alert_date, '')", Kind: "string"},
-			"obs_warn_date_updated_by":  {SQLExpr: "v_obsolescence.obs_warn_date_updated_by", Kind: "string"},
-			"obs_alert_date_updated_by": {SQLExpr: "v_obsolescence.obs_alert_date_updated_by", Kind: "string"},
-			"obs_warn_date_updated":     {SQLExpr: "v_obsolescence.obs_warn_date_updated", Kind: "string"},
-			"obs_alert_date_updated":    {SQLExpr: "v_obsolescence.obs_alert_date_updated", Kind: "string"},
-			"obs_count":                 {SQLExpr: "v_obsolescence.obs_count", Kind: "int64"},
+			"id":                        {Col: schema.VObsolescenceID, SQLExpr: "v_obsolescence.id", Kind: "int64"},
+			"obs_type":                  {Col: schema.VObsolescenceObsType, SQLExpr: "v_obsolescence.obs_type", Kind: "string"},
+			"obs_name":                  {Col: schema.VObsolescenceObsName, SQLExpr: "v_obsolescence.obs_name", Kind: "string"},
+			"obs_warn_date":             {Col: schema.VObsolescenceObsWarnDate, SQLExpr: "COALESCE(v_obsolescence.obs_warn_date, '')", Kind: "string"},
+			"obs_alert_date":            {Col: schema.VObsolescenceObsAlertDate, SQLExpr: "COALESCE(v_obsolescence.obs_alert_date, '')", Kind: "string"},
+			"obs_warn_date_updated_by":  {Col: schema.VObsolescenceObsWarnDateUpdatedBy, SQLExpr: "v_obsolescence.obs_warn_date_updated_by", Kind: "string"},
+			"obs_alert_date_updated_by": {Col: schema.VObsolescenceObsAlertDateUpdBy, SQLExpr: "v_obsolescence.obs_alert_date_updated_by", Kind: "string"},
+			"obs_warn_date_updated":     {Col: schema.VObsolescenceObsWarnDateUpdated, SQLExpr: "v_obsolescence.obs_warn_date_updated", Kind: "string"},
+			"obs_alert_date_updated":    {Col: schema.VObsolescenceObsAlertDateUpdated, SQLExpr: "v_obsolescence.obs_alert_date_updated", Kind: "string"},
+			"obs_count":                 {Col: schema.VObsolescenceObsCount, SQLExpr: "v_obsolescence.obs_count", Kind: "int64"},
 		},
 	},
 	"auth_group": {
@@ -483,13 +568,17 @@ var propsMapping = map[string]propMapping{
 			"form_yaml":      colStr(schema.FormsRevisionsFormYaml),
 		},
 	},
+	// The users. password, registration_key and reset_password_key are no props:
+	// they are credentials, and a prop can also be filtered and sorted on, which
+	// would let a caller guess a value it cannot read. The reset key alone is
+	// enough to change the password of an account while a reset is pending.
 	"user": {
 		Available: []string{
 			"id", "username", "email", "first_name", "last_name", "phone_work",
 			"im_type", "im_username", "email_notifications", "im_notifications",
 			"email_log_level", "im_log_level", "email_notifications_delay",
 			"im_notifications_delay", "lock_filter", "registration_id",
-			"reset_password_key", "quota_app", "quota_org_group", "quota_docker_registries",
+			"quota_app", "quota_org_group", "quota_docker_registries",
 		},
 		Props: map[string]propDef{
 			"id":                        col(schema.AuthUserID),
@@ -508,7 +597,6 @@ var propsMapping = map[string]propMapping{
 			"im_notifications_delay":    colStr(schema.AuthUserImNotificationsDelay),
 			"lock_filter":               colStr(schema.AuthUserLockFilter),
 			"registration_id":           colStr(schema.AuthUserRegistrationID),
-			"reset_password_key":        colStr(schema.AuthUserResetPasswordKey),
 			"quota_app":                 colStr(schema.AuthUserQuotaApp),
 			"quota_org_group":           colStr(schema.AuthUserQuotaOrgGroup),
 			"quota_docker_registries":   colStr(schema.AuthUserQuotaDockerRegistries),
@@ -562,9 +650,16 @@ var propsMapping = map[string]propMapping{
 			"svc_hostid", "svc_wave", "svc_config", "svc_config_updated",
 			"svc_metrocluster", "svc_drnoaction",
 			"svc_notifications", "svc_snooze_till",
+			"svc_sla", "svc_availability", "svc_availability_updated",
 			"updated",
 		},
 		Props: map[string]propDef{
+			// The availability target in percent; null without SLA.
+			"svc_sla": {Col: schema.ServicesSvcSla, Kind: "float64"},
+			// The availability rate of the last 30 days in percent, stored by the
+			// scheduler; null without status recorded.
+			"svc_availability":            {Col: schema.ServicesSvcAvailability, Kind: "float64"},
+			"svc_availability_updated":    colStr(schema.ServicesSvcAvailabilityUpdated),
 			"id":                          col(schema.ServicesID),
 			"svc_id":                      colStr(schema.ServicesSvcID),
 			"svcname":                     colStr(schema.ServicesSvcname),
@@ -603,6 +698,7 @@ var propsMapping = map[string]propMapping{
 		},
 	},
 	"instance": {
+		PrimaryKey: []*schema.Col{schema.SvcmonID},
 		Available: []string{
 			"svc_id", "node_id",
 			"mon_svctype",
@@ -902,6 +998,15 @@ var propsMapping = map[string]propMapping{
 			"dash_dict_md5": colStr(schema.DashboardDashDictMD5),
 			"dash_env":      colStr(schema.DashboardDashEnv),
 			"dash_instance": colStr(schema.DashboardDashInstance),
+			// Filter-only expressions: the object of an entry is its service, or its
+			// node when it has none, as the Object column of the dashboard shows it;
+			// the message is built from its format and its values after the query,
+			// so it is filtered on both, as stored.
+			"services.svcname": {FilterExpr: "COALESCE(NULLIF(services.svcname, ''), nodes.nodename)"},
+			"alert": {
+				Col:        schema.DashboardDashFmt,
+				FilterExpr: "CONCAT(COALESCE(dashboard.dash_fmt, ''), ' ', COALESCE(dashboard.dash_dict, ''))",
+			},
 		},
 		// A dashboard entry points at a node or a service by id only. The names live
 		// in the joined tables, as in the historical collector's own alert query.
@@ -925,12 +1030,19 @@ var propsMapping = map[string]propMapping{
 			"chk_type":               colStr(schema.ChecksLiveChkType),
 			"chk_instance":           colStr(schema.ChecksLiveChkInstance),
 			"chk_value":              colInt(schema.ChecksLiveChkValue),
-			"chk_low":                colInt(schema.ChecksLiveChkLow),
-			"chk_high":               colInt(schema.ChecksLiveChkHigh),
-			"chk_err":                colInt(schema.ChecksLiveChkErr),
+			// A check without thresholds has none, not thresholds of 0,
+			// and its error state is null then.
+			"chk_low":                col(schema.ChecksLiveChkLow),
+			"chk_high":               col(schema.ChecksLiveChkHigh),
+			"chk_err":                col(schema.ChecksLiveChkErr),
 			"chk_threshold_provider": colStr(schema.ChecksLiveChkThresholdProvider),
 			"chk_created":            colStr(schema.ChecksLiveChkCreated),
 			"chk_updated":            colStr(schema.ChecksLiveChkUpdated),
+		},
+		// A check points at its object by id only, the name lives in the
+		// joined table.
+		Joins: map[string]JoinDef{
+			"services": {MappingKey: "service"},
 		},
 	},
 	"resource": {
@@ -960,6 +1072,40 @@ var propsMapping = map[string]propMapping{
 			"vmname":       colStr(schema.ResmonVmname),
 			"changed":      colStr(schema.ResmonChanged),
 			"updated":      colStr(schema.ResmonUpdated),
+		},
+	},
+	// The resources of every instance (GET /resources), with the names of their
+	// service and node, joined by that list only: the resources of one service read
+	// the resmon table alone (mapping "resource").
+	"resourceList": {
+		Available: []string{
+			"id", "svc_id", "node_id", "vmname", "rid", "res_type", "res_status",
+			"res_desc", "res_log", "res_monitor", "res_disable", "res_optional",
+			"changed", "updated",
+		},
+		Default: []string{
+			"id", "svc_id", "node_id", "vmname", "rid", "res_type", "res_status",
+			"res_desc", "res_monitor", "res_disable", "res_optional", "updated",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.ResmonID),
+			"svc_id":       colStr(schema.ResmonSvcID),
+			"node_id":      colStr(schema.ResmonNodeID),
+			"vmname":       colStr(schema.ResmonVmname),
+			"rid":          colStr(schema.ResmonRid),
+			"res_type":     colStr(schema.ResmonResType),
+			"res_status":   colStr(schema.ResmonResStatus),
+			"res_desc":     colStr(schema.ResmonResDesc),
+			"res_log":      colStr(schema.ResmonResLog),
+			"res_monitor":  colStr(schema.ResmonResMonitor),
+			"res_disable":  colStr(schema.ResmonResDisable),
+			"res_optional": colStr(schema.ResmonResOptional),
+			"changed":      colStr(schema.ResmonChanged),
+			"updated":      colStr(schema.ResmonUpdated),
+		},
+		Joins: map[string]JoinDef{
+			"services": {MappingKey: "service"},
+			"nodes":    {MappingKey: "node"},
 		},
 	},
 	"resource_log": {
@@ -1010,6 +1156,43 @@ var propsMapping = map[string]propMapping{
 			"rset_md5":   colStr(schema.CompStatusRsetMD5),
 		},
 	},
+	// The charts: time series of historized metrics, defined in YAML.
+	"chart": {
+		Available: []string{"id", "chart_name", "chart_yaml"},
+		Props: map[string]propDef{
+			"id":         col(schema.ChartsID),
+			"chart_name": colStr(schema.ChartsChartName),
+			"chart_yaml": colStr(schema.ChartsChartYaml),
+		},
+	},
+	// The reports: pages of charts and metrics, defined in YAML.
+	"report": {
+		Available: []string{"id", "report_name", "report_yaml"},
+		Props: map[string]propDef{
+			"id":          col(schema.ReportsID),
+			"report_name": colStr(schema.ReportsReportName),
+			"report_yaml": colStr(schema.ReportsReportYaml),
+		},
+	},
+	// The metrics: SQL requests feeding the charts and the reports.
+	"metric": {
+		Available: []string{
+			"id", "metric_name", "metric_sql", "metric_author", "metric_created",
+			"metric_col_value_index", "metric_col_instance_index",
+			"metric_col_instance_label", "metric_historize",
+		},
+		Props: map[string]propDef{
+			"id":                        col(schema.MetricsID),
+			"metric_name":               colStr(schema.MetricsMetricName),
+			"metric_sql":                colStr(schema.MetricsMetricSql),
+			"metric_author":             colStr(schema.MetricsMetricAuthor),
+			"metric_created":            colStr(schema.MetricsMetricCreated),
+			"metric_col_value_index":    col(schema.MetricsMetricColValueIndex),
+			"metric_col_instance_index": col(schema.MetricsMetricColInstanceIndex),
+			"metric_col_instance_label": colStr(schema.MetricsMetricColInstanceLabel),
+			"metric_historize":          colStr(schema.MetricsMetricHistorize),
+		},
+	},
 	"filter": {
 		Available: []string{
 			"id", "f_table", "f_field", "f_value", "f_op",
@@ -1040,6 +1223,8 @@ var propsMapping = map[string]propMapping{
 		},
 	},
 	"filterset_filter": {
+		// The rows are the filterset's entries; the "id" prop is the filter's.
+		PrimaryKey: []*schema.Col{schema.GenFiltersetsFiltersID},
 		Available: []string{
 			"id", "f_table", "f_field", "f_value", "f_op",
 			"f_updated", "f_author", "f_cksum", "f_label",
@@ -1092,19 +1277,30 @@ var propsMapping = map[string]propMapping{
 	},
 	"log_event": {
 		Available: []string{
-			"id", "log_action", "log_user", "log_fmt", "log_dict", "log_date",
+			"id", "log_action", "log_user", "log_impersonator", "log_fmt", "log_dict", "log_date",
 			"svc_id", "node_id", "log_level", "log_entry_id",
 			"log_gtalk_sent", "log_email_sent",
 		},
 		Default: []string{
-			"id", "log_action", "log_user", "log_fmt", "log_date",
+			"id", "log_action", "log_user", "log_impersonator", "log_fmt", "log_date",
 			"svc_id", "node_id", "log_level",
 		},
 		Props: map[string]propDef{
-			"id":             col(schema.LogID),
-			"log_action":     colStr(schema.LogLogAction),
-			"log_user":       colStr(schema.LogLogUser),
-			"log_fmt":        colStr(schema.LogLogFmt),
+			"id":         col(schema.LogID),
+			"log_action": colStr(schema.LogLogAction),
+			"log_user":   colStr(schema.LogLogUser),
+			// The user who really signed in when log_user was impersonated; empty
+			// otherwise.
+			"log_impersonator": colStr(schema.LogLogImpersonator),
+			// Filtered on the format and its values together: the message shown is
+			// the format filled with the values, and a node or tag name typed in the
+			// filter is among the values.
+			"log_fmt": {
+				Col:        schema.LogLogFmt,
+				SQLExpr:    "COALESCE(log.log_fmt, '')",
+				Kind:       "string",
+				FilterExpr: "CONCAT_WS(' ', log.log_fmt, log.log_dict)",
+			},
 			"log_dict":       colStr(schema.LogLogDict),
 			"log_date":       colStr(schema.LogLogDate),
 			"svc_id":         colStr(schema.LogSvcID),

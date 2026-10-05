@@ -371,7 +371,11 @@ func (oDb *DB) GetObsolescenceSettings(ctx context.Context, p ListParams) ([]map
 	}
 	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
 		" FROM v_obsolescence WHERE v_obsolescence.id > 0"
-	args := []any{}
+	// Column filters of the request.
+	filterConds, args := p.FilterConditions()
+	for _, cond := range filterConds {
+		query += " AND " + cond
+	}
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}

@@ -51,7 +51,6 @@ const (
 
 var (
 	Tasks = TaskList{
-		TaskChecks,
 		TaskSysreport,
 		TaskRefreshBActionErrors,
 		TaskAlertUpdateActionErrors,
@@ -66,6 +65,7 @@ var (
 		TaskAlert1H,
 		TaskAlert1D,
 		TaskMetrics,
+		TaskServicesAvailability,
 	}
 
 	taskExecCounter = promauto.NewCounterVec(

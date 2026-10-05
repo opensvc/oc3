@@ -27,10 +27,13 @@ func (a *Api) deleteAppPublication(c echo.Context, handlerName, appId, groupId s
 		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
 	}
 
-	isManager := IsManager(c)
-	if !isManager {
+	// AppManager, as check_privilege("AppManager") of the historical collector,
+	// a Manager having every privilege; the responsibility of the app is checked
+	// below.
+	if !IsAppManager(c) {
 		return JSONProblemf(c, http.StatusForbidden, "AppManager privilege required")
 	}
+	isManager := IsManager(c)
 
 	log.Info("called", "app_id", appId, "group_id", groupId)
 

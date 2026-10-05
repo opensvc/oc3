@@ -12,6 +12,7 @@ type listMeta struct {
 	Count          int            `json:"count,omitempty"`
 	AvailableProps []string       `json:"available_props,omitempty"`
 	Distinct       map[string]int `json:"distinct,omitempty"`
+	Other          map[string]int `json:"other,omitempty"`
 	IncludedProps  []string       `json:"included_props,omitempty"`
 	Limit          int            `json:"limit,omitempty"`
 	Offset         int            `json:"offset,omitempty"`
@@ -95,18 +96,23 @@ func buildStatsData(items []map[string]any, props []string) (map[string]map[stri
 	return statsData, distinct
 }
 
-func newListResponse(items []map[string]any, mapping propMapping, query ListQueryParameters) listResponse {
-	if query.WithStats {
-		statsData, distinct := buildStatsData(items, query.Props)
-		return listResponse{
-			Data: statsData,
-			Meta: &listMeta{
-				Distinct: distinct,
-				Total:    intPtr(len(items)),
-			},
-		}
+// newStatsResponse counts the values of props over items, the whole selection of
+// a list whose pipeline does not go through handleList; limit > 0 keeps the most
+// frequent values of each prop. See listStats.
+func newStatsResponse(items []map[string]any, props []string, limit int) listResponse {
+	values, distinct := buildStatsData(items, props)
+	other := make(map[string]int, len(props))
+	for _, prop := range props {
+		values[prop] = topValues(values[prop], limit)
+		other[prop] = len(items) - sumCounts(values[prop])
 	}
+	return listResponse{
+		Data: values,
+		Meta: &listMeta{Distinct: distinct, Other: other, Total: intPtr(len(items))},
+	}
+}
 
+func newListResponse(items []map[string]any, mapping propMapping, query ListQueryParameters) listResponse {
 	response := listResponse{
 		Data: items,
 	}

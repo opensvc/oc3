@@ -7,6 +7,8 @@ import (
 	"github.com/shaj13/go-guardian/v2/auth"
 	"github.com/shaj13/go-guardian/v2/auth/strategies/union"
 
+	"github.com/opensvc/oc3/util/echolog"
+	"github.com/opensvc/oc3/util/logkey"
 	"github.com/opensvc/oc3/xauth"
 )
 
@@ -31,6 +33,11 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			_, user, err := strategies.AuthenticateRequest(c.Request())
+			if err != nil && xauth.IsUnavailable(err) {
+				// A database failure is not a wrong password: say so, and log it.
+				echolog.GetLog(c).Error("cannot authenticate", logkey.Error, err)
+				return JSONProblem(c, http.StatusServiceUnavailable, "authentication is unavailable, the database cannot be reached; retry later")
+			}
 
 			if err != nil {
 				code := http.StatusUnauthorized
@@ -114,8 +121,16 @@ func IsCompManager(c echo.Context) bool {
 	return IsManager(c) || HasGroup(c, "CompManager")
 }
 
+func IsAppManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "AppManager")
+}
+
 func IsAlertsManager(c echo.Context) bool {
 	return IsManager(c) || HasGroup(c, "AlertsManager")
+}
+
+func IsReportsManager(c echo.Context) bool {
+	return IsManager(c) || HasGroup(c, "ReportsManager")
 }
 
 func IsObsManager(c echo.Context) bool {

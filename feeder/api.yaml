@@ -8,26 +8,6 @@ info:
   version: 3.0.5
 
 paths:
-  /checks:
-    post:
-      description: |
-        Push checks
-      operationId: PostChecks
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PostChecks'
-      responses:
-        200:
-          description: OK
-      security:
-        - basicAuth: [ ]
-        - bearerAuth: [ ]
-      tags:
-        - checks
-
   /daemon/ping:
     post:
       description: |
@@ -161,6 +141,27 @@ paths:
       tags:
         - agent
 
+  /node/checks:
+    post:
+      description: |
+        Replace the checks of the node with the results of its check
+        drivers: the checks the node no longer reports are removed.
+      operationId: PostNodeChecks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeChecks'
+      responses:
+        202:
+          description: the checks of the node will be refreshed
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /node/disk:
     post:
       description: |
@@ -175,6 +176,44 @@ paths:
       responses:
         202:
           description: node disks configuration will be refreshed
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
+  /node/stats:
+    post:
+      description: |
+        Store the performance statistics of the node, as the historical collector
+        stored the ones pushed by the agent pushstats action (insert_stats): one
+        whisper file per metric under stats/nodes/<node_id>/<group>, with one
+        directory per cpu, device, interface or mount point for the groups
+        having one. The agent sends, per group, the columns and the rows sar or
+        its own probes gave. The values are written at once: a successful answer
+        tells what was stored.
+      operationId: PostNodeStats
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeStats'
+      responses:
+        200:
+          description: the statistics are stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeStatsStored'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
@@ -647,6 +686,98 @@ components:
         status:
           type: string
 
+    NodeStats:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          description: |
+            The statistics, by group: cpu, mem_u, swap, proc, block, blockdev,
+            netdev, netdev_err, fs_u, svc. An unknown group is refused.
+          additionalProperties:
+            $ref: '#/components/schemas/NodeStatsGroup'
+
+    NodeStatsGroup:
+      type: object
+      required:
+        - columns
+        - rows
+      properties:
+        columns:
+          type: array
+          description: |
+            The names of the values of each row. The "date" column dates the
+            row; the cpu, dev, mntpt or svcname column, for the groups having
+            one, says the directory it goes in; nodename is ignored; every other
+            column is a metric.
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: array
+            description: |
+              The values, in the order of the columns. The date is RFC 3339, or
+              "YYYY-MM-DD HH:MM:SS" in the collector time zone as the historical
+              agent sends it; a metric value that is not a number is skipped.
+            items:
+              type: string
+
+    NodeStatsStored:
+      type: object
+      required:
+        - series
+        - points
+      properties:
+        series:
+          type: integer
+          description: The whisper files written.
+        points:
+          type: integer
+          description: The values written.
+        skipped:
+          type: array
+          description: What was not stored, and why.
+          items:
+            type: string
+
+    NodeChecks:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeCheck'
+
+    NodeCheck:
+      type: object
+      required:
+        - type
+        - instance
+        - value
+      properties:
+        type:
+          type: string
+          description: The type of the check, as fs_u or mpath.
+        driver:
+          type: string
+          description: The driver of the check type that reported it.
+        path:
+          type: string
+          description: The object the check is attributed to, empty for the node.
+        instance:
+          type: string
+          description: What the check measures, as a mount point or a wwid.
+        unit:
+          type: string
+        value:
+          type: integer
+          format: int64
+
     NodeDisks:
       type: object
       properties:
@@ -873,22 +1004,6 @@ components:
             the archive holds every file and command output of the node: the
             ones the collector holds for the node and the archive does not
             are removed
-
-    PostChecks:
-      type: object
-      required:
-        - vars
-        - vals
-      properties:
-        vars:
-          type: array
-          items:
-            type: string
-        vals:
-          type: array
-          items:
-            type: array
-            items: {}
 
   parameters:
     ObjectPathHeader:

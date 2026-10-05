@@ -7,6 +7,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -54,6 +55,36 @@ func (s *T) pub(e *event) error {
 
 	if _, err := io.ReadAll(resp.Body); err != nil {
 		return err
+	}
+	return nil
+}
+
+// RegisterToken announces a one-time token to the messenger: the websocket
+// client presenting it is let in when the messenger requires tokens, as the
+// historical collector did for its comet server. The token is signed like an
+// event.
+func (s *T) RegisterToken(token string) error {
+	h := hmac.New(md5.New, s.Key)
+	if _, err := h.Write([]byte(token)); err != nil {
+		return err
+	}
+	params := url.Values{}
+	params.Add("message", token)
+	params.Add("signature", hex.EncodeToString(h.Sum(nil)))
+	endpoint, err := url.JoinPath(s.Url, "token")
+	if err != nil {
+		return err
+	}
+	resp, err := http.PostForm(endpoint, params)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	_, _ = io.Copy(io.Discard, resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("messenger refused the token: %s", resp.Status)
 	}
 	return nil
 }

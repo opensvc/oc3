@@ -22,15 +22,22 @@ type Tag struct {
 
 // GetTags returns all tags with id > 0, or a specific tag if tagID is provided
 // CountTags returns the number of tags, for the total of the paginated tag list.
-func (oDb *DB) CountTags(ctx context.Context) (int, error) {
+// CountTags counts the tags matching the column filters.
+func (oDb *DB) CountTags(ctx context.Context, filters []ColumnFilter) (int, error) {
 	var n int
-	if err := oDb.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM tags WHERE id > 0").Scan(&n); err != nil {
+	query := "SELECT COUNT(*) FROM tags WHERE id > 0"
+	conds, args := ListParams{Filters: filters}.FilterConditions()
+	for _, cond := range conds {
+		query += " AND " + cond
+	}
+	if err := oDb.DB.QueryRowContext(ctx, query, args...).Scan(&n); err != nil {
 		return 0, fmt.Errorf("countTags: %w", err)
 	}
 	return n, nil
 }
 
-func (oDb *DB) GetTags(ctx context.Context, tagID *int, limit, offset int) ([]Tag, error) {
+// GetTags returns the tags matching the column filters, or the one tag of tagID.
+func (oDb *DB) GetTags(ctx context.Context, tagID *int, filters []ColumnFilter, limit, offset int) ([]Tag, error) {
 	query := `
 		SELECT id, tag_name, tag_created, tag_exclude, tag_data, tag_id
 		FROM tags
@@ -42,6 +49,11 @@ func (oDb *DB) GetTags(ctx context.Context, tagID *int, limit, offset int) ([]Ta
 		query += " AND id = ?"
 		args = append(args, *tagID)
 	}
+	conds, filterArgs := ListParams{Filters: filters}.FilterConditions()
+	for _, cond := range conds {
+		query += " AND " + cond
+	}
+	args = append(args, filterArgs...)
 
 	query += " ORDER BY tag_name, id"
 	if tagID == nil {
@@ -535,6 +547,8 @@ func (oDb *DB) GetTagsNodes(ctx context.Context, p ListParams) ([]map[string]any
 	} else {
 		q = q.Where(schema.NodeTagsID, ">", 0)
 	}
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(p.Filters)
 	query, args, err := q.Build()
 	if err != nil {
 		return nil, fmt.Errorf("GetTagsNodes build: %w", err)
@@ -573,6 +587,8 @@ func (oDb *DB) GetTagsServices(ctx context.Context, p ListParams) ([]map[string]
 	} else {
 		q = q.Where(schema.SvcTagsID, ">", 0)
 	}
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(p.Filters)
 	query, args, err := q.Build()
 	if err != nil {
 		return nil, fmt.Errorf("GetTagsServices build: %w", err)

@@ -43,7 +43,7 @@ func (a *Api) GetFormsStore(c echo.Context, params server.GetFormsStoreParams) e
 	return a.handleList(c, "GetFormsStore", "form_store", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
-		filter: params.Filter, virtual: formDefinitionProp,
+		filter: params.Filter, virtual: formDefinitionProp, withUserID: true,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetFormsStore(ctx, nil, p)
 	})
@@ -55,15 +55,16 @@ func (a *Api) GetFormStore(c echo.Context, storeId int, params server.GetFormSto
 	return a.handleList(c, "GetFormStore", "form_store", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
-		filter: params.Filter, virtual: formDefinitionProp,
+		filter: params.Filter, virtual: formDefinitionProp, withUserID: true,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetFormsStore(ctx, &id, p)
 	})
 }
 
 // defaultRows reads rows with the default props of a mapping, virtual props
-// computed, for the handlers answering with records they assemble.
-func (a *Api) defaultRows(ctx context.Context, mappingKey string, virtual map[string]virtualProp, fetch listFetcher) ([]map[string]any, error) {
+// computed, for the handlers answering with records they assemble, with the
+// rights of access (IsManager, UserID).
+func (a *Api) defaultRows(ctx context.Context, mappingKey string, virtual map[string]virtualProp, access cdb.ListParams, fetch listFetcher) ([]map[string]any, error) {
 	mapping := propsMapping[mappingKey]
 	query, err := buildListQueryParameters(nil, nil, nil, nil, nil, nil, nil, mapping)
 	if err != nil {
@@ -75,7 +76,8 @@ func (a *Api) defaultRows(ctx context.Context, mappingKey string, virtual map[st
 		return nil, err
 	}
 	items, err := fetch(ctx, cdb.ListParams{
-		IsManager: true, Props: fetchProps, SelectExprs: selectExprs,
+		IsManager: access.IsManager, UserID: access.UserID, Groups: access.Groups,
+		Props: fetchProps, SelectExprs: selectExprs,
 		TypeHints: buildTypeHints(fetchProps, mapping),
 	})
 	if err != nil {
@@ -85,8 +87,9 @@ func (a *Api) defaultRows(ctx context.Context, mappingKey string, virtual map[st
 	return items, nil
 }
 
-func (a *Api) storedForm(ctx context.Context, id int64) (map[string]any, error) {
-	rows, err := a.defaultRows(ctx, "form_store", formDefinitionProp, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
+// storedForm reads a stored form the caller may read, nil otherwise.
+func (a *Api) storedForm(ctx context.Context, access cdb.ListParams, id int64) (map[string]any, error) {
+	rows, err := a.defaultRows(ctx, "form_store", formDefinitionProp, access, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetFormsStore(ctx, &id, p)
 	})
 	if err != nil || len(rows) == 0 {
@@ -114,8 +117,8 @@ func asInt64(v any) (int64, bool) {
 
 // workflowDump returns a workflow with its head and tail stored forms, as
 // /workflows/{id}/dump does in the historical collector.
-func (a *Api) workflowDump(ctx context.Context, workflowID int64) (map[string]any, error) {
-	rows, err := a.defaultRows(ctx, "workflow", nil, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
+func (a *Api) workflowDump(ctx context.Context, access cdb.ListParams, workflowID int64) (map[string]any, error) {
+	rows, err := a.defaultRows(ctx, "workflow", nil, access, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetWorkflows(ctx, &workflowID, "", p)
 	})
 	if err != nil || len(rows) == 0 {
@@ -123,12 +126,12 @@ func (a *Api) workflowDump(ctx context.Context, workflowID int64) (map[string]an
 	}
 	wf := rows[0]
 	if headID, ok := asInt64(wf["form_head_id"]); ok {
-		if wf["head"], err = a.storedForm(ctx, headID); err != nil {
+		if wf["head"], err = a.storedForm(ctx, access, headID); err != nil {
 			return nil, err
 		}
 	}
 	if lastID, ok := asInt64(wf["last_form_id"]); ok {
-		if wf["tail"], err = a.storedForm(ctx, lastID); err != nil {
+		if wf["tail"], err = a.storedForm(ctx, access, lastID); err != nil {
 			return nil, err
 		}
 	}
@@ -140,7 +143,9 @@ func (a *Api) workflowDump(ctx context.Context, workflowID int64) (map[string]an
 func (a *Api) GetFormStoreDump(c echo.Context, storeId int) error {
 	log := echolog.GetLogHandler(c, "GetFormStoreDump")
 	ctx := c.Request().Context()
-	stored, err := a.storedForm(ctx, int64(storeId))
+	// Read with the caller's rights: a request they take no part in is not found.
+	access := cdb.ListParams{IsManager: IsManager(c), UserID: authUserID(c)}
+	stored, err := a.storedForm(ctx, access, int64(storeId))
 	if err != nil {
 		return httpProblem(c, httpInternal(log, "cannot read the stored form", err))
 	}
@@ -153,7 +158,7 @@ func (a *Api) GetFormStoreDump(c echo.Context, storeId int) error {
 			return httpProblem(c, httpInternal(log, "cannot read the workflow", err))
 		}
 		if found {
-			if stored["workflow"], err = a.workflowDump(ctx, workflowID); err != nil {
+			if stored["workflow"], err = a.workflowDump(ctx, access, workflowID); err != nil {
 				return httpProblem(c, httpInternal(log, "cannot read the workflow", err))
 			}
 		}

@@ -3,6 +3,7 @@ package xauth
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -36,6 +37,9 @@ const (
 func NewBasicNode(db *sql.DB) auth.Strategy {
 	authFunc := func(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {
 		u, err := authenticateNode(ctx, db, userName, password)
+		if errors.Is(err, ErrUnavailable) {
+			return nil, err
+		}
 		if err != nil {
 			return nil, fmt.Errorf("invalid credentials")
 		}
@@ -49,8 +53,12 @@ func authenticateNode(ctx context.Context, db *sql.DB, nodename, password string
 	err := db.
 		QueryRowContext(ctx, queryAuthNode, nodename, password).
 		Scan(&node.id, &node.app, &node.clusterID, &node.nodeName)
-	if err != nil {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("invalid Credentials for node %s", nodename)
+	}
+	if err != nil {
+		// The database could not answer: the credentials are not known to be wrong.
+		return nil, fmt.Errorf("%w: %w", ErrUnavailable, err)
 	}
 	return &node, nil
 }

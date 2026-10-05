@@ -35,22 +35,42 @@ func (t *server) Section() string { return t.section }
 
 func (t *server) apiRegister(e *echo.Echo) {
 	odb := cdb.New(t.db)
-	odb.CreateSession(nil)
-	api.RegisterHandlersWithBaseURL(e, &handlers.Api{
+	handler := &handlers.Api{
 		DB:          t.db,
 		ODB:         odb,
 		Redis:       t.redis,
 		UI:          viper.GetBool(t.section + ".ui.enable"),
 		SyncTimeout: viper.GetDuration(t.section + ".sync.timeout"),
 		SubSystem:   t.section,
-	}, pathApi)
+	}
+	// With a messenger, the changes made through the api are announced like those
+	// of the workers, and the websocket clients get their tokens from the api.
+	if viper.GetString("messenger.url") != "" {
+		ev := newEv()
+		odb.CreateSession(ev)
+		handler.Ev = ev
+		handler.Realtime = ev
+	} else {
+		odb.CreateSession(nil)
+	}
+	api.RegisterHandlersWithBaseURL(e, handler, pathApi)
 }
 
 func (t *server) docMiddleware() echo.MiddlewareFunc {
 	return handlers.UIMiddleware(context.Background(), pathApi, pathSpec)
 }
 
+// authMiddleware authenticates the request, then lets a member of the
+// Manager make it as another user.
 func (t *server) authMiddleware(publicPath, publicPrefix []string) echo.MiddlewareFunc {
+	authenticate := t.authenticateMiddleware(publicPath, publicPrefix)
+	impersonate := handlers.ImpersonateMiddleware(t.db)
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return authenticate(impersonate(next))
+	}
+}
+
+func (t *server) authenticateMiddleware(publicPath, publicPrefix []string) echo.MiddlewareFunc {
 	return handlers.AuthMiddleware(union.New(
 		xauth.NewPublicStrategy(publicPath, publicPrefix),
 		xauth.NewAnonRegister(),

@@ -219,7 +219,11 @@ func (oDb *DB) GetFilters(ctx context.Context, p ListParams) ([]map[string]any, 
 	}
 	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
 		" FROM gen_filters WHERE gen_filters.id > 0"
-	args := []any{}
+	// Column filters of the request.
+	filterConds, args := p.FilterConditions()
+	for _, cond := range filterConds {
+		query += " AND " + cond
+	}
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}

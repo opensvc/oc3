@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/opensvc/oc3/schema"
 )
 
 // GetServiceResourceLogs returns the resmon_log entries for a given service
@@ -193,4 +195,76 @@ func (oDb *DB) GetServiceNodeResources(ctx context.Context, svcID, nodeID string
 	defer func() { _ = rows.Close() }()
 
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// buildResourcesQuery lists the resources of the service instances, each with its
+// service, and its node when the node row exists, as the historical resources
+// view does. A non-manager sees the resources of the services of an app their
+// groups are responsible for.
+func buildResourcesQuery(groups []string, isManager bool, selectExprs []string, filters []ColumnFilter) (string, []any, error) {
+	// services is an inner join: the access check filters on services.svc_app.
+	q := From(schema.TResmon).
+		Via(schema.TServices).
+		LeftJoin(schema.TNodes).
+		RawSelect(selectExprs...)
+	if !isManager {
+		clean := cleanGroups(groups)
+		if len(clean) == 0 {
+			q = q.WhereRaw("1=0")
+		} else {
+			q = q.WhereRaw(
+				"services.svc_app IN ("+
+					"SELECT a.app FROM apps a"+
+					" JOIN apps_responsibles ar ON ar.app_id = a.id"+
+					" JOIN auth_group ag ON ag.id = ar.group_id"+
+					" WHERE ag.role IN ("+Placeholders(len(clean))+"))",
+				stringsToAny(clean)...,
+			)
+		}
+	} else {
+		q = q.Where(schema.ResmonID, ">", 0)
+	}
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(filters)
+	query, args, err := q.Build()
+	if err != nil {
+		return "", nil, fmt.Errorf("buildResourcesQuery: %w", err)
+	}
+	return query, args, nil
+}
+
+func (oDb *DB) queryResources(ctx context.Context, id string, p ListParams) ([]map[string]any, error) {
+	defer logDuration("getResources", time.Now())
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getResources: no select expressions")
+	}
+	filters := p.Filters
+	if id != "" {
+		filters = append(append([]ColumnFilter{}, filters...), ColumnFilter{Col: schema.ResmonID, Expr: "resmon.id = ?", Args: []any{id}})
+	}
+	query, args, err := buildResourcesQuery(p.Groups, p.IsManager, p.SelectExprs, filters)
+	if err != nil {
+		return nil, err
+	}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("services.svcname, nodes.nodename, resmon.vmname, resmon.rid, resmon.id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getResources: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// GetResources returns the resources the caller may see.
+func (oDb *DB) GetResources(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	return oDb.queryResources(ctx, "", p)
+}
+
+// GetResource returns one resource, by its record id, if the caller may see it.
+func (oDb *DB) GetResource(ctx context.Context, id string, p ListParams) ([]map[string]any, error) {
+	return oDb.queryResources(ctx, id, p)
 }

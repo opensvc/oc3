@@ -22,6 +22,11 @@ func AuthMiddleware(strategies union.Union) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			_, user, err := strategies.AuthenticateRequest(c.Request())
+			if err != nil && xauth.IsUnavailable(err) {
+				// A database failure is not a wrong password: say so, and log it.
+				echolog.GetLog(c).Error("cannot authenticate", logkey.Error, err)
+				return JSONProblem(c, http.StatusServiceUnavailable, "authentication is unavailable, the database cannot be reached; retry later")
+			}
 			if err != nil {
 				code := http.StatusUnauthorized
 				return JSONProblem(c, code, err.Error())

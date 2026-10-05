@@ -1,6 +1,12 @@
 package serverhandlers
 
-import "github.com/opensvc/oc3/server"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/opensvc/oc3/server"
+)
 
 type serviceBodyFields struct {
 	Svcname              *string
@@ -26,6 +32,9 @@ type serviceBodyFields struct {
 	SvcPlacement         *string
 	SvcNotifications     *bool
 	SvcSnoozeTill        *string
+	// SvcSla is the availability target in percent, "" to remove it; checked by
+	// parseSLA before reaching the fields.
+	SvcSla *string
 }
 
 func (f serviceBodyFields) toFields() map[string]any {
@@ -68,6 +77,11 @@ func (f serviceBodyFields) toFields() map[string]any {
 	setStr("svc_placement", f.SvcPlacement)
 	setBool("svc_notifications", f.SvcNotifications)
 	setStr("svc_snooze_till", f.SvcSnoozeTill)
+	if f.SvcSla != nil {
+		if sla, err := parseSLA(*f.SvcSla); err == nil {
+			m["svc_sla"] = sla
+		}
+	}
 	return m
 }
 
@@ -81,7 +95,22 @@ func serviceBodyFieldsFromPostService(b server.PostServiceJSONRequestBody) servi
 		SvcFlexCpuLowThresh: b.SvcFlexCpuLowThreshold, SvcFlexCpuHighThresh: b.SvcFlexCpuHighThreshold,
 		SvcHa: b.SvcHa, SvcFrozen: b.SvcFrozen, SvcProvisioned: b.SvcProvisioned,
 		SvcPlacement: b.SvcPlacement, SvcNotifications: b.SvcNotifications, SvcSnoozeTill: b.SvcSnoozeTill,
+		SvcSla: b.SvcSla,
 	}
+}
+
+// parseSLA reads an availability target: a percent between 0 and 100, or the
+// empty string, which removes the SLA (nil, stored as NULL).
+func parseSLA(s string) (any, error) {
+	s = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(s), "%"))
+	if s == "" {
+		return nil, nil
+	}
+	v, err := strconv.ParseFloat(strings.Replace(s, ",", ".", 1), 64)
+	if err != nil || v < 0 || v > 100 {
+		return nil, fmt.Errorf("the SLA must be a percent between 0 and 100, or empty: %q", s)
+	}
+	return v, nil
 }
 
 func serviceBodyFieldsFromPostServices(b server.PostServicesJSONRequestBody) serviceBodyFields {

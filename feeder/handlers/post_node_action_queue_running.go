@@ -39,5 +39,6 @@ func (a *Api) PostNodeActionQueuedRunning(c echo.Context) error {
 		log.Error("set actionq running", logkey.Error, err)
 		return JSONProblem(c, http.StatusInternalServerError, err.Error())
 	}
+	a.notifyChanges(c)
 	return c.JSON(http.StatusAccepted, nil)
 }

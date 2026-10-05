@@ -10,6 +10,7 @@ import (
 	"crypto/sha512"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -58,6 +59,9 @@ const (
 func NewBasicWeb2py(db *sql.DB, hmacKey string) auth.Strategy {
 	authFunc := func(ctx context.Context, r *http.Request, userName, password string) (auth.Info, error) {
 		u, err := authenticateWeb2py(ctx, db, userName, password, hmacKey)
+		if errors.Is(err, ErrUnavailable) {
+			return nil, err
+		}
 		if err != nil {
 			return nil, fmt.Errorf("invalid credentials")
 		}
@@ -68,13 +72,24 @@ func NewBasicWeb2py(db *sql.DB, hmacKey string) auth.Strategy {
 
 func authenticateWeb2py(ctx context.Context, db *sql.DB, email, password, hmacKey string) (*authWeb2py, error) {
 	var user authWeb2py
+	// An account created without a password has a NULL one: it exists but cannot
+	// sign in, which is wrong credentials, not an unavailable database.
+	var hash sql.NullString
 
 	err := db.
 		QueryRowContext(ctx, queryAuthWeb2py, email).
-		Scan(&user.id, &user.email, &user.password)
-	if err != nil {
+		Scan(&user.id, &user.email, &hash)
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("invalid credentials")
 	}
+	if err != nil {
+		// The database could not answer: the credentials are not known to be wrong.
+		return nil, fmt.Errorf("%w: %w", ErrUnavailable, err)
+	}
+	if !hash.Valid || hash.String == "" {
+		return nil, fmt.Errorf("invalid credentials")
+	}
+	user.password = hash.String
 
 	if !verifyWeb2pyPassword(password, user.password, hmacKey) {
 		return nil, fmt.Errorf("invalid credentials")
@@ -91,7 +106,7 @@ func (n *authWeb2py) extensions() auth.Extensions {
 	return ext
 }
 
-func (n *authWeb2py) Groups(ctx context.Context, db *sql.DB, username string) []string {
+func (n *authWeb2py) Groups(ctx context.Context, db Querier, username string) []string {
 	rows, err := db.QueryContext(ctx, queryUserGroups, username)
 	if err != nil {
 		return []string{}

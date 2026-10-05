@@ -16,7 +16,7 @@ import (
 // GetAlerts handles GET /alerts
 func (a *Api) GetAlerts(c echo.Context, params server.GetAlertsParams) error {
 	return a.handleAlerts(c, "GetAlerts", "", false,
-		params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby,
+		params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, params.Filter,
 		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 			return a.ODB.GetAlerts(ctx, p)
 		})
@@ -25,7 +25,7 @@ func (a *Api) GetAlerts(c echo.Context, params server.GetAlertsParams) error {
 // GetAlert handles GET /alerts/{id}
 func (a *Api) GetAlert(c echo.Context, id string, params server.GetAlertParams) error {
 	return a.handleAlerts(c, "GetAlert", id, true,
-		params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby,
+		params.Props, params.Limit, params.Offset, params.Meta, params.Stats, params.Orderby, params.Groupby, nil,
 		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 			return a.ODB.GetAlert(ctx, id, p)
 		})
@@ -43,6 +43,7 @@ func (a *Api) handleAlerts(
 	stats *server.InQueryStats,
 	orderby *server.InQueryOrderby,
 	groupby *server.InQueryGroupby,
+	filter *server.InQueryFilter,
 	fetch listFetcher,
 ) error {
 	mapping := propsMapping["alert"]
@@ -50,6 +51,20 @@ func (a *Api) handleAlerts(
 	query, err := buildListQueryParameters(props, limit, offset, meta, stats, orderby, groupby, mapping)
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
+	}
+	filters, err := buildFilters(filter, mapping)
+	if err != nil {
+		return JSONProblem(c, http.StatusBadRequest, err.Error())
+	}
+	if !isItem {
+		// The session filterset narrows the dashboard and its counters, not one
+		// alert opened by its id.
+		session, err := a.sessionFilters(c, mapping)
+		if err != nil {
+			echolog.GetLogHandler(c, handlerName).Error("cannot apply the session filterset", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot apply the session filterset")
+		}
+		filters = append(filters, session...)
 	}
 
 	log := echolog.GetLogHandler(c, handlerName)
@@ -77,6 +92,12 @@ func (a *Api) handleAlerts(
 		TypeHints:   buildTypeHints(fetchProps, mapping),
 		OrderBy:     query.OrderBy,
 		GroupBy:     query.GroupBy,
+		Filters:     filters,
+	}
+	if query.WithStats && !isItem {
+		// The stats count the whole selection; the limit caps their values.
+		dbParams.Limit, dbParams.Offset = 0, 0
+		dbParams.OrderBy = nil
 	}
 	items, err := fetch(c.Request().Context(), dbParams)
 	if err != nil {
@@ -92,8 +113,11 @@ func (a *Api) handleAlerts(
 		return JSONProblemf(c, http.StatusNotFound, "alert %s not found", itemVal)
 	}
 
+	if query.WithStats && !isItem {
+		return c.JSON(http.StatusOK, newStatsResponse(items, query.Props, statsLimit(c, query)))
+	}
 	response := newListResponse(items, mapping, query)
-	if !isItem && query.WithMeta && !query.WithStats {
+	if !isItem && query.WithMeta {
 		response = response.withTotal(listTotal(c.Request().Context(), log, fetch, dbParams, len(items)))
 	}
 	return c.JSON(http.StatusOK, response)

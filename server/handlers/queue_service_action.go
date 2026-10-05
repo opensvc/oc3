@@ -15,15 +15,46 @@ import (
 	"github.com/opensvc/oc3/util/logkey"
 )
 
-// serviceActions are the agent actions the API accepts on a service or on one of
-// its instances. As for nodes, only what does not interrupt the service is exposed:
-// start, stop, restart, switch, giveback, takeover, the sync and provisioning
-// actions are deliberately left out for now.
+// serviceActions are the agent actions accepted on a whole service, the service
+// entries of the historical collector menu (am_svc_agent_leafs in
+// action_menu.js).
 var serviceActions = map[string]bool{
 	"push resinfo": true,
 	"push config":  true,
+	"start":        true,
+	"stop":         true,
+	"giveback":     true,
+	"switch":       true,
+	"abort":        true,
+	"clear":        true,
 	"freeze":       true,
 	"thaw":         true,
+}
+
+// instanceActions are the agent actions accepted on an instance, or on some of
+// its resources, the instance entries of the historical collector menu
+// (on_services_instances), the compliance runs on every module attached to the
+// service included.
+var instanceActions = map[string]bool{
+	"push resinfo":     true,
+	"push config":      true,
+	"start":            true,
+	"stop":             true,
+	"restart":          true,
+	"takeover":         true,
+	"giveback":         true,
+	"switch":           true,
+	"syncall":          true,
+	"syncnodes":        true,
+	"syncdrp":          true,
+	"abort":            true,
+	"clear":            true,
+	"enable":           true,
+	"disable":          true,
+	"freeze":           true,
+	"thaw":             true,
+	"compliance_check": true,
+	"compliance_fix":   true,
 }
 
 // ridPattern bounds a resource id list ("fs#1,ip#0"): the command reaches a push
@@ -57,6 +88,12 @@ func serviceActionCommand(action, svcname, actionType, connectTo, agentVersion, 
 	if actionType != "pull" && actionType != "feed" {
 		cmd = append(cmd, sshCmd...)
 		cmd = append(cmd, "opensvc@"+connectTo, "--", "sudo", "svcmgr", "--service", svcname)
+	}
+	if words, ok := nodeActionWords[action]; ok {
+		// A compliance run, on the modules attached to the service, as
+		// fmt_svc_comp_action() builds it: never limited to an instance.
+		cmd = append(cmd, words...)
+		return strings.Join(cmd, " ")
 	}
 	cmd = append(cmd, action)
 	switch {
@@ -100,6 +137,10 @@ func (a *Api) enqueueServiceCommand(
 	}
 
 	log.Info("action queued", "svc_id", svc.SvcID, logkey.NodeID, target.NodeID, "action", action, "rid", rid, "action_id", id)
+	// Announced at once: the action queue views follow it live.
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		log.Debug("cannot notify changes", logkey.Error, err)
+	}
 
 	userEmail, _ := c.Get(XUserEmail).(string)
 	logEntry := cdb.LogEntry{
@@ -132,13 +173,18 @@ func (a *Api) enqueueServiceCommand(
 	}, nil
 }
 
-// checkServiceAction validates the action and the caller rights shared by service
-// and instance actions: NodeExec privilege and responsibility for the service.
-func (a *Api) checkServiceAction(c echo.Context, log *slog.Logger, ctx context.Context, svcID, action string) (*cdb.DBService, error) {
-	if !serviceActions[action] {
+// checkServiceAction validates the action, among those allowed, and the caller
+// rights shared by service and instance actions: NodeExec privilege (CompExec
+// for a compliance run) and responsibility for the service.
+func (a *Api) checkServiceAction(c echo.Context, log *slog.Logger, ctx context.Context, svcID, action string, allowed map[string]bool) (*cdb.DBService, error) {
+	if !allowed[action] {
 		return nil, refuseAction(http.StatusBadRequest, "unsupported action %q", action)
 	}
-	if !IsManager(c) && !HasGroup(c, "NodeExec") {
+	if isCompAction(action) {
+		if !IsManager(c) && !HasGroup(c, "CompExec") {
+			return nil, refuseAction(http.StatusForbidden, "user has no CompExec privilege")
+		}
+	} else if !IsManager(c) && !HasGroup(c, "NodeExec") {
 		return nil, refuseAction(http.StatusForbidden, "user has no NodeExec privilege")
 	}
 	if svcID == "" {
@@ -169,7 +215,7 @@ func (a *Api) checkServiceAction(c echo.Context, log *slog.Logger, ctx context.C
 // does: posted for a node of the service seen alive in the last 15 minutes,
 // without --local.
 func (a *Api) queueServiceAction(c echo.Context, log *slog.Logger, ctx context.Context, svcID, action string) (*queuedAction, error) {
-	svc, err := a.checkServiceAction(c, log, ctx, svcID, action)
+	svc, err := a.checkServiceAction(c, log, ctx, svcID, action, serviceActions)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +241,7 @@ func (a *Api) queueInstanceAction(c echo.Context, log *slog.Logger, ctx context.
 	if rid != "" && !ridPattern.MatchString(rid) {
 		return nil, refuseAction(http.StatusBadRequest, "invalid rid %q", rid)
 	}
-	svc, err := a.checkServiceAction(c, log, ctx, svcID, action)
+	svc, err := a.checkServiceAction(c, log, ctx, svcID, action, instanceActions)
 	if err != nil {
 		return nil, err
 	}

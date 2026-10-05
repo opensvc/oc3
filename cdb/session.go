@@ -24,12 +24,16 @@ func NewSession(db execContexter, ev eventPublisher) *Session {
 	return &Session{db: db, ev: ev, tables: make(map[string]struct{})}
 }
 
+// NotifyChanges publishes a "<table>_change" event for each table changed since
+// the previous call, and forgets them: a session shared by many requests, as the
+// api server's, would otherwise announce again every table changed since it
+// started.
 func (t *Session) NotifyChanges(ctx context.Context) error {
 	slog.Debug("NotifyChanges")
 	if t.ev == nil {
 		return fmt.Errorf("NotifyChanges: eventPublisher is not configured")
 	}
-	for _, tableName := range t.listChanges() {
+	for _, tableName := range t.takeChanges() {
 		if err := t.NotifyTableChangeWithData(ctx, tableName, nil); err != nil {
 			return err
 		}
@@ -59,12 +63,14 @@ func (t *Session) SetChanges(s ...string) {
 	}
 }
 
-func (t *Session) listChanges() []string {
-	var r []string
-	t.mu.RLock()
-	defer t.mu.RUnlock()
+// takeChanges returns the changed tables and empties the list.
+func (t *Session) takeChanges() []string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	r := make([]string, 0, len(t.tables))
 	for s := range t.tables {
 		r = append(r, s)
 	}
+	t.tables = make(map[string]struct{})
 	return r
 }

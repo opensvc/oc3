@@ -2,6 +2,7 @@ package serverhandlers
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -32,6 +33,11 @@ type listEndpointParams struct {
 	// cdb.ListParams. Set it only on the endpoints whose access control
 	// references the caller's identity and not just its groups.
 	withUserID bool
+
+	// statsInGo counts the stats values over the fetched rows rather than in the
+	// database, for the fetchers with a grouping of their own, which the grouping
+	// of the counts would replace.
+	statsInGo bool
 
 	// virtual are the props computed from other props rather than read from a
 	// column, as the historical collector's vprops, e.g. form_definition parsed
@@ -120,6 +126,14 @@ func (a *Api) handleList(
 	if err != nil {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
+	// The session filterset of the caller narrows every list naming a node or a
+	// service, on top of the filters of the request.
+	session, err := a.sessionFilters(c, mapping)
+	if err != nil {
+		echolog.GetLogHandler(c, handlerName).Error("cannot apply the session filterset", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot apply the session filterset")
+	}
+	filters = append(filters, session...)
 
 	log := echolog.GetLogHandler(c, handlerName)
 	groups := UserGroupsFromContext(c)
@@ -160,6 +174,21 @@ func (a *Api) handleList(
 		dbParams.UserID = authUserID(c)
 	}
 
+	if query.WithStats {
+		stats, err := listStats(c.Request().Context(), log, fetch, dbParams, query.Props, mapping, p.virtual, statsLimit(c, query), p.statsInGo)
+		if errors.Is(err, errStatsTimeout) {
+			return JSONProblem(c, http.StatusBadRequest, err.Error())
+		}
+		if err != nil {
+			log.Error("cannot count the values", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot get %s stats", mappingKey)
+		}
+		return c.JSON(http.StatusOK, listResponse{
+			Data: stats.values,
+			Meta: &listMeta{Distinct: stats.distinct, Other: stats.other, Total: intPtr(stats.total)},
+		})
+	}
+
 	items, err := fetch(c.Request().Context(), dbParams)
 	if err != nil {
 		log.Error("cannot fetch items", logkey.Error, err)
@@ -168,7 +197,7 @@ func (a *Api) handleList(
 	computeVirtualProps(items, query.Props, p.virtual)
 
 	response := newListResponse(items, mapping, query)
-	if query.WithMeta && !query.WithStats {
+	if query.WithMeta {
 		response = response.withTotal(listTotal(c.Request().Context(), log, fetch, dbParams, len(items)))
 	}
 	return c.JSON(http.StatusOK, response)
@@ -262,6 +291,9 @@ func (a *Api) handleItem(
 		Offset:      query.Page.Offset,
 		Props:       query.Props,
 		SelectExprs: selectExprs,
+		// Typed as the lists type them: a decimal or an integer column reads as a
+		// number, not as the text the driver gives.
+		TypeHints: buildTypeHints(query.Props, mapping),
 	}
 	if p.withUserID {
 		dbParams.UserID = authUserID(c)

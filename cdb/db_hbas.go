@@ -7,7 +7,7 @@ import (
 	"github.com/opensvc/oc3/schema"
 )
 
-func buildHbasQuery(groups []string, isManager bool, selectExprs []string) (string, []any, error) {
+func buildHbasQuery(groups []string, isManager bool, selectExprs []string, filters []ColumnFilter) (string, []any, error) {
 	q := From(schema.TNodeHBA).
 		RawSelect(selectExprs...)
 
@@ -35,6 +35,9 @@ func buildHbasQuery(groups []string, isManager bool, selectExprs []string) (stri
 		q = q.Where(schema.NodeHBAID, ">", 0)
 	}
 
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(filters)
+
 	query, args, err := q.Build()
 	if err != nil {
 		return "", nil, fmt.Errorf("buildHbasQuery: %w", err)
@@ -43,7 +46,7 @@ func buildHbasQuery(groups []string, isManager bool, selectExprs []string) (stri
 }
 
 func (oDb *DB) GetHbas(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildHbasQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildHbasQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +66,7 @@ func (oDb *DB) GetHbas(ctx context.Context, p ListParams) ([]map[string]any, err
 }
 
 func (oDb *DB) GetNodeHbas(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildHbasQuery(p.Groups, p.IsManager, p.SelectExprs)
+	query, args, err := buildHbasQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}

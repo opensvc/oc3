@@ -173,6 +173,7 @@ func (oDb *DB) UpdateServiceFields(ctx context.Context, svcID string, fields map
 		"svc_flex_cpu_low_threshold": true, "svc_flex_cpu_high_threshold": true,
 		"svc_ha": true, "svc_frozen": true, "svc_provisioned": true,
 		"svc_placement": true, "svc_notifications": true, "svc_snooze_till": true,
+		"svc_sla": true,
 	}
 	setClauses := []string{"updated = NOW()"}
 	args := []any{}

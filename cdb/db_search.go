@@ -5,12 +5,14 @@ import (
 	"fmt"
 )
 
-// SearchTags returns the tags whose name contains the LIKE pattern, by name, up
+// SearchTags returns the tags whose name or exclusion pattern contains the LIKE
+// pattern, those matching by name first, then by name, up
 // to limit rows. Tags are readable by every user, as in the historical search.
 func (oDb *DB) SearchTags(ctx context.Context, pattern string, limit int) ([]map[string]any, error) {
 	rows, err := oDb.DB.QueryContext(ctx,
 		`SELECT COALESCE(tag_id, ''), COALESCE(tag_name, ''), COALESCE(tag_exclude, '')
-		FROM tags WHERE tag_name LIKE ? ORDER BY tag_name, id LIMIT ?`, pattern, limit)
+		FROM tags WHERE tag_name LIKE ? OR tag_exclude LIKE ?
+		ORDER BY tag_name LIKE ? DESC, tag_name, id LIMIT ?`, pattern, pattern, pattern, limit)
 	if err != nil {
 		return nil, fmt.Errorf("searchTags: %w", err)
 	}

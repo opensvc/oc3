@@ -31,7 +31,7 @@ func (a *Api) PostTag(c echo.Context, tagIdParam int) error {
 
 	log.Info("called", logkey.TagID, tagIdParam)
 
-	tags, err := odb.GetTags(ctx, &tagIdParam, 0, 0)
+	tags, err := odb.GetTags(ctx, &tagIdParam, nil, 0, 0)
 	if err != nil {
 		log.Error("cannot get tag", logkey.TagID, tagIdParam, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot get tag")
@@ -69,5 +69,5 @@ func (a *Api) PostTag(c echo.Context, tagIdParam int) error {
 		log.Error("cannot notify changes", logkey.Error, err)
 	}
 
-	return a.handleGetTags(c, &tagIdParam, ListQueryParameters{Props: defaultProps(propsMapping["tag"])})
+	return a.handleGetTags(c, &tagIdParam, ListQueryParameters{Props: defaultProps(propsMapping["tag"])}, nil)
 }
