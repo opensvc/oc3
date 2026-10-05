@@ -140,3 +140,25 @@ func TestOrderByEndsWithPrimaryKey(t *testing.T) {
 		t.Errorf("no orderby: %v", exprs)
 	}
 }
+
+func TestResourceListJoinedProps(t *testing.T) {
+	mapping := propsMapping["resourceList"]
+	orderby := "services.svcname,-nodes.nodename,rid"
+	exprs, err := buildOrderBy(&orderby, mapping, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(exprs, ","); got != "services.svcname,nodes.nodename DESC,resmon.rid,resmon.id" {
+		t.Errorf("orderby: %s", got)
+	}
+	raw := server.InQueryFilter{"services.svcname:dev%", "res_status:down"}
+	filters, err := buildFilters(&raw, mapping)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, want := range []string{"services.svcname", "resmon.res_status"} {
+		if !strings.Contains(filters[i].Expr, want) {
+			t.Errorf("filter %d: %q does not use %q", i, filters[i].Expr, want)
+		}
+	}
+}

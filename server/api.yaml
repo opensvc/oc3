@@ -5197,6 +5197,74 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /resources:
+    get:
+      operationId: GetResources
+      description: |
+        List the resources of the service instances, as the agents report them
+        (resmon), with the names of their service and node as joined props
+        (`services.svcname`, `nodes.nodename`). Sorted by service, node, container
+        and resource id by default. A manager sees every resource; the others see
+        those of the services of an app their groups are responsible for.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /resources/{resource_id}:
+    get:
+      operationId: GetResource
+      description: Display a resource, if the caller may see it (see GET /resources).
+      parameters:
+        - in: path
+          name: resource_id
+          required: true
+          description: Resource record identifier (resmon.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /reports:
     get:
       operationId: GetReports
@@ -15915,6 +15983,71 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/SessionFilterset'
+
+    ResourceRow:
+      type: object
+      description: |
+        A resource of a service instance, as its agent reports it. Every property
+        is optional: the `props` query parameter selects which columns the server
+        returns. The `services.` and `nodes.` props come from joined tables.
+      properties:
+        id:
+          type: integer
+        svc_id:
+          type: string
+        node_id:
+          type: string
+        vmname:
+          type: string
+          description: Container of an encapsulated service, empty otherwise.
+        rid:
+          type: string
+          description: Resource id in the service configuration (fs#1, ip#0…).
+        res_type:
+          type: string
+        res_status:
+          type: string
+        res_desc:
+          type: string
+        res_log:
+          type: string
+        res_monitor:
+          type: string
+          description: T when the resource is monitored.
+        res_disable:
+          type: string
+          description: T when the resource is disabled.
+        res_optional:
+          type: string
+          description: T when the resource is optional.
+        changed:
+          type: string
+        updated:
+          type: string
+        services.svcname:
+          type: string
+          nullable: true
+        nodes.nodename:
+          type: string
+          nullable: true
+
+    ResourceListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ResourceRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     ClusterRow:
       type: object

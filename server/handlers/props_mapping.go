@@ -1067,6 +1067,40 @@ var propsMapping = map[string]propMapping{
 			"updated":      colStr(schema.ResmonUpdated),
 		},
 	},
+	// The resources of every instance (GET /resources), with the names of their
+	// service and node, joined by that list only: the resources of one service read
+	// the resmon table alone (mapping "resource").
+	"resourceList": {
+		Available: []string{
+			"id", "svc_id", "node_id", "vmname", "rid", "res_type", "res_status",
+			"res_desc", "res_log", "res_monitor", "res_disable", "res_optional",
+			"changed", "updated",
+		},
+		Default: []string{
+			"id", "svc_id", "node_id", "vmname", "rid", "res_type", "res_status",
+			"res_desc", "res_monitor", "res_disable", "res_optional", "updated",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.ResmonID),
+			"svc_id":       colStr(schema.ResmonSvcID),
+			"node_id":      colStr(schema.ResmonNodeID),
+			"vmname":       colStr(schema.ResmonVmname),
+			"rid":          colStr(schema.ResmonRid),
+			"res_type":     colStr(schema.ResmonResType),
+			"res_status":   colStr(schema.ResmonResStatus),
+			"res_desc":     colStr(schema.ResmonResDesc),
+			"res_log":      colStr(schema.ResmonResLog),
+			"res_monitor":  colStr(schema.ResmonResMonitor),
+			"res_disable":  colStr(schema.ResmonResDisable),
+			"res_optional": colStr(schema.ResmonResOptional),
+			"changed":      colStr(schema.ResmonChanged),
+			"updated":      colStr(schema.ResmonUpdated),
+		},
+		Joins: map[string]JoinDef{
+			"services": {MappingKey: "service"},
+			"nodes":    {MappingKey: "node"},
+		},
+	},
 	"resource_log": {
 		Available: []string{
 			"id", "svc_id", "node_id", "rid", "res_status",
