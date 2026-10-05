@@ -72,10 +72,13 @@ func NewBasicWeb2py(db *sql.DB, hmacKey string) auth.Strategy {
 
 func authenticateWeb2py(ctx context.Context, db *sql.DB, email, password, hmacKey string) (*authWeb2py, error) {
 	var user authWeb2py
+	// An account created without a password has a NULL one: it exists but cannot
+	// sign in, which is wrong credentials, not an unavailable database.
+	var hash sql.NullString
 
 	err := db.
 		QueryRowContext(ctx, queryAuthWeb2py, email).
-		Scan(&user.id, &user.email, &user.password)
+		Scan(&user.id, &user.email, &hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("invalid credentials")
 	}
@@ -83,6 +86,10 @@ func authenticateWeb2py(ctx context.Context, db *sql.DB, email, password, hmacKe
 		// The database could not answer: the credentials are not known to be wrong.
 		return nil, fmt.Errorf("%w: %w", ErrUnavailable, err)
 	}
+	if !hash.Valid || hash.String == "" {
+		return nil, fmt.Errorf("invalid credentials")
+	}
+	user.password = hash.String
 
 	if !verifyWeb2pyPassword(password, user.password, hmacKey) {
 		return nil, fmt.Errorf("invalid credentials")
