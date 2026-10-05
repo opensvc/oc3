@@ -2,6 +2,7 @@ package serverhandlers
 
 import (
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -83,5 +84,26 @@ func TestClusterListFilters(t *testing.T) {
 	}
 	if strings.Join(exprs, ",") != "clusters.svc_count DESC,clusters.cluster_name" {
 		t.Errorf("orderby: %v", exprs)
+	}
+}
+
+func TestUserCredentialsAreNoProps(t *testing.T) {
+	mapping := propsMapping["user"]
+	for _, prop := range []string{"password", "registration_key", "reset_password_key"} {
+		if slices.Contains(mapping.Available, prop) {
+			t.Errorf("%s is available", prop)
+		}
+		if _, ok := mapping.Props[prop]; ok {
+			t.Errorf("%s is a prop", prop)
+		}
+		// Not filterable either: a filter would let a caller guess the value.
+		raw := server.InQueryFilter{prop + ":a%"}
+		if _, err := buildFilters(&raw, mapping); err == nil {
+			t.Errorf("%s can be filtered on", prop)
+		}
+		orderby := prop
+		if _, err := buildOrderBy(&orderby, mapping); err == nil {
+			t.Errorf("%s can be sorted on", prop)
+		}
 	}
 }

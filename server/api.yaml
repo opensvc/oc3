@@ -4393,8 +4393,8 @@ paths:
       operationId: GetGroupUsers
       description: |
         List the users member of the group. Managers can see all groups; other
-        users only see the groups they belong to. The password and
-        registration_key columns are never exposed.
+        users only see the groups they belong to. The password, registration_key
+        and reset_password_key columns are never exposed.
       parameters:
         - in: path
           name: group_id
@@ -17197,7 +17197,8 @@ components:
     UserRow:
       type: object
       description: |
-        A user of the users list. `password` and `registration_key` are never
+        A user of the users list. `password`, `registration_key` and
+        `reset_password_key` are never
         returned. The boolean-like columns (`email_notifications`,
         `im_notifications`, `lock_filter`) carry the collector's "T"/"F"
         convention, and the delay and quota columns are returned as strings.
@@ -17235,8 +17236,6 @@ components:
         lock_filter:
           type: string
         registration_id:
-          type: string
-        reset_password_key:
           type: string
         quota_app:
           type: string

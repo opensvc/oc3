@@ -547,13 +547,17 @@ var propsMapping = map[string]propMapping{
 			"form_yaml":      colStr(schema.FormsRevisionsFormYaml),
 		},
 	},
+	// The users. password, registration_key and reset_password_key are no props:
+	// they are credentials, and a prop can also be filtered and sorted on, which
+	// would let a caller guess a value it cannot read. The reset key alone is
+	// enough to change the password of an account while a reset is pending.
 	"user": {
 		Available: []string{
 			"id", "username", "email", "first_name", "last_name", "phone_work",
 			"im_type", "im_username", "email_notifications", "im_notifications",
 			"email_log_level", "im_log_level", "email_notifications_delay",
 			"im_notifications_delay", "lock_filter", "registration_id",
-			"reset_password_key", "quota_app", "quota_org_group", "quota_docker_registries",
+			"quota_app", "quota_org_group", "quota_docker_registries",
 		},
 		Props: map[string]propDef{
 			"id":                        col(schema.AuthUserID),
@@ -572,7 +576,6 @@ var propsMapping = map[string]propMapping{
 			"im_notifications_delay":    colStr(schema.AuthUserImNotificationsDelay),
 			"lock_filter":               colStr(schema.AuthUserLockFilter),
 			"registration_id":           colStr(schema.AuthUserRegistrationID),
-			"reset_password_key":        colStr(schema.AuthUserResetPasswordKey),
 			"quota_app":                 colStr(schema.AuthUserQuotaApp),
 			"quota_org_group":           colStr(schema.AuthUserQuotaOrgGroup),
 			"quota_docker_registries":   colStr(schema.AuthUserQuotaDockerRegistries),

@@ -2458,7 +2458,8 @@ type UserPrefsResponse struct {
 	Data map[string]interface{} `json:"data"`
 }
 
-// UserRow A user of the users list. `password` and `registration_key` are never
+// UserRow A user of the users list. `password`, `registration_key` and
+// `reset_password_key` are never
 // returned. The boolean-like columns (`email_notifications`,
 // `im_notifications`, `lock_filter`) carry the collector's "T"/"F"
 // convention, and the delay and quota columns are returned as strings.
@@ -2483,7 +2484,6 @@ type UserRow struct {
 	QuotaDockerRegistries   *string `json:"quota_docker_registries,omitempty"`
 	QuotaOrgGroup           *string `json:"quota_org_group,omitempty"`
 	RegistrationId          *string `json:"registration_id,omitempty"`
-	ResetPasswordKey        *string `json:"reset_password_key,omitempty"`
 	Username                *string `json:"username,omitempty"`
 }
 
