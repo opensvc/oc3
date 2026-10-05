@@ -14,8 +14,7 @@ import (
 func (a *Api) GetNodeSan(c echo.Context, nodeId string) error {
 	log := echolog.GetLogHandler(c, "GetNodeSan")
 	node, err := a.resolveNode(c, log, nodeId)
-	if err != nil || node == nil {
-		// resolveNode has answered already.
+	if err != nil {
 		return err
 	}
 	ctx := c.Request().Context()

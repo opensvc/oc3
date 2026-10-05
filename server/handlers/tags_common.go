@@ -14,23 +14,29 @@ import (
 	"github.com/opensvc/oc3/util/logkey"
 )
 
+// resolveTagByRecordID looks up a tag by its record id (tags.id). On failure the
+// problem response is written and errRequestDenied returned, so that the caller
+// stops instead of going on with a nil tag.
 func (a *Api) resolveTagByRecordID(c echo.Context, log *slog.Logger, ctx context.Context, id int) (*cdb.Tag, error) {
 	tag, err := a.ODB.TagByID(ctx, id)
 	if err != nil {
 		log.Error("cannot get tag", logkey.TagID, id, logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot get tag")
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot get tag")
 	}
 	if tag == nil {
-		return nil, JSONProblemf(c, http.StatusNotFound, "tag %d not found", id)
+		return nil, denyRequest(c, http.StatusNotFound, "tag %d not found", id)
 	}
 	return tag, nil
 }
 
+// resolveTagByKey looks up a tag by its tag_id, or else by its record id when the
+// key is a number. On failure the problem response is written and
+// errRequestDenied returned.
 func (a *Api) resolveTagByKey(c echo.Context, log *slog.Logger, ctx context.Context, key string) (*cdb.Tag, error) {
 	tag, err := a.ODB.TagByTagID(ctx, key)
 	if err != nil {
 		log.Error("cannot get tag", logkey.TagID, key, logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot get tag")
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot get tag")
 	}
 	if tag != nil {
 		return tag, nil
@@ -38,7 +44,7 @@ func (a *Api) resolveTagByKey(c echo.Context, log *slog.Logger, ctx context.Cont
 	if id, convErr := strconv.Atoi(key); convErr == nil {
 		return a.resolveTagByRecordID(c, log, ctx, id)
 	}
-	return nil, JSONProblemf(c, http.StatusNotFound, "tag %s not found", key)
+	return nil, denyRequest(c, http.StatusNotFound, "tag %s not found", key)
 }
 
 func (a *Api) attachTagNode(c echo.Context, log *slog.Logger, ctx context.Context, tag *cdb.Tag, nodeId string, tagAttachData *string) error {

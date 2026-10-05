@@ -97,10 +97,10 @@ func (a *Api) DeleteUserSelfFilterset(c echo.Context) error {
 func (a *Api) selfFiltersetWriter(c echo.Context) (int64, error) {
 	userID := authUserID(c)
 	if !IsAuthByUser(c) || userID == nil {
-		return 0, JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
+		return 0, denyRequest(c, http.StatusUnauthorized, "user authentication required")
 	}
 	if IsImpersonating(c) {
-		return 0, JSONProblemf(c, http.StatusForbidden, "the session filterset cannot be changed while acting as another user")
+		return 0, denyRequest(c, http.StatusForbidden, "the session filterset cannot be changed while acting as another user")
 	}
 	return *userID, nil
 }

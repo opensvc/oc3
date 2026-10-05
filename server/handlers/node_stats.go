@@ -68,7 +68,7 @@ func nodeStatsSeries(dir, device string, from, until int) []server.NodeStatSerie
 func (a *Api) GetNodeStats(c echo.Context, nodeId string, params server.GetNodeStatsParams) error {
 	log := echolog.GetLogHandler(c, "GetNodeStats")
 	node, err := a.resolveNode(c, log, nodeId)
-	if err != nil || node == nil {
+	if err != nil {
 		return err
 	}
 	group, ok := nodeStatsGroups[string(params.Group)]

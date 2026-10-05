@@ -91,7 +91,7 @@ func (a *Api) GetServiceStatusLog(c echo.Context, svcId string, params server.Ge
 // the service, a Manager being responsible for all.
 func (a *Api) serviceForAck(c echo.Context, log *slog.Logger, svcId string) (*cdb.DBService, error) {
 	if !IsAuthByUser(c) {
-		return nil, JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
+		return nil, denyRequest(c, http.StatusUnauthorized, "user authentication required")
 	}
 	if err := a.resolveService(c, log, svcId); err != nil {
 		return nil, err
@@ -100,15 +100,15 @@ func (a *Api) serviceForAck(c echo.Context, log *slog.Logger, svcId string) (*cd
 	svc, err := a.ODB.ServiceBySvcIDOrName(ctx, svcId)
 	if err != nil || svc == nil {
 		log.Error("cannot resolve service", "svc_id", svcId, logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot resolve service %s", svcId)
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot resolve service %s", svcId)
 	}
 	responsible, err := a.ODB.ServiceResponsible(ctx, svc.SvcID, UserGroupsFromContext(c), IsManager(c))
 	if err != nil {
 		log.Error("cannot check the responsibility", logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot check the responsibility")
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot check the responsibility")
 	}
 	if !responsible {
-		return nil, JSONProblemf(c, http.StatusForbidden, "you are not responsible for service %s", svc.Svcname)
+		return nil, denyRequest(c, http.StatusForbidden, "you are not responsible for service %s", svc.Svcname)
 	}
 	return svc, nil
 }
@@ -136,7 +136,7 @@ func (a *Api) PutServiceStatusLogAck(c echo.Context, svcId string) error {
 		return JSONProblemf(c, http.StatusBadRequest, "a justification needs a comment")
 	}
 	svc, err := a.serviceForAck(c, log, svcId)
-	if err != nil || svc == nil {
+	if err != nil {
 		return err
 	}
 	ctx := c.Request().Context()
@@ -158,7 +158,7 @@ func (a *Api) DeleteServiceStatusLogAck(c echo.Context, svcId string, params ser
 		return JSONProblemf(c, http.StatusBadRequest, "begin and end must be \"YYYY-MM-DD HH:MM:SS\" dates, begin first")
 	}
 	svc, err := a.serviceForAck(c, log, svcId)
-	if err != nil || svc == nil {
+	if err != nil {
 		return err
 	}
 	found, err := a.ODB.DeleteServiceStatusAck(c.Request().Context(), svc.SvcID, params.Begin, params.End)

@@ -60,8 +60,8 @@ func (acc sysreportAccess) check(path string) (secure, restricted bool) {
 }
 
 // nodeSysreportAccess checks that the caller may see the node and returns what
-// they may read of its sysreport. A nil access comes with the response already
-// written.
+// they may read of its sysreport. On failure the problem response is written and
+// errRequestDenied returned.
 func (a *Api) nodeSysreportAccess(c echo.Context, ctx context.Context, handler, nodeID string) (*sysreportAccess, error) {
 	log := echolog.GetLogHandler(c, handler)
 	odb := a.ODB
@@ -70,25 +70,25 @@ func (a *Api) nodeSysreportAccess(c echo.Context, ctx context.Context, handler, 
 	team, found, err := odb.NodeTeamResponsible(ctx, nodeID)
 	if err != nil {
 		log.Error("cannot read node", logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot read node")
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot read node")
 	}
 	if !found {
-		return nil, JSONProblemf(c, http.StatusNotFound, "node %s not found", nodeID)
+		return nil, denyRequest(c, http.StatusNotFound, "node %s not found", nodeID)
 	}
 	visible, err := odb.NodeResponsible(ctx, nodeID, groups, IsManager(c))
 	if err != nil {
 		log.Error("cannot check node access", logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot check node access")
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot check node access")
 	}
 	if !visible {
-		return nil, JSONProblemf(c, http.StatusForbidden, "not responsible for node %s", nodeID)
+		return nil, denyRequest(c, http.StatusForbidden, "not responsible for node %s", nodeID)
 	}
 
 	acc := &sysreportAccess{full: IsManager(c) || (team != "" && slices.Contains(groups, team))}
 	patterns, err := odb.SysrepSecurePatterns(ctx)
 	if err != nil {
 		log.Error("cannot read secure patterns", logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot read secure patterns")
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot read secure patterns")
 	}
 	if len(patterns) > 0 {
 		if re, err := anchored(strings.Join(patterns, "|")); err == nil {
@@ -108,12 +108,12 @@ func (a *Api) nodeSysreportAccess(c echo.Context, ctx context.Context, handler, 
 	groupIDs, err := odb.UserGroupIDs(ctx, *userID)
 	if err != nil {
 		log.Error("cannot list user groups", logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot list user groups")
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot list user groups")
 	}
 	allows, err := odb.SysrepAllows(ctx, groupIDs)
 	if err != nil {
 		log.Error("cannot read authorizations", logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot read authorizations")
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot read authorizations")
 	}
 	inFilterset := map[int]bool{}
 	for _, allow := range allows {
@@ -146,7 +146,7 @@ func sysreportFile(path string) map[string]any {
 // files and command outputs the node reports, newest first.
 func (a *Api) GetNodeSysreport(c echo.Context, nodeId string, params server.GetNodeSysreportParams) error {
 	ctx := c.Request().Context()
-	if acc, err := a.nodeSysreportAccess(c, ctx, "GetNodeSysreport", nodeId); acc == nil {
+	if _, err := a.nodeSysreportAccess(c, ctx, "GetNodeSysreport", nodeId); err != nil {
 		return err
 	}
 	var since, until string
@@ -218,7 +218,7 @@ func (a *Api) GetNodeSysreport(c echo.Context, nodeId string, params server.GetN
 func (a *Api) GetNodeSysreportChange(c echo.Context, nodeId string, cid string) error {
 	ctx := c.Request().Context()
 	acc, err := a.nodeSysreportAccess(c, ctx, "GetNodeSysreportChange", nodeId)
-	if acc == nil {
+	if err != nil {
 		return err
 	}
 	date, diffs, err := sysreportRepos().Show(nodeId, cid)
@@ -256,7 +256,7 @@ func sysreportDiffFiles(acc *sysreportAccess, diffs []git.SysreportFileDiff) []m
 func (a *Api) GetNodeSysreportTimediff(c echo.Context, nodeId string, params server.GetNodeSysreportTimediffParams) error {
 	ctx := c.Request().Context()
 	acc, err := a.nodeSysreportAccess(c, ctx, "GetNodeSysreportTimediff", nodeId)
-	if acc == nil {
+	if err != nil {
 		return err
 	}
 	repos := sysreportRepos()
@@ -295,7 +295,7 @@ func (a *Api) GetNodeSysreportTimediff(c echo.Context, nodeId string, params ser
 func (a *Api) GetNodeSysreportTree(c echo.Context, nodeId string, cid string) error {
 	ctx := c.Request().Context()
 	acc, err := a.nodeSysreportAccess(c, ctx, "GetNodeSysreportTree", nodeId)
-	if acc == nil {
+	if err != nil {
 		return err
 	}
 	entries, err := sysreportRepos().Tree(nodeId, cid)
@@ -322,7 +322,7 @@ func (a *Api) GetNodeSysreportTree(c echo.Context, nodeId string, cid string) er
 func (a *Api) GetNodeSysreportFile(c echo.Context, nodeId string, cid string, oid string) error {
 	ctx := c.Request().Context()
 	acc, err := a.nodeSysreportAccess(c, ctx, "GetNodeSysreportFile", nodeId)
-	if acc == nil {
+	if err != nil {
 		return err
 	}
 	repos := sysreportRepos()

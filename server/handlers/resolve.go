@@ -35,30 +35,32 @@ func (a *Api) resolveUserGroupIDs(c echo.Context, log *slog.Logger) ([]int64, er
 	ctx := c.Request().Context()
 	user := UserInfoFromContext(c)
 	if user == nil {
-		return nil, JSONProblemf(c, http.StatusUnauthorized, "missing user context")
+		return nil, denyRequest(c, http.StatusUnauthorized, "missing user context")
 	}
 	userID, err := strconv.ParseInt(user.GetExtensions().Get(xauth.XUserID), 10, 64)
 	if err != nil {
-		return nil, JSONProblemf(c, http.StatusBadRequest, "invalid user id")
+		return nil, denyRequest(c, http.StatusBadRequest, "invalid user id")
 	}
 	ids, err := a.ODB.UserGroupIDs(ctx, userID)
 	if err != nil {
 		log.Error("cannot list user groups", logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot list user groups")
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot list user groups")
 	}
 	return ids, nil
 }
 
-// resolveNode looks up a node by ID or name
+// resolveNode looks up a node by ID or name. On failure the problem response is
+// written and errRequestDenied returned, so that the caller stops instead of going
+// on with a nil node.
 func (a *Api) resolveNode(c echo.Context, log *slog.Logger, nodeId string) (*cdb.DBNode, error) {
 	ctx := c.Request().Context()
 	node, err := a.ODB.NodeByNodeIDOrNodename(ctx, nodeId)
 	if err != nil {
 		log.Error("cannot resolve node", logkey.NodeID, nodeId, logkey.Error, err)
-		return nil, JSONProblemf(c, http.StatusInternalServerError, "cannot resolve node")
+		return nil, denyRequest(c, http.StatusInternalServerError, "cannot resolve node")
 	}
 	if node == nil {
-		return nil, JSONProblemf(c, http.StatusNotFound, "node %s not found", nodeId)
+		return nil, denyRequest(c, http.StatusNotFound, "node %s not found", nodeId)
 	}
 	return node, nil
 }
@@ -102,18 +104,20 @@ func (a *Api) resolveService(c echo.Context, log *slog.Logger, svcId string) err
 	return nil
 }
 
+// decodeAppGroupKeys reads the app_id and group_id of the request body. On failure
+// the problem response is written and errRequestDenied returned.
 func decodeAppGroupKeys(c echo.Context) (string, string, error) {
 	var body map[string]any
 	if err := json.NewDecoder(c.Request().Body).Decode(&body); err != nil {
-		return "", "", JSONProblem(c, http.StatusBadRequest, err.Error())
+		return "", "", denyRequest(c, http.StatusBadRequest, "%s", err)
 	}
 	rawAppID, ok := body["app_id"]
 	if !ok {
-		return "", "", JSONProblemf(c, http.StatusBadRequest, "The 'app_id' key is mandatory")
+		return "", "", denyRequest(c, http.StatusBadRequest, "The 'app_id' key is mandatory")
 	}
 	rawGroupID, ok := body["group_id"]
 	if !ok {
-		return "", "", JSONProblemf(c, http.StatusBadRequest, "The 'group_id' key is mandatory")
+		return "", "", denyRequest(c, http.StatusBadRequest, "The 'group_id' key is mandatory")
 	}
 	return fmt.Sprintf("%v", rawAppID), fmt.Sprintf("%v", rawGroupID), nil
 }
