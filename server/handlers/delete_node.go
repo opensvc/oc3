@@ -28,7 +28,8 @@ func (a *Api) deleteNodeByID(c echo.Context, handlerName, nodeId string) error {
 	if !IsAuthByUser(c) {
 		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
 	}
-	if !IsManager(c) {
+	// As the historical collector: NodeManager, which a Manager holds implicitly.
+	if !IsNodeManager(c) {
 		return JSONProblemf(c, http.StatusForbidden, "NodeManager privilege required")
 	}
 
@@ -43,7 +44,7 @@ func (a *Api) deleteNodeByID(c echo.Context, handlerName, nodeId string) error {
 		return JSONProblemf(c, http.StatusNotFound, "node %s not found", nodeId)
 	}
 
-	responsible, err := odb.NodeResponsible(ctx, node.NodeID, UserGroupsFromContext(c), false)
+	responsible, err := odb.NodeResponsible(ctx, node.NodeID, UserGroupsFromContext(c), IsManager(c))
 	if err != nil {
 		log.Error("cannot check node responsibility", logkey.NodeID, node.NodeID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot check node responsibility")
