@@ -61,6 +61,23 @@ type propMapping struct {
 	// Joins declares joinable tables. A prop "table.column" is valid when "table"
 	// is a key in Joins and "column" is listed in JoinDef.Columns.
 	Joins map[string]JoinDef
+	// PrimaryKey is the primary key of the main table of the queries, which
+	// buildOrderBy appends to a requested sort so that rows with equal sort values
+	// keep one order and pages neither repeat nor skip rows. Several columns when a
+	// row joins two tables. When nil, the column of the "id" prop, if any.
+	PrimaryKey []*schema.Col
+}
+
+// primaryKey returns the columns ending a requested sort: PrimaryKey, or else the
+// column of the "id" prop; none when the mapping has neither.
+func (m propMapping) primaryKey() []*schema.Col {
+	if len(m.PrimaryKey) > 0 {
+		return m.PrimaryKey
+	}
+	if def, ok := m.Props["id"]; ok && def.Col != nil {
+		return []*schema.Col{def.Col}
+	}
+	return nil
 }
 
 var propsMapping = map[string]propMapping{
@@ -126,6 +143,8 @@ var propsMapping = map[string]propMapping{
 		},
 	},
 	"node": {
+		// node_id is unique too, but id is the key of the table.
+		PrimaryKey: []*schema.Col{schema.NodesID},
 		Available: []string{
 			"node_id", "nodename", "app", "node_env", "cluster_id",
 			"loc_country", "loc_city", "loc_addr", "loc_building", "loc_floor", "loc_room", "loc_rack", "loc_zip",
@@ -232,6 +251,8 @@ var propsMapping = map[string]propMapping{
 		},
 	},
 	"disk": {
+		// A disk used by several services is one row per service (svcdisks).
+		PrimaryKey: []*schema.Col{schema.DiskinfoID, schema.SvcdisksID},
 		Available: []string{
 			"disk_id", "disk_name", "disk_devid", "disk_vendor", "disk_model",
 			"disk_size", "disk_used", "disk_alloc", "disk_raid", "disk_group",
@@ -677,6 +698,7 @@ var propsMapping = map[string]propMapping{
 		},
 	},
 	"instance": {
+		PrimaryKey: []*schema.Col{schema.SvcmonID},
 		Available: []string{
 			"svc_id", "node_id",
 			"mon_svctype",
@@ -1160,6 +1182,8 @@ var propsMapping = map[string]propMapping{
 		},
 	},
 	"filterset_filter": {
+		// The rows are the filterset's entries; the "id" prop is the filter's.
+		PrimaryKey: []*schema.Col{schema.GenFiltersetsFiltersID},
 		Available: []string{
 			"id", "f_table", "f_field", "f_value", "f_op",
 			"f_updated", "f_author", "f_cksum", "f_label",

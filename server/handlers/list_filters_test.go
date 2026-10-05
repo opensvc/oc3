@@ -78,11 +78,11 @@ func TestClusterListFilters(t *testing.T) {
 		}
 	}
 	orderby := "-svc_count,cluster_name"
-	exprs, err := buildOrderBy(&orderby, propsMapping["clusterList"])
+	exprs, err := buildOrderBy(&orderby, propsMapping["clusterList"], false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Join(exprs, ",") != "clusters.svc_count DESC,clusters.cluster_name" {
+	if strings.Join(exprs, ",") != "clusters.svc_count DESC,clusters.cluster_name,clusters.id" {
 		t.Errorf("orderby: %v", exprs)
 	}
 }
@@ -102,8 +102,41 @@ func TestUserCredentialsAreNoProps(t *testing.T) {
 			t.Errorf("%s can be filtered on", prop)
 		}
 		orderby := prop
-		if _, err := buildOrderBy(&orderby, mapping); err == nil {
+		if _, err := buildOrderBy(&orderby, mapping, false); err == nil {
 			t.Errorf("%s can be sorted on", prop)
 		}
+	}
+}
+
+func TestOrderByEndsWithPrimaryKey(t *testing.T) {
+	cases := []struct {
+		mapping, orderby string
+		grouped          bool
+		want             string
+	}{
+		{"instance", "mon_availstatus", false, "svcmon.mon_availstatus,svcmon.ID"},
+		{"node", "-nodename", false, "nodes.nodename DESC,nodes.id"},
+		{"disk", "disk_size", false, "diskinfo.disk_size,diskinfo.id,svcdisks.id"},
+		{"filterset_filter", "f_table", false, "gen_filters.f_table,gen_filtersets_filters.id"},
+		// The key requested already, in either direction: not repeated.
+		{"alert", "-id", false, "dashboard.id DESC"},
+		{"alert", "dash_severity,id", false, "dashboard.dash_severity,dashboard.id"},
+		// Grouped rows: the key names none of them.
+		{"service", "svc_app", true, "services.svc_app"},
+	}
+	for _, tc := range cases {
+		orderby := tc.orderby
+		exprs, err := buildOrderBy(&orderby, propsMapping[tc.mapping], tc.grouped)
+		if err != nil {
+			t.Errorf("%s %s: %v", tc.mapping, tc.orderby, err)
+			continue
+		}
+		if got := strings.Join(exprs, ","); got != tc.want {
+			t.Errorf("%s %s: got %s, want %s", tc.mapping, tc.orderby, got, tc.want)
+		}
+	}
+	// No sort requested: the query keeps its own default order.
+	if exprs, _ := buildOrderBy(nil, propsMapping["instance"], false); exprs != nil {
+		t.Errorf("no orderby: %v", exprs)
 	}
 }

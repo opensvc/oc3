@@ -33,12 +33,12 @@ func buildListQueryParameters(
 		return ListQueryParameters{}, err
 	}
 
-	orderExprs, err := buildOrderBy(orderby, mapping)
+	groupExprs, err := buildGroupBy(groupby, mapping)
 	if err != nil {
 		return ListQueryParameters{}, err
 	}
 
-	groupExprs, err := buildGroupBy(groupby, mapping)
+	orderExprs, err := buildOrderBy(orderby, mapping, len(groupExprs) > 0)
 	if err != nil {
 		return ListQueryParameters{}, err
 	}
@@ -77,7 +77,12 @@ func buildGroupBy(groupby *server.InQueryGroupby, mapping propMapping) ([]string
 	return exprs, nil
 }
 
-func buildOrderBy(orderby *server.InQueryOrderby, mapping propMapping) ([]string, error) {
+// buildOrderBy returns the ORDER BY expressions of the requested sort, ended by
+// the primary key of the main table (propMapping.primaryKey) for the rows the
+// requested columns leave equal: without it the database may return them in any
+// order, from one page to the next. Not for grouped rows, which the key does not
+// name. No requested sort, no expression: the query keeps its default order.
+func buildOrderBy(orderby *server.InQueryOrderby, mapping propMapping, grouped bool) ([]string, error) {
 	if orderby == nil || *orderby == "" {
 		return nil, nil
 	}
@@ -102,6 +107,17 @@ func buildOrderBy(orderby *server.InQueryOrderby, mapping propMapping) ([]string
 			expr += " DESC"
 		}
 		exprs = append(exprs, expr)
+	}
+	if len(exprs) == 0 || grouped {
+		return exprs, nil
+	}
+	for _, col := range mapping.primaryKey() {
+		key := col.Qualified()
+		if !slices.ContainsFunc(exprs, func(e string) bool {
+			return strings.EqualFold(strings.TrimSuffix(e, " DESC"), key)
+		}) {
+			exprs = append(exprs, key)
+		}
 	}
 	return exprs, nil
 }
