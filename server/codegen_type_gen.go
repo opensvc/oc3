@@ -1440,14 +1440,18 @@ type LogListResponse_Data struct {
 // empty strings when the event names no node or service; the `nodes.` and
 // `services.` properties come from LEFT JOINs and are then null.
 type LogRow struct {
-	Id              *int    `json:"id,omitempty"`
-	LogAction       *string `json:"log_action,omitempty"`
-	LogDate         *string `json:"log_date,omitempty"`
-	LogDict         *string `json:"log_dict,omitempty"`
-	LogEmailSent    *int    `json:"log_email_sent,omitempty"`
-	LogEntryId      *int    `json:"log_entry_id,omitempty"`
-	LogFmt          *string `json:"log_fmt,omitempty"`
-	LogGtalkSent    *int    `json:"log_gtalk_sent,omitempty"`
+	Id           *int    `json:"id,omitempty"`
+	LogAction    *string `json:"log_action,omitempty"`
+	LogDate      *string `json:"log_date,omitempty"`
+	LogDict      *string `json:"log_dict,omitempty"`
+	LogEmailSent *int    `json:"log_email_sent,omitempty"`
+	LogEntryId   *int    `json:"log_entry_id,omitempty"`
+	LogFmt       *string `json:"log_fmt,omitempty"`
+	LogGtalkSent *int    `json:"log_gtalk_sent,omitempty"`
+
+	// LogImpersonator The user who really signed in when the action was made as log_user
+	// (impersonation); empty otherwise.
+	LogImpersonator *string `json:"log_impersonator,omitempty"`
 	LogLevel        *string `json:"log_level,omitempty"`
 	LogUser         *string `json:"log_user,omitempty"`
 	NodeId          *string `json:"node_id,omitempty"`

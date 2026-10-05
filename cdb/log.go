@@ -13,18 +13,22 @@ import (
 
 type (
 	LogEntry struct {
-		ID          int64          `json:"id"`
-		Action      string         `json:"log_action"`
-		User        string         `json:"log_user"`
-		Fmt         string         `json:"log_fmt"`
-		Dict        map[string]any `json:"log_dict"`
-		Date        time.Time      `json:"log_date"`
-		SvcID       *uuid.UUID     `json:"svc_id"`
-		IsGtalkSent bool           `json:"log_gtalk_sent"`
-		IsEmailSent bool           `json:"log_email_sent"`
-		EntryID     string         `json:"log_entry_id"`
-		Level       string         `json:"log_level"`
-		NodeID      *uuid.UUID     `json:"node_id"`
+		ID     int64  `json:"id"`
+		Action string `json:"log_action"`
+		User   string `json:"log_user"`
+		// Impersonator is the user who really signed in when the action is made as
+		// User; empty otherwise. Log fills it from the context (WithImpersonator)
+		// when it is not set.
+		Impersonator string         `json:"log_impersonator"`
+		Fmt          string         `json:"log_fmt"`
+		Dict         map[string]any `json:"log_dict"`
+		Date         time.Time      `json:"log_date"`
+		SvcID        *uuid.UUID     `json:"svc_id"`
+		IsGtalkSent  bool           `json:"log_gtalk_sent"`
+		IsEmailSent  bool           `json:"log_email_sent"`
+		EntryID      string         `json:"log_entry_id"`
+		Level        string         `json:"log_level"`
+		NodeID       *uuid.UUID     `json:"node_id"`
 	}
 )
 
@@ -123,6 +127,24 @@ func appendLogsFiltersetClause(query string, args []any, nodeIDs, svcIDs []strin
 	return query, args
 }
 
+type impersonatorKey struct{}
+
+// WithImpersonator marks a context as the one of a request made as another user
+// by the user named impersonator: the audit entries written with it say so.
+func WithImpersonator(ctx context.Context, impersonator string) context.Context {
+	return context.WithValue(ctx, impersonatorKey{}, impersonator)
+}
+
+// ImpersonatorFrom returns the user who really signed in, when the context is the
+// one of a request made as another user; empty otherwise.
+func ImpersonatorFrom(ctx context.Context) string {
+	s, _ := ctx.Value(impersonatorKey{}).(string)
+	return s
+}
+
+// Log writes audit entries. An entry written for a request made as another user
+// names both: log_user, the user the action is made as, and log_impersonator,
+// the user who really signed in (LogEntry.Impersonator, or the context's).
 func (oDb *DB) Log(ctx context.Context, entries ...LogEntry) error {
 	toDict := func(d map[string]any) string {
 		if d == nil {
@@ -134,13 +156,22 @@ func (oDb *DB) Log(ctx context.Context, entries ...LogEntry) error {
 		}
 		return string(s)
 	}
-	cols := "(log_action, log_user, log_fmt, log_dict, log_level, svc_id, node_id, log_date)"
+	cols := "(log_action, log_user, log_impersonator, log_fmt, log_dict, log_level, svc_id, node_id, log_date)"
+	fromCtx := ImpersonatorFrom(ctx)
 	lines := make([]string, 0)
 	args := make([]any, 0)
 
 	for _, entry := range entries {
-		args = append(args, entry.Action, entry.User, entry.Fmt, toDict(entry.Dict), entry.Level, entry.SvcID, entry.NodeID)
-		lines = append(lines, "(?, ?, ?, ?, ?, ?, ?, NOW())")
+		impersonator := entry.Impersonator
+		if impersonator == "" {
+			impersonator = fromCtx
+		}
+		var impersonatorArg any
+		if impersonator != "" {
+			impersonatorArg = impersonator
+		}
+		args = append(args, entry.Action, entry.User, impersonatorArg, entry.Fmt, toDict(entry.Dict), entry.Level, entry.SvcID, entry.NodeID)
+		lines = append(lines, "(?, ?, ?, ?, ?, ?, ?, ?, NOW())")
 
 	}
 	sql := fmt.Sprintf("INSERT INTO log %s VALUES %s", cols, strings.Join(lines, ","))

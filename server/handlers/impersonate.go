@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/shaj13/go-guardian/v2/auth"
@@ -38,8 +39,13 @@ const (
 // the identity of the user who really signed in stays available to the handlers
 // (RealUserInfo) and in the server log.
 //
+// Every audit entry of a request made as another user names both users (see
+// cdb.Log), and each such request that changes something is logged on its own
+// (logImpersonatedRequest), whether its handler logs or not.
+//
 // It must run after AuthMiddleware.
 func ImpersonateMiddleware(db *sql.DB) echo.MiddlewareFunc {
+	audit := cdb.New(db)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			ident := c.Request().Header.Get(ImpersonateHeader)
@@ -72,7 +78,9 @@ func ImpersonateMiddleware(db *sql.DB) echo.MiddlewareFunc {
 				return JSONProblem(c, http.StatusServiceUnavailable, "authentication is unavailable, the database cannot be reached; retry later")
 			}
 			setImpersonated(c, signedIn, target)
-			return next(c)
+			err = next(c)
+			logImpersonatedRequest(c, audit, err)
+			return err
 		}
 	}
 }
@@ -84,8 +92,66 @@ func setImpersonated(c echo.Context, signedIn, target auth.Info) {
 	c.Set("user", target)
 	c.Set("groups", target.GetGroups())
 	c.Set(XUserEmail, target.GetExtensions().Get(xauth.XUserEmail))
+	// The audit entries written while handling the request name the impersonator.
+	c.SetRequest(c.Request().WithContext(cdb.WithImpersonator(c.Request().Context(), signedIn.GetUserName())))
 	c.Response().Header().Set(ImpersonatedByHeader, signedIn.GetUserName())
 	echolog.GetLog(c).Debug("impersonated request", "impersonator", signedIn.GetUserName(), "user", target.GetUserName())
+}
+
+// unloggedImpersonatedRoutes change nothing an audit would follow: a one-time
+// token for the live updates, asked at each page load.
+var unloggedImpersonatedRoutes = map[string]bool{
+	"/api/realtime/token": true,
+}
+
+// logImpersonatedRequest writes the audit entry of a request made as another user
+// that changes something (any method but GET, HEAD and OPTIONS): the method, the
+// path and the status answered, under the impersonated user, the impersonator
+// beside. A refused or failed request is logged as well, as a warning: it was
+// attempted under that identity.
+func logImpersonatedRequest(c echo.Context, audit *cdb.DB, handlerErr error) {
+	method := c.Request().Method
+	if method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions {
+		return
+	}
+	if unloggedImpersonatedRoutes[c.Path()] {
+		return
+	}
+	status := c.Response().Status
+	if !c.Response().Committed {
+		var he *echo.HTTPError
+		switch {
+		case errors.As(handlerErr, &he):
+			status = he.Code
+		case handlerErr != nil:
+			status = http.StatusInternalServerError
+		}
+	}
+	level := "info"
+	if status >= 400 {
+		level = "warning"
+	}
+	target := UserInfoFromContext(c)
+	impersonator := RealUserInfo(c)
+	// The request may be over: the entry is written whatever becomes of it.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(c.Request().Context()), 2*time.Second)
+	defer cancel()
+	if err := audit.Log(ctx, cdb.LogEntry{
+		Action:       "impersonation.request",
+		User:         target.GetUserName(),
+		Impersonator: impersonator.GetUserName(),
+		Fmt:          "%(impersonator)s acting as %(user)s: %(method)s %(path)s answered %(status)d",
+		Dict: map[string]any{
+			"impersonator": impersonator.GetUserName(),
+			"user":         target.GetUserName(),
+			"method":       method,
+			"path":         c.Request().URL.Path,
+			"status":       status,
+		},
+		Level: level,
+	}); err != nil {
+		echolog.GetLog(c).Error("cannot write the impersonation audit entry", logkey.Error, err)
+	}
 }
 
 // RealUserInfo returns the user who really signed in: the impersonator when the

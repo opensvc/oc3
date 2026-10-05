@@ -1270,18 +1270,21 @@ var propsMapping = map[string]propMapping{
 	},
 	"log_event": {
 		Available: []string{
-			"id", "log_action", "log_user", "log_fmt", "log_dict", "log_date",
+			"id", "log_action", "log_user", "log_impersonator", "log_fmt", "log_dict", "log_date",
 			"svc_id", "node_id", "log_level", "log_entry_id",
 			"log_gtalk_sent", "log_email_sent",
 		},
 		Default: []string{
-			"id", "log_action", "log_user", "log_fmt", "log_date",
+			"id", "log_action", "log_user", "log_impersonator", "log_fmt", "log_date",
 			"svc_id", "node_id", "log_level",
 		},
 		Props: map[string]propDef{
 			"id":         col(schema.LogID),
 			"log_action": colStr(schema.LogLogAction),
 			"log_user":   colStr(schema.LogLogUser),
+			// The user who really signed in when log_user was impersonated; empty
+			// otherwise.
+			"log_impersonator": colStr(schema.LogLogImpersonator),
 			// Filtered on the format and its values together: the message shown is
 			// the format filled with the values, and a node or tag name typed in the
 			// filter is among the values.

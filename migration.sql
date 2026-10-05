@@ -17,3 +17,12 @@ ALTER TABLE services
   ADD COLUMN svc_availability_updated DATETIME NULL DEFAULT NULL
     COMMENT 'when svc_availability was computed',
   ADD KEY k_svc_availability (svc_availability);
+
+-- 2026-10-06: the user who really signed in when an action is made as another
+-- user (impersonation). log_user names the user the action is made as; NULL here
+-- when nobody is impersonated. Written by oc3 on every audit entry of an
+-- impersonated request.
+ALTER TABLE log
+  ADD COLUMN log_impersonator VARCHAR(100) NULL DEFAULT NULL
+    COMMENT 'user who really signed in, when acting as log_user'
+    AFTER log_user;

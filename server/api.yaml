@@ -15845,6 +15845,11 @@ components:
           type: string
         log_user:
           type: string
+        log_impersonator:
+          type: string
+          description: |
+            The user who really signed in when the action was made as log_user
+            (impersonation); empty otherwise.
         log_fmt:
           type: string
         log_dict:
