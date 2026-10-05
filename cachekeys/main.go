@@ -45,6 +45,7 @@ const (
 
 	FeedSysreportQ = "oc3:q:feed_sysreport"
 
-	FeedChecksH = "oc3:h:feed_checks"
-	FeedChecksQ = "oc3:q:feed_checks"
+	FeedNodeChecksH        = "oc3:h:feed_node_checks"
+	FeedNodeChecksQ        = "oc3:q:feed_node_checks"
+	FeedNodeChecksPendingH = "oc3:h:feed_node_checks_pending"
 )

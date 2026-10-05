@@ -6299,7 +6299,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/CheckListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -8136,7 +8136,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/CheckListResponse'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -17085,6 +17085,70 @@ components:
             $ref: '#/components/schemas/NetworkSegmentRow'
         info:
           type: string
+
+    CheckRow:
+      type: object
+      description: |
+        A check of a node, as its check drivers report it, with the
+        thresholds the collector sets. Every property is optional: the
+        `props` query parameter selects which columns the server returns.
+        `chk_low`, `chk_high` and `chk_err` are null for a check without
+        thresholds. `chk_err` is 0 within the thresholds, 1 under the low
+        one, 2 over the high one.
+      properties:
+        id:
+          type: integer
+        node_id:
+          type: string
+        svc_id:
+          type: string
+          description: The object the check is attributed to, empty for the node.
+        chk_type:
+          type: string
+        chk_instance:
+          type: string
+        chk_value:
+          type: integer
+          format: int64
+        chk_low:
+          type: integer
+          format: int64
+          nullable: true
+        chk_high:
+          type: integer
+          format: int64
+          nullable: true
+        chk_err:
+          type: integer
+          nullable: true
+        chk_threshold_provider:
+          type: string
+          description: Where the thresholds come from, settings, fset:<filterset> or defaults.
+        chk_created:
+          type: string
+        chk_updated:
+          type: string
+        services.svcname:
+          type: string
+          nullable: true
+
+    CheckListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/CheckRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     AlertListResponse:
       type: object

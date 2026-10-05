@@ -692,13 +692,7 @@ func (oDb *DB) DashboardUpdateChecksNotUpdated(ctx context.Context, maxAge time.
 		    -- Suppression des "check out of bounds" non correspondants
 		    SELECT d.id FROM dashboard d
 		    LEFT JOIN checks_live c ON
-			d.dash_dict_md5 = MD5(CONCAT(
-			    '{"ctype": "', c.chk_type,
-			    '", "inst": "', c.chk_instance,
-			    '", "ttype": "', c.chk_threshold_provider,
-			    '", "val": ', c.chk_value,
-			    ', "min": ', c.chk_low,
-			    ', "max": ', c.chk_high, '}'))
+			d.dash_dict_md5 = MD5(` + checkOutOfBoundsDictSQL("c") + `)
 			AND d.node_id = c.node_id
 		    WHERE
 			d.dash_type = "check out of bounds"

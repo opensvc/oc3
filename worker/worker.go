@@ -71,6 +71,7 @@ const (
 	jtInstanceAction       = "instanceAction"
 	jtInstanceResourceInfo = "instanceResourceInfo"
 	jtInstanceStatus       = "instanceStatus"
+	jtNodeChecks           = "nodeChecks"
 	jtNodeDisk             = "nodeDisk"
 	jtNodeSystem           = "nodeSystem"
 	jtObjectConfig         = "objectConfig"
@@ -146,6 +147,15 @@ func (w *Worker) runJob(unqueuedJob []string) error {
 			return fmt.Errorf("invalid feed node disk index expected `nodename`@`nodeID`@`clusterID` found: %s", unqueuedJob[1])
 		}
 		j = newNodeDisk(l[0], l[1], l[2])
+	case cachekeys.FeedNodeChecksQ:
+		// expected unqueuedJob[1]: <nodename>@<nodeID>@<clusterID>
+		l := strings.Split(unqueuedJob[1], "@")
+		if len(l) != 3 || l[0] == "" || l[1] == "" || l[2] == "" {
+			err := fmt.Errorf("invalid feed node checks index expected `nodename`@`nodeID`@`clusterID` found: %s", unqueuedJob[1])
+			slog.Warn(err.Error())
+			return err
+		}
+		j = newNodeChecks(l[0], l[1], l[2])
 	case cachekeys.FeedSANSwitchQ:
 		// expected unqueuedJob[1]: <type>@<name>
 		if l := strings.SplitN(unqueuedJob[1], "@", 2); len(l) != 2 || l[0] == "" || l[1] == "" {

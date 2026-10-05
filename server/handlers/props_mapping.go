@@ -1030,12 +1030,19 @@ var propsMapping = map[string]propMapping{
 			"chk_type":               colStr(schema.ChecksLiveChkType),
 			"chk_instance":           colStr(schema.ChecksLiveChkInstance),
 			"chk_value":              colInt(schema.ChecksLiveChkValue),
-			"chk_low":                colInt(schema.ChecksLiveChkLow),
-			"chk_high":               colInt(schema.ChecksLiveChkHigh),
-			"chk_err":                colInt(schema.ChecksLiveChkErr),
+			// A check without thresholds has none, not thresholds of 0,
+			// and its error state is null then.
+			"chk_low":                col(schema.ChecksLiveChkLow),
+			"chk_high":               col(schema.ChecksLiveChkHigh),
+			"chk_err":                col(schema.ChecksLiveChkErr),
 			"chk_threshold_provider": colStr(schema.ChecksLiveChkThresholdProvider),
 			"chk_created":            colStr(schema.ChecksLiveChkCreated),
 			"chk_updated":            colStr(schema.ChecksLiveChkUpdated),
+		},
+		// A check points at its object by id only, the name lives in the
+		// joined table.
+		Joins: map[string]JoinDef{
+			"services": {MappingKey: "service"},
 		},
 	},
 	"resource": {

@@ -51,7 +51,6 @@ const (
 
 var (
 	Tasks = TaskList{
-		TaskChecks,
 		TaskSysreport,
 		TaskRefreshBActionErrors,
 		TaskAlertUpdateActionErrors,

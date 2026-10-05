@@ -74,6 +74,7 @@ worker.fast:
     - "instance_resource_info"
     - "instance_status"
     - "instance_action"
+    - "node_checks"
     - "node_disk"
     - "object_config"
     - "san_switch"

@@ -775,6 +775,49 @@ type ChartSeries struct {
 	Unit   *string     `json:"unit,omitempty"`
 }
 
+// CheckListResponse defines model for CheckListResponse.
+type CheckListResponse struct {
+	Data CheckListResponse_Data `json:"data"`
+	Meta *ListMeta              `json:"meta,omitempty"`
+}
+
+// CheckListResponseData0 defines model for .
+type CheckListResponseData0 = []CheckRow
+
+// CheckListResponseData1 defines model for .
+type CheckListResponseData1 map[string]map[string]int
+
+// CheckListResponse_Data defines model for CheckListResponse.Data.
+type CheckListResponse_Data struct {
+	union json.RawMessage
+}
+
+// CheckRow A check of a node, as its check drivers report it, with the
+// thresholds the collector sets. Every property is optional: the
+// `props` query parameter selects which columns the server returns.
+// `chk_low`, `chk_high` and `chk_err` are null for a check without
+// thresholds. `chk_err` is 0 within the thresholds, 1 under the low
+// one, 2 over the high one.
+type CheckRow struct {
+	ChkCreated  *string `json:"chk_created,omitempty"`
+	ChkErr      *int    `json:"chk_err,omitempty"`
+	ChkHigh     *int64  `json:"chk_high,omitempty"`
+	ChkInstance *string `json:"chk_instance,omitempty"`
+	ChkLow      *int64  `json:"chk_low,omitempty"`
+
+	// ChkThresholdProvider Where the thresholds come from, settings, fset:<filterset> or defaults.
+	ChkThresholdProvider *string `json:"chk_threshold_provider,omitempty"`
+	ChkType              *string `json:"chk_type,omitempty"`
+	ChkUpdated           *string `json:"chk_updated,omitempty"`
+	ChkValue             *int64  `json:"chk_value,omitempty"`
+	Id                   *int    `json:"id,omitempty"`
+	NodeId               *string `json:"node_id,omitempty"`
+	ServicesSvcname      *string `json:"services.svcname,omitempty"`
+
+	// SvcId The object the check is attributed to, empty for the node.
+	SvcId *string `json:"svc_id,omitempty"`
+}
+
 // ClusterListResponse defines model for ClusterListResponse.
 type ClusterListResponse struct {
 	Data ClusterListResponse_Data `json:"data"`
@@ -10276,6 +10319,68 @@ func (t ChartListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ChartListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsCheckListResponseData0 returns the union data inside the CheckListResponse_Data as a CheckListResponseData0
+func (t CheckListResponse_Data) AsCheckListResponseData0() (CheckListResponseData0, error) {
+	var body CheckListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckListResponseData0 overwrites any union data inside the CheckListResponse_Data as the provided CheckListResponseData0
+func (t *CheckListResponse_Data) FromCheckListResponseData0(v CheckListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckListResponseData0 performs a merge with any union data inside the CheckListResponse_Data, using the provided CheckListResponseData0
+func (t *CheckListResponse_Data) MergeCheckListResponseData0(v CheckListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCheckListResponseData1 returns the union data inside the CheckListResponse_Data as a CheckListResponseData1
+func (t CheckListResponse_Data) AsCheckListResponseData1() (CheckListResponseData1, error) {
+	var body CheckListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckListResponseData1 overwrites any union data inside the CheckListResponse_Data as the provided CheckListResponseData1
+func (t *CheckListResponse_Data) FromCheckListResponseData1(v CheckListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckListResponseData1 performs a merge with any union data inside the CheckListResponse_Data, using the provided CheckListResponseData1
+func (t *CheckListResponse_Data) MergeCheckListResponseData1(v CheckListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CheckListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CheckListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

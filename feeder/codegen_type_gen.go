@@ -130,6 +130,28 @@ type InstanceStatus struct {
 	Version string `json:"version"`
 }
 
+// NodeCheck defines model for NodeCheck.
+type NodeCheck struct {
+	// Driver The driver of the check type that reported it.
+	Driver *string `json:"driver,omitempty"`
+
+	// Instance What the check measures, as a mount point or a wwid.
+	Instance string `json:"instance"`
+
+	// Path The object the check is attributed to, empty for the node.
+	Path *string `json:"path,omitempty"`
+
+	// Type The type of the check, as fs_u or mpath.
+	Type  string  `json:"type"`
+	Unit  *string `json:"unit,omitempty"`
+	Value int64   `json:"value"`
+}
+
+// NodeChecks defines model for NodeChecks.
+type NodeChecks struct {
+	Data []NodeCheck `json:"data"`
+}
+
 // NodeDisks defines model for NodeDisks.
 type NodeDisks struct {
 	Data *[]Disk `json:"data,omitempty"`
@@ -180,12 +202,6 @@ type ObjectConfig struct {
 	RawConfig              *[]byte   `json:"raw_config,omitempty"`
 	Scope                  *[]string `json:"scope,omitempty"`
 	Topology               *string   `json:"topology,omitempty"`
-}
-
-// PostChecks defines model for PostChecks.
-type PostChecks struct {
-	Vals [][]interface{} `json:"vals"`
-	Vars []string        `json:"vars"`
 }
 
 // PostDaemonPing defines model for PostDaemonPing.
@@ -356,9 +372,6 @@ type PostInstanceStatusParams struct {
 	Sync *InQuerySync `form:"sync,omitempty" json:"sync,omitempty"`
 }
 
-// PostChecksJSONRequestBody defines body for PostChecks for application/json ContentType.
-type PostChecksJSONRequestBody = PostChecks
-
 // PostDaemonPingJSONRequestBody defines body for PostDaemonPing for application/json ContentType.
 type PostDaemonPingJSONRequestBody = PostDaemonPing
 
@@ -382,6 +395,9 @@ type PostNodeActionQueuedDoneJSONRequestBody = QueuedActionDone
 
 // PostNodeActionQueuedRunningJSONRequestBody defines body for PostNodeActionQueuedRunning for application/json ContentType.
 type PostNodeActionQueuedRunningJSONRequestBody = QueuedActionRunning
+
+// PostNodeChecksJSONRequestBody defines body for PostNodeChecks for application/json ContentType.
+type PostNodeChecksJSONRequestBody = NodeChecks
 
 // PostNodeDiskJSONRequestBody defines body for PostNodeDisk for application/json ContentType.
 type PostNodeDiskJSONRequestBody = NodeDisks
