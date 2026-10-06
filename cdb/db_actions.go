@@ -485,11 +485,12 @@ func (oDb *DB) UpdateDashActionErrors(ctx context.Context, svcID string, nodeID 
 	return nil
 }
 
-// GetServiceActions returns the actions the agents ran on a service (svcactions),
-// each with its service and its node when the node row exists, the latest first
-// as the historical actions view. A non-manager sees them only for a service of an
-// app their groups are responsible for.
-func (oDb *DB) GetServiceActions(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
+// queryServiceActions lists the actions the agents ran (svcactions), each with its
+// service and its node when the node row exists, the latest first as the
+// historical actions view; svcID and id, when not empty, narrow it to a service or
+// to one row. A non-manager sees only the actions of the services of an app their
+// groups are responsible for.
+func (oDb *DB) queryServiceActions(ctx context.Context, svcID, id string, p ListParams) ([]map[string]any, error) {
 	defer logDuration("getServiceActions", time.Now())
 	if len(p.SelectExprs) == 0 {
 		return nil, fmt.Errorf("getServiceActions: no select expressions")
@@ -498,8 +499,13 @@ func (oDb *DB) GetServiceActions(ctx context.Context, svcID string, p ListParams
 	q := From(schema.TSvcactions).
 		Via(schema.TServices).
 		LeftJoin(schema.TNodes).
-		RawSelect(p.SelectExprs...).
-		Where(schema.SvcactionsSvcID, "=", svcID)
+		RawSelect(p.SelectExprs...)
+	if svcID != "" {
+		q = q.Where(schema.SvcactionsSvcID, "=", svcID)
+	}
+	if id != "" {
+		q = q.Where(schema.SvcactionsID, "=", id)
+	}
 	if !p.IsManager {
 		clean := cleanGroups(p.Groups)
 		if len(clean) == 0 {
@@ -514,6 +520,9 @@ func (oDb *DB) GetServiceActions(ctx context.Context, svcID string, p ListParams
 				stringsToAny(clean)...,
 			)
 		}
+	} else if svcID == "" && id == "" {
+		// The query builder wants a condition to build its WHERE on.
+		q = q.Where(schema.SvcactionsID, ">", 0)
 	}
 	// Column filters of the request, ANDed with the access control above.
 	q = q.WhereFilters(p.Filters)
@@ -532,4 +541,20 @@ func (oDb *DB) GetServiceActions(ctx context.Context, svcID string, p ListParams
 	}
 	defer func() { _ = rows.Close() }()
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// GetServiceActions returns the actions the agents ran on a service.
+func (oDb *DB) GetServiceActions(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
+	return oDb.queryServiceActions(ctx, svcID, "", p)
+}
+
+// GetServicesActions returns the actions the agents ran on the services the
+// caller may see.
+func (oDb *DB) GetServicesActions(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	return oDb.queryServiceActions(ctx, "", "", p)
+}
+
+// GetServicesAction returns one action, by its record id, if the caller may see it.
+func (oDb *DB) GetServicesAction(ctx context.Context, id string, p ListParams) ([]map[string]any, error) {
+	return oDb.queryServiceActions(ctx, "", id, p)
 }

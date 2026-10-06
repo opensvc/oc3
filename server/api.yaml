@@ -8110,6 +8110,73 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /services_actions:
+    get:
+      operationId: GetServicesActions
+      description: |
+        List the actions the agents ran on the services (svcactions), as the
+        historical Actions view; see GET /services/{svc_id}/actions for the rows.
+        The latest first by default. A manager sees every action; the others those
+        of the services of an app their groups are responsible for.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceActionListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /services_actions/{action_id}:
+    get:
+      operationId: GetServicesAction
+      description: Display an action, if the caller may see it (see GET /services_actions).
+      parameters:
+        - in: path
+          name: action_id
+          required: true
+          description: Action record identifier (svcactions.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceActionListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /services/{svc_id}/actions:
     get:
       operationId: GetServiceActions
