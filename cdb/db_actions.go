@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/opensvc/oc3/schema"
 )
 
 type (
@@ -285,7 +287,7 @@ func (oDb *DB) InsertSvcAction(ctx context.Context, a SvcAction, lines ...SvcAct
 	if !a.EndAt.IsZero() {
 		query += ", end, time"
 		placeholders += ", ?, ?"
-		args = append(args, a.EndAt, a.BeginAt.Sub(a.EndAt).Seconds())
+		args = append(args, a.EndAt, a.EndAt.Sub(a.BeginAt).Seconds())
 
 	}
 	if a.Status != "" {
@@ -481,4 +483,53 @@ func (oDb *DB) UpdateDashActionErrors(ctx context.Context, svcID string, nodeID 
 		}
 	}
 	return nil
+}
+
+// GetServiceActions returns the actions the agents ran on a service (svcactions),
+// each with its service and its node when the node row exists, the latest first
+// as the historical actions view. A non-manager sees them only for a service of an
+// app their groups are responsible for.
+func (oDb *DB) GetServiceActions(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
+	defer logDuration("getServiceActions", time.Now())
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getServiceActions: no select expressions")
+	}
+	// services is an inner join: the access check filters on services.svc_app.
+	q := From(schema.TSvcactions).
+		Via(schema.TServices).
+		LeftJoin(schema.TNodes).
+		RawSelect(p.SelectExprs...).
+		Where(schema.SvcactionsSvcID, "=", svcID)
+	if !p.IsManager {
+		clean := cleanGroups(p.Groups)
+		if len(clean) == 0 {
+			q = q.WhereRaw("1=0")
+		} else {
+			q = q.WhereRaw(
+				"services.svc_app IN ("+
+					"SELECT a.app FROM apps a"+
+					" JOIN apps_responsibles ar ON ar.app_id = a.id"+
+					" JOIN auth_group ag ON ag.id = ar.group_id"+
+					" WHERE ag.role IN ("+Placeholders(len(clean))+"))",
+				stringsToAny(clean)...,
+			)
+		}
+	}
+	// Column filters of the request, ANDed with the access control above.
+	q = q.WhereFilters(p.Filters)
+	query, args, err := q.Build()
+	if err != nil {
+		return nil, fmt.Errorf("getServiceActions: %w", err)
+	}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("svcactions.begin DESC, svcactions.id DESC")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getServiceActions: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }

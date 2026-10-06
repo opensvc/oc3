@@ -1790,6 +1790,9 @@ var (
 	SvcactionsSid          = &Col{T: TSvcactions, Name: "sid", Nullable: true}
 	SvcactionsRid          = &Col{T: TSvcactions, Name: "rid", Nullable: true}
 	SvcactionsSubset       = &Col{T: TSvcactions, Name: "subset", Nullable: true}
+	SvcactionsCommand      = &Col{T: TSvcactions, Name: "command", Nullable: true}
+	SvcactionsOrigin       = &Col{T: TSvcactions, Name: "origin", Nullable: true}
+	SvcactionsLogType      = &Col{T: TSvcactions, Name: "log_type", Nullable: true}
 )
 
 // Columns of svcdisks

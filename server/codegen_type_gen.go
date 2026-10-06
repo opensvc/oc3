@@ -2249,6 +2249,65 @@ type SearchResponse struct {
 	Data []SearchGroup `json:"data"`
 }
 
+// ServiceActionListResponse defines model for ServiceActionListResponse.
+type ServiceActionListResponse struct {
+	Data ServiceActionListResponse_Data `json:"data"`
+	Meta *ListMeta                      `json:"meta,omitempty"`
+}
+
+// ServiceActionListResponseData0 defines model for .
+type ServiceActionListResponseData0 = []ServiceActionRow
+
+// ServiceActionListResponseData1 defines model for .
+type ServiceActionListResponseData1 map[string]map[string]int
+
+// ServiceActionListResponse_Data defines model for ServiceActionListResponse.Data.
+type ServiceActionListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ServiceActionRow An action an agent ran on a service, or a log line of one. Every property
+// is optional: the `props` query parameter selects which columns the server
+// returns. The `services.` and `nodes.` props come from joined tables.
+type ServiceActionRow struct {
+	Ack          *int    `json:"ack,omitempty"`
+	AckedBy      *string `json:"acked_by,omitempty"`
+	AckedComment *string `json:"acked_comment,omitempty"`
+	AckedDate    *string `json:"acked_date,omitempty"`
+	Action       *string `json:"action,omitempty"`
+	Alert        *int    `json:"alert,omitempty"`
+	Begin        *string `json:"begin,omitempty"`
+	Command      *string `json:"command,omitempty"`
+
+	// Cron 1 when the scheduler of the agent ran the action
+	Cron   *int    `json:"cron,omitempty"`
+	End    *string `json:"end,omitempty"`
+	Hostid *string `json:"hostid,omitempty"`
+	Id     *int    `json:"id,omitempty"`
+
+	// LogType "status" for an action, empty for a log line of an action
+	LogType         *string `json:"log_type,omitempty"`
+	NodeId          *string `json:"node_id,omitempty"`
+	NodesNodename   *string `json:"nodes.nodename,omitempty"`
+	Origin          *string `json:"origin,omitempty"`
+	Pid             *string `json:"pid,omitempty"`
+	Rid             *string `json:"rid,omitempty"`
+	ServicesSvcname *string `json:"services.svcname,omitempty"`
+
+	// Sid Session id, shared by the actions of one agent command
+	Sid *string `json:"sid,omitempty"`
+
+	// Status ok, warn, err, or empty while the action runs
+	Status    *string `json:"status,omitempty"`
+	StatusLog *string `json:"status_log,omitempty"`
+	Subset    *string `json:"subset,omitempty"`
+	SvcId     *string `json:"svc_id,omitempty"`
+
+	// Time Duration, in seconds
+	Time    *int    `json:"time,omitempty"`
+	Version *string `json:"version,omitempty"`
+}
+
 // ServiceAvailability defines model for ServiceAvailability.
 type ServiceAvailability struct {
 	AvailableS int `json:"available_s"`
@@ -8365,6 +8424,59 @@ type PostServiceJSONBody struct {
 	Svcname       *string `json:"svcname,omitempty"`
 }
 
+// GetServiceActionsParams defines parameters for GetServiceActions.
+type GetServiceActionsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
 // GetServiceAlertsParams defines parameters for GetServiceAlerts.
 type GetServiceAlertsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -12055,6 +12167,68 @@ func (t RulesetsVariableListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *RulesetsVariableListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsServiceActionListResponseData0 returns the union data inside the ServiceActionListResponse_Data as a ServiceActionListResponseData0
+func (t ServiceActionListResponse_Data) AsServiceActionListResponseData0() (ServiceActionListResponseData0, error) {
+	var body ServiceActionListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromServiceActionListResponseData0 overwrites any union data inside the ServiceActionListResponse_Data as the provided ServiceActionListResponseData0
+func (t *ServiceActionListResponse_Data) FromServiceActionListResponseData0(v ServiceActionListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeServiceActionListResponseData0 performs a merge with any union data inside the ServiceActionListResponse_Data, using the provided ServiceActionListResponseData0
+func (t *ServiceActionListResponse_Data) MergeServiceActionListResponseData0(v ServiceActionListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsServiceActionListResponseData1 returns the union data inside the ServiceActionListResponse_Data as a ServiceActionListResponseData1
+func (t ServiceActionListResponse_Data) AsServiceActionListResponseData1() (ServiceActionListResponseData1, error) {
+	var body ServiceActionListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromServiceActionListResponseData1 overwrites any union data inside the ServiceActionListResponse_Data as the provided ServiceActionListResponseData1
+func (t *ServiceActionListResponse_Data) FromServiceActionListResponseData1(v ServiceActionListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeServiceActionListResponseData1 performs a merge with any union data inside the ServiceActionListResponse_Data, using the provided ServiceActionListResponseData1
+func (t *ServiceActionListResponse_Data) MergeServiceActionListResponseData1(v ServiceActionListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ServiceActionListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ServiceActionListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

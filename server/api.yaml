@@ -8110,6 +8110,54 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /services/{svc_id}/actions:
+    get:
+      operationId: GetServiceActions
+      description: |
+        List the actions the agents ran on a service (svcactions), as the
+        historical collector's service actions tab: an action row has
+        `log_type` "status", a log line of an action an empty `log_type` and its
+        text in `status_log`. With the names of the node and the service as
+        joined props (`nodes.nodename`, `services.svcname`). The latest first by
+        default. A manager sees the actions of every service; the others those of
+        a service of an app their groups are responsible for, the other services
+        answering 404.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service identifier (svc_id UUID or svcname)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceActionListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /services/{svc_id}/checks:
     get:
       operationId: GetServiceChecks
@@ -16043,6 +16091,110 @@ components:
         nodes.nodename:
           type: string
           nullable: true
+
+    ServiceActionRow:
+      type: object
+      description: |
+        An action an agent ran on a service, or a log line of one. Every property
+        is optional: the `props` query parameter selects which columns the server
+        returns. The `services.` and `nodes.` props come from joined tables.
+      properties:
+        id:
+          type: integer
+        svc_id:
+          type: string
+        node_id:
+          type: string
+        sid:
+          type: string
+          nullable: true
+          description: Session id, shared by the actions of one agent command
+        pid:
+          type: string
+          nullable: true
+        rid:
+          type: string
+          nullable: true
+        subset:
+          type: string
+          nullable: true
+        action:
+          type: string
+          nullable: true
+        command:
+          type: string
+          nullable: true
+        origin:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+          description: ok, warn, err, or empty while the action runs
+        begin:
+          type: string
+        end:
+          type: string
+          nullable: true
+        time:
+          type: integer
+          nullable: true
+          description: Duration, in seconds
+        status_log:
+          type: string
+          nullable: true
+        log_type:
+          type: string
+          nullable: true
+          description: '"status" for an action, empty for a log line of an action'
+        cron:
+          type: integer
+          nullable: true
+          description: 1 when the scheduler of the agent ran the action
+        version:
+          type: string
+          nullable: true
+        hostid:
+          type: string
+          nullable: true
+        alert:
+          type: integer
+          nullable: true
+        ack:
+          type: integer
+          nullable: true
+        acked_by:
+          type: string
+          nullable: true
+        acked_date:
+          type: string
+          nullable: true
+        acked_comment:
+          type: string
+          nullable: true
+        services.svcname:
+          type: string
+        nodes.nodename:
+          type: string
+          nullable: true
+
+    ServiceActionListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ServiceActionRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     ResourceListResponse:
       type: object
