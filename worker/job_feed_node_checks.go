@@ -93,7 +93,9 @@ func (d *jobFeedNodeChecks) getData(ctx context.Context) error {
 }
 
 // updateDB stores the checks reported, and removes the ones the node no
-// longer reports.
+// longer reports. A partial feed, of a run where a checker failed, removes
+// none: the checks of the failed checker are missing from it, and their last
+// known values and alerts must stay until a complete run tells their state.
 //
 // A check is attributed to the object of its path. A check of the node
 // itself, with no path, is attributed to the object running the node as a
@@ -143,6 +145,10 @@ func (d *jobFeedNodeChecks) updateDB(ctx context.Context) error {
 	}
 	if err := d.oDb.ChecksLiveUpsert(ctx, d.nodeID, rows, d.now); err != nil {
 		return err
+	}
+	if d.data.Partial != nil && *d.data.Partial {
+		d.Logger().Info("partial checks feed: keep the checks not reported")
+		return nil
 	}
 	return d.oDb.ChecksLivePurgeBefore(ctx, d.nodeID, d.now)
 }
