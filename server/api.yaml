@@ -1433,6 +1433,131 @@ paths:
       tags:
         - auth
 
+  /auth/backchannel-logout:
+    post:
+      operationId: PostAuthBackchannelLogout
+      description: |
+        OpenID Connect Back-Channel Logout 1.0: the provider ends the sessions of a
+        user or of one of its sign-ins. The logout token is verified (signature,
+        issuer, audience, issue time, event, no nonce), then the sessions it names
+        by sid, or else by sub, are deleted. Public: the provider authenticates
+        itself by the signature of the token.
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [logout_token]
+              properties:
+                logout_token:
+                  type: string
+      responses:
+        200:
+          description: The sessions named by the token are ended.
+        400:
+          $ref: '#/components/responses/400'
+        503:
+          description: The OpenID Connect provider is not reachable yet.
+
+  /auth/callback:
+    get:
+      operationId: GetAuthCallback
+      description: |
+        End of an OpenID Connect sign-in, where the provider sends the browser back.
+        The sign-in in progress (cookie) is consumed, the state checked, the code
+        exchanged with the PKCE verifier, the ID token verified, the account
+        resolved from the (issuer, subject) identity, and a session opened in an
+        HttpOnly cookie. Always answers a redirection: to the path the sign-in
+        started from, or to it with an auth_error parameter naming the failure
+        (state, expired, token, unknown_user, locked, denied, unavailable).
+      tags:
+        - auth
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+        - in: query
+          name: state
+          schema:
+            type: string
+        - in: query
+          name: error
+          schema:
+            type: string
+      responses:
+        303:
+          description: Back to the SPA.
+
+  /auth/info:
+    get:
+      operationId: GetAuthInfo
+      description: |
+        The sign-in modes the collector offers, for the sign-in screen, and whether
+        the request carries a valid OpenID Connect session. Public.
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthInfo'
+
+  /auth/login:
+    get:
+      operationId: GetAuthLogin
+      description: |
+        Starts an OpenID Connect sign-in (authorization code flow with PKCE): fresh
+        state, nonce and code verifier are kept on the server, a short-lived
+        HttpOnly cookie names the sign-in, and the browser is redirected to the
+        provider. return_to must be a path of the SPA; anything else is replaced
+        by /.
+      tags:
+        - auth
+      parameters:
+        - in: query
+          name: return_to
+          description: Path of the SPA to come back to once signed in
+          schema:
+            type: string
+      responses:
+        302:
+          description: To the provider's authorization endpoint.
+        404:
+          description: OpenID Connect is not enabled.
+        503:
+          description: The OpenID Connect provider is not reachable yet.
+
+  /auth/logout:
+    post:
+      operationId: PostAuthLogout
+      description: |
+        Ends the OpenID Connect session of the request and clears its cookie, then
+        returns the provider's end-session URL (RP-initiated logout) for the SPA to
+        follow, empty when the provider has none. Protected against cross-site
+        requests: the X-OC3-CSRF header is required and the Origin must be the
+        SPA's.
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [logout_url]
+                properties:
+                  logout_url:
+                    type: string
+        403:
+          $ref: '#/components/responses/403'
+
   /charts:
     get:
       operationId: GetCharts
@@ -14673,6 +14798,29 @@ components:
             $ref: "#/components/schemas/Problem"
 
   schemas:
+    AuthInfo:
+      type: object
+      required: [basic, oidc, session]
+      properties:
+        basic:
+          type: boolean
+          description: Whether users may sign in with their collector password
+        oidc:
+          type: object
+          required: [enabled, ready, name]
+          properties:
+            enabled:
+              type: boolean
+            ready:
+              type: boolean
+              description: Whether the provider was discovered and the sign-in can start
+            name:
+              type: string
+              description: Name of the provider (display_name), for messages and logs; the sign-in screen does not show it
+        session:
+          type: boolean
+          description: Whether the request carries a valid OpenID Connect session
+
     ListMeta:
       type: object
       required:

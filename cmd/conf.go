@@ -73,6 +73,7 @@ func setDefaultServerConfig() {
 	viper.SetDefault(s+".log.request.level", "none")
 
 	setDefaultAuthConfig()
+	setDefaultOIDCConfig(s)
 }
 
 func setDefaultSchedulerConfig() {

@@ -781,6 +781,24 @@ type AppRow struct {
 	Updated     *string `json:"updated,omitempty"`
 }
 
+// AuthInfo defines model for AuthInfo.
+type AuthInfo struct {
+	// Basic Whether users may sign in with their collector password
+	Basic bool `json:"basic"`
+	Oidc  struct {
+		Enabled bool `json:"enabled"`
+
+		// Name Name of the provider (display_name), for messages and logs; the sign-in screen does not show it
+		Name string `json:"name"`
+
+		// Ready Whether the provider was discovered and the sign-in can start
+		Ready bool `json:"ready"`
+	} `json:"oidc"`
+
+	// Session Whether the request carries a valid OpenID Connect session
+	Session bool `json:"session"`
+}
+
 // ChartListResponse defines model for ChartListResponse.
 type ChartListResponse struct {
 	Data ChartListResponse_Data `json:"data"`
@@ -3499,6 +3517,24 @@ type GetArraysParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// PostAuthBackchannelLogoutFormdataBody defines parameters for PostAuthBackchannelLogout.
+type PostAuthBackchannelLogoutFormdataBody struct {
+	LogoutToken string `form:"logout_token" json:"logout_token"`
+}
+
+// GetAuthCallbackParams defines parameters for GetAuthCallback.
+type GetAuthCallbackParams struct {
+	Code  *string `form:"code,omitempty" json:"code,omitempty"`
+	State *string `form:"state,omitempty" json:"state,omitempty"`
+	Error *string `form:"error,omitempty" json:"error,omitempty"`
+}
+
+// GetAuthLoginParams defines parameters for GetAuthLogin.
+type GetAuthLoginParams struct {
+	// ReturnTo Path of the SPA to come back to once signed in
+	ReturnTo *string `form:"return_to,omitempty" json:"return_to,omitempty"`
 }
 
 // PostAuthNodeJSONBody defines parameters for PostAuthNode.
@@ -10154,6 +10190,9 @@ type DeleteAppsResponsiblesJSONRequestBody DeleteAppsResponsiblesJSONBody
 
 // PostAppsResponsiblesJSONRequestBody defines body for PostAppsResponsibles for application/json ContentType.
 type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
+
+// PostAuthBackchannelLogoutFormdataRequestBody defines body for PostAuthBackchannelLogout for application/x-www-form-urlencoded ContentType.
+type PostAuthBackchannelLogoutFormdataRequestBody PostAuthBackchannelLogoutFormdataBody
 
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody

@@ -86,6 +86,10 @@ type formSubmission struct {
 	nodeID     string
 	userEmail  string
 	auth       string // Authorization header, for the calls of rest outputs
+	// cookie is the OIDC session cookie of the submitter, replayed like auth on
+	// the local calls of rest outputs: a session-authenticated submitter has no
+	// Authorization header to replay.
+	cookie string
 
 	mu        sync.Mutex
 	results   map[string]any
@@ -107,6 +111,11 @@ func (a *Api) PutForm(c echo.Context, formId int) error {
 	body := entries[0]
 
 	s := &formSubmission{a: a, log: log, formID: int64(formId), auth: c.Request().Header.Get("Authorization")}
+	if a.OIDC != nil {
+		if cookie, err := c.Cookie(a.OIDC.SessionCookieName()); err == nil && cookie.Value != "" {
+			s.cookie = cookie.Name + "=" + cookie.Value
+		}
+	}
 	s.userEmail, _ = c.Get(XUserEmail).(string)
 	s.nodeID, _ = c.Get(XNodeID).(string)
 	if s.caller, err = a.formCaller(ctx, c); err != nil {
@@ -501,6 +510,12 @@ func (s *formSubmission) callAPI(ctx context.Context, method, path string, vars 
 	req.Header.Set("Accept", "application/json")
 	if fullURL == "" && s.auth != "" {
 		req.Header.Set("Authorization", s.auth)
+	}
+	if fullURL == "" && s.cookie != "" {
+		// A local call, without Origin: the CSRF header is what a session
+		// request that changes something needs.
+		req.Header.Set("Cookie", s.cookie)
+		req.Header.Set(CSRFHeader, "1")
 	}
 	resp, err := formsHTTPClient.Do(req)
 	if err != nil {
