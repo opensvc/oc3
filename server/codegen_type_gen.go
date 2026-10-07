@@ -1186,14 +1186,20 @@ type FiltersetRow struct {
 	Id          *int    `json:"id,omitempty"`
 }
 
+// FiltersetRulesetRef defines model for FiltersetRulesetRef.
+type FiltersetRulesetRef struct {
+	Id          int    `json:"id"`
+	RulesetName string `json:"ruleset_name"`
+}
+
 // FiltersetUsageResponse defines model for FiltersetUsageResponse.
 type FiltersetUsageResponse struct {
 	Data struct {
 		// Filtersets Filtersets encapsulating this one.
 		Filtersets []FiltersetRef `json:"filtersets"`
 
-		// Rulesets Compliance rulesets restricted by this filterset. The ruleset name is in `fset_name`.
-		Rulesets []FiltersetRef `json:"rulesets"`
+		// Rulesets Compliance rulesets restricted by this filterset.
+		Rulesets []FiltersetRulesetRef `json:"rulesets"`
 
 		// Thresholds Check thresholds, as "chk_type.chk_instance:low-high".
 		Thresholds []string `json:"thresholds"`

@@ -16682,9 +16682,9 @@ components:
                 $ref: '#/components/schemas/FiltersetRef'
             rulesets:
               type: array
-              description: Compliance rulesets restricted by this filterset. The ruleset name is in `fset_name`.
+              description: Compliance rulesets restricted by this filterset.
               items:
-                $ref: '#/components/schemas/FiltersetRef'
+                $ref: '#/components/schemas/FiltersetRulesetRef'
             thresholds:
               type: array
               description: Check thresholds, as "chk_type.chk_instance:low-high".
@@ -16698,6 +16698,15 @@ components:
         id:
           type: integer
         fset_name:
+          type: string
+
+    FiltersetRulesetRef:
+      type: object
+      required: [id, ruleset_name]
+      properties:
+        id:
+          type: integer
+        ruleset_name:
           type: string
 
     FiltersetExport:

@@ -48,6 +48,12 @@ type FiltersetRef struct {
 	Name string `json:"fset_name,omitempty"`
 }
 
+// FiltersetRulesetRef names a compliance ruleset restricted by a filterset.
+type FiltersetRulesetRef struct {
+	ID   int    `json:"id"`
+	Name string `json:"ruleset_name"`
+}
+
 type FiltersetThreshold struct {
 	ChkType     string
 	ChkInstance string
@@ -110,7 +116,7 @@ func (oDb *DB) FiltersetUsageEncapFiltersets(ctx context.Context, fsetID int) ([
 }
 
 // FiltersetUsageRulesets lists the comp_rulesets attached to the given filterset.
-func (oDb *DB) FiltersetUsageRulesets(ctx context.Context, fsetID int) ([]FiltersetRef, error) {
+func (oDb *DB) FiltersetUsageRulesets(ctx context.Context, fsetID int) ([]FiltersetRulesetRef, error) {
 	const query = `SELECT comp_rulesets.ruleset_name, comp_rulesets.id
 		FROM comp_rulesets_filtersets
 		JOIN comp_rulesets ON comp_rulesets.id = comp_rulesets_filtersets.ruleset_id
@@ -121,7 +127,7 @@ func (oDb *DB) FiltersetUsageRulesets(ctx context.Context, fsetID int) ([]Filter
 		return nil, fmt.Errorf("FiltersetUsageRulesets: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
-	out := make([]FiltersetRef, 0)
+	out := make([]FiltersetRulesetRef, 0)
 	for rows.Next() {
 		var (
 			name sql.NullString
@@ -130,7 +136,7 @@ func (oDb *DB) FiltersetUsageRulesets(ctx context.Context, fsetID int) ([]Filter
 		if err := rows.Scan(&name, &id); err != nil {
 			return nil, fmt.Errorf("FiltersetUsageRulesets scan: %w", err)
 		}
-		out = append(out, FiltersetRef{ID: id, Name: name.String})
+		out = append(out, FiltersetRulesetRef{ID: id, Name: name.String})
 	}
 	return out, nil
 }
