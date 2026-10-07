@@ -2080,6 +2080,17 @@ paths:
                   type: string
                   enum: ['T', 'F']
                   description: Whether the filterset is a stats filterset (T or F)
+                entries:
+                  type: array
+                  description: |
+                    Entries to create the filterset with, in order: filters, given by
+                    their definition, and nested filtersets. Accepted on creation only:
+                    with entries, a name already in use is a conflict rather than an
+                    update. A filter identical to an existing one reuses it. The
+                    filterset, its new filters and its entries are written together, or
+                    not at all.
+                  items:
+                    $ref: '#/components/schemas/FiltersetNewEntry'
       tags:
         - collector
       responses:
@@ -16690,6 +16701,33 @@ components:
               description: Check thresholds, as "chk_type.chk_instance:low-high".
               items:
                 type: string
+
+    FiltersetNewEntry:
+      type: object
+      description: |
+        An entry of a filterset being created: either a filter (f_table, f_field,
+        f_op and f_value) or a nested filterset (filterset), joined to the previous
+        entries by f_log_op.
+      required: [f_log_op]
+      properties:
+        f_log_op:
+          type: string
+          enum: ['AND', 'AND NOT', 'OR', 'OR NOT']
+        f_table:
+          type: string
+          description: Table the filter applies to
+        f_field:
+          type: string
+          description: Column of f_table the filter applies to
+        f_op:
+          type: string
+          enum: ['=', 'LIKE', '>', '>=', '<', '<=', 'IN']
+        f_value:
+          type: string
+          description: Value to compare the column to
+        filterset:
+          type: string
+          description: Record id or name of the filterset to nest
 
     FiltersetRef:
       type: object

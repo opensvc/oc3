@@ -14,6 +14,63 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for FiltersetNewEntryFLogOp.
+const (
+	FiltersetNewEntryFLogOpAND    FiltersetNewEntryFLogOp = "AND"
+	FiltersetNewEntryFLogOpANDNOT FiltersetNewEntryFLogOp = "AND NOT"
+	FiltersetNewEntryFLogOpOR     FiltersetNewEntryFLogOp = "OR"
+	FiltersetNewEntryFLogOpORNOT  FiltersetNewEntryFLogOp = "OR NOT"
+)
+
+// Valid indicates whether the value is a known member of the FiltersetNewEntryFLogOp enum.
+func (e FiltersetNewEntryFLogOp) Valid() bool {
+	switch e {
+	case FiltersetNewEntryFLogOpAND:
+		return true
+	case FiltersetNewEntryFLogOpANDNOT:
+		return true
+	case FiltersetNewEntryFLogOpOR:
+		return true
+	case FiltersetNewEntryFLogOpORNOT:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FiltersetNewEntryFOp.
+const (
+	FiltersetNewEntryFOpEqual            FiltersetNewEntryFOp = "="
+	FiltersetNewEntryFOpGreaterThan      FiltersetNewEntryFOp = ">"
+	FiltersetNewEntryFOpGreaterThanEqual FiltersetNewEntryFOp = ">="
+	FiltersetNewEntryFOpIN               FiltersetNewEntryFOp = "IN"
+	FiltersetNewEntryFOpLIKE             FiltersetNewEntryFOp = "LIKE"
+	FiltersetNewEntryFOpLessThan         FiltersetNewEntryFOp = "<"
+	FiltersetNewEntryFOpLessThanEqual    FiltersetNewEntryFOp = "<="
+)
+
+// Valid indicates whether the value is a known member of the FiltersetNewEntryFOp enum.
+func (e FiltersetNewEntryFOp) Valid() bool {
+	switch e {
+	case FiltersetNewEntryFOpEqual:
+		return true
+	case FiltersetNewEntryFOpGreaterThan:
+		return true
+	case FiltersetNewEntryFOpGreaterThanEqual:
+		return true
+	case FiltersetNewEntryFOpIN:
+		return true
+	case FiltersetNewEntryFOpLIKE:
+		return true
+	case FiltersetNewEntryFOpLessThan:
+		return true
+	case FiltersetNewEntryFOpLessThanEqual:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for NetworkSegmentRowSegType.
 const (
 	NetworkSegmentRowSegTypeDynamic NetworkSegmentRowSegType = "dynamic"
@@ -316,31 +373,31 @@ func (e PostFiltersJSONBodyFOp) Valid() bool {
 
 // Defines values for PostFilterJSONBodyFOp.
 const (
-	PostFilterJSONBodyFOpEqual            PostFilterJSONBodyFOp = "="
-	PostFilterJSONBodyFOpGreaterThan      PostFilterJSONBodyFOp = ">"
-	PostFilterJSONBodyFOpGreaterThanEqual PostFilterJSONBodyFOp = ">="
-	PostFilterJSONBodyFOpIN               PostFilterJSONBodyFOp = "IN"
-	PostFilterJSONBodyFOpLIKE             PostFilterJSONBodyFOp = "LIKE"
-	PostFilterJSONBodyFOpLessThan         PostFilterJSONBodyFOp = "<"
-	PostFilterJSONBodyFOpLessThanEqual    PostFilterJSONBodyFOp = "<="
+	Equal            PostFilterJSONBodyFOp = "="
+	GreaterThan      PostFilterJSONBodyFOp = ">"
+	GreaterThanEqual PostFilterJSONBodyFOp = ">="
+	IN               PostFilterJSONBodyFOp = "IN"
+	LIKE             PostFilterJSONBodyFOp = "LIKE"
+	LessThan         PostFilterJSONBodyFOp = "<"
+	LessThanEqual    PostFilterJSONBodyFOp = "<="
 )
 
 // Valid indicates whether the value is a known member of the PostFilterJSONBodyFOp enum.
 func (e PostFilterJSONBodyFOp) Valid() bool {
 	switch e {
-	case PostFilterJSONBodyFOpEqual:
+	case Equal:
 		return true
-	case PostFilterJSONBodyFOpGreaterThan:
+	case GreaterThan:
 		return true
-	case PostFilterJSONBodyFOpGreaterThanEqual:
+	case GreaterThanEqual:
 		return true
-	case PostFilterJSONBodyFOpIN:
+	case IN:
 		return true
-	case PostFilterJSONBodyFOpLIKE:
+	case LIKE:
 		return true
-	case PostFilterJSONBodyFOpLessThan:
+	case LessThan:
 		return true
-	case PostFilterJSONBodyFOpLessThanEqual:
+	case LessThanEqual:
 		return true
 	default:
 		return false
@@ -457,22 +514,22 @@ func (e PostFiltersetsFiltersJSONBodyFLogOp) Valid() bool {
 
 // Defines values for PostFiltersetsFiltersetsJSONBodyFLogOp.
 const (
-	PostFiltersetsFiltersetsJSONBodyFLogOpAND    PostFiltersetsFiltersetsJSONBodyFLogOp = "AND"
-	PostFiltersetsFiltersetsJSONBodyFLogOpANDNOT PostFiltersetsFiltersetsJSONBodyFLogOp = "AND NOT"
-	PostFiltersetsFiltersetsJSONBodyFLogOpOR     PostFiltersetsFiltersetsJSONBodyFLogOp = "OR"
-	PostFiltersetsFiltersetsJSONBodyFLogOpORNOT  PostFiltersetsFiltersetsJSONBodyFLogOp = "OR NOT"
+	AND    PostFiltersetsFiltersetsJSONBodyFLogOp = "AND"
+	ANDNOT PostFiltersetsFiltersetsJSONBodyFLogOp = "AND NOT"
+	OR     PostFiltersetsFiltersetsJSONBodyFLogOp = "OR"
+	ORNOT  PostFiltersetsFiltersetsJSONBodyFLogOp = "OR NOT"
 )
 
 // Valid indicates whether the value is a known member of the PostFiltersetsFiltersetsJSONBodyFLogOp enum.
 func (e PostFiltersetsFiltersetsJSONBodyFLogOp) Valid() bool {
 	switch e {
-	case PostFiltersetsFiltersetsJSONBodyFLogOpAND:
+	case AND:
 		return true
-	case PostFiltersetsFiltersetsJSONBodyFLogOpANDNOT:
+	case ANDNOT:
 		return true
-	case PostFiltersetsFiltersetsJSONBodyFLogOpOR:
+	case OR:
 		return true
-	case PostFiltersetsFiltersetsJSONBodyFLogOpORNOT:
+	case ORNOT:
 		return true
 	default:
 		return false
@@ -1166,6 +1223,31 @@ type FiltersetListResponseData1 map[string]map[string]int
 type FiltersetListResponse_Data struct {
 	union json.RawMessage
 }
+
+// FiltersetNewEntry An entry of a filterset being created: either a filter (f_table, f_field,
+// f_op and f_value) or a nested filterset (filterset), joined to the previous
+// entries by f_log_op.
+type FiltersetNewEntry struct {
+	// FField Column of f_table the filter applies to
+	FField *string                 `json:"f_field,omitempty"`
+	FLogOp FiltersetNewEntryFLogOp `json:"f_log_op"`
+	FOp    *FiltersetNewEntryFOp   `json:"f_op,omitempty"`
+
+	// FTable Table the filter applies to
+	FTable *string `json:"f_table,omitempty"`
+
+	// FValue Value to compare the column to
+	FValue *string `json:"f_value,omitempty"`
+
+	// Filterset Record id or name of the filterset to nest
+	Filterset *string `json:"filterset,omitempty"`
+}
+
+// FiltersetNewEntryFLogOp defines model for FiltersetNewEntry.FLogOp.
+type FiltersetNewEntryFLogOp string
+
+// FiltersetNewEntryFOp defines model for FiltersetNewEntry.FOp.
+type FiltersetNewEntryFOp string
 
 // FiltersetRef defines model for FiltersetRef.
 type FiltersetRef struct {
@@ -5208,6 +5290,14 @@ type GetFiltersetsParams struct {
 
 // PostFiltersetsJSONBody defines parameters for PostFiltersets.
 type PostFiltersetsJSONBody struct {
+	// Entries Entries to create the filterset with, in order: filters, given by
+	// their definition, and nested filtersets. Accepted on creation only:
+	// with entries, a name already in use is a conflict rather than an
+	// update. A filter identical to an existing one reuses it. The
+	// filterset, its new filters and its entries are written together, or
+	// not at all.
+	Entries *[]FiltersetNewEntry `json:"entries,omitempty"`
+
 	// FsetName Name of the filterset to create, or of the filterset to update
 	FsetName *string `json:"fset_name,omitempty"`
 
