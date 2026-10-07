@@ -16,7 +16,6 @@ func setDefaultOIDCConfig(section string) {
 	s := section + ".oidc"
 	viper.SetDefault(s+".enable", false)
 	viper.SetDefault(s+".scopes", []string{"openid", "email", "profile"})
-	viper.SetDefault(s+".groups_claim", "groups")
 	viper.SetDefault(s+".link_by_verified_email", false)
 	viper.SetDefault(s+".auto_create_users", false)
 	viper.SetDefault(s+".session.idle_timeout", "1h")
@@ -52,11 +51,8 @@ func newOIDC(ctx context.Context, section string, rdb *redis.Client, db *sql.DB)
 		Scopes:                viper.GetStringSlice(s + ".scopes"),
 		DisplayName:           viper.GetString(s + ".display_name"),
 		APIAudience:           viper.GetString(s + ".api_audience"),
-		GroupsClaim:           viper.GetString(s + ".groups_claim"),
-		GroupMapping:          groupMapping(viper.Get(s + ".group_mapping")),
 		LinkByVerifiedEmail:   viper.GetBool(s + ".link_by_verified_email"),
 		AutoCreateUsers:       viper.GetBool(s + ".auto_create_users"),
-		AutoCreateGroups:      viper.GetStringSlice(s + ".auto_create_groups"),
 		IdleTimeout:           viper.GetDuration(s + ".session.idle_timeout"),
 		MaxLifetime:           viper.GetDuration(s + ".session.max_lifetime"),
 		CookieSecure:          viper.GetBool(s + ".session.cookie_secure"),
@@ -67,29 +63,6 @@ func newOIDC(ctx context.Context, section string, rdb *redis.Client, db *sql.DB)
 	}
 	slog.Info("oidc: enabled", "issuer", cfg.Issuer, "client_id", cfg.ClientID, "redirect_url", cfg.RedirectURL,
 		"basic_users", viper.GetBool(section+".auth.basic_users"),
-		"auto_create_users", cfg.AutoCreateUsers, "auto_create_groups", cfg.AutoCreateGroups)
+		"auto_create_users", cfg.AutoCreateUsers)
 	return o, nil
-}
-
-// groupMapping reads group_mapping: a provider group to a collector role, or to a
-// list of roles.
-func groupMapping(v any) map[string][]string {
-	m, ok := v.(map[string]any)
-	if !ok {
-		return nil
-	}
-	out := make(map[string][]string, len(m))
-	for group, roles := range m {
-		switch r := roles.(type) {
-		case string:
-			out[group] = []string{r}
-		case []any:
-			for _, role := range r {
-				if s, ok := role.(string); ok {
-					out[group] = append(out[group], s)
-				}
-			}
-		}
-	}
-	return out
 }

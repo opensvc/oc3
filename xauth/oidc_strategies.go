@@ -127,7 +127,7 @@ func (s *oidcSession) Authenticate(ctx context.Context, r *http.Request) (auth.I
 type verifiedToken struct {
 	issuer  string
 	subject string
-	groups  []string
+	claims  map[string]any
 	expires time.Time
 }
 
@@ -198,7 +198,7 @@ func (o *OIDC) VerifyAccessToken(ctx context.Context, raw string) (*verifiedToke
 	t := verifiedToken{
 		issuer:  token.Issuer,
 		subject: token.Subject,
-		groups:  stringList(claims[o.cfg.GroupsClaim]),
+		claims:  claims,
 		expires: token.Expiry,
 	}
 	o.bearerCache.put(key, t)
@@ -212,8 +212,8 @@ type oidcBearer struct {
 
 // NewOIDCBearer is the strategy of the provider's access tokens, for scripts and
 // automations. The token must belong to an identity already linked to an account:
-// a Bearer request never creates nor links one. The roles managed by the group
-// mapping are read from the token, the others from the database.
+// a Bearer request never creates nor links one. The claim rules apply to its
+// claims: access, and the teams they manage, the others coming from the database.
 func NewOIDCBearer(o *OIDC, db *sql.DB) auth.Strategy {
 	return &oidcBearer{o: o, db: db}
 }
@@ -246,19 +246,28 @@ func (b *oidcBearer) Authenticate(ctx context.Context, r *http.Request) (auth.In
 	if lockedKey(key) {
 		return nil, errors.New("account locked")
 	}
+	rules, err := b.o.ClaimRules(ctx)
+	if err != nil {
+		return nil, err
+	}
+	outcome := EvaluateClaimRules(rules, token.claims)
+	if !outcome.MayAccess() {
+		return nil, errors.New("bearer token of an identity no claim rule allows")
+	}
 	roles, err := rolesOf(ctx, b.db, userID)
 	if err != nil {
 		return nil, err
 	}
-	granted, managed := b.o.MappedRoles(token.groups)
-	if len(managed) > 0 {
+	// The teams a rule names follow the token's claims, without writing to the
+	// database: the others are those of the account.
+	if len(outcome.ManagedRoles) > 0 {
 		kept := roles[:0]
 		for _, role := range roles {
-			if !contains(managed, role) {
+			if !contains(outcome.ManagedRoles, role) {
 				kept = append(kept, role)
 			}
 		}
-		roles = append(kept, granted...)
+		roles = append(kept, outcome.GrantedRoles...)
 	}
 	return userInfo(ctx, b.db, userID, email.String, AuthSourceBearer, roles), nil
 }
@@ -270,4 +279,14 @@ func contains(list []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// AccessTokenClaims returns the claims of a verified access token that a rule may
+// use.
+func (o *OIDC) AccessTokenClaims(ctx context.Context, raw string) (map[string]any, error) {
+	t, err := o.VerifyAccessToken(ctx, raw)
+	if err != nil {
+		return nil, err
+	}
+	return displayedClaims(t.claims), nil
 }

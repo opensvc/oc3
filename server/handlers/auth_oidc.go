@@ -177,6 +177,7 @@ func (a *Api) GetAuthCallback(c echo.Context, params server.GetAuthCallbackParam
 		Subject: claims.Subject,
 		SID:     claims.SID,
 		IDToken: idToken,
+		Claims:  claims.Raw,
 	})
 	if err != nil {
 		log.Error("cannot open a session", logkey.Error, err)
@@ -208,6 +209,18 @@ func (a *Api) resolveOIDCUser(ctx context.Context, log *slog.Logger, claims *xau
 		return nil, "", err
 	}
 	email := strings.TrimSpace(claims.Email)
+
+	// The claim rules decide who may sign in, account or not, and which of the
+	// teams they name the account belongs to.
+	rules, err := a.OIDC.ClaimRules(ctx)
+	if err != nil {
+		return nil, "", err
+	}
+	outcome := xauth.EvaluateClaimRules(rules, claims.Raw)
+	if !outcome.MayAccess() {
+		log.Warn("sign-in refused: no claim rule allows this identity", "iss", claims.Issuer, "sub", claims.Subject)
+		return nil, authErrorNotAllowed, nil
+	}
 
 	tx, markSuccess, endTx, err := odb.BeginTxWithControl(ctx, log, &sql.TxOptions{})
 	if err != nil {
@@ -249,9 +262,10 @@ func (a *Api) resolveOIDCUser(ctx context.Context, log *slog.Logger, claims *xau
 				"iss", claims.Issuer, "sub", claims.Subject,
 				"email_verified", claims.EmailVerified, "link_by_verified_email", cfg.LinkByVerifiedEmail)
 			return nil, authErrorUnknownUser, nil
-		case email != "" && cfg.AutoCreateUsers && !a.OIDC.MayAutoCreate(claims.Groups):
-			log.Warn("first sign-in refused: not in a group allowed to use the collector",
-				"iss", claims.Issuer, "sub", claims.Subject, "groups", claims.Groups, "allowed", cfg.AutoCreateGroups)
+		case email != "" && cfg.AutoCreateUsers && !outcome.MayCreate():
+			// Creation needs a rule allowing the access explicitly: without access
+			// rules, nobody gets an account by default.
+			log.Warn("first sign-in refused: no claim rule allows creating this account", "iss", claims.Issuer, "sub", claims.Subject)
 			return nil, authErrorNotAllowed, nil
 		case email != "" && cfg.AutoCreateUsers:
 			insert := cdb.UserInsert{Email: email}
@@ -278,8 +292,8 @@ func (a *Api) resolveOIDCUser(ctx context.Context, log *slog.Logger, claims *xau
 			if logErr := tx.Log(ctx, cdb.LogEntry{
 				Action: "user.create",
 				User:   email,
-				Fmt:    "add user %(email)s at its first sign-in through %(provider)s, member of %(groups)s",
-				Dict:   map[string]any{"email": email, "provider": cfg.DisplayName, "groups": strings.Join(claims.Groups, ", ")},
+				Fmt:    "add user %(email)s at its first sign-in through %(provider)s",
+				Dict:   map[string]any{"email": email, "provider": cfg.DisplayName},
 				Level:  "info",
 			}); logErr != nil {
 				log.Error("cannot write audit log", logkey.Error, logErr)
@@ -302,8 +316,7 @@ func (a *Api) resolveOIDCUser(ctx context.Context, log *slog.Logger, claims *xau
 		}
 	}
 
-	granted, managed := a.OIDC.MappedRoles(claims.Groups)
-	joined, left, err := tx.SyncMappedRoles(ctx, user.ID, managed, granted)
+	joined, left, err := tx.SyncMappedGroups(ctx, user.ID, outcome.ManagedIDs, outcome.GrantedIDs)
 	if err != nil {
 		return nil, "", err
 	}

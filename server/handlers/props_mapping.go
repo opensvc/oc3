@@ -33,6 +33,12 @@ func clusterListCol(name string) *schema.Col {
 	return &schema.Col{T: schema.TClusters, Name: name, Nullable: true}
 }
 
+// oidcMappingListCol is a computed column of the claim rule lists, whose derived
+// table is named after auth_oidc_mappings.
+func oidcMappingListCol(name string) *schema.Col {
+	return &schema.Col{T: schema.TAuthOidcMappings, Name: name, Nullable: true}
+}
+
 func col(c *schema.Col) propDef {
 	return propDef{Col: c}
 }
@@ -1254,6 +1260,22 @@ var propsMapping = map[string]propMapping{
 			"f_author":  colStr(schema.GenFiltersFAuthor),
 			"f_cksum":   colStr(schema.GenFiltersFCksum),
 			"f_label":   colStr(schema.GenFiltersFLabel),
+		},
+	},
+	"oidc_mapping": {
+		Available: []string{
+			"id", "claim", "value", "allow_access", "group_ids", "group_roles", "author", "updated",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.AuthOidcMappingsID),
+			"claim":        colStr(schema.AuthOidcMappingsClaim),
+			"value":        colStr(schema.AuthOidcMappingsValue),
+			"allow_access": colStr(schema.AuthOidcMappingsAllowAccess),
+			// The teams granted, computed by the derived table of the rule queries.
+			"group_ids":   colStr(oidcMappingListCol("group_ids")),
+			"group_roles": colStr(oidcMappingListCol("group_roles")),
+			"author":     colStr(schema.AuthOidcMappingsAuthor),
+			"updated":    colStr(schema.AuthOidcMappingsUpdated),
 		},
 	},
 	"filterset": {

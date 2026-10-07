@@ -27,13 +27,16 @@ type loginTx struct {
 // Session is a sign-in through the provider. The browser only holds its random id,
 // in an HttpOnly cookie; Redis keys it by the hash of that id.
 type Session struct {
-	UserID  int64     `json:"user_id"`
-	Email   string    `json:"email"`
-	Issuer  string    `json:"iss"`
-	Subject string    `json:"sub"`
-	SID     string    `json:"sid,omitempty"`
-	IDToken string    `json:"id_token"`
-	Created time.Time `json:"created"`
+	UserID  int64  `json:"user_id"`
+	Email   string `json:"email"`
+	Issuer  string `json:"iss"`
+	Subject string `json:"sub"`
+	SID     string `json:"sid,omitempty"`
+	IDToken string `json:"id_token"`
+	// Claims are the claims of the ID token a rule may use, shown on the Claim
+	// mappings page to those who write the rules.
+	Claims  map[string]any `json:"claims,omitempty"`
+	Created time.Time      `json:"created"`
 	// Expires is the absolute end of the session, whatever the activity.
 	Expires  time.Time `json:"expires"`
 	LastSeen time.Time `json:"last_seen"`
@@ -50,7 +53,8 @@ type Claims struct {
 	FamilyName        string
 	Name              string
 	SID               string
-	Groups            []string
+	// Raw holds every claim of the ID token, for the claim rules.
+	Raw map[string]any
 }
 
 // Login errors, told apart for the message the SPA shows; their details stay in
@@ -184,66 +188,8 @@ func (o *OIDC) readClaims(token *oidc.IDToken) (*Claims, error) {
 	c.FamilyName, _ = raw["family_name"].(string)
 	c.Name, _ = raw["name"].(string)
 	c.SID, _ = raw["sid"].(string)
-	c.Groups = stringList(raw[o.cfg.GroupsClaim])
+	c.Raw = raw
 	return c, nil
-}
-
-// stringList reads a claim holding a list of strings, or a single string.
-func stringList(v any) []string {
-	switch t := v.(type) {
-	case string:
-		return []string{t}
-	case []any:
-		out := make([]string, 0, len(t))
-		for _, item := range t {
-			if s, ok := item.(string); ok {
-				out = append(out, s)
-			}
-		}
-		return out
-	}
-	return nil
-}
-
-// MappedRoles returns the roles the configured mapping grants for these provider
-// groups, and every role the mapping manages.
-func (o *OIDC) MappedRoles(groups []string) (granted, managed []string) {
-	seen := map[string]bool{}
-	for _, roles := range o.cfg.GroupMapping {
-		for _, role := range roles {
-			if !seen[role] {
-				seen[role] = true
-				managed = append(managed, role)
-			}
-		}
-	}
-	got := map[string]bool{}
-	for _, g := range groups {
-		for _, role := range o.cfg.GroupMapping[g] {
-			if !got[role] {
-				got[role] = true
-				granted = append(granted, role)
-			}
-		}
-	}
-	return granted, managed
-}
-
-// MayAutoCreate tells whether an unknown identity with these provider groups may
-// have its account created at its first sign-in.
-func (o *OIDC) MayAutoCreate(groups []string) bool {
-	if !o.cfg.AutoCreateUsers {
-		return false
-	}
-	if len(o.cfg.AutoCreateGroups) == 0 {
-		return true
-	}
-	for _, g := range groups {
-		if contains(o.cfg.AutoCreateGroups, g) {
-			return true
-		}
-	}
-	return false
 }
 
 // CreateSession stores a new session and returns its id, for the cookie. A new id
@@ -255,6 +201,9 @@ func (o *OIDC) CreateSession(ctx context.Context, s Session) (string, error) {
 	}
 	now := time.Now()
 	s.Created, s.LastSeen = now, now
+	if s.Claims != nil {
+		s.Claims = displayedClaims(s.Claims)
+	}
 	s.Expires = now.Add(o.cfg.MaxLifetime)
 	b, err := json.Marshal(s)
 	if err != nil {

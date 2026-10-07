@@ -2037,6 +2037,55 @@ type ObsolescenceSettingRow struct {
 // ObsolescenceSettingRowObsType defines model for ObsolescenceSettingRow.ObsType.
 type ObsolescenceSettingRowObsType string
 
+// OidcMappingInput defines model for OidcMappingInput.
+type OidcMappingInput struct {
+	AllowAccess *bool  `json:"allow_access,omitempty"`
+	Claim       string `json:"claim"`
+
+	// GroupIds The teams the rule grants, as many as needed
+	GroupIds *[]int `json:"group_ids,omitempty"`
+	Value    string `json:"value"`
+}
+
+// OidcMappingListResponse defines model for OidcMappingListResponse.
+type OidcMappingListResponse struct {
+	Data OidcMappingListResponse_Data `json:"data"`
+	Meta *ListMeta                    `json:"meta,omitempty"`
+}
+
+// OidcMappingListResponseData0 defines model for .
+type OidcMappingListResponseData0 = []OidcMappingRow
+
+// OidcMappingListResponseData1 defines model for .
+type OidcMappingListResponseData1 map[string]map[string]int
+
+// OidcMappingListResponse_Data defines model for OidcMappingListResponse.Data.
+type OidcMappingListResponse_Data struct {
+	union json.RawMessage
+}
+
+// OidcMappingRow A rule translating a claim value into access and a team. Every property is
+// optional: the props query parameter selects which columns the server returns.
+type OidcMappingRow struct {
+	// AllowAccess T when the matching identities may sign in, F otherwise
+	AllowAccess *string `json:"allow_access,omitempty"`
+	Author      *string `json:"author,omitempty"`
+
+	// Claim Claim name, or dotted path into a nested claim
+	Claim *string `json:"claim,omitempty"`
+
+	// GroupIds Ids of the teams granted to the matching identities, comma separated, in the order of their names; empty when the rule grants none
+	GroupIds *string `json:"group_ids,omitempty"`
+
+	// GroupRoles Names of those teams, comma and space separated
+	GroupRoles *string `json:"group_roles,omitempty"`
+	Id         *int    `json:"id,omitempty"`
+	Updated    *string `json:"updated,omitempty"`
+
+	// Value Value the claim must equal, or contain for a list
+	Value *string `json:"value,omitempty"`
+}
+
 // PackageDiffNode defines model for PackageDiffNode.
 type PackageDiffNode struct {
 	NodeId   string `json:"node_id"`
@@ -8183,6 +8232,65 @@ type PostObsolescenceSettingJSONBody struct {
 	ObsWarnDate *string `json:"obs_warn_date,omitempty"`
 }
 
+// GetOidcMappingsParams defines parameters for GetOidcMappings.
+type GetOidcMappingsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetOidcMappingParams defines parameters for GetOidcMapping.
+type GetOidcMappingParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetPackagesParams defines parameters for GetPackages.
 type GetPackagesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -10425,6 +10533,12 @@ type PostObsolescenceSettingsJSONRequestBody PostObsolescenceSettingsJSONBody
 // PostObsolescenceSettingJSONRequestBody defines body for PostObsolescenceSetting for application/json ContentType.
 type PostObsolescenceSettingJSONRequestBody PostObsolescenceSettingJSONBody
 
+// PostOidcMappingsJSONRequestBody defines body for PostOidcMappings for application/json ContentType.
+type PostOidcMappingsJSONRequestBody = OidcMappingInput
+
+// PostOidcMappingJSONRequestBody defines body for PostOidcMapping for application/json ContentType.
+type PostOidcMappingJSONRequestBody = OidcMappingInput
+
 // PostReportsJSONRequestBody defines body for PostReports for application/json ContentType.
 type PostReportsJSONRequestBody PostReportsJSONBody
 
@@ -12031,6 +12145,68 @@ func (t ObsolescenceSettingListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ObsolescenceSettingListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsOidcMappingListResponseData0 returns the union data inside the OidcMappingListResponse_Data as a OidcMappingListResponseData0
+func (t OidcMappingListResponse_Data) AsOidcMappingListResponseData0() (OidcMappingListResponseData0, error) {
+	var body OidcMappingListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromOidcMappingListResponseData0 overwrites any union data inside the OidcMappingListResponse_Data as the provided OidcMappingListResponseData0
+func (t *OidcMappingListResponse_Data) FromOidcMappingListResponseData0(v OidcMappingListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeOidcMappingListResponseData0 performs a merge with any union data inside the OidcMappingListResponse_Data, using the provided OidcMappingListResponseData0
+func (t *OidcMappingListResponse_Data) MergeOidcMappingListResponseData0(v OidcMappingListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsOidcMappingListResponseData1 returns the union data inside the OidcMappingListResponse_Data as a OidcMappingListResponseData1
+func (t OidcMappingListResponse_Data) AsOidcMappingListResponseData1() (OidcMappingListResponseData1, error) {
+	var body OidcMappingListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromOidcMappingListResponseData1 overwrites any union data inside the OidcMappingListResponse_Data as the provided OidcMappingListResponseData1
+func (t *OidcMappingListResponse_Data) FromOidcMappingListResponseData1(v OidcMappingListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeOidcMappingListResponseData1 performs a merge with any union data inside the OidcMappingListResponse_Data, using the provided OidcMappingListResponseData1
+func (t *OidcMappingListResponse_Data) MergeOidcMappingListResponseData1(v OidcMappingListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t OidcMappingListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *OidcMappingListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

@@ -47,25 +47,15 @@ type OIDCConfig struct {
 	// APIAudience is the audience the Bearer access tokens must carry; the client
 	// id by default, which is what providers like authentik put in theirs.
 	APIAudience string
-	// GroupsClaim is the claim listing the groups of the user at the provider.
-	GroupsClaim string
-	// GroupMapping translates a value of GroupsClaim into collector roles. Only the
-	// roles named here are aligned on the claim; a value absent from the mapping
-	// grants nothing.
-	GroupMapping map[string][]string
 	// LinkByVerifiedEmail links an unknown identity to the account with the same
 	// email, when the provider says the email is verified.
 	LinkByVerifiedEmail bool
 	// AutoCreateUsers creates an account for an unknown identity whose email no
-	// account uses yet.
+	// account uses yet, when a claim rule allows its access (ClaimRules): nobody
+	// is created while no rule decides access.
 	AutoCreateUsers bool
-	// AutoCreateGroups, when set, restricts that creation to the identities whose
-	// GroupsClaim holds one of these provider groups: the provider decides who may
-	// use the collector. Empty, AutoCreateUsers creates an account for anyone the
-	// provider authenticates.
-	AutoCreateGroups []string
-	IdleTimeout      time.Duration
-	MaxLifetime      time.Duration
+	IdleTimeout     time.Duration
+	MaxLifetime     time.Duration
 	// CookieSecure sets the Secure attribute and the __Host- prefix on the cookies.
 	// False only for a development origin served over plain http.
 	CookieSecure bool
@@ -102,6 +92,7 @@ type OIDC struct {
 	endSession string
 
 	bearerCache *bearerCache
+	rules       ruleCache
 }
 
 // ReadSecretFile returns the trimmed content of a file holding a secret.
@@ -142,9 +133,6 @@ func NewOIDC(ctx context.Context, cfg OIDCConfig, rdb *redis.Client, db *sql.DB)
 	}
 	if cfg.APIAudience == "" {
 		cfg.APIAudience = cfg.ClientID
-	}
-	if cfg.GroupsClaim == "" {
-		cfg.GroupsClaim = "groups"
 	}
 	if cfg.IdleTimeout <= 0 {
 		cfg.IdleTimeout = time.Hour

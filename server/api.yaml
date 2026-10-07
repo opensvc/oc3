@@ -1492,6 +1492,35 @@ paths:
         303:
           description: Back to the SPA.
 
+  /auth/claims:
+    get:
+      operationId: GetAuthClaims
+      description: |
+        The claims of the OpenID Connect sign-in of the request, those a claim rule
+        may use (the claims that only serve to verify the token are left out), so
+        that whoever writes the rules sees what the provider sends. Empty for a
+        request authenticated otherwise.
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [source, claims]
+                properties:
+                  source:
+                    type: string
+                    description: How the request was authenticated (session, bearer, basic)
+                  claims:
+                    type: object
+                    additionalProperties: true
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /auth/info:
     get:
       operationId: GetAuthInfo
@@ -7790,6 +7819,159 @@ paths:
           $ref: '#/components/responses/403'
         500:
           $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /oidc_mappings:
+    get:
+      operationId: GetOidcMappings
+      description: |
+        List the rules translating the claims of an OpenID Connect identity into
+        access and teams. Manager only: a rule may grant any team, Manager included.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcMappingListResponse'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostOidcMappings
+      description: |
+        Create a claim rule: one per claim and value, which allows signing in,
+        grants teams (as many as needed), or both. The Everybody team and the
+        private teams of the users cannot be granted: the teams a rule names follow
+        the claims at every sign-in, which would remove them from the accounts that
+        do not match. Manager only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcMappingInput'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcMappingListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /oidc_mappings/{mapping_id}:
+    get:
+      operationId: GetOidcMapping
+      description: A claim rule. Manager only.
+      parameters:
+        - in: path
+          name: mapping_id
+          required: true
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcMappingListResponse'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostOidcMapping
+      description: Change a claim rule, under the same checks as its creation. Manager only.
+      parameters:
+        - in: path
+          name: mapping_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcMappingInput'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcMappingListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteOidcMapping
+      description: |
+        Delete a claim rule. The memberships it granted stay until the next sign-in
+        of each account; a team no rule names any more is managed by hand again.
+        Manager only.
+      parameters:
+        - in: path
+          name: mapping_id
+          required: true
+          schema:
+            type: integer
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
@@ -16762,6 +16944,68 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    OidcMappingRow:
+      type: object
+      description: |
+        A rule translating a claim value into access and a team. Every property is
+        optional: the props query parameter selects which columns the server returns.
+      properties:
+        id:
+          type: integer
+        claim:
+          type: string
+          description: Claim name, or dotted path into a nested claim
+        value:
+          type: string
+          description: Value the claim must equal, or contain for a list
+        allow_access:
+          type: string
+          description: T when the matching identities may sign in, F otherwise
+        group_ids:
+          type: string
+          description: Ids of the teams granted to the matching identities, comma separated, in the order of their names; empty when the rule grants none
+        group_roles:
+          type: string
+          description: Names of those teams, comma and space separated
+        author:
+          type: string
+        updated:
+          type: string
+
+    OidcMappingListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/OidcMappingRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    OidcMappingInput:
+      type: object
+      required: [claim, value]
+      properties:
+        claim:
+          type: string
+        value:
+          type: string
+        allow_access:
+          type: boolean
+        group_ids:
+          type: array
+          description: The teams the rule grants, as many as needed
+          items:
+            type: integer
 
     FiltersetRow:
       type: object

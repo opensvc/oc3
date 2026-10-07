@@ -144,7 +144,6 @@ func newTestOIDC(t *testing.T, p *fakeProvider, edit func(*OIDCConfig)) (*OIDC, 
 		Enable: true, Issuer: p.srv.URL, ClientID: p.client, ClientSecret: "s3cret",
 		RedirectURL:  "https://collector.example.com/api/auth/callback",
 		CookieSecure: true,
-		GroupMapping: map[string][]string{"admins": {"Manager"}, "netops": {"NetworkManager"}},
 	}
 	if edit != nil {
 		edit(&cfg)
@@ -268,7 +267,7 @@ func TestAccessTokens(t *testing.T) {
 	if err != nil {
 		t.Fatalf("valid token refused: %v", err)
 	}
-	if tok.subject != "user-1" || len(tok.groups) != 1 {
+	if tok.subject != "user-1" || len(ClaimValues(tok.claims, "groups")) != 1 {
 		t.Fatalf("unexpected token %+v", tok)
 	}
 
@@ -463,38 +462,75 @@ func TestConfigRefusals(t *testing.T) {
 	}
 }
 
-func TestMappedRoles(t *testing.T) {
-	o := &OIDC{cfg: OIDCConfig{GroupMapping: map[string][]string{"admins": {"Manager"}, "netops": {"NetworkManager", "NodeManager"}}}}
-	granted, managed := o.MappedRoles([]string{"admins", "unmapped"})
-	if len(granted) != 1 || granted[0] != "Manager" {
-		t.Fatalf("granted %v", granted)
+func TestClaimValues(t *testing.T) {
+	claims := map[string]any{
+		"groups":                          []any{"opensvc-collector", "ops", 42.0},
+		"email":                           "alice@example.com",
+		"email_verified":                  true,
+		"level":                           3.0,
+		"realm_access":                    map[string]any{"roles": []any{"admin", "viewer"}},
+		"https://example.com/claims/team": "storage",
 	}
-	if len(managed) != 3 {
-		t.Fatalf("managed %v", managed)
+	cases := []struct {
+		name, value string
+		want        bool
+	}{
+		{"groups", "opensvc-collector", true},
+		{"groups", "OpenSVC-Collector", false},
+		{"groups", "42", true},
+		{"email", "alice@example.com", true},
+		{"email", "alice", false},
+		{"email_verified", "true", true},
+		{"level", "3", true},
+		{"realm_access.roles", "admin", true},
+		{"realm_access.roles", "root", false},
+		{"realm_access.missing", "admin", false},
+		{"https://example.com/claims/team", "storage", true},
+		{"absent", "x", false},
 	}
-	if granted, _ := o.MappedRoles([]string{"Manager"}); len(granted) != 0 {
-		t.Fatalf("a group named like a role granted %v", granted)
+	for _, c := range cases {
+		if got := ClaimMatches(claims, c.name, c.value); got != c.want {
+			t.Errorf("ClaimMatches(%q, %q) = %v, want %v", c.name, c.value, got, c.want)
+		}
 	}
 }
 
-func TestMayAutoCreate(t *testing.T) {
-	cases := []struct {
-		name   string
-		cfg    OIDCConfig
-		groups []string
-		want   bool
-	}{
-		{"creation off", OIDCConfig{AutoCreateGroups: []string{"opensvc-collector"}}, []string{"opensvc-collector"}, false},
-		{"anyone", OIDCConfig{AutoCreateUsers: true}, nil, true},
-		{"member", OIDCConfig{AutoCreateUsers: true, AutoCreateGroups: []string{"opensvc-collector"}}, []string{"staff", "opensvc-collector"}, true},
-		{"not a member", OIDCConfig{AutoCreateUsers: true, AutoCreateGroups: []string{"opensvc-collector"}}, []string{"staff"}, false},
-		{"no groups claim", OIDCConfig{AutoCreateUsers: true, AutoCreateGroups: []string{"opensvc-collector"}}, nil, false},
-		{"case matters", OIDCConfig{AutoCreateUsers: true, AutoCreateGroups: []string{"opensvc-collector"}}, []string{"OpenSVC-Collector"}, false},
+func TestEvaluateClaimRules(t *testing.T) {
+	member := map[string]any{"groups": []any{"opensvc-collector", "admins"}}
+	stranger := map[string]any{"groups": []any{"marketing"}}
+
+	// Without access rules, anyone may sign in, but nobody is created.
+	none := EvaluateClaimRules(nil, stranger)
+	if !none.MayAccess() || none.MayCreate() {
+		t.Fatalf("no rules: access %v create %v", none.MayAccess(), none.MayCreate())
 	}
-	for _, c := range cases {
-		o := &OIDC{cfg: c.cfg}
-		if got := o.MayAutoCreate(c.groups); got != c.want {
-			t.Errorf("%s: MayAutoCreate(%v) = %v, want %v", c.name, c.groups, got, c.want)
-		}
+
+	rules := []ClaimRule{
+		{ID: 1, Claim: "groups", Value: "opensvc-collector", AllowAccess: true},
+		// One claim value granting several teams.
+		{ID: 2, Claim: "groups", Value: "admins", GroupIDs: []int64{10, 12}, GroupRoles: []string{"Manager", "NodeManager"}},
+		{ID: 3, Claim: "groups", Value: "netops", GroupIDs: []int64{11}, GroupRoles: []string{"NetworkManager"}},
+		{ID: 4, Claim: "groups", Value: "ops", GroupIDs: []int64{11, 12}, GroupRoles: []string{"NetworkManager", "NodeManager"}},
+	}
+	m := EvaluateClaimRules(rules, member)
+	if !m.MayAccess() || !m.MayCreate() {
+		t.Fatalf("member: access %v create %v", m.MayAccess(), m.MayCreate())
+	}
+	if len(m.GrantedIDs) != 2 || m.GrantedRoles[0] != "Manager" || m.GrantedRoles[1] != "NodeManager" {
+		t.Fatalf("member granted %v %v", m.GrantedIDs, m.GrantedRoles)
+	}
+	// Teams named by several rules count once among the managed teams.
+	if len(m.ManagedIDs) != 3 {
+		t.Fatalf("managed %v", m.ManagedIDs)
+	}
+
+	s := EvaluateClaimRules(rules, stranger)
+	if s.MayAccess() || s.MayCreate() || len(s.GrantedIDs) != 0 {
+		t.Fatalf("stranger: access %v create %v granted %v", s.MayAccess(), s.MayCreate(), s.GrantedIDs)
+	}
+	// The teams it does not get are still managed: a stranger who had them by
+	// hand loses them at the next sign-in, were it allowed.
+	if len(s.ManagedIDs) != 3 {
+		t.Fatalf("stranger managed %v", s.ManagedIDs)
 	}
 }
