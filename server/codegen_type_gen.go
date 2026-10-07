@@ -1137,6 +1137,20 @@ type FilterRow struct {
 	Id       *int    `json:"id,omitempty"`
 }
 
+// FilterUsageResponse defines model for FilterUsageResponse.
+type FilterUsageResponse struct {
+	Data struct {
+		// Filtersets Filtersets holding this filter, which loses it when the filter is deleted.
+		Filtersets []FiltersetUsingRef `json:"filtersets"`
+	} `json:"data"`
+}
+
+// FiltersetComparisonRef defines model for FiltersetComparisonRef.
+type FiltersetComparisonRef struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}
+
 // FiltersetExport A filterset and every filterset it encapsulates, recursively, each with its
 // ordered entries. An entry holds either a filter or the name of an
 // encapsulated filterset.
@@ -1249,12 +1263,6 @@ type FiltersetNewEntryFLogOp string
 // FiltersetNewEntryFOp defines model for FiltersetNewEntry.FOp.
 type FiltersetNewEntryFOp string
 
-// FiltersetRef defines model for FiltersetRef.
-type FiltersetRef struct {
-	FsetName *string `json:"fset_name,omitempty"`
-	Id       int     `json:"id"`
-}
-
 // FiltersetRow A filterset: an ordered combination of filters and other filtersets that
 // selects nodes and services. Every property is optional: the `props` query
 // parameter selects which columns the server returns.
@@ -1274,18 +1282,52 @@ type FiltersetRulesetRef struct {
 	RulesetName string `json:"ruleset_name"`
 }
 
+// FiltersetSysreportGrant defines model for FiltersetSysreportGrant.
+type FiltersetSysreportGrant struct {
+	Id      int    `json:"id"`
+	Pattern string `json:"pattern"`
+	Role    string `json:"role"`
+}
+
 // FiltersetUsageResponse defines model for FiltersetUsageResponse.
 type FiltersetUsageResponse struct {
+	// Data What uses a filterset, all of it removed with the filterset when it is
+	// deleted. The teams responsible for the filterset itself are not uses.
 	Data struct {
-		// Filtersets Filtersets encapsulating this one.
-		Filtersets []FiltersetRef `json:"filtersets"`
+		// Comparisons Statistics comparisons including this filterset.
+		Comparisons []FiltersetComparisonRef `json:"comparisons"`
+
+		// Filtersets Filtersets nesting this one.
+		Filtersets []FiltersetUsingRef `json:"filtersets"`
 
 		// Rulesets Compliance rulesets restricted by this filterset.
 		Rulesets []FiltersetRulesetRef `json:"rulesets"`
 
+		// SysreportGrants Sysreport access granted to teams on the nodes of this filterset.
+		SysreportGrants []FiltersetSysreportGrant `json:"sysreport_grants"`
+
 		// Thresholds Check thresholds, as "chk_type.chk_instance:low-high".
 		Thresholds []string `json:"thresholds"`
+
+		// Users Users whose session filter is this filterset.
+		Users []FiltersetUserRef `json:"users"`
 	} `json:"data"`
+}
+
+// FiltersetUserRef defines model for FiltersetUserRef.
+type FiltersetUserRef struct {
+	Email string `json:"email"`
+	Id    int    `json:"id"`
+	Name  string `json:"name"`
+}
+
+// FiltersetUsingRef A filterset holding the object looked up, with the logical operator of that
+// entry and its number of entries.
+type FiltersetUsingRef struct {
+	Entries  int    `json:"entries"`
+	FLogOp   string `json:"f_log_op"`
+	FsetName string `json:"fset_name"`
+	Id       int    `json:"id"`
 }
 
 // FormListResponse defines model for FormListResponse.

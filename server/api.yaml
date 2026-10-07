@@ -1907,6 +1907,34 @@ paths:
         - bearerAuth: [ ]
 
 
+  /filters/{filter_id}/usage:
+    get:
+      operationId: GetFilterUsage
+      description: Display the filtersets holding a filter.
+      parameters:
+        - in: path
+          name: filter_id
+          required: true
+          description: Filter identifier (gen_filters.id or f_label)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterUsageResponse'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /filters/{filter_id}:
     post:
       operationId: PostFilter
@@ -2275,7 +2303,9 @@ paths:
   /filtersets/{filterset_id}/usage:
     get:
       operationId: GetFiltersetUsage
-      description: Display where a filterset is used (encapsulating filtersets, rulesets, check thresholds)
+      description: |
+        Display where a filterset is used: encapsulating filtersets, rulesets, check
+        thresholds, session filters, statistics comparisons and sysreport grants.
       parameters:
         - in: path
           name: filterset_id
@@ -16684,13 +16714,16 @@ components:
       properties:
         data:
           type: object
-          required: [filtersets, rulesets, thresholds]
+          description: |
+            What uses a filterset, all of it removed with the filterset when it is
+            deleted. The teams responsible for the filterset itself are not uses.
+          required: [filtersets, rulesets, thresholds, users, comparisons, sysreport_grants]
           properties:
             filtersets:
               type: array
-              description: Filtersets encapsulating this one.
+              description: Filtersets nesting this one.
               items:
-                $ref: '#/components/schemas/FiltersetRef'
+                $ref: '#/components/schemas/FiltersetUsingRef'
             rulesets:
               type: array
               description: Compliance rulesets restricted by this filterset.
@@ -16701,6 +16734,83 @@ components:
               description: Check thresholds, as "chk_type.chk_instance:low-high".
               items:
                 type: string
+            users:
+              type: array
+              description: Users whose session filter is this filterset.
+              items:
+                $ref: '#/components/schemas/FiltersetUserRef'
+            comparisons:
+              type: array
+              description: Statistics comparisons including this filterset.
+              items:
+                $ref: '#/components/schemas/FiltersetComparisonRef'
+            sysreport_grants:
+              type: array
+              description: Sysreport access granted to teams on the nodes of this filterset.
+              items:
+                $ref: '#/components/schemas/FiltersetSysreportGrant'
+
+    FilterUsageResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required: [filtersets]
+          properties:
+            filtersets:
+              type: array
+              description: Filtersets holding this filter, which loses it when the filter is deleted.
+              items:
+                $ref: '#/components/schemas/FiltersetUsingRef'
+
+    FiltersetUsingRef:
+      type: object
+      description: |
+        A filterset holding the object looked up, with the logical operator of that
+        entry and its number of entries.
+      required: [id, fset_name, f_log_op, entries]
+      properties:
+        id:
+          type: integer
+        fset_name:
+          type: string
+        f_log_op:
+          type: string
+        entries:
+          type: integer
+
+    FiltersetUserRef:
+      type: object
+      required: [id, email, name]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+
+    FiltersetComparisonRef:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    FiltersetSysreportGrant:
+      type: object
+      required: [id, role, pattern]
+      properties:
+        id:
+          type: integer
+        role:
+          type: string
+        pattern:
+          type: string
 
     FiltersetNewEntry:
       type: object
@@ -16728,15 +16838,6 @@ components:
         filterset:
           type: string
           description: Record id or name of the filterset to nest
-
-    FiltersetRef:
-      type: object
-      required: [id]
-      properties:
-        id:
-          type: integer
-        fset_name:
-          type: string
 
     FiltersetRulesetRef:
       type: object
