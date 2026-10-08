@@ -17006,6 +17006,18 @@ components:
         group_roles:
           type: string
           description: Names of those teams, comma and space separated
+        privilege_ids:
+          type: string
+          description: Ids of the privilege teams among them, comma separated, in the order of their names
+        privilege_roles:
+          type: string
+          description: Names of the privilege teams among them, comma and space separated
+        org_ids:
+          type: string
+          description: Ids of the organizational teams among them, comma separated, in the order of their names
+        org_roles:
+          type: string
+          description: Names of the organizational teams among them, comma and space separated
         author:
           type: string
         updated:

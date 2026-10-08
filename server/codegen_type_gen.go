@@ -2080,7 +2080,19 @@ type OidcMappingRow struct {
 	// GroupRoles Names of those teams, comma and space separated
 	GroupRoles *string `json:"group_roles,omitempty"`
 	Id         *int    `json:"id,omitempty"`
-	Updated    *string `json:"updated,omitempty"`
+
+	// OrgIds Ids of the organizational teams among them, comma separated, in the order of their names
+	OrgIds *string `json:"org_ids,omitempty"`
+
+	// OrgRoles Names of the organizational teams among them, comma and space separated
+	OrgRoles *string `json:"org_roles,omitempty"`
+
+	// PrivilegeIds Ids of the privilege teams among them, comma separated, in the order of their names
+	PrivilegeIds *string `json:"privilege_ids,omitempty"`
+
+	// PrivilegeRoles Names of the privilege teams among them, comma and space separated
+	PrivilegeRoles *string `json:"privilege_roles,omitempty"`
+	Updated        *string `json:"updated,omitempty"`
 
 	// Value Value the claim must equal, or contain for a list
 	Value *string `json:"value,omitempty"`

@@ -1264,7 +1264,8 @@ var propsMapping = map[string]propMapping{
 	},
 	"oidc_mapping": {
 		Available: []string{
-			"id", "claim", "value", "allow_access", "group_ids", "group_roles", "author", "updated",
+			"id", "claim", "value", "allow_access", "group_ids", "group_roles",
+			"privilege_ids", "privilege_roles", "org_ids", "org_roles", "author", "updated",
 		},
 		Props: map[string]propDef{
 			"id":           col(schema.AuthOidcMappingsID),
@@ -1274,8 +1275,13 @@ var propsMapping = map[string]propMapping{
 			// The teams granted, computed by the derived table of the rule queries.
 			"group_ids":   colStr(oidcMappingListCol("group_ids")),
 			"group_roles": colStr(oidcMappingListCol("group_roles")),
-			"author":      colStr(schema.AuthOidcMappingsAuthor),
-			"updated":     colStr(schema.AuthOidcMappingsUpdated),
+			// The same, privilege teams and organizational teams apart.
+			"privilege_ids":   colStr(oidcMappingListCol("privilege_ids")),
+			"privilege_roles": colStr(oidcMappingListCol("privilege_roles")),
+			"org_ids":         colStr(oidcMappingListCol("org_ids")),
+			"org_roles":       colStr(oidcMappingListCol("org_roles")),
+			"author":          colStr(schema.AuthOidcMappingsAuthor),
+			"updated":         colStr(schema.AuthOidcMappingsUpdated),
 		},
 	},
 	"filterset": {

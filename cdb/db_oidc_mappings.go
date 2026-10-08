@@ -12,11 +12,17 @@ import (
 // oidcMappingsFrom is the FROM clause of the claim rule lists: a derived table
 // named after auth_oidc_mappings, where each rule carries the ids and the names of
 // the teams it grants, in the order of the names, so that they can be selected,
-// filtered and sorted like the other columns.
+// filtered and sorted like the other columns: all of them, then the privilege
+// teams and the organizational ones apart (GROUP_CONCAT skips the NULLs of the
+// other kind).
 const oidcMappingsFrom = ` FROM (
 	SELECT m.id, m.claim, m.value, m.allow_access, m.author, m.updated,
 		COALESCE(GROUP_CONCAT(g.id ORDER BY g.role SEPARATOR ','), '') AS group_ids,
-		COALESCE(GROUP_CONCAT(g.role ORDER BY g.role SEPARATOR ', '), '') AS group_roles
+		COALESCE(GROUP_CONCAT(g.role ORDER BY g.role SEPARATOR ', '), '') AS group_roles,
+		COALESCE(GROUP_CONCAT(IF(g.privilege = 'T', g.id, NULL) ORDER BY g.role SEPARATOR ','), '') AS privilege_ids,
+		COALESCE(GROUP_CONCAT(IF(g.privilege = 'T', g.role, NULL) ORDER BY g.role SEPARATOR ', '), '') AS privilege_roles,
+		COALESCE(GROUP_CONCAT(IF(g.privilege = 'T', NULL, g.id) ORDER BY g.role SEPARATOR ','), '') AS org_ids,
+		COALESCE(GROUP_CONCAT(IF(g.privilege = 'T', NULL, g.role) ORDER BY g.role SEPARATOR ', '), '') AS org_roles
 	FROM auth_oidc_mappings m
 	LEFT JOIN auth_oidc_mapping_groups mg ON mg.mapping_id = m.id
 	LEFT JOIN auth_group g ON g.id = mg.group_id
