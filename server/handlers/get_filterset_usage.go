@@ -24,7 +24,7 @@ func (a *Api) GetFiltersetUsage(c echo.Context, filtersetId string) error {
 		return JSONProblemf(c, http.StatusNotFound, "fset %s does not exist", filtersetId)
 	}
 
-	fsets, err := odb.FiltersetUsageEncapFiltersets(ctx, fsetID)
+	fsets, err := odb.FiltersetUsageParents(ctx, fsetID)
 	if err != nil {
 		log.Error("cannot fetch encapsulating filtersets", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot fetch filterset usage")
@@ -39,6 +39,21 @@ func (a *Api) GetFiltersetUsage(c echo.Context, filtersetId string) error {
 		log.Error("cannot fetch thresholds", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot fetch filterset usage")
 	}
+	users, err := odb.FiltersetUsageUsers(ctx, fsetID)
+	if err != nil {
+		log.Error("cannot fetch session filter users", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot fetch filterset usage")
+	}
+	comparisons, err := odb.FiltersetUsageComparisons(ctx, fsetID)
+	if err != nil {
+		log.Error("cannot fetch statistics comparisons", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot fetch filterset usage")
+	}
+	grants, err := odb.FiltersetUsageSysreportGrants(ctx, fsetID)
+	if err != nil {
+		log.Error("cannot fetch sysreport grants", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot fetch filterset usage")
+	}
 
 	thresholdStrings := make([]string, 0, len(thresholds))
 	for _, t := range thresholds {
@@ -47,9 +62,12 @@ func (a *Api) GetFiltersetUsage(c echo.Context, filtersetId string) error {
 
 	return c.JSON(http.StatusOK, map[string]any{
 		"data": map[string]any{
-			"filtersets": fsets,
-			"rulesets":   rulesets,
-			"thresholds": thresholdStrings,
+			"filtersets":       fsets,
+			"rulesets":         rulesets,
+			"thresholds":       thresholdStrings,
+			"users":            users,
+			"comparisons":      comparisons,
+			"sysreport_grants": grants,
 		},
 	})
 }

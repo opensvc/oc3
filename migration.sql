@@ -26,3 +26,92 @@ ALTER TABLE log
   ADD COLUMN log_impersonator VARCHAR(100) NULL DEFAULT NULL
     COMMENT 'user who really signed in, when acting as log_user'
     AFTER log_user;
+
+-- 2026-10-06: the kind of an svcactions row, as the historical collector declares
+-- it (init/models/db.py): 'status' for an action, begun or ended, '' for a log line
+-- of an action. oc3 writes it with every action, and the actions of a service
+-- (GET /services/{svc_id}/actions) are read by it; a database created before the
+-- column existed refuses every action the agents report ("Unknown column
+-- 'log_type'"). IF NOT EXISTS: the column is already there in a collector
+-- database kept up to date by web2py.
+ALTER TABLE svcactions
+  ADD COLUMN IF NOT EXISTS log_type VARCHAR(30) DEFAULT '';
+
+-- 2026-10-07: the OpenID Connect identities of the users. A user signing in
+-- through an OIDC provider is known by the pair (issuer, subject) the provider
+-- gives, never by the email, which changes and can be reassigned. oc3 reads it at
+-- every OIDC sign-in and for every Bearer access token, and writes it when an
+-- identity is first linked to an auth_user account. A table of its own rather than
+-- columns of auth_user, which the historical collector shares.
+CREATE TABLE IF NOT EXISTS auth_user_identities (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  issuer     VARCHAR(255) NOT NULL,
+  subject    VARCHAR(255) NOT NULL,
+  created    DATETIME NOT NULL,
+  last_login DATETIME NULL DEFAULT NULL,
+  UNIQUE KEY uk_identity (issuer, subject),
+  KEY k_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- 2026-10-07: the Everybody group, that every account belongs to. The historical
+-- collector expects it (immutable group, user_add_evt trigger of auth_user adding
+-- each new account to it), but never creates it: a database built from the
+-- collector dump has none, and the trigger then leaves memberships with a NULL
+-- group. Data rather than schema; idempotent. The memberships left with a NULL
+-- group are given to Everybody, and an account without the membership gets it.
+INSERT INTO auth_group (role, description, privilege)
+  SELECT 'Everybody', 'Every user of the collector', 'F' FROM DUAL
+  WHERE NOT EXISTS (SELECT 1 FROM auth_group WHERE role = 'Everybody');
+UPDATE auth_membership
+  SET group_id = (SELECT id FROM auth_group WHERE role = 'Everybody')
+  WHERE group_id IS NULL;
+INSERT IGNORE INTO auth_membership (user_id, group_id, primary_group)
+  SELECT auth_user.id, (SELECT id FROM auth_group WHERE role = 'Everybody'), 'F'
+  FROM auth_user
+  WHERE NOT EXISTS (
+    SELECT 1 FROM auth_membership m JOIN auth_group g ON g.id = m.group_id
+    WHERE m.user_id = auth_user.id AND g.role = 'Everybody');
+
+-- 2026-10-07: the rules translating the claims of an OpenID Connect identity into
+-- access and teams. A rule matches when the claim (a name, or a dotted path into a
+-- nested claim) equals the value, or, for a list, contains it; one rule per claim
+-- and value. allow_access 'T': once at least one such rule exists, only the
+-- identities matching one may sign in, and those may have their account created at
+-- their first sign-in. auth_oidc_mapping_groups: the teams a rule grants, as many
+-- as needed; the teams named by a rule follow the claims at every sign-in. Read by
+-- oc3 at every OIDC sign-in and for the Bearer tokens, written from the Claim
+-- mappings page (Manager only).
+CREATE TABLE IF NOT EXISTS auth_oidc_mappings (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  claim        VARCHAR(128) NOT NULL,
+  value        VARCHAR(255) NOT NULL,
+  allow_access CHAR(1) NOT NULL DEFAULT 'F',
+  author       VARCHAR(100) NULL DEFAULT NULL,
+  updated      DATETIME NOT NULL,
+  UNIQUE KEY uk_claim_value (claim, value)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+CREATE TABLE IF NOT EXISTS auth_oidc_mapping_groups (
+  mapping_id INT NOT NULL,
+  group_id   INT NOT NULL,
+  PRIMARY KEY (mapping_id, group_id),
+  KEY k_group (group_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- 2026-10-08: the memberships the claim rules granted. A team a rule names
+-- follows the claims; once no rule names it any more, the memberships recorded
+-- here are revoked (when the rule changes, and at the next OIDC sign-in), while
+-- those added by hand stay. Seeded with the current memberships of the teams the
+-- rules name, of the accounts linked to an identity: those already followed the
+-- claims.
+CREATE TABLE IF NOT EXISTS auth_oidc_memberships (
+  user_id  INT NOT NULL,
+  group_id INT NOT NULL,
+  PRIMARY KEY (user_id, group_id),
+  KEY k_group (group_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+INSERT IGNORE INTO auth_oidc_memberships (user_id, group_id)
+  SELECT DISTINCT am.user_id, am.group_id FROM auth_membership am
+  JOIN auth_oidc_mapping_groups mg ON mg.group_id = am.group_id
+  WHERE EXISTS (SELECT 1 FROM auth_user_identities i WHERE i.user_id = am.user_id);

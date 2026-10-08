@@ -1433,6 +1433,160 @@ paths:
       tags:
         - auth
 
+  /auth/backchannel-logout:
+    post:
+      operationId: PostAuthBackchannelLogout
+      description: |
+        OpenID Connect Back-Channel Logout 1.0: the provider ends the sessions of a
+        user or of one of its sign-ins. The logout token is verified (signature,
+        issuer, audience, issue time, event, no nonce), then the sessions it names
+        by sid, or else by sub, are deleted. Public: the provider authenticates
+        itself by the signature of the token.
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [logout_token]
+              properties:
+                logout_token:
+                  type: string
+      responses:
+        200:
+          description: The sessions named by the token are ended.
+        400:
+          $ref: '#/components/responses/400'
+        503:
+          description: The OpenID Connect provider is not reachable yet.
+
+  /auth/callback:
+    get:
+      operationId: GetAuthCallback
+      description: |
+        End of an OpenID Connect sign-in, where the provider sends the browser back.
+        The sign-in in progress (cookie) is consumed, the state checked, the code
+        exchanged with the PKCE verifier, the ID token verified, the account
+        resolved from the (issuer, subject) identity, and a session opened in an
+        HttpOnly cookie. Always answers a redirection: to the path the sign-in
+        started from, or to it with an auth_error parameter naming the failure
+        (state, expired, token, unknown_user, locked, denied, unavailable).
+      tags:
+        - auth
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+        - in: query
+          name: state
+          schema:
+            type: string
+        - in: query
+          name: error
+          schema:
+            type: string
+      responses:
+        303:
+          description: Back to the SPA.
+
+  /auth/claims:
+    get:
+      operationId: GetAuthClaims
+      description: |
+        The claims of the OpenID Connect sign-in of the request, those a claim rule
+        may use (the claims that only serve to verify the token are left out), so
+        that whoever writes the rules sees what the provider sends. Empty for a
+        request authenticated otherwise.
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [source, claims]
+                properties:
+                  source:
+                    type: string
+                    description: How the request was authenticated (session, bearer, basic)
+                  claims:
+                    type: object
+                    additionalProperties: true
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /auth/info:
+    get:
+      operationId: GetAuthInfo
+      description: |
+        The sign-in modes the collector offers, for the sign-in screen, and whether
+        the request carries a valid OpenID Connect session. Public.
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthInfo'
+
+  /auth/login:
+    get:
+      operationId: GetAuthLogin
+      description: |
+        Starts an OpenID Connect sign-in (authorization code flow with PKCE): fresh
+        state, nonce and code verifier are kept on the server, a short-lived
+        HttpOnly cookie names the sign-in, and the browser is redirected to the
+        provider. return_to must be a path of the SPA; anything else is replaced
+        by /.
+      tags:
+        - auth
+      parameters:
+        - in: query
+          name: return_to
+          description: Path of the SPA to come back to once signed in
+          schema:
+            type: string
+      responses:
+        302:
+          description: To the provider's authorization endpoint.
+        404:
+          description: OpenID Connect is not enabled.
+        503:
+          description: The OpenID Connect provider is not reachable yet.
+
+  /auth/logout:
+    post:
+      operationId: PostAuthLogout
+      description: |
+        Ends the OpenID Connect session of the request and clears its cookie, then
+        returns the provider's end-session URL (RP-initiated logout) for the SPA to
+        follow, empty when the provider has none. Protected against cross-site
+        requests: the X-OC3-CSRF header is required and the Origin must be the
+        SPA's.
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [logout_url]
+                properties:
+                  logout_url:
+                    type: string
+        403:
+          $ref: '#/components/responses/403'
+
   /charts:
     get:
       operationId: GetCharts
@@ -1907,6 +2061,34 @@ paths:
         - bearerAuth: [ ]
 
 
+  /filters/{filter_id}/usage:
+    get:
+      operationId: GetFilterUsage
+      description: Display the filtersets holding a filter.
+      parameters:
+        - in: path
+          name: filter_id
+          required: true
+          description: Filter identifier (gen_filters.id or f_label)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterUsageResponse'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /filters/{filter_id}:
     post:
       operationId: PostFilter
@@ -2080,6 +2262,17 @@ paths:
                   type: string
                   enum: ['T', 'F']
                   description: Whether the filterset is a stats filterset (T or F)
+                entries:
+                  type: array
+                  description: |
+                    Entries to create the filterset with, in order: filters, given by
+                    their definition, and nested filtersets. Accepted on creation only:
+                    with entries, a name already in use is a conflict rather than an
+                    update. A filter identical to an existing one reuses it. The
+                    filterset, its new filters and its entries are written together, or
+                    not at all.
+                  items:
+                    $ref: '#/components/schemas/FiltersetNewEntry'
       tags:
         - collector
       responses:
@@ -2264,7 +2457,9 @@ paths:
   /filtersets/{filterset_id}/usage:
     get:
       operationId: GetFiltersetUsage
-      description: Display where a filterset is used (encapsulating filtersets, rulesets, check thresholds)
+      description: |
+        Display where a filterset is used: encapsulating filtersets, rulesets, check
+        thresholds, session filters, statistics comparisons and sysreport grants.
       parameters:
         - in: path
           name: filterset_id
@@ -5462,7 +5657,8 @@ paths:
       description: |
         Search the main kinds of objects for the text, as the historical collector's
         search: nodes, services, instances, applications, node addresses, disks, tags,
-        users, teams, requests, modulesets, rulesets, filtersets and forms. For each
+        users, organizational groups (group), privilege groups (privilege), requests,
+        modulesets, rulesets, filtersets and forms. For each
         kind, the objects whose name or another identifying prop contains the text,
         case-insensitively, are read through the kind's own list and its access
         control. A request also matches by its number. Then come, while `limit` leaves
@@ -5484,8 +5680,8 @@ paths:
           name: kinds
           description: |
             Comma-separated kinds to search, all by default: node, service, instance,
-            app, network, disk, tag, user, group, request, moduleset, ruleset,
-            filterset, form.
+            app, network, disk, tag, user, group, privilege, request, moduleset,
+            ruleset, filterset, form.
           schema:
             type: string
         - in: query
@@ -7628,6 +7824,163 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /oidc_mappings:
+    get:
+      operationId: GetOidcMappings
+      description: |
+        List the rules translating the claims of an OpenID Connect identity into
+        access and teams. Manager only: a rule may grant any team, Manager included.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcMappingListResponse'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostOidcMappings
+      description: |
+        Create a claim rule: one per claim and value, which allows signing in,
+        grants teams (as many as needed), or both. The Everybody team and the
+        private teams of the users cannot be granted: the teams a rule names follow
+        the claims at every sign-in, which would remove them from the accounts that
+        do not match. Manager only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcMappingInput'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcMappingListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /oidc_mappings/{mapping_id}:
+    get:
+      operationId: GetOidcMapping
+      description: A claim rule. Manager only.
+      parameters:
+        - in: path
+          name: mapping_id
+          required: true
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcMappingListResponse'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostOidcMapping
+      description: |
+        Change a claim rule, under the same checks as its creation. The accounts
+        the rules had put in a team no rule names any more leave it at once, those
+        added by hand stay. Manager only.
+      parameters:
+        - in: path
+          name: mapping_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcMappingInput'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcMappingListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteOidcMapping
+      description: |
+        Delete a claim rule. The accounts the rules had put in a team no rule
+        names any more leave it at once, those added by hand stay, and the team is
+        managed by hand again. The teams other rules still name follow the claims
+        at the next sign-in of each account. Manager only.
+      parameters:
+        - in: path
+          name: mapping_id
+          required: true
+          schema:
+            type: integer
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /openapi.json:
     get:
       operationId: GetSwagger
@@ -8102,6 +8455,121 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListResponse'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /services_actions:
+    get:
+      operationId: GetServicesActions
+      description: |
+        List the actions the agents ran on the services (svcactions), as the
+        historical Actions view; see GET /services/{svc_id}/actions for the rows.
+        The latest first by default. A manager sees every action; the others those
+        of the services of an app their groups are responsible for.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceActionListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /services_actions/{action_id}:
+    get:
+      operationId: GetServicesAction
+      description: Display an action, if the caller may see it (see GET /services_actions).
+      parameters:
+        - in: path
+          name: action_id
+          required: true
+          description: Action record identifier (svcactions.id)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceActionListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /services/{svc_id}/actions:
+    get:
+      operationId: GetServiceActions
+      description: |
+        List the actions the agents ran on a service (svcactions), as the
+        historical collector's service actions tab: an action row has
+        `log_type` "status", a log line of an action an empty `log_type` and its
+        text in `status_log`. With the names of the node and the service as
+        joined props (`nodes.nodename`, `services.svcname`). The latest first by
+        default. A manager sees the actions of every service; the others those of
+        a service of an app their groups are responsible for, the other services
+        answering 404.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service identifier (svc_id UUID or svcname)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceActionListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -10260,7 +10728,9 @@ paths:
         Change the password of the signed-in user, who gives the current one. The new
         password must be at least 12 characters long and differ from the current one;
         it is stored as a web2py hash, accepted by both collectors. The change is
-        logged, without the password. Requires user authentication, no privilege.
+        logged, without the password. Requires user authentication, no privilege; a
+        user signed in through the identity provider (OIDC session or Bearer token)
+        is refused with 403, the provider managing their password.
       requestBody:
         required: true
         content:
@@ -10338,12 +10808,48 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteUser
+      description: |
+        Delete a user, as the historical rest_delete_user does, then clean up what
+        belongs to the account alone: its team memberships, its private team
+        (user_<id>, and what references it), its OpenID Connect identities, its
+        session filter, its preferences, its report and comparison selections and
+        its read marks of the log. What records history stays: the audit log, the
+        action queue, the alerts sent. UserManager privilege required. Refused for
+        one's own account, for the account of a Manager unless the caller is a
+        Manager, and for the last member of the Manager team.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: User identifier, auth_user.id or the user email.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
     post:
       operationId: PostUser
       description: |
         Change the first name, last name or email of a user. Any signed-in user may
-        change their own, as the profile form of the historical collector allows;
-        another user's requires the UserManager privilege (or Manager), else 403.
+        change their own, as the profile form of the historical collector allows,
+        unless signed in through the identity provider (OIDC session or Bearer token):
+        their profile is the provider's, 403. Another user's requires the
+        UserManager privilege (or Manager), else 403.
         Only the keys given are changed; names are trimmed, at most 128
         characters, and may be empty. The email must be a valid address, at most 512
         characters, not used by another user (409): it is the sign-in name, so the
@@ -14456,6 +14962,149 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/history:
+    get:
+      operationId: GetComplianceHistory
+      description: |
+        The versions of the compliance export, newest first: each commit of the
+        compliance designer records the whole export (every filterset, ruleset and
+        moduleset, whoever they are published to) in a git repository. Requires the
+        CompManager privilege.
+      parameters:
+        - in: query
+          name: limit
+          description: Versions returned, 50 by default, 300 at most.
+          schema:
+            type: integer
+        - in: query
+          name: object
+          description: |
+            Only the versions in which this object changed (created, changed or
+            deleted), named by kind and id as `ruleset:12`, `moduleset:3` or
+            `filterset:7`: the id follows the object through its renames. The last
+            300 versions are looked through.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplianceVersion'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostComplianceHistory
+      description: |
+        Record the current compliance export as a new version in the git repository
+        of the compliance history (`server.directories.compliance`), authored by the
+        user, with the message given: the compliance designer calls it once its
+        changes are saved. The export holds every filterset, ruleset and moduleset,
+        whoever they are published to, sorted by name, in the format of the import.
+        When nothing changed since the last version, none is recorded and changed is
+        false. Requires the CompManager privilege.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  description: The commit message, its first line a summary.
+                source:
+                  type: string
+                  enum: [designer, elsewhere]
+                  description: |
+                    What the version records: the changes of a designer commit, or
+                    the export as found before one, holding the changes made
+                    elsewhere. Kept as a trailer of the commit, returned as source.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - commit
+                  - changed
+                properties:
+                  commit:
+                    type: string
+                    description: The id of the version recorded, or of the last one when nothing changed.
+                  changed:
+                    type: boolean
+                    description: Whether a new version was recorded.
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/history/{commit}:
+    get:
+      operationId: GetComplianceVersion
+      description: |
+        A version of the compliance export: its commit, the export it recorded and
+        the one of the version before, from which the changes are worked out, and
+        the git diff between the two. Requires the CompManager privilege.
+      parameters:
+        - in: path
+          name: commit
+          required: true
+          description: The commit id, whole or abbreviated.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceVersionDetail'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:
@@ -14517,6 +15166,29 @@ components:
             $ref: "#/components/schemas/Problem"
 
   schemas:
+    AuthInfo:
+      type: object
+      required: [basic, oidc, session]
+      properties:
+        basic:
+          type: boolean
+          description: Whether users may sign in with their collector password
+        oidc:
+          type: object
+          required: [enabled, ready, name]
+          properties:
+            enabled:
+              type: boolean
+            ready:
+              type: boolean
+              description: Whether the provider was discovered and the sign-in can start
+            name:
+              type: string
+              description: Name of the provider (display_name), for messages and logs; the sign-in screen does not show it
+        session:
+          type: boolean
+          description: Whether the request carries a valid OpenID Connect session
+
     ListMeta:
       type: object
       required:
@@ -16044,6 +16716,110 @@ components:
           type: string
           nullable: true
 
+    ServiceActionRow:
+      type: object
+      description: |
+        An action an agent ran on a service, or a log line of one. Every property
+        is optional: the `props` query parameter selects which columns the server
+        returns. The `services.` and `nodes.` props come from joined tables.
+      properties:
+        id:
+          type: integer
+        svc_id:
+          type: string
+        node_id:
+          type: string
+        sid:
+          type: string
+          nullable: true
+          description: Session id, shared by the actions of one agent command
+        pid:
+          type: string
+          nullable: true
+        rid:
+          type: string
+          nullable: true
+        subset:
+          type: string
+          nullable: true
+        action:
+          type: string
+          nullable: true
+        command:
+          type: string
+          nullable: true
+        origin:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+          description: ok, warn, err, or empty while the action runs
+        begin:
+          type: string
+        end:
+          type: string
+          nullable: true
+        time:
+          type: integer
+          nullable: true
+          description: Duration, in seconds
+        status_log:
+          type: string
+          nullable: true
+        log_type:
+          type: string
+          nullable: true
+          description: '"status" for an action, empty for a log line of an action'
+        cron:
+          type: integer
+          nullable: true
+          description: 1 when the scheduler of the agent ran the action
+        version:
+          type: string
+          nullable: true
+        hostid:
+          type: string
+          nullable: true
+        alert:
+          type: integer
+          nullable: true
+        ack:
+          type: integer
+          nullable: true
+        acked_by:
+          type: string
+          nullable: true
+        acked_date:
+          type: string
+          nullable: true
+        acked_comment:
+          type: string
+          nullable: true
+        services.svcname:
+          type: string
+        nodes.nodename:
+          type: string
+          nullable: true
+
+    ServiceActionListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ServiceActionRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
     ResourceListResponse:
       type: object
       required:
@@ -16355,6 +17131,154 @@ components:
         meta:
           $ref: '#/components/schemas/ListMeta'
 
+    OidcMappingRow:
+      type: object
+      description: |
+        A rule translating a claim value into access and a team. Every property is
+        optional: the props query parameter selects which columns the server returns.
+      properties:
+        id:
+          type: integer
+        claim:
+          type: string
+          description: Claim name, or dotted path into a nested claim
+        value:
+          type: string
+          description: Value the claim must equal, or contain for a list
+        allow_access:
+          type: string
+          description: T when the matching identities may sign in, F otherwise
+        group_ids:
+          type: string
+          description: Ids of the teams granted to the matching identities, comma separated, in the order of their names; empty when the rule grants none
+        group_roles:
+          type: string
+          description: Names of those teams, comma and space separated
+        privilege_ids:
+          type: string
+          description: Ids of the privilege teams among them, comma separated, in the order of their names
+        privilege_roles:
+          type: string
+          description: Names of the privilege teams among them, comma and space separated
+        org_ids:
+          type: string
+          description: Ids of the organizational teams among them, comma separated, in the order of their names
+        org_roles:
+          type: string
+          description: Names of the organizational teams among them, comma and space separated
+        author:
+          type: string
+        updated:
+          type: string
+
+    ComplianceVersion:
+      type: object
+      description: A version of the compliance export, a commit of its git repository.
+      required:
+        - id
+        - date
+        - author
+        - subject
+        - body
+        - source
+      properties:
+        id:
+          type: string
+          description: The commit id.
+        date:
+          type: string
+          description: The date of the commit, ISO 8601.
+        author:
+          type: string
+          description: '"First Last <email>" of the user who committed.'
+        subject:
+          type: string
+          description: The first line of the message.
+        body:
+          type: string
+          description: The rest of the message, the changes saved, one per line.
+        source:
+          type: string
+          enum: [designer, elsewhere, ""]
+          description: What the version records, as given when it was recorded; empty when not said.
+
+    ComplianceExport:
+      type: object
+      description: The compliance export a version recorded, in the format of the import.
+      required:
+        - filtersets
+        - rulesets
+        - modulesets
+      properties:
+        filtersets:
+          type: array
+          items:
+            $ref: '#/components/schemas/FiltersetExportItem'
+        rulesets:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompExportRuleset'
+        modulesets:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompExportModuleset'
+
+    ComplianceVersionDetail:
+      type: object
+      required:
+        - version
+        - export
+        - diff
+      properties:
+        version:
+          $ref: '#/components/schemas/ComplianceVersion'
+        export:
+          $ref: '#/components/schemas/ComplianceExport'
+        previous:
+          description: The export of the version before, absent for the first one.
+          allOf:
+            - $ref: '#/components/schemas/ComplianceExport'
+        previous_id:
+          type: string
+          description: The commit id of the version before, absent for the first one.
+        diff:
+          type: string
+          description: The git diff of the export from the version before, unified.
+
+    OidcMappingListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/OidcMappingRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    OidcMappingInput:
+      type: object
+      required: [claim, value]
+      properties:
+        claim:
+          type: string
+        value:
+          type: string
+        allow_access:
+          type: boolean
+        group_ids:
+          type: array
+          description: The teams the rule grants, as many as needed
+          items:
+            type: integer
+
     FiltersetRow:
       type: object
       description: |
@@ -16454,31 +17378,138 @@ components:
       properties:
         data:
           type: object
-          required: [filtersets, rulesets, thresholds]
+          description: |
+            What uses a filterset, all of it removed with the filterset when it is
+            deleted. The teams responsible for the filterset itself are not uses.
+          required: [filtersets, rulesets, thresholds, users, comparisons, sysreport_grants]
           properties:
             filtersets:
               type: array
-              description: Filtersets encapsulating this one.
+              description: Filtersets nesting this one.
               items:
-                $ref: '#/components/schemas/FiltersetRef'
+                $ref: '#/components/schemas/FiltersetUsingRef'
             rulesets:
               type: array
-              description: Compliance rulesets restricted by this filterset. The ruleset name is in `fset_name`.
+              description: Compliance rulesets restricted by this filterset.
               items:
-                $ref: '#/components/schemas/FiltersetRef'
+                $ref: '#/components/schemas/FiltersetRulesetRef'
             thresholds:
               type: array
               description: Check thresholds, as "chk_type.chk_instance:low-high".
               items:
                 type: string
+            users:
+              type: array
+              description: Users whose session filter is this filterset.
+              items:
+                $ref: '#/components/schemas/FiltersetUserRef'
+            comparisons:
+              type: array
+              description: Statistics comparisons including this filterset.
+              items:
+                $ref: '#/components/schemas/FiltersetComparisonRef'
+            sysreport_grants:
+              type: array
+              description: Sysreport access granted to teams on the nodes of this filterset.
+              items:
+                $ref: '#/components/schemas/FiltersetSysreportGrant'
 
-    FiltersetRef:
+    FilterUsageResponse:
       type: object
-      required: [id]
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required: [filtersets]
+          properties:
+            filtersets:
+              type: array
+              description: Filtersets holding this filter, which loses it when the filter is deleted.
+              items:
+                $ref: '#/components/schemas/FiltersetUsingRef'
+
+    FiltersetUsingRef:
+      type: object
+      description: |
+        A filterset holding the object looked up, with the logical operator of that
+        entry and its number of entries.
+      required: [id, fset_name, f_log_op, entries]
       properties:
         id:
           type: integer
         fset_name:
+          type: string
+        f_log_op:
+          type: string
+        entries:
+          type: integer
+
+    FiltersetUserRef:
+      type: object
+      required: [id, email, name]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+
+    FiltersetComparisonRef:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    FiltersetSysreportGrant:
+      type: object
+      required: [id, role, pattern]
+      properties:
+        id:
+          type: integer
+        role:
+          type: string
+        pattern:
+          type: string
+
+    FiltersetNewEntry:
+      type: object
+      description: |
+        An entry of a filterset being created: either a filter (f_table, f_field,
+        f_op and f_value) or a nested filterset (filterset), joined to the previous
+        entries by f_log_op.
+      required: [f_log_op]
+      properties:
+        f_log_op:
+          type: string
+          enum: ['AND', 'AND NOT', 'OR', 'OR NOT']
+        f_table:
+          type: string
+          description: Table the filter applies to
+        f_field:
+          type: string
+          description: Column of f_table the filter applies to
+        f_op:
+          type: string
+          enum: ['=', 'LIKE', '>', '>=', '<', '<=', 'IN']
+        f_value:
+          type: string
+          description: Value to compare the column to
+        filterset:
+          type: string
+          description: Record id or name of the filterset to nest
+
+    FiltersetRulesetRef:
+      type: object
+      required: [id, ruleset_name]
+      properties:
+        id:
+          type: integer
+        ruleset_name:
           type: string
 
     FiltersetExport:
@@ -16838,7 +17869,7 @@ components:
       properties:
         kind:
           type: string
-          enum: [node, service, instance, app, network, disk, tag, user, group, request, moduleset, ruleset, filterset, form]
+          enum: [node, service, instance, app, network, disk, tag, user, group, privilege, request, moduleset, ruleset, filterset, form]
         items:
           type: array
           description: |
@@ -16850,7 +17881,8 @@ components:
             mask, mac, intf, node_id, nodename, net_name for a node address; disk_id,
             disk_name, disk_size, disk_arrayid, nodename, svcname for a disk; tag_id,
             tag_name, tag_exclude for a tag; id, email, first_name, last_name, username
-            for a user; id, role, privilege, description for a team; id, form_name,
+            for a user; id, role, privilege, description for an organizational group
+            or a privilege group; id, form_name,
             last_form_name, status, creator, last_update for a request; id,
             modset_name, modset_author for a moduleset; id, ruleset_name, ruleset_type,
             ruleset_public for a ruleset; id, fset_name, fset_author for a filterset;
@@ -17619,6 +18651,9 @@ components:
           - `in:a,b,c`: one of the listed values;
           - `eq:v`, `ne:v`: equal, not equal;
           - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+            a date may be relative to now, `-` then a duration in weeks, days,
+            hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+            minutes, `gte:-1d12h` those of the last day and a half;
           - `empty`: no value;
           - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
             out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,

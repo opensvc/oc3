@@ -43,9 +43,10 @@ type (
 	}
 )
 
-type FiltersetRef struct {
+// FiltersetRulesetRef names a compliance ruleset restricted by a filterset.
+type FiltersetRulesetRef struct {
 	ID   int    `json:"id"`
-	Name string `json:"fset_name,omitempty"`
+	Name string `json:"ruleset_name"`
 }
 
 type FiltersetThreshold struct {
@@ -82,35 +83,8 @@ func (oDb *DB) FiltersetByIDOrName(ctx context.Context, idOrName string) (int, s
 	return id, name.String, nil
 }
 
-// FiltersetUsageEncapFiltersets lists the filtersets encapsulating the given fsetID.
-func (oDb *DB) FiltersetUsageEncapFiltersets(ctx context.Context, fsetID int) ([]FiltersetRef, error) {
-	const query = `SELECT gen_filtersets.fset_name, gen_filtersets.id
-		FROM gen_filtersets_filters
-		JOIN gen_filtersets ON gen_filtersets.id = gen_filtersets_filters.fset_id
-		WHERE gen_filtersets_filters.encap_fset_id = ?
-		GROUP BY gen_filtersets.fset_name
-		ORDER BY gen_filtersets.fset_name`
-	rows, err := oDb.DB.QueryContext(ctx, query, fsetID)
-	if err != nil {
-		return nil, fmt.Errorf("FiltersetUsageEncapFiltersets: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-	out := make([]FiltersetRef, 0)
-	for rows.Next() {
-		var (
-			name sql.NullString
-			id   int
-		)
-		if err := rows.Scan(&name, &id); err != nil {
-			return nil, fmt.Errorf("FiltersetUsageEncapFiltersets scan: %w", err)
-		}
-		out = append(out, FiltersetRef{ID: id, Name: name.String})
-	}
-	return out, nil
-}
-
 // FiltersetUsageRulesets lists the comp_rulesets attached to the given filterset.
-func (oDb *DB) FiltersetUsageRulesets(ctx context.Context, fsetID int) ([]FiltersetRef, error) {
+func (oDb *DB) FiltersetUsageRulesets(ctx context.Context, fsetID int) ([]FiltersetRulesetRef, error) {
 	const query = `SELECT comp_rulesets.ruleset_name, comp_rulesets.id
 		FROM comp_rulesets_filtersets
 		JOIN comp_rulesets ON comp_rulesets.id = comp_rulesets_filtersets.ruleset_id
@@ -121,7 +95,7 @@ func (oDb *DB) FiltersetUsageRulesets(ctx context.Context, fsetID int) ([]Filter
 		return nil, fmt.Errorf("FiltersetUsageRulesets: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
-	out := make([]FiltersetRef, 0)
+	out := make([]FiltersetRulesetRef, 0)
 	for rows.Next() {
 		var (
 			name sql.NullString
@@ -130,7 +104,7 @@ func (oDb *DB) FiltersetUsageRulesets(ctx context.Context, fsetID int) ([]Filter
 		if err := rows.Scan(&name, &id); err != nil {
 			return nil, fmt.Errorf("FiltersetUsageRulesets scan: %w", err)
 		}
-		out = append(out, FiltersetRef{ID: id, Name: name.String})
+		out = append(out, FiltersetRulesetRef{ID: id, Name: name.String})
 	}
 	return out, nil
 }
@@ -493,6 +467,9 @@ func (oDb *DB) DeleteFiltersetCascade(ctx context.Context, id int) error {
 		{"gen_filterset_check_threshold", "DELETE FROM gen_filterset_check_threshold WHERE fset_id = ?"},
 		{"gen_filterset_user", "DELETE FROM gen_filterset_user WHERE fset_id = ?"},
 		{"stats_compare_fset", "DELETE FROM stats_compare_fset WHERE fset_id = ?"},
+		// Not removed by the historical collector, which left the grant pointing to
+		// a filterset that no longer exists.
+		{"sysrep_allow", "DELETE FROM sysrep_allow WHERE fset_id = ?"},
 		{"gen_filtersets", "DELETE FROM gen_filtersets WHERE id = ?"},
 	}
 	for _, s := range stmts {

@@ -103,6 +103,7 @@ func (n *authWeb2py) extensions() auth.Extensions {
 	ext.Set(XUserID, n.id)
 	ext.Set(XUserEmail, n.email)
 	ext.Set(XUserPassword, n.password)
+	ext.Set(XAuthSource, AuthSourceBasic)
 	return ext
 }
 

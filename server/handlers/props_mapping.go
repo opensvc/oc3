@@ -33,6 +33,12 @@ func clusterListCol(name string) *schema.Col {
 	return &schema.Col{T: schema.TClusters, Name: name, Nullable: true}
 }
 
+// oidcMappingListCol is a computed column of the claim rule lists, whose derived
+// table is named after auth_oidc_mappings.
+func oidcMappingListCol(name string) *schema.Col {
+	return &schema.Col{T: schema.TAuthOidcMappings, Name: name, Nullable: true}
+}
+
 func col(c *schema.Col) propDef {
 	return propDef{Col: c}
 }
@@ -1024,12 +1030,12 @@ var propsMapping = map[string]propMapping{
 			"chk_created", "chk_updated",
 		},
 		Props: map[string]propDef{
-			"id":                     col(schema.ChecksLiveID),
-			"node_id":                colStr(schema.ChecksLiveNodeID),
-			"svc_id":                 colStr(schema.ChecksLiveSvcID),
-			"chk_type":               colStr(schema.ChecksLiveChkType),
-			"chk_instance":           colStr(schema.ChecksLiveChkInstance),
-			"chk_value":              colInt(schema.ChecksLiveChkValue),
+			"id":           col(schema.ChecksLiveID),
+			"node_id":      colStr(schema.ChecksLiveNodeID),
+			"svc_id":       colStr(schema.ChecksLiveSvcID),
+			"chk_type":     colStr(schema.ChecksLiveChkType),
+			"chk_instance": colStr(schema.ChecksLiveChkInstance),
+			"chk_value":    colInt(schema.ChecksLiveChkValue),
 			// A check without thresholds has none, not thresholds of 0,
 			// and its error state is null then.
 			"chk_low":                col(schema.ChecksLiveChkLow),
@@ -1102,6 +1108,52 @@ var propsMapping = map[string]propMapping{
 			"res_optional": colStr(schema.ResmonResOptional),
 			"changed":      colStr(schema.ResmonChanged),
 			"updated":      colStr(schema.ResmonUpdated),
+		},
+		Joins: map[string]JoinDef{
+			"services": {MappingKey: "service"},
+			"nodes":    {MappingKey: "node"},
+		},
+	},
+	// The actions the agents ran on a service (GET /services/{svc_id}/actions), as
+	// the historical actions view lists them, with the names of the service and
+	// the node as joined props. log_type tells an action ("status") from a log
+	// line of an action ("").
+	"service_action": {
+		Available: []string{
+			"id", "svc_id", "node_id", "sid", "pid", "rid", "subset",
+			"action", "command", "origin", "status", "begin", "end", "time",
+			"status_log", "log_type", "cron", "version", "hostid", "alert",
+			"ack", "acked_by", "acked_date", "acked_comment",
+		},
+		Default: []string{
+			"id", "node_id", "action", "status", "begin", "end", "time",
+			"cron", "sid", "pid", "rid",
+		},
+		Props: map[string]propDef{
+			"id":            colInt(schema.SvcactionsID),
+			"svc_id":        colStr(schema.SvcactionsSvcID),
+			"node_id":       colStr(schema.SvcactionsNodeID),
+			"sid":           colStr(schema.SvcactionsSid),
+			"pid":           colStr(schema.SvcactionsPid),
+			"rid":           colStr(schema.SvcactionsRid),
+			"subset":        colStr(schema.SvcactionsSubset),
+			"action":        colStr(schema.SvcactionsAction),
+			"command":       colStr(schema.SvcactionsCommand),
+			"origin":        colStr(schema.SvcactionsOrigin),
+			"status":        colStr(schema.SvcactionsStatus),
+			"begin":         colStr(schema.SvcactionsBegin),
+			"end":           colStr(schema.SvcactionsEnd),
+			"time":          colInt(schema.SvcactionsTime),
+			"status_log":    colStr(schema.SvcactionsStatusLog),
+			"log_type":      colStr(schema.SvcactionsLogType),
+			"cron":          colInt(schema.SvcactionsCron),
+			"version":       colStr(schema.SvcactionsVersion),
+			"hostid":        colStr(schema.SvcactionsHostid),
+			"alert":         colInt(schema.SvcactionsAlert),
+			"ack":           colInt(schema.SvcactionsAck),
+			"acked_by":      colStr(schema.SvcactionsAckedBy),
+			"acked_date":    colStr(schema.SvcactionsAckedDate),
+			"acked_comment": colStr(schema.SvcactionsAckedComment),
 		},
 		Joins: map[string]JoinDef{
 			"services": {MappingKey: "service"},
@@ -1208,6 +1260,28 @@ var propsMapping = map[string]propMapping{
 			"f_author":  colStr(schema.GenFiltersFAuthor),
 			"f_cksum":   colStr(schema.GenFiltersFCksum),
 			"f_label":   colStr(schema.GenFiltersFLabel),
+		},
+	},
+	"oidc_mapping": {
+		Available: []string{
+			"id", "claim", "value", "allow_access", "group_ids", "group_roles",
+			"privilege_ids", "privilege_roles", "org_ids", "org_roles", "author", "updated",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.AuthOidcMappingsID),
+			"claim":        colStr(schema.AuthOidcMappingsClaim),
+			"value":        colStr(schema.AuthOidcMappingsValue),
+			"allow_access": colStr(schema.AuthOidcMappingsAllowAccess),
+			// The teams granted, computed by the derived table of the rule queries.
+			"group_ids":   colStr(oidcMappingListCol("group_ids")),
+			"group_roles": colStr(oidcMappingListCol("group_roles")),
+			// The same, privilege teams and organizational teams apart.
+			"privilege_ids":   colStr(oidcMappingListCol("privilege_ids")),
+			"privilege_roles": colStr(oidcMappingListCol("privilege_roles")),
+			"org_ids":         colStr(oidcMappingListCol("org_ids")),
+			"org_roles":       colStr(oidcMappingListCol("org_roles")),
+			"author":          colStr(schema.AuthOidcMappingsAuthor),
+			"updated":         colStr(schema.AuthOidcMappingsUpdated),
 		},
 	},
 	"filterset": {

@@ -67,12 +67,16 @@ func setDefaultServerConfig() {
 	// One git repository per node, committed by the scheduler from the reports of
 	// the agents.
 	viper.SetDefault(s+".directories.sysreport", "/oc3/uploads/sysreport")
+	// One git repository holding the compliance export, committed at each commit
+	// of the compliance designer.
+	viper.SetDefault(s+".directories.compliance", "/oc3/uploads/compliance")
 	// The javascript sandbox running the manglers of the form rest outputs.
 	viper.SetDefault(s+".forms.nodejs", "/usr/bin/nodejs")
 	viper.SetDefault(s+".forms.vm2", "/usr/local/bin/vm2")
 	viper.SetDefault(s+".log.request.level", "none")
 
 	setDefaultAuthConfig()
+	setDefaultOIDCConfig(s)
 }
 
 func setDefaultSchedulerConfig() {

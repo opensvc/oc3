@@ -14,6 +14,84 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for ComplianceVersionSource.
+const (
+	ComplianceVersionSourceDesigner  ComplianceVersionSource = "designer"
+	ComplianceVersionSourceElsewhere ComplianceVersionSource = "elsewhere"
+	ComplianceVersionSourceEmpty     ComplianceVersionSource = ""
+)
+
+// Valid indicates whether the value is a known member of the ComplianceVersionSource enum.
+func (e ComplianceVersionSource) Valid() bool {
+	switch e {
+	case ComplianceVersionSourceDesigner:
+		return true
+	case ComplianceVersionSourceElsewhere:
+		return true
+	case ComplianceVersionSourceEmpty:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FiltersetNewEntryFLogOp.
+const (
+	FiltersetNewEntryFLogOpAND    FiltersetNewEntryFLogOp = "AND"
+	FiltersetNewEntryFLogOpANDNOT FiltersetNewEntryFLogOp = "AND NOT"
+	FiltersetNewEntryFLogOpOR     FiltersetNewEntryFLogOp = "OR"
+	FiltersetNewEntryFLogOpORNOT  FiltersetNewEntryFLogOp = "OR NOT"
+)
+
+// Valid indicates whether the value is a known member of the FiltersetNewEntryFLogOp enum.
+func (e FiltersetNewEntryFLogOp) Valid() bool {
+	switch e {
+	case FiltersetNewEntryFLogOpAND:
+		return true
+	case FiltersetNewEntryFLogOpANDNOT:
+		return true
+	case FiltersetNewEntryFLogOpOR:
+		return true
+	case FiltersetNewEntryFLogOpORNOT:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FiltersetNewEntryFOp.
+const (
+	FiltersetNewEntryFOpEqual            FiltersetNewEntryFOp = "="
+	FiltersetNewEntryFOpGreaterThan      FiltersetNewEntryFOp = ">"
+	FiltersetNewEntryFOpGreaterThanEqual FiltersetNewEntryFOp = ">="
+	FiltersetNewEntryFOpIN               FiltersetNewEntryFOp = "IN"
+	FiltersetNewEntryFOpLIKE             FiltersetNewEntryFOp = "LIKE"
+	FiltersetNewEntryFOpLessThan         FiltersetNewEntryFOp = "<"
+	FiltersetNewEntryFOpLessThanEqual    FiltersetNewEntryFOp = "<="
+)
+
+// Valid indicates whether the value is a known member of the FiltersetNewEntryFOp enum.
+func (e FiltersetNewEntryFOp) Valid() bool {
+	switch e {
+	case FiltersetNewEntryFOpEqual:
+		return true
+	case FiltersetNewEntryFOpGreaterThan:
+		return true
+	case FiltersetNewEntryFOpGreaterThanEqual:
+		return true
+	case FiltersetNewEntryFOpIN:
+		return true
+	case FiltersetNewEntryFOpLIKE:
+		return true
+	case FiltersetNewEntryFOpLessThan:
+		return true
+	case FiltersetNewEntryFOpLessThanEqual:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for NetworkSegmentRowSegType.
 const (
 	NetworkSegmentRowSegTypeDynamic NetworkSegmentRowSegType = "dynamic"
@@ -82,6 +160,7 @@ const (
 	Moduleset SearchGroupKind = "moduleset"
 	Network   SearchGroupKind = "network"
 	Node      SearchGroupKind = "node"
+	Privilege SearchGroupKind = "privilege"
 	Request   SearchGroupKind = "request"
 	Ruleset   SearchGroupKind = "ruleset"
 	Service   SearchGroupKind = "service"
@@ -109,6 +188,8 @@ func (e SearchGroupKind) Valid() bool {
 	case Network:
 		return true
 	case Node:
+		return true
+	case Privilege:
 		return true
 	case Request:
 		return true
@@ -191,6 +272,24 @@ func (e SysreportFileStatKind) Valid() bool {
 	case SysreportFileStatKindCommand:
 		return true
 	case SysreportFileStatKindFile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostComplianceHistoryJSONBodySource.
+const (
+	PostComplianceHistoryJSONBodySourceDesigner  PostComplianceHistoryJSONBodySource = "designer"
+	PostComplianceHistoryJSONBodySourceElsewhere PostComplianceHistoryJSONBodySource = "elsewhere"
+)
+
+// Valid indicates whether the value is a known member of the PostComplianceHistoryJSONBodySource enum.
+func (e PostComplianceHistoryJSONBodySource) Valid() bool {
+	switch e {
+	case PostComplianceHistoryJSONBodySourceDesigner:
+		return true
+	case PostComplianceHistoryJSONBodySourceElsewhere:
 		return true
 	default:
 		return false
@@ -316,31 +415,31 @@ func (e PostFiltersJSONBodyFOp) Valid() bool {
 
 // Defines values for PostFilterJSONBodyFOp.
 const (
-	PostFilterJSONBodyFOpEqual            PostFilterJSONBodyFOp = "="
-	PostFilterJSONBodyFOpGreaterThan      PostFilterJSONBodyFOp = ">"
-	PostFilterJSONBodyFOpGreaterThanEqual PostFilterJSONBodyFOp = ">="
-	PostFilterJSONBodyFOpIN               PostFilterJSONBodyFOp = "IN"
-	PostFilterJSONBodyFOpLIKE             PostFilterJSONBodyFOp = "LIKE"
-	PostFilterJSONBodyFOpLessThan         PostFilterJSONBodyFOp = "<"
-	PostFilterJSONBodyFOpLessThanEqual    PostFilterJSONBodyFOp = "<="
+	Equal            PostFilterJSONBodyFOp = "="
+	GreaterThan      PostFilterJSONBodyFOp = ">"
+	GreaterThanEqual PostFilterJSONBodyFOp = ">="
+	IN               PostFilterJSONBodyFOp = "IN"
+	LIKE             PostFilterJSONBodyFOp = "LIKE"
+	LessThan         PostFilterJSONBodyFOp = "<"
+	LessThanEqual    PostFilterJSONBodyFOp = "<="
 )
 
 // Valid indicates whether the value is a known member of the PostFilterJSONBodyFOp enum.
 func (e PostFilterJSONBodyFOp) Valid() bool {
 	switch e {
-	case PostFilterJSONBodyFOpEqual:
+	case Equal:
 		return true
-	case PostFilterJSONBodyFOpGreaterThan:
+	case GreaterThan:
 		return true
-	case PostFilterJSONBodyFOpGreaterThanEqual:
+	case GreaterThanEqual:
 		return true
-	case PostFilterJSONBodyFOpIN:
+	case IN:
 		return true
-	case PostFilterJSONBodyFOpLIKE:
+	case LIKE:
 		return true
-	case PostFilterJSONBodyFOpLessThan:
+	case LessThan:
 		return true
-	case PostFilterJSONBodyFOpLessThanEqual:
+	case LessThanEqual:
 		return true
 	default:
 		return false
@@ -457,22 +556,22 @@ func (e PostFiltersetsFiltersJSONBodyFLogOp) Valid() bool {
 
 // Defines values for PostFiltersetsFiltersetsJSONBodyFLogOp.
 const (
-	PostFiltersetsFiltersetsJSONBodyFLogOpAND    PostFiltersetsFiltersetsJSONBodyFLogOp = "AND"
-	PostFiltersetsFiltersetsJSONBodyFLogOpANDNOT PostFiltersetsFiltersetsJSONBodyFLogOp = "AND NOT"
-	PostFiltersetsFiltersetsJSONBodyFLogOpOR     PostFiltersetsFiltersetsJSONBodyFLogOp = "OR"
-	PostFiltersetsFiltersetsJSONBodyFLogOpORNOT  PostFiltersetsFiltersetsJSONBodyFLogOp = "OR NOT"
+	AND    PostFiltersetsFiltersetsJSONBodyFLogOp = "AND"
+	ANDNOT PostFiltersetsFiltersetsJSONBodyFLogOp = "AND NOT"
+	OR     PostFiltersetsFiltersetsJSONBodyFLogOp = "OR"
+	ORNOT  PostFiltersetsFiltersetsJSONBodyFLogOp = "OR NOT"
 )
 
 // Valid indicates whether the value is a known member of the PostFiltersetsFiltersetsJSONBodyFLogOp enum.
 func (e PostFiltersetsFiltersetsJSONBodyFLogOp) Valid() bool {
 	switch e {
-	case PostFiltersetsFiltersetsJSONBodyFLogOpAND:
+	case AND:
 		return true
-	case PostFiltersetsFiltersetsJSONBodyFLogOpANDNOT:
+	case ANDNOT:
 		return true
-	case PostFiltersetsFiltersetsJSONBodyFLogOpOR:
+	case OR:
 		return true
-	case PostFiltersetsFiltersetsJSONBodyFLogOpORNOT:
+	case ORNOT:
 		return true
 	default:
 		return false
@@ -724,6 +823,24 @@ type AppRow struct {
 	Updated     *string `json:"updated,omitempty"`
 }
 
+// AuthInfo defines model for AuthInfo.
+type AuthInfo struct {
+	// Basic Whether users may sign in with their collector password
+	Basic bool `json:"basic"`
+	Oidc  struct {
+		Enabled bool `json:"enabled"`
+
+		// Name Name of the provider (display_name), for messages and logs; the sign-in screen does not show it
+		Name string `json:"name"`
+
+		// Ready Whether the provider was discovered and the sign-in can start
+		Ready bool `json:"ready"`
+	} `json:"oidc"`
+
+	// Session Whether the request carries a valid OpenID Connect session
+	Session bool `json:"session"`
+}
+
 // ChartListResponse defines model for ChartListResponse.
 type ChartListResponse struct {
 	Data ChartListResponse_Data `json:"data"`
@@ -932,6 +1049,13 @@ type CompRulesetExport struct {
 	Rulesets   *[]CompExportRuleset   `json:"rulesets,omitempty"`
 }
 
+// ComplianceExport The compliance export a version recorded, in the format of the import.
+type ComplianceExport struct {
+	Filtersets []FiltersetExportItem `json:"filtersets"`
+	Modulesets []CompExportModuleset `json:"modulesets"`
+	Rulesets   []CompExportRuleset   `json:"rulesets"`
+}
+
 // ComplianceLogListResponse defines model for ComplianceLogListResponse.
 type ComplianceLogListResponse struct {
 	Data ComplianceLogListResponse_Data `json:"data"`
@@ -1002,6 +1126,48 @@ type ComplianceStatusRow struct {
 	RunModule *string `json:"run_module,omitempty"`
 	RunStatus *int    `json:"run_status,omitempty"`
 	SvcId     *string `json:"svc_id,omitempty"`
+}
+
+// ComplianceVersion A version of the compliance export, a commit of its git repository.
+type ComplianceVersion struct {
+	// Author "First Last <email>" of the user who committed.
+	Author string `json:"author"`
+
+	// Body The rest of the message, the changes saved, one per line.
+	Body string `json:"body"`
+
+	// Date The date of the commit, ISO 8601.
+	Date string `json:"date"`
+
+	// Id The commit id.
+	Id string `json:"id"`
+
+	// Source What the version records, as given when it was recorded; empty when not said.
+	Source ComplianceVersionSource `json:"source"`
+
+	// Subject The first line of the message.
+	Subject string `json:"subject"`
+}
+
+// ComplianceVersionSource What the version records, as given when it was recorded; empty when not said.
+type ComplianceVersionSource string
+
+// ComplianceVersionDetail defines model for ComplianceVersionDetail.
+type ComplianceVersionDetail struct {
+	// Diff The git diff of the export from the version before, unified.
+	Diff string `json:"diff"`
+
+	// Export The compliance export a version recorded, in the format of the import.
+	Export ComplianceExport `json:"export"`
+
+	// Previous The export of the version before, absent for the first one.
+	Previous *ComplianceExport `json:"previous,omitempty"`
+
+	// PreviousId The commit id of the version before, absent for the first one.
+	PreviousId *string `json:"previous_id,omitempty"`
+
+	// Version A version of the compliance export, a commit of its git repository.
+	Version ComplianceVersion `json:"version"`
 }
 
 // DiskListResponse defines model for DiskListResponse.
@@ -1078,6 +1244,20 @@ type FilterRow struct {
 	FUpdated *string `json:"f_updated,omitempty"`
 	FValue   *string `json:"f_value,omitempty"`
 	Id       *int    `json:"id,omitempty"`
+}
+
+// FilterUsageResponse defines model for FilterUsageResponse.
+type FilterUsageResponse struct {
+	Data struct {
+		// Filtersets Filtersets holding this filter, which loses it when the filter is deleted.
+		Filtersets []FiltersetUsingRef `json:"filtersets"`
+	} `json:"data"`
+}
+
+// FiltersetComparisonRef defines model for FiltersetComparisonRef.
+type FiltersetComparisonRef struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 // FiltersetExport A filterset and every filterset it encapsulates, recursively, each with its
@@ -1167,11 +1347,30 @@ type FiltersetListResponse_Data struct {
 	union json.RawMessage
 }
 
-// FiltersetRef defines model for FiltersetRef.
-type FiltersetRef struct {
-	FsetName *string `json:"fset_name,omitempty"`
-	Id       int     `json:"id"`
+// FiltersetNewEntry An entry of a filterset being created: either a filter (f_table, f_field,
+// f_op and f_value) or a nested filterset (filterset), joined to the previous
+// entries by f_log_op.
+type FiltersetNewEntry struct {
+	// FField Column of f_table the filter applies to
+	FField *string                 `json:"f_field,omitempty"`
+	FLogOp FiltersetNewEntryFLogOp `json:"f_log_op"`
+	FOp    *FiltersetNewEntryFOp   `json:"f_op,omitempty"`
+
+	// FTable Table the filter applies to
+	FTable *string `json:"f_table,omitempty"`
+
+	// FValue Value to compare the column to
+	FValue *string `json:"f_value,omitempty"`
+
+	// Filterset Record id or name of the filterset to nest
+	Filterset *string `json:"filterset,omitempty"`
 }
+
+// FiltersetNewEntryFLogOp defines model for FiltersetNewEntry.FLogOp.
+type FiltersetNewEntryFLogOp string
+
+// FiltersetNewEntryFOp defines model for FiltersetNewEntry.FOp.
+type FiltersetNewEntryFOp string
 
 // FiltersetRow A filterset: an ordered combination of filters and other filtersets that
 // selects nodes and services. Every property is optional: the `props` query
@@ -1186,18 +1385,58 @@ type FiltersetRow struct {
 	Id          *int    `json:"id,omitempty"`
 }
 
+// FiltersetRulesetRef defines model for FiltersetRulesetRef.
+type FiltersetRulesetRef struct {
+	Id          int    `json:"id"`
+	RulesetName string `json:"ruleset_name"`
+}
+
+// FiltersetSysreportGrant defines model for FiltersetSysreportGrant.
+type FiltersetSysreportGrant struct {
+	Id      int    `json:"id"`
+	Pattern string `json:"pattern"`
+	Role    string `json:"role"`
+}
+
 // FiltersetUsageResponse defines model for FiltersetUsageResponse.
 type FiltersetUsageResponse struct {
+	// Data What uses a filterset, all of it removed with the filterset when it is
+	// deleted. The teams responsible for the filterset itself are not uses.
 	Data struct {
-		// Filtersets Filtersets encapsulating this one.
-		Filtersets []FiltersetRef `json:"filtersets"`
+		// Comparisons Statistics comparisons including this filterset.
+		Comparisons []FiltersetComparisonRef `json:"comparisons"`
 
-		// Rulesets Compliance rulesets restricted by this filterset. The ruleset name is in `fset_name`.
-		Rulesets []FiltersetRef `json:"rulesets"`
+		// Filtersets Filtersets nesting this one.
+		Filtersets []FiltersetUsingRef `json:"filtersets"`
+
+		// Rulesets Compliance rulesets restricted by this filterset.
+		Rulesets []FiltersetRulesetRef `json:"rulesets"`
+
+		// SysreportGrants Sysreport access granted to teams on the nodes of this filterset.
+		SysreportGrants []FiltersetSysreportGrant `json:"sysreport_grants"`
 
 		// Thresholds Check thresholds, as "chk_type.chk_instance:low-high".
 		Thresholds []string `json:"thresholds"`
+
+		// Users Users whose session filter is this filterset.
+		Users []FiltersetUserRef `json:"users"`
 	} `json:"data"`
+}
+
+// FiltersetUserRef defines model for FiltersetUserRef.
+type FiltersetUserRef struct {
+	Email string `json:"email"`
+	Id    int    `json:"id"`
+	Name  string `json:"name"`
+}
+
+// FiltersetUsingRef A filterset holding the object looked up, with the logical operator of that
+// entry and its number of entries.
+type FiltersetUsingRef struct {
+	Entries  int    `json:"entries"`
+	FLogOp   string `json:"f_log_op"`
+	FsetName string `json:"fset_name"`
+	Id       int    `json:"id"`
 }
 
 // FormListResponse defines model for FormListResponse.
@@ -1889,6 +2128,67 @@ type ObsolescenceSettingRow struct {
 // ObsolescenceSettingRowObsType defines model for ObsolescenceSettingRow.ObsType.
 type ObsolescenceSettingRowObsType string
 
+// OidcMappingInput defines model for OidcMappingInput.
+type OidcMappingInput struct {
+	AllowAccess *bool  `json:"allow_access,omitempty"`
+	Claim       string `json:"claim"`
+
+	// GroupIds The teams the rule grants, as many as needed
+	GroupIds *[]int `json:"group_ids,omitempty"`
+	Value    string `json:"value"`
+}
+
+// OidcMappingListResponse defines model for OidcMappingListResponse.
+type OidcMappingListResponse struct {
+	Data OidcMappingListResponse_Data `json:"data"`
+	Meta *ListMeta                    `json:"meta,omitempty"`
+}
+
+// OidcMappingListResponseData0 defines model for .
+type OidcMappingListResponseData0 = []OidcMappingRow
+
+// OidcMappingListResponseData1 defines model for .
+type OidcMappingListResponseData1 map[string]map[string]int
+
+// OidcMappingListResponse_Data defines model for OidcMappingListResponse.Data.
+type OidcMappingListResponse_Data struct {
+	union json.RawMessage
+}
+
+// OidcMappingRow A rule translating a claim value into access and a team. Every property is
+// optional: the props query parameter selects which columns the server returns.
+type OidcMappingRow struct {
+	// AllowAccess T when the matching identities may sign in, F otherwise
+	AllowAccess *string `json:"allow_access,omitempty"`
+	Author      *string `json:"author,omitempty"`
+
+	// Claim Claim name, or dotted path into a nested claim
+	Claim *string `json:"claim,omitempty"`
+
+	// GroupIds Ids of the teams granted to the matching identities, comma separated, in the order of their names; empty when the rule grants none
+	GroupIds *string `json:"group_ids,omitempty"`
+
+	// GroupRoles Names of those teams, comma and space separated
+	GroupRoles *string `json:"group_roles,omitempty"`
+	Id         *int    `json:"id,omitempty"`
+
+	// OrgIds Ids of the organizational teams among them, comma separated, in the order of their names
+	OrgIds *string `json:"org_ids,omitempty"`
+
+	// OrgRoles Names of the organizational teams among them, comma and space separated
+	OrgRoles *string `json:"org_roles,omitempty"`
+
+	// PrivilegeIds Ids of the privilege teams among them, comma separated, in the order of their names
+	PrivilegeIds *string `json:"privilege_ids,omitempty"`
+
+	// PrivilegeRoles Names of the privilege teams among them, comma and space separated
+	PrivilegeRoles *string `json:"privilege_roles,omitempty"`
+	Updated        *string `json:"updated,omitempty"`
+
+	// Value Value the claim must equal, or contain for a list
+	Value *string `json:"value,omitempty"`
+}
+
 // PackageDiffNode defines model for PackageDiffNode.
 type PackageDiffNode struct {
 	NodeId   string `json:"node_id"`
@@ -2229,7 +2529,8 @@ type SearchGroup struct {
 	// mask, mac, intf, node_id, nodename, net_name for a node address; disk_id,
 	// disk_name, disk_size, disk_arrayid, nodename, svcname for a disk; tag_id,
 	// tag_name, tag_exclude for a tag; id, email, first_name, last_name, username
-	// for a user; id, role, privilege, description for a team; id, form_name,
+	// for a user; id, role, privilege, description for an organizational group
+	// or a privilege group; id, form_name,
 	// last_form_name, status, creator, last_update for a request; id,
 	// modset_name, modset_author for a moduleset; id, ruleset_name, ruleset_type,
 	// ruleset_public for a ruleset; id, fset_name, fset_author for a filterset;
@@ -2247,6 +2548,65 @@ type SearchGroupKind string
 // SearchResponse defines model for SearchResponse.
 type SearchResponse struct {
 	Data []SearchGroup `json:"data"`
+}
+
+// ServiceActionListResponse defines model for ServiceActionListResponse.
+type ServiceActionListResponse struct {
+	Data ServiceActionListResponse_Data `json:"data"`
+	Meta *ListMeta                      `json:"meta,omitempty"`
+}
+
+// ServiceActionListResponseData0 defines model for .
+type ServiceActionListResponseData0 = []ServiceActionRow
+
+// ServiceActionListResponseData1 defines model for .
+type ServiceActionListResponseData1 map[string]map[string]int
+
+// ServiceActionListResponse_Data defines model for ServiceActionListResponse.Data.
+type ServiceActionListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ServiceActionRow An action an agent ran on a service, or a log line of one. Every property
+// is optional: the `props` query parameter selects which columns the server
+// returns. The `services.` and `nodes.` props come from joined tables.
+type ServiceActionRow struct {
+	Ack          *int    `json:"ack,omitempty"`
+	AckedBy      *string `json:"acked_by,omitempty"`
+	AckedComment *string `json:"acked_comment,omitempty"`
+	AckedDate    *string `json:"acked_date,omitempty"`
+	Action       *string `json:"action,omitempty"`
+	Alert        *int    `json:"alert,omitempty"`
+	Begin        *string `json:"begin,omitempty"`
+	Command      *string `json:"command,omitempty"`
+
+	// Cron 1 when the scheduler of the agent ran the action
+	Cron   *int    `json:"cron,omitempty"`
+	End    *string `json:"end,omitempty"`
+	Hostid *string `json:"hostid,omitempty"`
+	Id     *int    `json:"id,omitempty"`
+
+	// LogType "status" for an action, empty for a log line of an action
+	LogType         *string `json:"log_type,omitempty"`
+	NodeId          *string `json:"node_id,omitempty"`
+	NodesNodename   *string `json:"nodes.nodename,omitempty"`
+	Origin          *string `json:"origin,omitempty"`
+	Pid             *string `json:"pid,omitempty"`
+	Rid             *string `json:"rid,omitempty"`
+	ServicesSvcname *string `json:"services.svcname,omitempty"`
+
+	// Sid Session id, shared by the actions of one agent command
+	Sid *string `json:"sid,omitempty"`
+
+	// Status ok, warn, err, or empty while the action runs
+	Status    *string `json:"status,omitempty"`
+	StatusLog *string `json:"status_log,omitempty"`
+	Subset    *string `json:"subset,omitempty"`
+	SvcId     *string `json:"svc_id,omitempty"`
+
+	// Time Duration, in seconds
+	Time    *int    `json:"time,omitempty"`
+	Version *string `json:"version,omitempty"`
 }
 
 // ServiceAvailability defines model for ServiceAvailability.
@@ -2736,6 +3096,9 @@ type GetActionsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -2890,6 +3253,9 @@ type GetAlertsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3023,6 +3389,9 @@ type GetAppsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3312,6 +3681,24 @@ type GetArraysParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostAuthBackchannelLogoutFormdataBody defines parameters for PostAuthBackchannelLogout.
+type PostAuthBackchannelLogoutFormdataBody struct {
+	LogoutToken string `form:"logout_token" json:"logout_token"`
+}
+
+// GetAuthCallbackParams defines parameters for GetAuthCallback.
+type GetAuthCallbackParams struct {
+	Code  *string `form:"code,omitempty" json:"code,omitempty"`
+	State *string `form:"state,omitempty" json:"state,omitempty"`
+	Error *string `form:"error,omitempty" json:"error,omitempty"`
+}
+
+// GetAuthLoginParams defines parameters for GetAuthLogin.
+type GetAuthLoginParams struct {
+	// ReturnTo Path of the SPA to come back to once signed in
+	ReturnTo *string `form:"return_to,omitempty" json:"return_to,omitempty"`
+}
+
 // PostAuthNodeJSONBody defines parameters for PostAuthNode.
 type PostAuthNodeJSONBody struct {
 	App      *string `json:"app,omitempty"`
@@ -3359,6 +3746,9 @@ type GetChartsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3433,6 +3823,9 @@ type GetClustersParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3450,6 +3843,32 @@ type GetClusterParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
+
+// GetComplianceHistoryParams defines parameters for GetComplianceHistory.
+type GetComplianceHistoryParams struct {
+	// Limit Versions returned, 50 by default, 300 at most.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Object Only the versions in which this object changed (created, changed or
+	// deleted), named by kind and id as `ruleset:12`, `moduleset:3` or
+	// `filterset:7`: the id follows the object through its renames. The last
+	// 300 versions are looked through.
+	Object *string `form:"object,omitempty" json:"object,omitempty"`
+}
+
+// PostComplianceHistoryJSONBody defines parameters for PostComplianceHistory.
+type PostComplianceHistoryJSONBody struct {
+	// Message The commit message, its first line a summary.
+	Message string `json:"message"`
+
+	// Source What the version records: the changes of a designer commit, or
+	// the export as found before one, holding the changes made
+	// elsewhere. Kept as a trailer of the commit, returned as source.
+	Source *PostComplianceHistoryJSONBodySource `json:"source,omitempty"`
+}
+
+// PostComplianceHistoryJSONBodySource defines parameters for PostComplianceHistory.
+type PostComplianceHistoryJSONBodySource string
 
 // PostComplianceImportJSONBody defines parameters for PostComplianceImport.
 type PostComplianceImportJSONBody struct {
@@ -3502,6 +3921,9 @@ type GetComplianceLogsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3567,6 +3989,9 @@ type GetComplianceModulesetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3644,6 +4069,9 @@ type GetComplianceModulesetCandidateNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3700,6 +4128,9 @@ type GetComplianceModulesetCandidateServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3753,6 +4184,9 @@ type GetComplianceModulesetModulesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3826,6 +4260,9 @@ type GetComplianceModulesetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3879,6 +4316,9 @@ type GetComplianceModulesetPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3932,6 +4372,9 @@ type GetComplianceModulesetResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3988,6 +4431,9 @@ type GetComplianceModulesetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4041,6 +4487,9 @@ type GetComplianceModulesetsModulesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4174,6 +4623,9 @@ type GetComplianceRulesetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4265,6 +4717,9 @@ type GetComplianceRulesetCandidateNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4321,6 +4776,9 @@ type GetComplianceRulesetCandidateServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4374,6 +4832,9 @@ type GetComplianceRulesetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4427,6 +4888,9 @@ type GetComplianceRulesetPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4480,6 +4944,9 @@ type GetComplianceRulesetResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4536,6 +5003,9 @@ type GetComplianceRulesetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4589,6 +5059,9 @@ type GetComplianceRulesetVariablesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4755,6 +5228,9 @@ type GetComplianceRulesetsVariablesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4825,6 +5301,9 @@ type GetComplianceStatusParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4893,6 +5372,9 @@ type GetDisksParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5001,6 +5483,9 @@ type GetFiltersParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5132,6 +5617,9 @@ type GetFiltersetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5143,6 +5631,14 @@ type GetFiltersetsParams struct {
 
 // PostFiltersetsJSONBody defines parameters for PostFiltersets.
 type PostFiltersetsJSONBody struct {
+	// Entries Entries to create the filterset with, in order: filters, given by
+	// their definition, and nested filtersets. Accepted on creation only:
+	// with entries, a name already in use is a conflict rather than an
+	// update. A filter identical to an existing one reuses it. The
+	// filterset, its new filters and its entries are written together, or
+	// not at all.
+	Entries *[]FiltersetNewEntry `json:"entries,omitempty"`
+
 	// FsetName Name of the filterset to create, or of the filterset to update
 	FsetName *string `json:"fset_name,omitempty"`
 
@@ -5335,6 +5831,9 @@ type GetFiltersetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5388,6 +5887,9 @@ type GetFiltersetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5521,6 +6023,9 @@ type GetFormsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5585,6 +6090,9 @@ type GetFormParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5656,6 +6164,9 @@ type GetFormPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5709,6 +6220,9 @@ type GetFormResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5806,6 +6320,9 @@ type GetFormsRevisionsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5859,6 +6376,9 @@ type GetFormsRevisionParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5912,6 +6432,9 @@ type GetFormsStoreParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5965,6 +6488,9 @@ type GetFormStoreParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6064,6 +6590,9 @@ type GetGroupsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6451,6 +6980,9 @@ type GetIpsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6544,6 +7076,9 @@ type GetLogsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6643,6 +7178,9 @@ type GetMetricsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6756,6 +7294,9 @@ type GetNetworksParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6854,6 +7395,9 @@ type GetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6988,6 +7532,9 @@ type GetNodesHardwareParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -7880,6 +8427,9 @@ type GetObsolescenceSettingsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -7950,6 +8500,68 @@ type PostObsolescenceSettingJSONBody struct {
 	ObsWarnDate *string `json:"obs_warn_date,omitempty"`
 }
 
+// GetOidcMappingsParams defines parameters for GetOidcMappings.
+type GetOidcMappingsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetOidcMappingParams defines parameters for GetOidcMapping.
+type GetOidcMappingParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetPackagesParams defines parameters for GetPackages.
 type GetPackagesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -7991,6 +8603,9 @@ type GetPackagesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8056,6 +8671,9 @@ type GetReportsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8124,6 +8742,9 @@ type GetResourcesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8183,6 +8804,9 @@ type GetSanSwitchesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8201,8 +8825,8 @@ type GetSearchParams struct {
 	Q string `form:"q" json:"q"`
 
 	// Kinds Comma-separated kinds to search, all by default: node, service, instance,
-	// app, network, disk, tag, user, group, request, moduleset, ruleset,
-	// filterset, form.
+	// app, network, disk, tag, user, group, privilege, request, moduleset,
+	// ruleset, filterset, form.
 	Kinds *string `form:"kinds,omitempty" json:"kinds,omitempty"`
 
 	// Limit Hits returned per kind, 5 by default, 20 at most.
@@ -8256,6 +8880,9 @@ type GetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8363,6 +8990,62 @@ type PostServiceJSONBody struct {
 	SvcTopology   *string `json:"svc_topology,omitempty"`
 	SvcWave       *int    `json:"svc_wave,omitempty"`
 	Svcname       *string `json:"svcname,omitempty"`
+}
+
+// GetServiceActionsParams defines parameters for GetServiceActions.
+type GetServiceActionsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
 // GetServiceAlertsParams defines parameters for GetServiceAlerts.
@@ -9128,6 +9811,68 @@ type GetServiceTagsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetServicesActionsParams defines parameters for GetServicesActions.
+type GetServicesActionsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServicesActionParams defines parameters for GetServicesAction.
+type GetServicesActionParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // DeleteServicesInstancesJSONBody defines parameters for DeleteServicesInstances.
 type DeleteServicesInstancesJSONBody struct {
 	// Id Service instance record id, as an alternative to svc_id + node_id
@@ -9181,6 +9926,9 @@ type GetServicesInstancesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -9351,6 +10099,9 @@ type GetTagsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -9605,6 +10356,9 @@ type GetUsersParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -9725,6 +10479,9 @@ type GetUserGroupsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -9788,6 +10545,9 @@ type GetWorkflowsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -9846,11 +10606,17 @@ type DeleteAppsResponsiblesJSONRequestBody DeleteAppsResponsiblesJSONBody
 // PostAppsResponsiblesJSONRequestBody defines body for PostAppsResponsibles for application/json ContentType.
 type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
 
+// PostAuthBackchannelLogoutFormdataRequestBody defines body for PostAuthBackchannelLogout for application/x-www-form-urlencoded ContentType.
+type PostAuthBackchannelLogoutFormdataRequestBody PostAuthBackchannelLogoutFormdataBody
+
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
 
 // PostChartsJSONRequestBody defines body for PostCharts for application/json ContentType.
 type PostChartsJSONRequestBody PostChartsJSONBody
+
+// PostComplianceHistoryJSONRequestBody defines body for PostComplianceHistory for application/json ContentType.
+type PostComplianceHistoryJSONRequestBody PostComplianceHistoryJSONBody
 
 // PostComplianceImportJSONRequestBody defines body for PostComplianceImport for application/json ContentType.
 type PostComplianceImportJSONRequestBody PostComplianceImportJSONBody
@@ -10076,6 +10842,12 @@ type PostObsolescenceSettingsJSONRequestBody PostObsolescenceSettingsJSONBody
 
 // PostObsolescenceSettingJSONRequestBody defines body for PostObsolescenceSetting for application/json ContentType.
 type PostObsolescenceSettingJSONRequestBody PostObsolescenceSettingJSONBody
+
+// PostOidcMappingsJSONRequestBody defines body for PostOidcMappings for application/json ContentType.
+type PostOidcMappingsJSONRequestBody = OidcMappingInput
+
+// PostOidcMappingJSONRequestBody defines body for PostOidcMapping for application/json ContentType.
+type PostOidcMappingJSONRequestBody = OidcMappingInput
 
 // PostReportsJSONRequestBody defines body for PostReports for application/json ContentType.
 type PostReportsJSONRequestBody PostReportsJSONBody
@@ -11687,6 +12459,68 @@ func (t *ObsolescenceSettingListResponse_Data) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsOidcMappingListResponseData0 returns the union data inside the OidcMappingListResponse_Data as a OidcMappingListResponseData0
+func (t OidcMappingListResponse_Data) AsOidcMappingListResponseData0() (OidcMappingListResponseData0, error) {
+	var body OidcMappingListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromOidcMappingListResponseData0 overwrites any union data inside the OidcMappingListResponse_Data as the provided OidcMappingListResponseData0
+func (t *OidcMappingListResponse_Data) FromOidcMappingListResponseData0(v OidcMappingListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeOidcMappingListResponseData0 performs a merge with any union data inside the OidcMappingListResponse_Data, using the provided OidcMappingListResponseData0
+func (t *OidcMappingListResponse_Data) MergeOidcMappingListResponseData0(v OidcMappingListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsOidcMappingListResponseData1 returns the union data inside the OidcMappingListResponse_Data as a OidcMappingListResponseData1
+func (t OidcMappingListResponse_Data) AsOidcMappingListResponseData1() (OidcMappingListResponseData1, error) {
+	var body OidcMappingListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromOidcMappingListResponseData1 overwrites any union data inside the OidcMappingListResponse_Data as the provided OidcMappingListResponseData1
+func (t *OidcMappingListResponse_Data) FromOidcMappingListResponseData1(v OidcMappingListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeOidcMappingListResponseData1 performs a merge with any union data inside the OidcMappingListResponse_Data, using the provided OidcMappingListResponseData1
+func (t *OidcMappingListResponse_Data) MergeOidcMappingListResponseData1(v OidcMappingListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t OidcMappingListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *OidcMappingListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsPackageListResponseData0 returns the union data inside the PackageListResponse_Data as a PackageListResponseData0
 func (t PackageListResponse_Data) AsPackageListResponseData0() (PackageListResponseData0, error) {
 	var body PackageListResponseData0
@@ -12055,6 +12889,68 @@ func (t RulesetsVariableListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *RulesetsVariableListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsServiceActionListResponseData0 returns the union data inside the ServiceActionListResponse_Data as a ServiceActionListResponseData0
+func (t ServiceActionListResponse_Data) AsServiceActionListResponseData0() (ServiceActionListResponseData0, error) {
+	var body ServiceActionListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromServiceActionListResponseData0 overwrites any union data inside the ServiceActionListResponse_Data as the provided ServiceActionListResponseData0
+func (t *ServiceActionListResponse_Data) FromServiceActionListResponseData0(v ServiceActionListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeServiceActionListResponseData0 performs a merge with any union data inside the ServiceActionListResponse_Data, using the provided ServiceActionListResponseData0
+func (t *ServiceActionListResponse_Data) MergeServiceActionListResponseData0(v ServiceActionListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsServiceActionListResponseData1 returns the union data inside the ServiceActionListResponse_Data as a ServiceActionListResponseData1
+func (t ServiceActionListResponse_Data) AsServiceActionListResponseData1() (ServiceActionListResponseData1, error) {
+	var body ServiceActionListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromServiceActionListResponseData1 overwrites any union data inside the ServiceActionListResponse_Data as the provided ServiceActionListResponseData1
+func (t *ServiceActionListResponse_Data) FromServiceActionListResponseData1(v ServiceActionListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeServiceActionListResponseData1 performs a merge with any union data inside the ServiceActionListResponse_Data, using the provided ServiceActionListResponseData1
+func (t *ServiceActionListResponse_Data) MergeServiceActionListResponseData1(v ServiceActionListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ServiceActionListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ServiceActionListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

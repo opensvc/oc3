@@ -150,6 +150,9 @@ type NodeCheck struct {
 // NodeChecks defines model for NodeChecks.
 type NodeChecks struct {
 	Data []NodeCheck `json:"data"`
+
+	// Partial A checker failed during the run, so the data misses some of the checks the node has. The checks reported are updated, and the others are kept, with their alerts, where a complete feed removes them.
+	Partial *bool `json:"partial,omitempty"`
 }
 
 // NodeDisks defines model for NodeDisks.

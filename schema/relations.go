@@ -27,6 +27,8 @@ func init() {
 	SvcmonNodeID.Ref = NodesNodeID
 	ResmonSvcID.Ref = ServicesSvcID
 	ResmonNodeID.Ref = NodesNodeID
+	SvcactionsSvcID.Ref = ServicesSvcID
+	SvcactionsNodeID.Ref = NodesNodeID
 	SvcmonLogSvcID.Ref = ServicesSvcID
 	ServicesLogSvcID.Ref = ServicesSvcID
 }
