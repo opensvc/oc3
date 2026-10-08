@@ -7918,7 +7918,10 @@ paths:
         - bearerAuth: [ ]
     post:
       operationId: PostOidcMapping
-      description: Change a claim rule, under the same checks as its creation. Manager only.
+      description: |
+        Change a claim rule, under the same checks as its creation. The accounts
+        the rules had put in a team no rule names any more leave it at once, those
+        added by hand stay. Manager only.
       parameters:
         - in: path
           name: mapping_id
@@ -7954,9 +7957,10 @@ paths:
     delete:
       operationId: DeleteOidcMapping
       description: |
-        Delete a claim rule. The memberships it granted stay until the next sign-in
-        of each account; a team no rule names any more is managed by hand again.
-        Manager only.
+        Delete a claim rule. The accounts the rules had put in a team no rule
+        names any more leave it at once, those added by hand stay, and the team is
+        managed by hand again. The teams other rules still name follow the claims
+        at the next sign-in of each account. Manager only.
       parameters:
         - in: path
           name: mapping_id

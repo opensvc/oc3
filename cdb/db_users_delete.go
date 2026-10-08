@@ -13,6 +13,7 @@ import (
 var userOwnedTables = []string{
 	"auth_membership",
 	"auth_user_identities",
+	"auth_oidc_memberships",
 	"gen_filterset_user",
 	"user_prefs",
 	"user_log",

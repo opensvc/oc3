@@ -205,8 +205,11 @@ func (a *Api) PostOidcMapping(c echo.Context, mappingId int) error {
 		if err := tx.UpdateOIDCMapping(ctx, int64(mappingId), m); err != nil {
 			return err
 		}
-		return a.logMapping(ctx, tx, log, "oidc_mapping.change",
-			"changed the claim rule to %(claim)s = %(value)s, which %(effect)s", m, roles)
+		if err := a.logMapping(ctx, tx, log, "oidc_mapping.change",
+			"changed the claim rule to %(claim)s = %(value)s, which %(effect)s", m, roles); err != nil {
+			return err
+		}
+		return a.revokeUnmappedGroups(ctx, tx, log, m.Author)
 	}); err != nil {
 		log.Error("cannot change the rule", logkey.Error, err)
 		return JSONProblem(c, http.StatusInternalServerError, "cannot change the rule")
@@ -237,8 +240,11 @@ func (a *Api) DeleteOidcMapping(c echo.Context, mappingId int) error {
 		if err := tx.DeleteOIDCMapping(ctx, int64(mappingId)); err != nil {
 			return err
 		}
-		return a.logMapping(ctx, tx, log, "oidc_mapping.delete",
-			"deleted the claim rule %(claim)s = %(value)s, which %(effect)s", m, current.GroupRoles)
+		if err := a.logMapping(ctx, tx, log, "oidc_mapping.delete",
+			"deleted the claim rule %(claim)s = %(value)s, which %(effect)s", m, current.GroupRoles); err != nil {
+			return err
+		}
+		return a.revokeUnmappedGroups(ctx, tx, log, m.Author)
 	}); err != nil {
 		log.Error("cannot delete the rule", logkey.Error, err)
 		return JSONProblem(c, http.StatusInternalServerError, "cannot delete the rule")
@@ -269,6 +275,30 @@ func (a *Api) logMapping(ctx context.Context, tx *cdb.DB, log *slog.Logger, acti
 		Level:  "info",
 	}); err != nil {
 		log.Error("cannot write audit log", logkey.Error, err)
+	}
+	return nil
+}
+
+// revokeUnmappedGroups revokes the memberships the rules granted in the teams no
+// rule names any more, each one logged.
+func (a *Api) revokeUnmappedGroups(ctx context.Context, tx *cdb.DB, log *slog.Logger, author string) error {
+	revoked, err := tx.RevokeUnmappedGroups(ctx)
+	if err != nil {
+		return err
+	}
+	for _, r := range revoked {
+		if err := tx.Log(ctx, cdb.LogEntry{
+			Action: "users.groups.sync",
+			User:   author,
+			Fmt:    "removed %(email)s from %(group)s, which no claim rule grants any more",
+			Dict:   map[string]any{"email": r.Email, "group": r.Role},
+			Level:  "info",
+		}); err != nil {
+			log.Error("cannot write audit log", logkey.Error, err)
+		}
+	}
+	if len(revoked) > 0 {
+		log.Info("revoked the memberships no claim rule grants any more", "count", len(revoked))
 	}
 	return nil
 }

@@ -213,32 +213,39 @@ func (oDb *DB) GroupRoleByID(ctx context.Context, id int64) (string, bool, error
 }
 
 // SyncMappedGroups aligns the memberships of the account userID to the teams in
-// managed: it joins those in wanted and leaves the others. Teams outside managed
-// are not touched. It returns the names of the teams joined and left.
+// managed: it joins those in wanted and leaves the others. The teams the rules
+// granted the account before, recorded in auth_oidc_memberships, are aligned too,
+// so that one no rule names any more is left. Other teams are not touched. The
+// memberships in wanted are recorded as granted by the rules. It returns the
+// names of the teams joined and left.
 func (oDb *DB) SyncMappedGroups(ctx context.Context, userID int64, managed, wanted []int64) (joined, left []string, err error) {
-	if len(managed) == 0 {
+	granted, err := oDb.int64Column(ctx,
+		"SELECT group_id FROM auth_oidc_memberships WHERE user_id = ?", userID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("SyncMappedGroups: %w", err)
+	}
+	if len(managed) == 0 && len(granted) == 0 {
 		return nil, nil, nil
 	}
 	want := make(map[int64]bool, len(wanted))
 	for _, id := range wanted {
 		want[id] = true
 	}
-	rows, err := oDb.DB.QueryContext(ctx,
+	current, err := oDb.int64Column(ctx,
 		"SELECT group_id FROM auth_membership WHERE user_id = ? AND group_id IS NOT NULL", userID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("SyncMappedGroups: %w", err)
 	}
-	has := map[int64]bool{}
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			_ = rows.Close()
-			return nil, nil, fmt.Errorf("SyncMappedGroups scan: %w", err)
-		}
+	has := make(map[int64]bool, len(current))
+	for _, id := range current {
 		has[id] = true
 	}
-	_ = rows.Close()
-	for _, id := range managed {
+	seen := map[int64]bool{}
+	for _, id := range append(append([]int64{}, managed...), granted...) {
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
 		switch {
 		case want[id] && !has[id]:
 			if _, err := oDb.ExecContext(ctx,
@@ -256,8 +263,92 @@ func (oDb *DB) SyncMappedGroups(ctx context.Context, userID int64, managed, want
 			left = append(left, role)
 		}
 	}
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM auth_oidc_memberships WHERE user_id = ?", userID); err != nil {
+		return joined, left, fmt.Errorf("SyncMappedGroups record: %w", err)
+	}
+	for _, id := range wanted {
+		if _, err := oDb.ExecContext(ctx,
+			"INSERT IGNORE INTO auth_oidc_memberships (user_id, group_id) VALUES (?, ?)", userID, id); err != nil {
+			return joined, left, fmt.Errorf("SyncMappedGroups record %d: %w", id, err)
+		}
+	}
 	if len(joined) > 0 || len(left) > 0 {
 		oDb.SetChange("auth_membership")
 	}
 	return joined, left, nil
+}
+
+// RevokedMembership is a membership the claim rules had granted, revoked once no
+// rule names its team any more.
+type RevokedMembership struct {
+	Email string
+	Role  string
+}
+
+// RevokeUnmappedGroups revokes the memberships the claim rules granted in the
+// teams no rule names any more, at once rather than at the next sign-in of each
+// account: a Bearer token, which reads the memberships of the account for the
+// teams no rule names, would otherwise keep them.
+func (oDb *DB) RevokeUnmappedGroups(ctx context.Context) ([]RevokedMembership, error) {
+	const unmapped = "o.group_id NOT IN (SELECT group_id FROM auth_oidc_mapping_groups)"
+	rows, err := oDb.DB.QueryContext(ctx,
+		`SELECT o.user_id, o.group_id, COALESCE(u.email, ''), COALESCE(g.role, '')
+		FROM auth_oidc_memberships o
+		LEFT JOIN auth_user u ON u.id = o.user_id
+		LEFT JOIN auth_group g ON g.id = o.group_id
+		WHERE `+unmapped+` ORDER BY g.role, u.email`)
+	if err != nil {
+		return nil, fmt.Errorf("RevokeUnmappedGroups: %w", err)
+	}
+	type membership struct{ userID, groupID int64 }
+	var memberships []membership
+	var revoked []RevokedMembership
+	for rows.Next() {
+		var m membership
+		var r RevokedMembership
+		if err := rows.Scan(&m.userID, &m.groupID, &r.Email, &r.Role); err != nil {
+			_ = rows.Close()
+			return nil, fmt.Errorf("RevokeUnmappedGroups scan: %w", err)
+		}
+		memberships = append(memberships, m)
+		revoked = append(revoked, r)
+	}
+	_ = rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("RevokeUnmappedGroups: %w", err)
+	}
+	if len(memberships) == 0 {
+		return nil, nil
+	}
+	for _, m := range memberships {
+		if _, err := oDb.ExecContext(ctx,
+			"DELETE FROM auth_membership WHERE user_id = ? AND group_id = ?", m.userID, m.groupID); err != nil {
+			return nil, fmt.Errorf("RevokeUnmappedGroups leave: %w", err)
+		}
+	}
+	if _, err := oDb.ExecContext(ctx, "DELETE o FROM auth_oidc_memberships o WHERE "+unmapped); err != nil {
+		return nil, fmt.Errorf("RevokeUnmappedGroups record: %w", err)
+	}
+	oDb.SetChange("auth_membership")
+	return revoked, nil
+}
+
+// int64Column returns the first column of the rows of query, NULLs left out.
+func (oDb *DB) int64Column(ctx context.Context, query string, args ...any) ([]int64, error) {
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var ids []int64
+	for rows.Next() {
+		var id sql.NullInt64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		if id.Valid {
+			ids = append(ids, id.Int64)
+		}
+	}
+	return ids, rows.Err()
 }
