@@ -139,6 +139,7 @@ const (
 	Moduleset SearchGroupKind = "moduleset"
 	Network   SearchGroupKind = "network"
 	Node      SearchGroupKind = "node"
+	Privilege SearchGroupKind = "privilege"
 	Request   SearchGroupKind = "request"
 	Ruleset   SearchGroupKind = "ruleset"
 	Service   SearchGroupKind = "service"
@@ -166,6 +167,8 @@ func (e SearchGroupKind) Valid() bool {
 	case Network:
 		return true
 	case Node:
+		return true
+	case Privilege:
 		return true
 	case Request:
 		return true
@@ -2438,7 +2441,8 @@ type SearchGroup struct {
 	// mask, mac, intf, node_id, nodename, net_name for a node address; disk_id,
 	// disk_name, disk_size, disk_arrayid, nodename, svcname for a disk; tag_id,
 	// tag_name, tag_exclude for a tag; id, email, first_name, last_name, username
-	// for a user; id, role, privilege, description for a team; id, form_name,
+	// for a user; id, role, privilege, description for an organizational group
+	// or a privilege group; id, form_name,
 	// last_form_name, status, creator, last_update for a request; id,
 	// modset_name, modset_author for a moduleset; id, ruleset_name, ruleset_type,
 	// ruleset_public for a ruleset; id, fset_name, fset_author for a filterset;
@@ -8707,8 +8711,8 @@ type GetSearchParams struct {
 	Q string `form:"q" json:"q"`
 
 	// Kinds Comma-separated kinds to search, all by default: node, service, instance,
-	// app, network, disk, tag, user, group, request, moduleset, ruleset,
-	// filterset, form.
+	// app, network, disk, tag, user, group, privilege, request, moduleset,
+	// ruleset, filterset, form.
 	Kinds *string `form:"kinds,omitempty" json:"kinds,omitempty"`
 
 	// Limit Hits returned per kind, 5 by default, 20 at most.
