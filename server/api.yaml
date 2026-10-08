@@ -18416,6 +18416,9 @@ components:
           - `in:a,b,c`: one of the listed values;
           - `eq:v`, `ne:v`: equal, not equal;
           - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+            a date may be relative to now, `-` then a duration in weeks, days,
+            hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+            minutes, `gte:-1d12h` those of the last day and a half;
           - `empty`: no value;
           - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
             out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,

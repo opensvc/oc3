@@ -2992,6 +2992,9 @@ type GetActionsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3146,6 +3149,9 @@ type GetAlertsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3279,6 +3285,9 @@ type GetAppsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3633,6 +3642,9 @@ type GetChartsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3707,6 +3719,9 @@ type GetClustersParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3776,6 +3791,9 @@ type GetComplianceLogsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3841,6 +3859,9 @@ type GetComplianceModulesetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3918,6 +3939,9 @@ type GetComplianceModulesetCandidateNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -3974,6 +3998,9 @@ type GetComplianceModulesetCandidateServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4027,6 +4054,9 @@ type GetComplianceModulesetModulesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4100,6 +4130,9 @@ type GetComplianceModulesetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4153,6 +4186,9 @@ type GetComplianceModulesetPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4206,6 +4242,9 @@ type GetComplianceModulesetResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4262,6 +4301,9 @@ type GetComplianceModulesetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4315,6 +4357,9 @@ type GetComplianceModulesetsModulesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4448,6 +4493,9 @@ type GetComplianceRulesetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4539,6 +4587,9 @@ type GetComplianceRulesetCandidateNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4595,6 +4646,9 @@ type GetComplianceRulesetCandidateServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4648,6 +4702,9 @@ type GetComplianceRulesetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4701,6 +4758,9 @@ type GetComplianceRulesetPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4754,6 +4814,9 @@ type GetComplianceRulesetResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4810,6 +4873,9 @@ type GetComplianceRulesetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -4863,6 +4929,9 @@ type GetComplianceRulesetVariablesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5029,6 +5098,9 @@ type GetComplianceRulesetsVariablesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5099,6 +5171,9 @@ type GetComplianceStatusParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5167,6 +5242,9 @@ type GetDisksParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5275,6 +5353,9 @@ type GetFiltersParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5406,6 +5487,9 @@ type GetFiltersetsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5617,6 +5701,9 @@ type GetFiltersetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5670,6 +5757,9 @@ type GetFiltersetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5803,6 +5893,9 @@ type GetFormsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5867,6 +5960,9 @@ type GetFormParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5938,6 +6034,9 @@ type GetFormPublicationsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -5991,6 +6090,9 @@ type GetFormResponsiblesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6088,6 +6190,9 @@ type GetFormsRevisionsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6141,6 +6246,9 @@ type GetFormsRevisionParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6194,6 +6302,9 @@ type GetFormsStoreParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6247,6 +6358,9 @@ type GetFormStoreParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6346,6 +6460,9 @@ type GetGroupsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6733,6 +6850,9 @@ type GetIpsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6826,6 +6946,9 @@ type GetLogsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -6925,6 +7048,9 @@ type GetMetricsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -7038,6 +7164,9 @@ type GetNetworksParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -7136,6 +7265,9 @@ type GetNodesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -7270,6 +7402,9 @@ type GetNodesHardwareParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8162,6 +8297,9 @@ type GetObsolescenceSettingsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8273,6 +8411,9 @@ type GetOidcMappingsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8332,6 +8473,9 @@ type GetPackagesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8397,6 +8541,9 @@ type GetReportsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8465,6 +8612,9 @@ type GetResourcesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8524,6 +8674,9 @@ type GetSanSwitchesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8597,6 +8750,9 @@ type GetServicesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -8747,6 +8903,9 @@ type GetServiceActionsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -9563,6 +9722,9 @@ type GetServicesActionsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -9634,6 +9796,9 @@ type GetServicesInstancesParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -9804,6 +9969,9 @@ type GetTagsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -10058,6 +10226,9 @@ type GetUsersParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -10178,6 +10349,9 @@ type GetUserGroupsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
@@ -10241,6 +10415,9 @@ type GetWorkflowsParams struct {
 	//   - `in:a,b,c`: one of the listed values;
 	//   - `eq:v`, `ne:v`: equal, not equal;
 	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
 	//   - `empty`: no value;
 	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
 	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,

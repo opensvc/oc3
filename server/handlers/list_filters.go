@@ -3,6 +3,7 @@ package serverhandlers
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/opensvc/oc3/cdb"
@@ -26,6 +27,12 @@ var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
 //	gt: gte: lt: lte:   comparisons
 //	empty       no value
 //	!expr       the inverse of any of the above: the rows expr leaves out
+//
+// A comparison value made of "-" and a duration in weeks, days, hours, minutes
+// and seconds, "-15m" or "-1d12h", is a date relative to now, as in the
+// historical collector: "lt:-15m" keeps the dates older than 15 minutes. The
+// collector writes its dates with the database's NOW(), which the condition uses
+// too.
 //
 // Case-insensitivity comes from the utf8_general_ci collation of the collector
 // tables, which LIKE and REGEXP both honour. Regular expressions are checked with
@@ -100,6 +107,9 @@ func filterCondition(column, prop, expr string) (string, []any, error) {
 		return fmt.Sprintf("%s IN (%s)", column, cdb.Placeholders(len(values))), args, nil
 	}
 	if op, value, isOp := comparison(expr); isOp {
+		if seconds, relative := relativeSeconds(value); relative {
+			return column + " " + op + " DATE_SUB(NOW(), INTERVAL ? SECOND)", []any{seconds}, nil
+		}
 		return column + " " + op + " ?", []any{value}, nil
 	}
 	return column + " LIKE ?", []any{"%" + likeEscaper.Replace(expr) + "%"}, nil
@@ -115,4 +125,29 @@ func comparison(expr string) (op, value string, ok bool) {
 		}
 	}
 	return "", "", false
+}
+
+// relativeDate matches a date relative to now: "-" then at least one of weeks,
+// days, hours, minutes and seconds, in that order.
+var relativeDate = regexp.MustCompile(`^-(?:(\d+)w)?(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$`)
+
+// relativeSeconds returns the number of seconds a relative date such as "-1d12h"
+// lies in the past, and whether value is one.
+func relativeSeconds(value string) (int64, bool) {
+	m := relativeDate.FindStringSubmatch(value)
+	if m == nil || value == "-" {
+		return 0, false
+	}
+	var seconds int64
+	for i, unit := range []int64{7 * 86400, 86400, 3600, 60, 1} {
+		if m[i+1] == "" {
+			continue
+		}
+		n, err := strconv.ParseInt(m[i+1], 10, 64)
+		if err != nil {
+			return 0, false
+		}
+		seconds += n * unit
+	}
+	return seconds, true
 }

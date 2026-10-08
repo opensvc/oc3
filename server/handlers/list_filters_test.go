@@ -20,6 +20,13 @@ func TestFilterCondition(t *testing.T) {
 		{"~^dev", "n.name REGEXP ?", []any{"^dev"}},
 		{"in:a,b", "n.name IN (?,?)", []any{"a", "b"}},
 		{"gte:8", "n.name >= ?", []any{"8"}},
+		// A date relative to now, as in the historical collector.
+		{"lt:-15m", "n.name < DATE_SUB(NOW(), INTERVAL ? SECOND)", []any{int64(900)}},
+		{"gte:-1w2d3h4m5s", "n.name >= DATE_SUB(NOW(), INTERVAL ? SECOND)", []any{int64(7*86400 + 2*86400 + 3*3600 + 4*60 + 5)}},
+		{"!gte:-15m", "(n.name IS NULL OR NOT (n.name >= DATE_SUB(NOW(), INTERVAL ? SECOND)))", []any{int64(900)}},
+		// A negative number, or a lone "-", stays a value.
+		{"gt:-15", "n.name > ?", []any{"-15"}},
+		{"lt:-", "n.name < ?", []any{"-"}},
 		{"empty", "(n.name IS NULL OR n.name = '')", nil},
 		{"!empty", "(n.name IS NOT NULL AND n.name <> '')", nil},
 		{"!dev", "(n.name IS NULL OR NOT (n.name LIKE ?))", []any{"%dev%"}},
