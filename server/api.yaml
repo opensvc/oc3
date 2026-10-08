@@ -10801,6 +10801,40 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteUser
+      description: |
+        Delete a user, as the historical rest_delete_user does, then clean up what
+        belongs to the account alone: its team memberships, its private team
+        (user_<id>, and what references it), its OpenID Connect identities, its
+        session filter, its preferences, its report and comparison selections and
+        its read marks of the log. What records history stays: the audit log, the
+        action queue, the alerts sent. UserManager privilege required. Refused for
+        one's own account, for the account of a Manager unless the caller is a
+        Manager, and for the last member of the Manager team.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: User identifier, auth_user.id or the user email.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
     post:
       operationId: PostUser
       description: |

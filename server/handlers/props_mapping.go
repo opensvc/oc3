@@ -1274,8 +1274,8 @@ var propsMapping = map[string]propMapping{
 			// The teams granted, computed by the derived table of the rule queries.
 			"group_ids":   colStr(oidcMappingListCol("group_ids")),
 			"group_roles": colStr(oidcMappingListCol("group_roles")),
-			"author":     colStr(schema.AuthOidcMappingsAuthor),
-			"updated":    colStr(schema.AuthOidcMappingsUpdated),
+			"author":      colStr(schema.AuthOidcMappingsAuthor),
+			"updated":     colStr(schema.AuthOidcMappingsUpdated),
 		},
 	},
 	"filterset": {
