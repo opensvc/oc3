@@ -14,6 +14,27 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for ComplianceVersionSource.
+const (
+	ComplianceVersionSourceDesigner  ComplianceVersionSource = "designer"
+	ComplianceVersionSourceElsewhere ComplianceVersionSource = "elsewhere"
+	ComplianceVersionSourceEmpty     ComplianceVersionSource = ""
+)
+
+// Valid indicates whether the value is a known member of the ComplianceVersionSource enum.
+func (e ComplianceVersionSource) Valid() bool {
+	switch e {
+	case ComplianceVersionSourceDesigner:
+		return true
+	case ComplianceVersionSourceElsewhere:
+		return true
+	case ComplianceVersionSourceEmpty:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FiltersetNewEntryFLogOp.
 const (
 	FiltersetNewEntryFLogOpAND    FiltersetNewEntryFLogOp = "AND"
@@ -251,6 +272,24 @@ func (e SysreportFileStatKind) Valid() bool {
 	case SysreportFileStatKindCommand:
 		return true
 	case SysreportFileStatKindFile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostComplianceHistoryJSONBodySource.
+const (
+	PostComplianceHistoryJSONBodySourceDesigner  PostComplianceHistoryJSONBodySource = "designer"
+	PostComplianceHistoryJSONBodySourceElsewhere PostComplianceHistoryJSONBodySource = "elsewhere"
+)
+
+// Valid indicates whether the value is a known member of the PostComplianceHistoryJSONBodySource enum.
+func (e PostComplianceHistoryJSONBodySource) Valid() bool {
+	switch e {
+	case PostComplianceHistoryJSONBodySourceDesigner:
+		return true
+	case PostComplianceHistoryJSONBodySourceElsewhere:
 		return true
 	default:
 		return false
@@ -1010,6 +1049,13 @@ type CompRulesetExport struct {
 	Rulesets   *[]CompExportRuleset   `json:"rulesets,omitempty"`
 }
 
+// ComplianceExport The compliance export a version recorded, in the format of the import.
+type ComplianceExport struct {
+	Filtersets []FiltersetExportItem `json:"filtersets"`
+	Modulesets []CompExportModuleset `json:"modulesets"`
+	Rulesets   []CompExportRuleset   `json:"rulesets"`
+}
+
 // ComplianceLogListResponse defines model for ComplianceLogListResponse.
 type ComplianceLogListResponse struct {
 	Data ComplianceLogListResponse_Data `json:"data"`
@@ -1080,6 +1126,48 @@ type ComplianceStatusRow struct {
 	RunModule *string `json:"run_module,omitempty"`
 	RunStatus *int    `json:"run_status,omitempty"`
 	SvcId     *string `json:"svc_id,omitempty"`
+}
+
+// ComplianceVersion A version of the compliance export, a commit of its git repository.
+type ComplianceVersion struct {
+	// Author "First Last <email>" of the user who committed.
+	Author string `json:"author"`
+
+	// Body The rest of the message, the changes saved, one per line.
+	Body string `json:"body"`
+
+	// Date The date of the commit, ISO 8601.
+	Date string `json:"date"`
+
+	// Id The commit id.
+	Id string `json:"id"`
+
+	// Source What the version records, as given when it was recorded; empty when not said.
+	Source ComplianceVersionSource `json:"source"`
+
+	// Subject The first line of the message.
+	Subject string `json:"subject"`
+}
+
+// ComplianceVersionSource What the version records, as given when it was recorded; empty when not said.
+type ComplianceVersionSource string
+
+// ComplianceVersionDetail defines model for ComplianceVersionDetail.
+type ComplianceVersionDetail struct {
+	// Diff The git diff of the export from the version before, unified.
+	Diff string `json:"diff"`
+
+	// Export The compliance export a version recorded, in the format of the import.
+	Export ComplianceExport `json:"export"`
+
+	// Previous The export of the version before, absent for the first one.
+	Previous *ComplianceExport `json:"previous,omitempty"`
+
+	// PreviousId The commit id of the version before, absent for the first one.
+	PreviousId *string `json:"previous_id,omitempty"`
+
+	// Version A version of the compliance export, a commit of its git repository.
+	Version ComplianceVersion `json:"version"`
 }
 
 // DiskListResponse defines model for DiskListResponse.
@@ -3755,6 +3843,32 @@ type GetClusterParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
+
+// GetComplianceHistoryParams defines parameters for GetComplianceHistory.
+type GetComplianceHistoryParams struct {
+	// Limit Versions returned, 50 by default, 300 at most.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Object Only the versions in which this object changed (created, changed or
+	// deleted), named by kind and id as `ruleset:12`, `moduleset:3` or
+	// `filterset:7`: the id follows the object through its renames. The last
+	// 300 versions are looked through.
+	Object *string `form:"object,omitempty" json:"object,omitempty"`
+}
+
+// PostComplianceHistoryJSONBody defines parameters for PostComplianceHistory.
+type PostComplianceHistoryJSONBody struct {
+	// Message The commit message, its first line a summary.
+	Message string `json:"message"`
+
+	// Source What the version records: the changes of a designer commit, or
+	// the export as found before one, holding the changes made
+	// elsewhere. Kept as a trailer of the commit, returned as source.
+	Source *PostComplianceHistoryJSONBodySource `json:"source,omitempty"`
+}
+
+// PostComplianceHistoryJSONBodySource defines parameters for PostComplianceHistory.
+type PostComplianceHistoryJSONBodySource string
 
 // PostComplianceImportJSONBody defines parameters for PostComplianceImport.
 type PostComplianceImportJSONBody struct {
@@ -10500,6 +10614,9 @@ type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
 
 // PostChartsJSONRequestBody defines body for PostCharts for application/json ContentType.
 type PostChartsJSONRequestBody PostChartsJSONBody
+
+// PostComplianceHistoryJSONRequestBody defines body for PostComplianceHistory for application/json ContentType.
+type PostComplianceHistoryJSONRequestBody PostComplianceHistoryJSONBody
 
 // PostComplianceImportJSONRequestBody defines body for PostComplianceImport for application/json ContentType.
 type PostComplianceImportJSONRequestBody PostComplianceImportJSONBody

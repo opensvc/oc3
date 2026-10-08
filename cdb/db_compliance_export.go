@@ -364,3 +364,57 @@ func (oDb *DB) ExportCompModulesets(ctx context.Context, ids []int64) (CompModul
 	out.CompRulesetExport = rsets
 	return out, nil
 }
+
+// ExportCompAll returns every filterset, ruleset and moduleset the compliance
+// objects use, whoever they are published to, in the format of the exports and
+// of the import, sorted by name throughout: the document versioned at each commit
+// of the compliance designer, whose diffs must show only what changed.
+func (oDb *DB) ExportCompAll(ctx context.Context) (CompModulesetExport, error) {
+	var out CompModulesetExport
+	rulesetIDs, err := oDb.int64s(ctx, "exportCompAll", "SELECT id FROM comp_rulesets ORDER BY id")
+	if err != nil {
+		return out, err
+	}
+	modulesetIDs, err := oDb.int64s(ctx, "exportCompAll", "SELECT id FROM comp_moduleset ORDER BY id")
+	if err != nil {
+		return out, err
+	}
+	rulesets, err := oDb.ExportCompRulesets(ctx, rulesetIDs)
+	if err != nil {
+		return out, err
+	}
+	out, err = oDb.ExportCompModulesets(ctx, modulesetIDs)
+	if err != nil {
+		return out, err
+	}
+	// Every ruleset, the modulesets' ones among them, and the filtersets of both.
+	out.Rulesets = rulesets.Rulesets
+	seen := map[int]bool{}
+	filtersets := []FiltersetExport{}
+	for _, f := range append(rulesets.Filtersets, out.Filtersets...) {
+		if !seen[f.ID] {
+			seen[f.ID] = true
+			filtersets = append(filtersets, f)
+		}
+	}
+	out.Filtersets = filtersets
+	sort.Slice(out.Filtersets, func(i, j int) bool { return out.Filtersets[i].FsetName < out.Filtersets[j].FsetName })
+	sort.Slice(out.Rulesets, func(i, j int) bool { return out.Rulesets[i].RulesetName < out.Rulesets[j].RulesetName })
+	for i := range out.Rulesets {
+		r := &out.Rulesets[i]
+		sort.Slice(r.Variables, func(a, b int) bool { return r.Variables[a].VarName < r.Variables[b].VarName })
+		sort.Strings(r.Rulesets)
+		sort.Strings(r.Publications)
+		sort.Strings(r.Responsibles)
+	}
+	sort.Slice(out.Modulesets, func(i, j int) bool { return out.Modulesets[i].ModsetName < out.Modulesets[j].ModsetName })
+	for i := range out.Modulesets {
+		m := &out.Modulesets[i]
+		sort.Slice(m.Modules, func(a, b int) bool { return m.Modules[a].ModsetModName < m.Modules[b].ModsetModName })
+		sort.Strings(m.Modulesets)
+		sort.Strings(m.Rulesets)
+		sort.Strings(m.Publications)
+		sort.Strings(m.Responsibles)
+	}
+	return out, nil
+}

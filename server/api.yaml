@@ -14958,6 +14958,149 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/history:
+    get:
+      operationId: GetComplianceHistory
+      description: |
+        The versions of the compliance export, newest first: each commit of the
+        compliance designer records the whole export (every filterset, ruleset and
+        moduleset, whoever they are published to) in a git repository. Requires the
+        CompManager privilege.
+      parameters:
+        - in: query
+          name: limit
+          description: Versions returned, 50 by default, 300 at most.
+          schema:
+            type: integer
+        - in: query
+          name: object
+          description: |
+            Only the versions in which this object changed (created, changed or
+            deleted), named by kind and id as `ruleset:12`, `moduleset:3` or
+            `filterset:7`: the id follows the object through its renames. The last
+            300 versions are looked through.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComplianceVersion'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostComplianceHistory
+      description: |
+        Record the current compliance export as a new version in the git repository
+        of the compliance history (`server.directories.compliance`), authored by the
+        user, with the message given: the compliance designer calls it once its
+        changes are saved. The export holds every filterset, ruleset and moduleset,
+        whoever they are published to, sorted by name, in the format of the import.
+        When nothing changed since the last version, none is recorded and changed is
+        false. Requires the CompManager privilege.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  description: The commit message, its first line a summary.
+                source:
+                  type: string
+                  enum: [designer, elsewhere]
+                  description: |
+                    What the version records: the changes of a designer commit, or
+                    the export as found before one, holding the changes made
+                    elsewhere. Kept as a trailer of the commit, returned as source.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - commit
+                  - changed
+                properties:
+                  commit:
+                    type: string
+                    description: The id of the version recorded, or of the last one when nothing changed.
+                  changed:
+                    type: boolean
+                    description: Whether a new version was recorded.
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /compliance/history/{commit}:
+    get:
+      operationId: GetComplianceVersion
+      description: |
+        A version of the compliance export: its commit, the export it recorded and
+        the one of the version before, from which the changes are worked out, and
+        the git diff between the two. Requires the CompManager privilege.
+      parameters:
+        - in: path
+          name: commit
+          required: true
+          description: The commit id, whole or abbreviated.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceVersionDetail'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:
@@ -17023,6 +17166,80 @@ components:
           type: string
         updated:
           type: string
+
+    ComplianceVersion:
+      type: object
+      description: A version of the compliance export, a commit of its git repository.
+      required:
+        - id
+        - date
+        - author
+        - subject
+        - body
+        - source
+      properties:
+        id:
+          type: string
+          description: The commit id.
+        date:
+          type: string
+          description: The date of the commit, ISO 8601.
+        author:
+          type: string
+          description: '"First Last <email>" of the user who committed.'
+        subject:
+          type: string
+          description: The first line of the message.
+        body:
+          type: string
+          description: The rest of the message, the changes saved, one per line.
+        source:
+          type: string
+          enum: [designer, elsewhere, ""]
+          description: What the version records, as given when it was recorded; empty when not said.
+
+    ComplianceExport:
+      type: object
+      description: The compliance export a version recorded, in the format of the import.
+      required:
+        - filtersets
+        - rulesets
+        - modulesets
+      properties:
+        filtersets:
+          type: array
+          items:
+            $ref: '#/components/schemas/FiltersetExportItem'
+        rulesets:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompExportRuleset'
+        modulesets:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompExportModuleset'
+
+    ComplianceVersionDetail:
+      type: object
+      required:
+        - version
+        - export
+        - diff
+      properties:
+        version:
+          $ref: '#/components/schemas/ComplianceVersion'
+        export:
+          $ref: '#/components/schemas/ComplianceExport'
+        previous:
+          description: The export of the version before, absent for the first one.
+          allOf:
+            - $ref: '#/components/schemas/ComplianceExport'
+        previous_id:
+          type: string
+          description: The commit id of the version before, absent for the first one.
+        diff:
+          type: string
+          description: The git diff of the export from the version before, unified.
 
     OidcMappingListResponse:
       type: object
