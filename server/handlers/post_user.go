@@ -14,6 +14,7 @@ import (
 	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/util/echolog"
 	"github.com/opensvc/oc3/util/logkey"
+	"github.com/opensvc/oc3/xauth"
 )
 
 // The widths of the auth_user columns.
@@ -57,6 +58,9 @@ func (a *Api) PostUser(c echo.Context, userId string) error {
 			return JSONProblemf(c, http.StatusNotFound, "user %s not found", userId)
 		}
 		targetID = id
+	}
+	if targetID == *selfID && identityManagedByProvider(c) {
+		return JSONProblemf(c, http.StatusForbidden, "your profile is managed by your identity provider: change it there")
 	}
 
 	var body server.PostUserJSONRequestBody
@@ -157,4 +161,21 @@ func (a *Api) PostUser(c echo.Context, userId string) error {
 		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 			return odb.GetUser(ctx, id, p)
 		})
+}
+
+// identityManagedByProvider tells whether the caller signed in through the
+// identity provider, by its session or a Bearer token: their name, email and
+// password are the provider's, not theirs to change in the collector, which
+// takes the name again from the provider at each sign-in. Acting as another user,
+// the profile changed is that user's, managed or not by a provider.
+func identityManagedByProvider(c echo.Context) bool {
+	if IsImpersonating(c) {
+		return false
+	}
+	user := UserInfoFromContext(c)
+	if user == nil {
+		return false
+	}
+	source := user.GetExtensions().Get(xauth.XAuthSource)
+	return source == xauth.AuthSourceSession || source == xauth.AuthSourceBearer
 }
