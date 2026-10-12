@@ -15473,6 +15473,14 @@ components:
             history of the service computes it, stored by the scheduler every 10
             minutes and at once when a justification changes; sortable and
             filterable. Null without status recorded.
+        svc_availability_trend:
+          type: number
+          format: double
+          nullable: true
+          description: |
+            The change of svc_availability over the last 7 days, in points: its
+            value now minus its value 7 days ago, positive when the service is
+            more available than it was. Null without status history 7 days ago.
         svc_availability_updated:
           type: string
           nullable: true

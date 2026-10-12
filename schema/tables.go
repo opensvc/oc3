@@ -1581,6 +1581,7 @@ var (
 	ServicesSvcFlexTarget           = &Col{T: TServices, Name: "svc_flex_target", Nullable: true}
 	ServicesSvcSla                  = &Col{T: TServices, Name: "svc_sla", Nullable: true}
 	ServicesSvcAvailability         = &Col{T: TServices, Name: "svc_availability", Nullable: true}
+	ServicesSvcAvailabilityTrend    = &Col{T: TServices, Name: "svc_availability_trend", Nullable: true}
 	ServicesSvcAvailabilityUpdated  = &Col{T: TServices, Name: "svc_availability_updated", Nullable: true}
 )
 
@@ -2922,6 +2923,7 @@ var AllCols = []*Col{
 	ServicesSvcFlexTarget,
 	ServicesSvcSla,
 	ServicesSvcAvailability,
+	ServicesSvcAvailabilityTrend,
 	ServicesSvcAvailabilityUpdated,
 	ServicesLogID,
 	ServicesLogSvcAvailstatus,

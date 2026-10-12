@@ -51,3 +51,41 @@ func TestServiceAvailability(t *testing.T) {
 		t.Errorf("stale: %+v", r)
 	}
 }
+
+// TestAvailabilityTrend checks the trend of the 30-day rate: up when the last
+// week was better than the week it replaced, down when worse, nil without history
+// a week ago.
+func TestAvailabilityTrend(t *testing.T) {
+	now := time.Date(2026, 10, 12, 12, 0, 0, 0, time.Local)
+	f := func(d time.Duration) string { return now.Add(d).Format("2006-01-02 15:04:05") }
+	day := 24 * time.Hour
+	// Up for 40 days, but down for a day 35 days ago: that day left the window
+	// since a week, so the rate improved.
+	improving := []cdb.StatusPeriod{
+		{Avail: "up", Begin: f(-40 * day), End: f(-35 * day)},
+		{Avail: "down", Begin: f(-35 * day), End: f(-34 * day)},
+		{Avail: "up", Begin: f(-34 * day), End: f(-time.Minute)},
+	}
+	if d := Trend(improving, nil, now); d == nil || *d <= 0 {
+		t.Errorf("improving: %v", d)
+	}
+	// Down for a day 2 days ago: the rate deteriorated.
+	worsening := []cdb.StatusPeriod{
+		{Avail: "up", Begin: f(-40 * day), End: f(-2 * day)},
+		{Avail: "down", Begin: f(-2 * day), End: f(-day)},
+		{Avail: "up", Begin: f(-day), End: f(-time.Minute)},
+	}
+	d := Trend(worsening, nil, now)
+	if d == nil || *d >= 0 {
+		t.Fatalf("worsening: %v", d)
+	}
+	// One day down out of 30: about 3.3 points lost.
+	if math.Abs(*d+100.0/30) > 0.01 {
+		t.Errorf("worsening by %f points", *d)
+	}
+	// A service first seen 3 days ago has no rate a week ago.
+	young := []cdb.StatusPeriod{{Avail: "up", Begin: f(-3 * day), End: f(-time.Minute)}}
+	if d := Trend(young, nil, now); d != nil {
+		t.Errorf("young: %v", *d)
+	}
+}

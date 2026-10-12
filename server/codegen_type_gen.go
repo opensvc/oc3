@@ -2726,6 +2726,11 @@ type ServiceRow struct {
 	// filterable. Null without status recorded.
 	SvcAvailability *float64 `json:"svc_availability,omitempty"`
 
+	// SvcAvailabilityTrend The change of svc_availability over the last 7 days, in points: its
+	// value now minus its value 7 days ago, positive when the service is
+	// more available than it was. Null without status history 7 days ago.
+	SvcAvailabilityTrend *float64 `json:"svc_availability_trend,omitempty"`
+
 	// SvcAvailabilityUpdated When svc_availability was computed.
 	SvcAvailabilityUpdated  *string `json:"svc_availability_updated,omitempty"`
 	SvcAvailstatus          *string `json:"svc_availstatus,omitempty"`
