@@ -1180,12 +1180,13 @@ func buildCompStatusQuery(groups []string, isManager bool, selectExprs []string)
 	if len(selectExprs) == 0 {
 		return "", nil, fmt.Errorf("buildCompStatusQuery: no columns selected")
 	}
-	query := "SELECT " + strings.Join(selectExprs, ", ") + "\nFROM comp_status"
+	// The node and the service of a run are joined for their names, the node also
+	// for the visibility; a run whose node row is missing stays a manager's.
+	query := "SELECT " + strings.Join(selectExprs, ", ") + "\nFROM " + compStatusFrom
 	var args []any
 
 	if !isManager {
 		clean := cleanGroups(groups)
-		query += "\nJOIN nodes ON comp_status.node_id = nodes.node_id"
 		if len(clean) == 0 {
 			query += "\nWHERE 1=0"
 		} else {
@@ -1205,7 +1206,7 @@ func (oDb *DB) GetServiceComplianceStatus(ctx context.Context, svcID string, p L
 	if len(p.SelectExprs) == 0 {
 		return nil, fmt.Errorf("getServiceComplianceStatus: no columns selected")
 	}
-	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + "\nFROM comp_status\nWHERE comp_status.svc_id = ?"
+	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + "\nFROM " + compStatusFrom + "\nWHERE comp_status.svc_id = ?"
 	args := []any{svcID}
 
 	if !p.IsManager {

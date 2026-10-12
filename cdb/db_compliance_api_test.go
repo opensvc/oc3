@@ -1,6 +1,9 @@
 package cdb
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // TestCompStatusGroupsOrder checks the counts of a group and their order: the
 // least compliant first, then the largest, then by name, a group without any run
@@ -29,6 +32,22 @@ func TestCompStatusGroupsOrder(t *testing.T) {
 	for i, name := range want {
 		if groups[i].Name != name {
 			t.Fatalf("order: got %v at %d, want %v", groups[i].Name, i, name)
+		}
+	}
+}
+
+// TestBuildCompStatusQueryJoinsNames checks that the check runs of a node join
+// their node and service once, for their names, whoever asks.
+func TestBuildCompStatusQueryJoinsNames(t *testing.T) {
+	for _, isManager := range []bool{true, false} {
+		query, _, err := buildCompStatusQuery([]string{"ops"}, isManager, []string{"services.svcname"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, join := range []string{"JOIN nodes ON", "JOIN services ON"} {
+			if n := strings.Count(query, join); n != 1 {
+				t.Errorf("manager %v: %q %d times in:\n%s", isManager, join, n, query)
+			}
 		}
 	}
 }
