@@ -8057,9 +8057,6 @@ type GetNodeComplianceModulesetsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
-// PostNodeComplianceModulesetJSONBody defines parameters for PostNodeComplianceModuleset.
-type PostNodeComplianceModulesetJSONBody = map[string]interface{}
-
 // GetNodeComplianceRulesetsParams defines parameters for GetNodeComplianceRulesets.
 type GetNodeComplianceRulesetsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -8096,9 +8093,6 @@ type GetNodeComplianceRulesetsParams struct {
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
-
-// PostNodeComplianceRulesetJSONBody defines parameters for PostNodeComplianceRuleset.
-type PostNodeComplianceRulesetJSONBody = map[string]interface{}
 
 // GetNodeComplianceStatusParams defines parameters for GetNodeComplianceStatus.
 type GetNodeComplianceStatusParams struct {
@@ -10921,12 +10915,6 @@ type PostNodesJSONRequestBody PostNodesJSONBody
 
 // PostNodeJSONRequestBody defines body for PostNode for application/json ContentType.
 type PostNodeJSONRequestBody PostNodeJSONBody
-
-// PostNodeComplianceModulesetJSONRequestBody defines body for PostNodeComplianceModuleset for application/json ContentType.
-type PostNodeComplianceModulesetJSONRequestBody = PostNodeComplianceModulesetJSONBody
-
-// PostNodeComplianceRulesetJSONRequestBody defines body for PostNodeComplianceRuleset for application/json ContentType.
-type PostNodeComplianceRulesetJSONRequestBody = PostNodeComplianceRulesetJSONBody
 
 // PostNodeSnoozeJSONRequestBody defines body for PostNodeSnooze for application/json ContentType.
 type PostNodeSnoozeJSONRequestBody PostNodeSnoozeJSONBody
