@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 )
 
 // compPublishedNodesCond restricts a node_id column to the nodes the caller may
@@ -58,6 +60,11 @@ func (oDb *DB) GetComplianceLogs(ctx context.Context, id *int64, fsetNodeIDs []s
 	return oDb.listQuery(ctx, "getComplianceLogs", compLogFrom, conds, args, "comp_log.id DESC", p)
 }
 
+// compStatusFrom joins the node and the service of a check run, for their names.
+const compStatusFrom = "comp_status" +
+	" LEFT JOIN nodes ON nodes.node_id = comp_status.node_id" +
+	" LEFT JOIN services ON services.svc_id = comp_status.svc_id"
+
 // GetComplianceStatus lists the last check run of each module-node-service tuple,
 // for the nodes the caller may see; one when id is set.
 func (oDb *DB) GetComplianceStatus(ctx context.Context, id *int64, p ListParams) ([]map[string]any, error) {
@@ -67,7 +74,125 @@ func (oDb *DB) GetComplianceStatus(ctx context.Context, id *int64, p ListParams)
 		conds = append(conds, "comp_status.id = ?")
 		args = append(args, *id)
 	}
-	return oDb.listQuery(ctx, "getComplianceStatus", "comp_status", conds, args, "comp_status.id DESC", p)
+	return oDb.listQuery(ctx, "getComplianceStatus", compStatusFrom, conds, args, "comp_status.id DESC", p)
+}
+
+// CompStatusObsoleteAfter is the age past which a check run no longer tells the
+// state of its module: counted as obsolete, whatever its status, as the
+// historical collector's compliance status views do.
+const CompStatusObsoleteAfter = "7 DAY"
+
+// CompStatusCounts are the check runs of a selection by state: ok, not ok and not
+// applicable among the recent ones, obsolete past CompStatusObsoleteAfter. Total
+// is their sum, so a recent run of any other status (a killed module) is left out,
+// as in the historical views; Pct is the share of ok and not applicable runs.
+type CompStatusCounts struct {
+	Total int64
+	OK    int64
+	NOK   int64
+	NA    int64
+	Obs   int64
+	Pct   *int64
+}
+
+// CompStatusGroup are the counts of the runs of one module, node or service.
+type CompStatusGroup struct {
+	ID   string
+	Name string
+	CompStatusCounts
+}
+
+// compStatusCountExprs are the SELECT expressions of CompStatusCounts.
+const compStatusCountExprs = "" +
+	"COALESCE(SUM(comp_status.run_date >= NOW() - INTERVAL " + CompStatusObsoleteAfter + " AND comp_status.run_status = 0), 0)," +
+	" COALESCE(SUM(comp_status.run_date >= NOW() - INTERVAL " + CompStatusObsoleteAfter + " AND comp_status.run_status = 1), 0)," +
+	" COALESCE(SUM(comp_status.run_date >= NOW() - INTERVAL " + CompStatusObsoleteAfter + " AND comp_status.run_status = 2), 0)," +
+	" COALESCE(SUM(comp_status.run_date < NOW() - INTERVAL " + CompStatusObsoleteAfter + "), 0)"
+
+func (c *CompStatusCounts) complete() {
+	c.Total = c.OK + c.NOK + c.NA + c.Obs
+	if c.Total > 0 {
+		pct := (c.OK + c.NA) * 100 / c.Total
+		c.Pct = &pct
+	}
+}
+
+// ComplianceStatusSummary counts the check runs the caller may see, narrowed by
+// the filters of p, overall and, when by is "module", "node" or "service", per
+// group of that kind: the least compliant first, then the largest, then by name,
+// as the historical comp_mod_status, comp_node_status and comp_svc_status
+// tables. The runs of no service are left out of the service groups.
+func (oDb *DB) ComplianceStatusSummary(ctx context.Context, by string, p ListParams) (CompStatusCounts, []CompStatusGroup, error) {
+	cond, args := compPublishedNodesCond("comp_status.node_id", p.Groups, p.IsManager)
+	conds := []string{cond}
+	filterConds, filterArgs := p.FilterConditions()
+	conds = append(conds, filterConds...)
+	args = append(args, filterArgs...)
+	where := " WHERE " + strings.Join(conds, " AND ")
+
+	var totals CompStatusCounts
+	query := "SELECT " + compStatusCountExprs + " FROM " + compStatusFrom + where
+	if err := oDb.DB.QueryRowContext(ctx, query, args...).Scan(&totals.OK, &totals.NOK, &totals.NA, &totals.Obs); err != nil {
+		return totals, nil, fmt.Errorf("complianceStatusSummary: %w", err)
+	}
+	totals.complete()
+
+	var key, name, extra string
+	switch by {
+	case "":
+		return totals, nil, nil
+	case "module":
+		key, name = "comp_status.run_module", "comp_status.run_module"
+	case "node":
+		key, name = "comp_status.node_id", "COALESCE(MAX(nodes.nodename), '')"
+	case "service":
+		key, name = "comp_status.svc_id", "COALESCE(MAX(services.svcname), '')"
+		extra = " AND COALESCE(comp_status.svc_id, '') <> ''"
+	default:
+		return totals, nil, fmt.Errorf("complianceStatusSummary: unknown grouping %q", by)
+	}
+	query = "SELECT COALESCE(" + key + ", ''), " + name + ", " + compStatusCountExprs +
+		" FROM " + compStatusFrom + where + extra + " GROUP BY " + key
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return totals, nil, fmt.Errorf("complianceStatusSummary: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	groups := []CompStatusGroup{}
+	for rows.Next() {
+		var g CompStatusGroup
+		if err := rows.Scan(&g.ID, &g.Name, &g.OK, &g.NOK, &g.NA, &g.Obs); err != nil {
+			return totals, nil, fmt.Errorf("complianceStatusSummary: %w", err)
+		}
+		g.complete()
+		groups = append(groups, g)
+	}
+	if err := rows.Err(); err != nil {
+		return totals, nil, fmt.Errorf("complianceStatusSummary: %w", err)
+	}
+	sortCompStatusGroups(groups)
+	return totals, groups, nil
+}
+
+// sortCompStatusGroups orders the groups the least compliant first, then the
+// largest, then by name.
+func sortCompStatusGroups(groups []CompStatusGroup) {
+	pct := func(g CompStatusGroup) int64 {
+		if g.Pct == nil {
+			return 101
+		}
+		return *g.Pct
+	}
+	sort.SliceStable(groups, func(i, j int) bool {
+		a, b := groups[i], groups[j]
+		if pct(a) != pct(b) {
+			return pct(a) < pct(b)
+		}
+		if a.Total != b.Total {
+			return a.Total > b.Total
+		}
+		return a.Name < b.Name
+	})
 }
 
 // CompStatusRun is the last check run of a module on a node, or on a service

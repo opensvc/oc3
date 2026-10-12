@@ -1216,6 +1216,12 @@ var propsMapping = map[string]propMapping{
 			"run_action": colStr(schema.CompStatusRunAction),
 			"rset_md5":   colStr(schema.CompStatusRsetMD5),
 		},
+		// A run points at its node, and at its service when it has one, by id
+		// only: the names live in the joined tables.
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
+		},
 	},
 	// The charts: time series of historized metrics, defined in YAML.
 	"chart": {

@@ -11406,6 +11406,46 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /compliance/status/summary:
+    get:
+      operationId: GetComplianceStatusSummary
+      description: |
+        Count the last check runs of the modules, among those `GET /compliance/status`
+        lists with the same filters (the session filterset included): ok, not ok and
+        not applicable among the runs of the last 7 days, obsolete past them, their
+        total and the share of ok and not applicable runs (`pct`). Overall in
+        `totals`, and per module, node or service in `data` when `by` asks for it,
+        the least compliant first, then the largest, then by name, as the historical
+        compliance status views. The runs of no service are left out of the service
+        groups.
+      parameters:
+        - in: query
+          name: by
+          required: false
+          description: Group the counts per module, node or service.
+          schema:
+            type: string
+            enum: [module, node, service]
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceStatusSummaryResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /compliance/status/{status_id}:
     get:
       operationId: GetComplianceStatusRun
@@ -15908,6 +15948,59 @@ components:
           type: string
         rset_md5:
           type: string
+        nodes.nodename:
+          type: string
+          nullable: true
+        services.svcname:
+          type: string
+          nullable: true
+
+    ComplianceStatusCounts:
+      type: object
+      description: |
+        Check runs by state: ok, not ok and not applicable among the runs of the last
+        7 days, obsolete past them. `total` is their sum; `pct` the share of ok and
+        not applicable runs, rounded down, null without any run.
+      required: [total, ok, nok, na, obs, pct]
+      properties:
+        total:
+          type: integer
+        ok:
+          type: integer
+        nok:
+          type: integer
+        na:
+          type: integer
+        obs:
+          type: integer
+        pct:
+          type: integer
+          nullable: true
+
+    ComplianceStatusGroup:
+      description: |
+        The counts of one module, node or service. `id` is the module name, the
+        node id or the service id; `name` the module, node or service name.
+      allOf:
+        - $ref: '#/components/schemas/ComplianceStatusCounts'
+        - type: object
+          required: [id, name]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+
+    ComplianceStatusSummaryResponse:
+      type: object
+      required: [totals, data]
+      properties:
+        totals:
+          $ref: '#/components/schemas/ComplianceStatusCounts'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplianceStatusGroup'
 
     ComplianceStatusListResponse:
       type: object

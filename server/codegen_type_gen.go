@@ -151,55 +151,55 @@ func (e SanTopologyNodeKind) Valid() bool {
 
 // Defines values for SearchGroupKind.
 const (
-	App       SearchGroupKind = "app"
-	Disk      SearchGroupKind = "disk"
-	Filterset SearchGroupKind = "filterset"
-	Form      SearchGroupKind = "form"
-	Group     SearchGroupKind = "group"
-	Instance  SearchGroupKind = "instance"
-	Moduleset SearchGroupKind = "moduleset"
-	Network   SearchGroupKind = "network"
-	Node      SearchGroupKind = "node"
-	Privilege SearchGroupKind = "privilege"
-	Request   SearchGroupKind = "request"
-	Ruleset   SearchGroupKind = "ruleset"
-	Service   SearchGroupKind = "service"
-	Tag       SearchGroupKind = "tag"
-	User      SearchGroupKind = "user"
+	SearchGroupKindApp       SearchGroupKind = "app"
+	SearchGroupKindDisk      SearchGroupKind = "disk"
+	SearchGroupKindFilterset SearchGroupKind = "filterset"
+	SearchGroupKindForm      SearchGroupKind = "form"
+	SearchGroupKindGroup     SearchGroupKind = "group"
+	SearchGroupKindInstance  SearchGroupKind = "instance"
+	SearchGroupKindModuleset SearchGroupKind = "moduleset"
+	SearchGroupKindNetwork   SearchGroupKind = "network"
+	SearchGroupKindNode      SearchGroupKind = "node"
+	SearchGroupKindPrivilege SearchGroupKind = "privilege"
+	SearchGroupKindRequest   SearchGroupKind = "request"
+	SearchGroupKindRuleset   SearchGroupKind = "ruleset"
+	SearchGroupKindService   SearchGroupKind = "service"
+	SearchGroupKindTag       SearchGroupKind = "tag"
+	SearchGroupKindUser      SearchGroupKind = "user"
 )
 
 // Valid indicates whether the value is a known member of the SearchGroupKind enum.
 func (e SearchGroupKind) Valid() bool {
 	switch e {
-	case App:
+	case SearchGroupKindApp:
 		return true
-	case Disk:
+	case SearchGroupKindDisk:
 		return true
-	case Filterset:
+	case SearchGroupKindFilterset:
 		return true
-	case Form:
+	case SearchGroupKindForm:
 		return true
-	case Group:
+	case SearchGroupKindGroup:
 		return true
-	case Instance:
+	case SearchGroupKindInstance:
 		return true
-	case Moduleset:
+	case SearchGroupKindModuleset:
 		return true
-	case Network:
+	case SearchGroupKindNetwork:
 		return true
-	case Node:
+	case SearchGroupKindNode:
 		return true
-	case Privilege:
+	case SearchGroupKindPrivilege:
 		return true
-	case Request:
+	case SearchGroupKindRequest:
 		return true
-	case Ruleset:
+	case SearchGroupKindRuleset:
 		return true
-	case Service:
+	case SearchGroupKindService:
 		return true
-	case Tag:
+	case SearchGroupKindTag:
 		return true
-	case User:
+	case SearchGroupKindUser:
 		return true
 	default:
 		return false
@@ -374,6 +374,27 @@ func (e PutComplianceRulesetVariableJSONBodyAction) Valid() bool {
 	case Copy:
 		return true
 	case Move:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetComplianceStatusSummaryParamsBy.
+const (
+	GetComplianceStatusSummaryParamsByModule  GetComplianceStatusSummaryParamsBy = "module"
+	GetComplianceStatusSummaryParamsByNode    GetComplianceStatusSummaryParamsBy = "node"
+	GetComplianceStatusSummaryParamsByService GetComplianceStatusSummaryParamsBy = "service"
+)
+
+// Valid indicates whether the value is a known member of the GetComplianceStatusSummaryParamsBy enum.
+func (e GetComplianceStatusSummaryParamsBy) Valid() bool {
+	switch e {
+	case GetComplianceStatusSummaryParamsByModule:
+		return true
+	case GetComplianceStatusSummaryParamsByNode:
+		return true
+	case GetComplianceStatusSummaryParamsByService:
 		return true
 	default:
 		return false
@@ -1097,6 +1118,30 @@ type ComplianceLogRow struct {
 	SvcId           *string `json:"svc_id,omitempty"`
 }
 
+// ComplianceStatusCounts Check runs by state: ok, not ok and not applicable among the runs of the last
+// 7 days, obsolete past them. `total` is their sum; `pct` the share of ok and
+// not applicable runs, rounded down, null without any run.
+type ComplianceStatusCounts struct {
+	Na    int  `json:"na"`
+	Nok   int  `json:"nok"`
+	Obs   int  `json:"obs"`
+	Ok    int  `json:"ok"`
+	Pct   *int `json:"pct"`
+	Total int  `json:"total"`
+}
+
+// ComplianceStatusGroup defines model for ComplianceStatusGroup.
+type ComplianceStatusGroup struct {
+	Id    string `json:"id"`
+	Na    int    `json:"na"`
+	Name  string `json:"name"`
+	Nok   int    `json:"nok"`
+	Obs   int    `json:"obs"`
+	Ok    int    `json:"ok"`
+	Pct   *int   `json:"pct"`
+	Total int    `json:"total"`
+}
+
 // ComplianceStatusListResponse defines model for ComplianceStatusListResponse.
 type ComplianceStatusListResponse struct {
 	Data ComplianceStatusListResponse_Data `json:"data"`
@@ -1119,15 +1164,27 @@ type ComplianceStatusListResponse_Data struct {
 // columns the server returns. `run_status` is the module's exit code: 0 ok,
 // 1 not ok, 2 not applicable.
 type ComplianceStatusRow struct {
-	Id        *int    `json:"id,omitempty"`
-	NodeId    *string `json:"node_id,omitempty"`
-	RsetMd5   *string `json:"rset_md5,omitempty"`
-	RunAction *string `json:"run_action,omitempty"`
-	RunDate   *string `json:"run_date,omitempty"`
-	RunLog    *string `json:"run_log,omitempty"`
-	RunModule *string `json:"run_module,omitempty"`
-	RunStatus *int    `json:"run_status,omitempty"`
-	SvcId     *string `json:"svc_id,omitempty"`
+	Id              *int    `json:"id,omitempty"`
+	NodeId          *string `json:"node_id,omitempty"`
+	NodesNodename   *string `json:"nodes.nodename,omitempty"`
+	RsetMd5         *string `json:"rset_md5,omitempty"`
+	RunAction       *string `json:"run_action,omitempty"`
+	RunDate         *string `json:"run_date,omitempty"`
+	RunLog          *string `json:"run_log,omitempty"`
+	RunModule       *string `json:"run_module,omitempty"`
+	RunStatus       *int    `json:"run_status,omitempty"`
+	ServicesSvcname *string `json:"services.svcname,omitempty"`
+	SvcId           *string `json:"svc_id,omitempty"`
+}
+
+// ComplianceStatusSummaryResponse defines model for ComplianceStatusSummaryResponse.
+type ComplianceStatusSummaryResponse struct {
+	Data []ComplianceStatusGroup `json:"data"`
+
+	// Totals Check runs by state: ok, not ok and not applicable among the runs of the last
+	// 7 days, obsolete past them. `total` is their sum; `pct` the share of ok and
+	// not applicable runs, rounded down, null without any run.
+	Totals ComplianceStatusCounts `json:"totals"`
 }
 
 // ComplianceVersion A version of the compliance export, a commit of its git repository.
@@ -5327,6 +5384,34 @@ type GetComplianceStatusParams struct {
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
+
+// GetComplianceStatusSummaryParams defines parameters for GetComplianceStatusSummary.
+type GetComplianceStatusSummaryParams struct {
+	// By Group the counts per module, node or service.
+	By *GetComplianceStatusSummaryParamsBy `form:"by,omitempty" json:"by,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetComplianceStatusSummaryParamsBy defines parameters for GetComplianceStatusSummary.
+type GetComplianceStatusSummaryParamsBy string
 
 // GetComplianceStatusRunParams defines parameters for GetComplianceStatusRun.
 type GetComplianceStatusRunParams struct {
