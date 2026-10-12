@@ -13,9 +13,13 @@ func buildServicesInstancesQuery(groups []string, isManager bool, selectExprs []
 	// services is an inner join: the access check filters on services.svc_app.
 	// nodes is a left join so that "nodes.*" props can be selected without dropping
 	// an instance whose node row is missing.
+	// b_action_errors holds the count of the instance's unacknowledged action
+	// errors of the last day, one row per service and node: the "err" prop.
 	q := From(schema.TSvcmon).
 		Via(schema.TServices).
 		LeftJoin(schema.TNodes).
+		LeftJoinOn(schema.TBActionErrors,
+			"b_action_errors.svc_id = svcmon.svc_id AND b_action_errors.node_id = svcmon.node_id").
 		RawSelect(selectExprs...)
 
 	if !isManager {

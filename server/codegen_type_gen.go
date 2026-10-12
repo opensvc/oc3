@@ -1581,34 +1581,44 @@ type InstanceListResponse_Data struct {
 // which columns the server returns. The `nodes.` and `services.` properties
 // come from joined tables; `nodes.` ones are null when the node row is missing.
 type InstanceRow struct {
-	MonAppstatus        *string `json:"mon_appstatus,omitempty"`
-	MonAvailstatus      *string `json:"mon_availstatus,omitempty"`
-	MonChanged          *string `json:"mon_changed,omitempty"`
-	MonContainerstatus  *string `json:"mon_containerstatus,omitempty"`
-	MonDiskstatus       *string `json:"mon_diskstatus,omitempty"`
-	MonEncapFrozenAt    *string `json:"mon_encap_frozen_at,omitempty"`
-	MonFrozen           *string `json:"mon_frozen,omitempty"`
-	MonFrozenAt         *string `json:"mon_frozen_at,omitempty"`
-	MonFsstatus         *string `json:"mon_fsstatus,omitempty"`
-	MonGuestos          *string `json:"mon_guestos,omitempty"`
-	MonHbstatus         *string `json:"mon_hbstatus,omitempty"`
-	MonIpstatus         *string `json:"mon_ipstatus,omitempty"`
-	MonOverallstatus    *string `json:"mon_overallstatus,omitempty"`
-	MonSharestatus      *string `json:"mon_sharestatus,omitempty"`
-	MonSmonGlobalExpect *string `json:"mon_smon_global_expect,omitempty"`
-	MonSmonStatus       *string `json:"mon_smon_status,omitempty"`
-	MonSvctype          *string `json:"mon_svctype,omitempty"`
-	MonSyncstatus       *string `json:"mon_syncstatus,omitempty"`
-	MonUpdated          *string `json:"mon_updated,omitempty"`
-	MonVcpus            *int    `json:"mon_vcpus,omitempty"`
-	MonVmem             *int    `json:"mon_vmem,omitempty"`
-	MonVmname           *string `json:"mon_vmname,omitempty"`
-	MonVmtype           *string `json:"mon_vmtype,omitempty"`
-	NodeId              *string `json:"node_id,omitempty"`
-	NodesNodename       *string `json:"nodes.nodename,omitempty"`
-	NodesOsName         *string `json:"nodes.os_name,omitempty"`
-	ServicesSvcname     *string `json:"services.svcname,omitempty"`
-	SvcId               *string `json:"svc_id,omitempty"`
+	// Err Unacknowledged action errors of the instance in the last day, 0 when
+	// none, as the "err" column of the historical collector.
+	Err                    *int    `json:"err,omitempty"`
+	MonAppstatus           *string `json:"mon_appstatus,omitempty"`
+	MonAvailstatus         *string `json:"mon_availstatus,omitempty"`
+	MonChanged             *string `json:"mon_changed,omitempty"`
+	MonContainerstatus     *string `json:"mon_containerstatus,omitempty"`
+	MonDiskstatus          *string `json:"mon_diskstatus,omitempty"`
+	MonEncapFrozenAt       *string `json:"mon_encap_frozen_at,omitempty"`
+	MonFrozen              *string `json:"mon_frozen,omitempty"`
+	MonFrozenAt            *string `json:"mon_frozen_at,omitempty"`
+	MonFsstatus            *string `json:"mon_fsstatus,omitempty"`
+	MonGuestos             *string `json:"mon_guestos,omitempty"`
+	MonHbstatus            *string `json:"mon_hbstatus,omitempty"`
+	MonIpstatus            *string `json:"mon_ipstatus,omitempty"`
+	MonOverallstatus       *string `json:"mon_overallstatus,omitempty"`
+	MonSharestatus         *string `json:"mon_sharestatus,omitempty"`
+	MonSmonGlobalExpect    *string `json:"mon_smon_global_expect,omitempty"`
+	MonSmonStatus          *string `json:"mon_smon_status,omitempty"`
+	MonSvctype             *string `json:"mon_svctype,omitempty"`
+	MonSyncstatus          *string `json:"mon_syncstatus,omitempty"`
+	MonUpdated             *string `json:"mon_updated,omitempty"`
+	MonVcpus               *int    `json:"mon_vcpus,omitempty"`
+	MonVmem                *int    `json:"mon_vmem,omitempty"`
+	MonVmname              *string `json:"mon_vmname,omitempty"`
+	MonVmtype              *string `json:"mon_vmtype,omitempty"`
+	NodeId                 *string `json:"node_id,omitempty"`
+	NodesNodeEnv           *string `json:"nodes.node_env,omitempty"`
+	NodesNodename          *string `json:"nodes.nodename,omitempty"`
+	NodesOsName            *string `json:"nodes.os_name,omitempty"`
+	ServicesSvcApp         *string `json:"services.svc_app,omitempty"`
+	ServicesSvcAvailstatus *string `json:"services.svc_availstatus,omitempty"`
+	ServicesSvcEnv         *string `json:"services.svc_env,omitempty"`
+	ServicesSvcHa          *int    `json:"services.svc_ha,omitempty"`
+	ServicesSvcStatus      *string `json:"services.svc_status,omitempty"`
+	ServicesSvcTopology    *string `json:"services.svc_topology,omitempty"`
+	ServicesSvcname        *string `json:"services.svcname,omitempty"`
+	SvcId                  *string `json:"svc_id,omitempty"`
 }
 
 // InstanceStatusPeriod defines model for InstanceStatusPeriod.

@@ -715,6 +715,7 @@ var propsMapping = map[string]propMapping{
 			"mon_frozen", "mon_frozen_at", "mon_encap_frozen_at",
 			"mon_vmname", "mon_vmtype", "mon_guestos", "mon_vcpus", "mon_vmem",
 			"mon_updated", "mon_changed",
+			"err",
 		},
 		Default: []string{
 			"svc_id", "node_id",
@@ -747,6 +748,14 @@ var propsMapping = map[string]propMapping{
 			"mon_vmem":               colInt(schema.SvcmonMonVmem),
 			"mon_updated":            colStr(schema.SvcmonMonUpdated),
 			"mon_changed":            colStr(schema.SvcmonMonChanged),
+			// Unacknowledged action errors of the last day, as the historical
+			// collector's "err" column: 0 for an instance without any.
+			"err": {
+				Col:        schema.BActionErrorsErr,
+				SQLExpr:    "COALESCE(b_action_errors.err, 0)",
+				Kind:       "int64",
+				FilterExpr: "COALESCE(b_action_errors.err, 0)",
+			},
 		},
 		// An instance row carries only the service and node ids: the names live in
 		// the joined tables, as in the historical collector's svcmon table.

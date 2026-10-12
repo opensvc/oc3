@@ -15737,13 +15737,39 @@ components:
           type: string
         mon_changed:
           type: string
+        err:
+          type: integer
+          description: |
+            Unacknowledged action errors of the instance in the last day, 0 when
+            none, as the "err" column of the historical collector.
         nodes.nodename:
+          type: string
+          nullable: true
+        nodes.node_env:
           type: string
           nullable: true
         nodes.os_name:
           type: string
           nullable: true
         services.svcname:
+          type: string
+          nullable: true
+        services.svc_status:
+          type: string
+          nullable: true
+        services.svc_availstatus:
+          type: string
+          nullable: true
+        services.svc_ha:
+          type: integer
+          nullable: true
+        services.svc_app:
+          type: string
+          nullable: true
+        services.svc_env:
+          type: string
+          nullable: true
+        services.svc_topology:
           type: string
           nullable: true
 
