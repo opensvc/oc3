@@ -17,7 +17,7 @@ func (a *Api) GetNodeTags(c echo.Context, nodeId string, params server.GetNodeTa
 	if err != nil {
 		return err
 	}
-	return a.handleList(c, "GetNodeTags", "tag", listEndpointParams{
+	return a.handleList(c, "GetNodeTags", "nodeTagList", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {

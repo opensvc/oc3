@@ -17,7 +17,7 @@ func (a *Api) GetServiceTags(c echo.Context, svcId string, params server.GetServ
 	if err := a.resolveService(c, log, svcId); err != nil {
 		return err
 	}
-	return a.handleList(c, "GetServiceTags", "tag", listEndpointParams{
+	return a.handleList(c, "GetServiceTags", "svcTagList", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {

@@ -620,6 +620,34 @@ var propsMapping = map[string]propMapping{
 			"tag_id":      colStr(schema.TagsTagID),
 		},
 	},
+	// The tags of one node, or of one service: the tag's props, and the data of the
+	// attachment, which a form-based tag ("<form>::<name>") describes with its form.
+	"nodeTagList": {
+		Available: []string{"id", "tag_name", "tag_created", "tag_exclude", "tag_data", "tag_id", "tag_attach_data"},
+		Blacklist: map[string]struct{}{"id": {}},
+		Props: map[string]propDef{
+			"id":              col(schema.TagsID),
+			"tag_name":        colStr(schema.TagsTagName),
+			"tag_created":     colStr(schema.TagsTagCreated),
+			"tag_exclude":     colStr(schema.TagsTagExclude),
+			"tag_data":        col(schema.TagsTagData),
+			"tag_id":          colStr(schema.TagsTagID),
+			"tag_attach_data": colStr(schema.NodeTagsTagAttachData),
+		},
+	},
+	"svcTagList": {
+		Available: []string{"id", "tag_name", "tag_created", "tag_exclude", "tag_data", "tag_id", "tag_attach_data"},
+		Blacklist: map[string]struct{}{"id": {}},
+		Props: map[string]propDef{
+			"id":              col(schema.TagsID),
+			"tag_name":        colStr(schema.TagsTagName),
+			"tag_created":     colStr(schema.TagsTagCreated),
+			"tag_exclude":     colStr(schema.TagsTagExclude),
+			"tag_data":        col(schema.TagsTagData),
+			"tag_id":          colStr(schema.TagsTagID),
+			"tag_attach_data": colStr(schema.SvcTagsTagAttachData),
+		},
+	},
 	"node_tag": {
 		Available: []string{"id", "created", "node_id", "tag_id", "tag_attach_data"},
 		Blacklist: map[string]struct{}{"id": {}},
@@ -629,6 +657,10 @@ var propsMapping = map[string]propMapping{
 			"node_id":         colStr(schema.NodeTagsNodeID),
 			"tag_id":          colStr(schema.NodeTagsTagID),
 			"tag_attach_data": colStr(schema.NodeTagsTagAttachData),
+		},
+		// The node of an attachment, joined for its name.
+		Joins: map[string]JoinDef{
+			"nodes": {MappingKey: "node"},
 		},
 	},
 	"svc_tag": {
@@ -640,6 +672,10 @@ var propsMapping = map[string]propMapping{
 			"svc_id":          colStr(schema.SvcTagsSvcID),
 			"tag_id":          colStr(schema.SvcTagsTagID),
 			"tag_attach_data": colStr(schema.SvcTagsTagAttachData),
+		},
+		// The service of an attachment, joined for its name.
+		Joins: map[string]JoinDef{
+			"services": {MappingKey: "service"},
 		},
 	},
 	"service": {

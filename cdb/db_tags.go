@@ -360,9 +360,11 @@ func (oDb *DB) GetTagNodes(ctx context.Context, tagID int, p ListParams) ([]map[
 
 // GetNodeTags returns tags attached to a node (identified by node_id UUID).
 func (oDb *DB) GetNodeTags(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
+	// One row per attachment, with its own data (tag_attach_data).
 	q := From(schema.TTags).
+		LeftJoinOn(schema.TNodeTags, "node_tags.tag_id = tags.tag_id").
 		RawSelect(p.SelectExprs...).
-		WhereRaw("tags.tag_id IN (SELECT tag_id FROM node_tags WHERE node_id = ?)", nodeID)
+		WhereRaw("node_tags.node_id = ?", nodeID)
 	q = applyNodeAppAuth(q, nodeID, p.Groups, p.IsManager)
 	query, args, err := q.Build()
 	if err != nil {
@@ -380,9 +382,11 @@ func (oDb *DB) GetNodeTags(ctx context.Context, nodeID string, p ListParams) ([]
 
 // GetServiceTags returns tags attached to a service (identified by svc_id UUID or svcname).
 func (oDb *DB) GetServiceTags(ctx context.Context, svcID string, p ListParams) ([]map[string]any, error) {
+	// One row per attachment, with its own data (tag_attach_data).
 	q := From(schema.TTags).
+		LeftJoinOn(schema.TSvcTags, "svc_tags.tag_id = tags.tag_id").
 		RawSelect(p.SelectExprs...).
-		WhereRaw("tags.tag_id IN (SELECT tag_id FROM svc_tags WHERE svc_id = (SELECT svc_id FROM services WHERE svc_id = ? OR svcname = ? LIMIT 1))", svcID, svcID)
+		WhereRaw("svc_tags.svc_id = (SELECT svc_id FROM services WHERE svc_id = ? OR svcname = ? LIMIT 1)", svcID, svcID)
 	q = applySvcAppAuth(q, svcID, p.Groups, p.IsManager)
 	query, args, err := q.Build()
 	if err != nil {
@@ -528,7 +532,10 @@ func (oDb *DB) GetTagServices(ctx context.Context, tagID int, p ListParams) ([]m
 
 // GetTagsNodes returns all node_tag attachment records with node app-based auth.
 func (oDb *DB) GetTagsNodes(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	q := From(schema.TNodeTags).RawSelect(p.SelectExprs...)
+	// The node joined for its name (nodes.nodename props, filters and sort).
+	q := From(schema.TNodeTags).
+		LeftJoinOn(schema.TNodes, "nodes.node_id = node_tags.node_id").
+		RawSelect(p.SelectExprs...)
 	if !p.IsManager {
 		cleanG := cleanGroups(p.Groups)
 		if len(cleanG) == 0 {
@@ -568,7 +575,10 @@ func (oDb *DB) GetTagsNodes(ctx context.Context, p ListParams) ([]map[string]any
 
 // GetTagsServices returns all svc_tag attachment records with service app-based auth.
 func (oDb *DB) GetTagsServices(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	q := From(schema.TSvcTags).RawSelect(p.SelectExprs...)
+	// The service joined for its name (services.svcname props, filters and sort).
+	q := From(schema.TSvcTags).
+		LeftJoinOn(schema.TServices, "services.svc_id = svc_tags.svc_id").
+		RawSelect(p.SelectExprs...)
 	if !p.IsManager {
 		cleanG := cleanGroups(p.Groups)
 		if len(cleanG) == 0 {

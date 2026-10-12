@@ -12,14 +12,18 @@ import (
 )
 
 // GetTagNodes handles GET /tags/{tag_id}/nodes
-func (a *Api) GetTagNodes(c echo.Context, tagIdParam int, params server.GetTagNodesParams) error {
+func (a *Api) GetTagNodes(c echo.Context, tagIdParam string, params server.GetTagNodesParams) error {
 	log := echolog.GetLogHandler(c, "GetTagNodes")
 	log.Info("called", logkey.TagID, tagIdParam)
+	tag, err := a.resolveTagByKey(c, log, c.Request().Context(), tagIdParam)
+	if err != nil {
+		return err
+	}
 
 	odb := a.ODB
 	return a.handleList(c, "GetTagNodes", "node", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
-		return odb.GetTagNodes(ctx, tagIdParam, p)
+		return odb.GetTagNodes(ctx, tag.ID, p)
 	})
 }

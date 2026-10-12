@@ -99,6 +99,14 @@ func (a *Api) attachTagNode(c echo.Context, log *slog.Logger, ctx context.Contex
 			log.Error("cannot attach tag to node", logkey.NodeID, nodeId, logkey.TagID, tag.TagID, logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot attach tag to node")
 		}
+		// The data given with a first attachment is kept with it: a form-based tag
+		// is attached with its form filled in one request.
+		if tagAttachData != nil && *tagAttachData != "" {
+			if err := odb.UpdateNodeTagAttachData(ctx, nodeId, tag.TagID, *tagAttachData); err != nil {
+				log.Error("cannot set node tag attach data", logkey.NodeID, nodeId, logkey.TagID, tag.TagID, logkey.Error, err)
+				return JSONProblemf(c, http.StatusInternalServerError, "cannot set node tag attach data")
+			}
+		}
 		info = fmt.Sprintf("node '%s' tag '%s' attached", nodeId, tag.TagName)
 		logFmt = "node '%(node_id)s' tag '%(tag_name)s' attached"
 	}
@@ -192,6 +200,14 @@ func (a *Api) attachTagService(c echo.Context, log *slog.Logger, ctx context.Con
 		if err := odb.AttachServiceTag(ctx, svc, tag.TagID); err != nil {
 			log.Error("cannot attach tag to service", "svc_id", svc, logkey.TagID, tag.TagID, logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot attach tag to service")
+		}
+		// The data given with a first attachment is kept with it: a form-based tag
+		// is attached with its form filled in one request.
+		if tagAttachData != nil && *tagAttachData != "" {
+			if err := odb.UpdateServiceTagAttachData(ctx, svc, tag.TagID, *tagAttachData); err != nil {
+				log.Error("cannot set service tag attach data", "svc_id", svc, logkey.TagID, tag.TagID, logkey.Error, err)
+				return JSONProblemf(c, http.StatusInternalServerError, "cannot set service tag attach data")
+			}
 		}
 		info = fmt.Sprintf("service '%s' tag '%s' attached", svc, tag.TagName)
 		logFmt = "service '%(svc_id)s' tag '%(tag_name)s' attached"

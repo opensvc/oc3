@@ -13,7 +13,7 @@ import (
 )
 
 // PostTag handles POST /tags/{tag_id} update a tag's properties.
-func (a *Api) PostTag(c echo.Context, tagIdParam int) error {
+func (a *Api) PostTag(c echo.Context, tagIdParam string) error {
 	log := echolog.GetLogHandler(c, "PostTag")
 	odb := a.ODB
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
@@ -31,23 +31,18 @@ func (a *Api) PostTag(c echo.Context, tagIdParam int) error {
 
 	log.Info("called", logkey.TagID, tagIdParam)
 
-	tags, err := odb.GetTags(ctx, &tagIdParam, nil, 0, 0)
+	tag, err := a.resolveTagByKey(c, log, ctx, tagIdParam)
 	if err != nil {
-		log.Error("cannot get tag", logkey.TagID, tagIdParam, logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot get tag")
+		return err
 	}
-	if len(tags) == 0 {
-		return JSONProblemf(c, http.StatusNotFound, "tag %d not found", tagIdParam)
-	}
-	tag := tags[0]
 
 	fields := cdb.UpdateTagFields{
 		TagName:    body.TagName,
 		TagExclude: body.TagExclude,
 		TagData:    body.TagData,
 	}
-	if _, err := odb.UpdateTag(ctx, tagIdParam, fields); err != nil {
-		log.Error("cannot update tag", logkey.TagID, tagIdParam, logkey.Error, err)
+	if _, err := odb.UpdateTag(ctx, tag.ID, fields); err != nil {
+		log.Error("cannot update tag", logkey.TagID, tag.ID, logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot update tag")
 	}
 
@@ -69,5 +64,5 @@ func (a *Api) PostTag(c echo.Context, tagIdParam int) error {
 		log.Error("cannot notify changes", logkey.Error, err)
 	}
 
-	return a.handleGetTags(c, &tagIdParam, ListQueryParameters{Props: defaultProps(propsMapping["tag"])}, nil)
+	return a.handleGetTags(c, &tag.ID, ListQueryParameters{Props: defaultProps(propsMapping["tag"])}, nil)
 }
