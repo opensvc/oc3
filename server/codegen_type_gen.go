@@ -826,6 +826,8 @@ type AppRow struct {
 // AuthInfo defines model for AuthInfo.
 type AuthInfo struct {
 	// Basic Whether users may sign in with their collector password
+	// (server.auth.basic_users). When false, the collector also refuses to set
+	// passwords, at user creation and on the profile.
 	Basic bool `json:"basic"`
 	Oidc  struct {
 		Enabled bool `json:"enabled"`

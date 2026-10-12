@@ -39,7 +39,8 @@ type (
 		OIDC *xauth.OIDC
 
 		// BasicUsers tells whether users may still sign in with their collector
-		// password (HTTP Basic), for the sign-in screen.
+		// password (HTTP Basic), as server.auth.basic_users says: the sign-in
+		// screen reads it, and without it no password is set.
 		BasicUsers bool
 	}
 )

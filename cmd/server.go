@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
@@ -36,6 +37,11 @@ func newServer() (*server, error) {
 	// with weaker settings than the operator asked for.
 	if t.oidc, err = newOIDC(context.Background(), t.section, t.redis, db); err != nil {
 		return nil, err
+	}
+	// Turning the passwords off leaves the identity provider as the only way in:
+	// without it, no user could sign in.
+	if !viper.GetBool(t.section+".auth.basic_users") && t.oidc == nil {
+		return nil, fmt.Errorf("%[1]s.auth.basic_users is false and %[1]s.oidc.enable is not set: no user could sign in", t.section)
 	}
 	return t, nil
 }

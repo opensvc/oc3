@@ -21,6 +21,12 @@ feeder:
 server:
   tx: true
   addr: 127.0.0.1:8081
+  auth:
+    # Users signing in with their collector password (HTTP Basic). Set to false
+    # once everyone signs in through OpenID Connect (server.oidc), which it then
+    # requires: passwords are no longer accepted nor set. Nodes keep their own
+    # authentication.
+    basic_users: true
   pprof:
     ux.enable: true
     net.enable: true
