@@ -6259,7 +6259,7 @@ type PutFormJSONBody struct {
 	// Data The information the form expects, as an object, a list of objects or their JSON string form.
 	Data interface{} `json:"data,omitempty"`
 
-	// PrevWfid The previous step id in an existing workflow.
+	// PrevWfid The id of the step of an existing workflow this submission decides on (forms_store.id).
 	PrevWfid interface{} `json:"prev_wfid,omitempty"`
 }
 

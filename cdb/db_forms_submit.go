@@ -119,6 +119,41 @@ func (oDb *DB) StoredFormLinkByID(ctx context.Context, id int64) (*StoredFormLin
 	return &l, nil
 }
 
+// StoredFormStep is what deciding on a workflow step depends on: whom the step
+// awaits, whether it is decided already, and the definition of the form
+// revision it was submitted with, whose workflow output names the next forms.
+type StoredFormStep struct {
+	ID       int64
+	NextID   *int64
+	Assignee string
+	// Yaml is empty when the revision is missing.
+	Yaml string
+}
+
+// StoredFormStepByID returns a stored form as a workflow step, nil when it does
+// not exist.
+func (oDb *DB) StoredFormStepByID(ctx context.Context, id int64) (*StoredFormStep, error) {
+	var step StoredFormStep
+	var next sql.NullInt64
+	var assignee, yaml sql.NullString
+	err := oDb.DB.QueryRowContext(ctx, "SELECT s.id, s.form_next_id, s.form_assignee, r.form_yaml"+
+		" FROM forms_store s LEFT JOIN forms_revisions r ON r.form_md5 = s.form_md5"+
+		" WHERE s.id = ? LIMIT 1", id).
+		Scan(&step.ID, &next, &assignee, &yaml)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("storedFormStepByID: %w", err)
+	}
+	if next.Valid {
+		step.NextID = &next.Int64
+	}
+	step.Assignee = assignee.String
+	step.Yaml = yaml.String
+	return &step, nil
+}
+
 // StoredFormInsert is a new step of a workflow.
 type StoredFormInsert struct {
 	MD5       string

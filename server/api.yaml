@@ -3329,6 +3329,13 @@ paths:
         structure, also stored and readable with GET /form_output_results/{id}. A
         negative id designates an internal form. The form must be published to the
         caller, unless a manager.
+
+        A submission continuing a request (`prev_wfid`, a form with a workflow
+        output) decides on that step: the form must be one of the next forms the
+        step names (the `NextForms` of its workflow output, those of its `Scripts`
+        outcomes included), and the caller its assignee, by full name or through
+        one of their groups, a manager included; 403 otherwise, 404 when the step
+        does not exist.
       parameters:
         - in: path
           name: form_id
@@ -3346,7 +3353,7 @@ paths:
                   data:
                     description: The information the form expects, as an object, a list of objects or their JSON string form.
                   prev_wfid:
-                    description: The previous step id in an existing workflow.
+                    description: The id of the step of an existing workflow this submission decides on (forms_store.id).
       tags:
         - collector
       responses:

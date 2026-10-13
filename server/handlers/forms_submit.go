@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -154,6 +155,10 @@ func (a *Api) PutForm(c echo.Context, formId int) error {
 		"status":         "QUEUED",
 	}
 
+	if err := s.authorizeContinuation(ctx, c); err != nil {
+		return httpProblem(c, err)
+	}
+
 	if done, err := s.workflowStepDone(ctx); err != nil {
 		return httpProblem(c, httpInternal(log, "cannot read the workflow step", err))
 	} else if done {
@@ -227,6 +232,88 @@ func (s *formSubmission) loadForm(ctx context.Context, c echo.Context) error {
 		s.definition = map[string]any{}
 	}
 	return nil
+}
+
+// authorizeContinuation checks that a submission continuing a workflow step
+// (prev_wfid) may decide on it: the form must be one of the next forms the step
+// names, and the caller its assignee, by full name or through one of their
+// groups. The historical collector only hid the choice in the browser
+// (workflow_continuation() checks neither); a Manager gets no exemption, as
+// there. A form without workflow output does not continue the step: nothing to
+// check.
+func (s *formSubmission) authorizeContinuation(ctx context.Context, c echo.Context) error {
+	if s.formID < 0 || s.prevWfid == nil || !hasWorkflowOutput(s.definition) {
+		return nil
+	}
+	step, err := s.a.ODB.StoredFormStepByID(ctx, *s.prevWfid)
+	if err != nil {
+		return httpInternal(s.log, "cannot read the workflow step", err)
+	}
+	if step == nil {
+		return httpErrorf(http.StatusNotFound, "workflow step %d not found", *s.prevWfid)
+	}
+	var stepDefinition map[string]any
+	if parsed, err := parseFormYaml(step.Yaml); err == nil {
+		stepDefinition, _ = parsed.(map[string]any)
+	}
+	if !slices.Contains(workflowNextForms(stepDefinition), s.formName) {
+		return httpErrorf(http.StatusForbidden, "the %s form is not a next step of workflow step %d", s.formName, *s.prevWfid)
+	}
+	if !stepAssignedTo(step.Assignee, s.caller.name, UserGroupsFromContext(c)) {
+		return httpErrorf(http.StatusForbidden, "workflow step %d awaits the decision of %s", *s.prevWfid, strings.TrimSpace(step.Assignee))
+	}
+	return nil
+}
+
+// hasWorkflowOutput tells whether a form definition stores its submissions as
+// workflow steps.
+func hasWorkflowOutput(definition map[string]any) bool {
+	for _, output := range defMaps(definition, "Outputs") {
+		if defString(output, "Dest") == "workflow" {
+			return true
+		}
+	}
+	return false
+}
+
+// workflowNextForms lists the forms a workflow step may be followed by: the
+// NextForms of the workflow outputs of the form it was submitted with, those of
+// their Success and Error scripts included, outputWorkflow choosing between the
+// two by the outcome of the step's run.
+func workflowNextForms(definition map[string]any) []string {
+	var names []string
+	add := func(defs map[string]any) {
+		for _, name := range defList(defs, "NextForms") {
+			if text, ok := name.(string); ok {
+				names = append(names, text)
+			}
+		}
+	}
+	for _, output := range defMaps(definition, "Outputs") {
+		if defString(output, "Dest") != "workflow" {
+			continue
+		}
+		add(output)
+		if scripts, ok := output["Scripts"].(map[string]any); ok {
+			for _, key := range []string{"Success", "Error"} {
+				if defs, ok := scripts[key].(map[string]any); ok {
+					add(defs)
+				}
+			}
+		}
+	}
+	return names
+}
+
+// stepAssignedTo tells whether a workflow step assigned to `assignee` awaits the
+// caller: their full name, or the role of one of their groups. Names compare
+// trimmed: a user without first name is stored with a leading space.
+func stepAssignedTo(assignee, callerName string, groups []string) bool {
+	who := strings.TrimSpace(assignee)
+	if who == "" {
+		return false
+	}
+	return who == strings.TrimSpace(callerName) || slices.Contains(groups, who)
 }
 
 // workflowStepDone tells whether the submission continues a workflow step that
