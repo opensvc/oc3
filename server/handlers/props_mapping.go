@@ -543,6 +543,49 @@ var propsMapping = map[string]propMapping{
 			"form_name":        colStr(schema.FormsRevisionsFormName),
 		},
 	},
+	// Files of the collector safe, a row per version, as the historical v_safe
+	// view lists them: with the uploader's name and the groups linked. md5,
+	// sha256 and size are those of the plaintext; encrypted tells whether the
+	// file is encrypted at rest. The encryption keys are never props.
+	"safe": {
+		Available: []string{
+			"id", "uuid", "name", "size", "md5", "sha256", "uploader", "uploader_name",
+			"uploaded_from", "uploaded_date", "encrypted", "safe_team_publication", "safe_team_responsible",
+		},
+		Default: []string{
+			"id", "uuid", "name", "size", "md5", "uploader", "uploader_name", "uploaded_from",
+			"uploaded_date", "encrypted", "safe_team_publication", "safe_team_responsible",
+		},
+		Props: map[string]propDef{
+			"id":            col(schema.SafeID),
+			"uuid":          colStr(schema.SafeUuid),
+			"name":          colStr(schema.SafeName),
+			"size":          colInt(schema.SafeSize),
+			"md5":           colStr(schema.SafeMD5),
+			"sha256":        {Col: schema.SafeSha256, Kind: "string"},
+			"uploader":      {Col: schema.SafeUploader, Kind: "int64"},
+			"uploaded_from": colStr(schema.SafeUploadedFrom),
+			"uploaded_date": colStr(schema.SafeUploadedDate),
+			"uploader_name": {
+				SQLExpr: "TRIM(CONCAT(COALESCE(auth_user.first_name, ''), ' ', COALESCE(auth_user.last_name, '')))",
+				Kind:    "string",
+			},
+			"encrypted": {
+				SQLExpr: "(safe.enc_version IS NOT NULL AND safe.enc_uuid = safe.uuid)",
+				Kind:    "bool",
+			},
+			"safe_team_publication": {
+				SQLExpr: "(SELECT GROUP_CONCAT(ag.role ORDER BY ag.role SEPARATOR ', ') FROM safe_team_publication x" +
+					" JOIN auth_group ag ON ag.id = x.group_id WHERE x.file_id = safe.id)",
+				Kind: "string",
+			},
+			"safe_team_responsible": {
+				SQLExpr: "(SELECT GROUP_CONCAT(ag.role ORDER BY ag.role SEPARATOR ', ') FROM safe_team_responsible x" +
+					" JOIN auth_group ag ON ag.id = x.group_id WHERE x.file_id = safe.id)",
+				Kind: "string",
+			},
+		},
+	},
 	// Workflows chaining stored forms: the requests. form_name, form_folder and
 	// form_yaml are those of the form revision the request started from, joined
 	// by form_md5 as in the historical workflows table; they are not among the

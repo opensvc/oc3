@@ -4187,6 +4187,714 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /safe:
+    get:
+      operationId: GetSafeFiles
+      description: |
+        List the files of the collector safe the caller may see: a Manager every
+        file; a user those they uploaded or published to one of their groups; a
+        node those published to its responsible team. Each version of a file is a
+        row. `md5`, `sha256` and `size` are those of the plaintext; `encrypted`
+        tells whether the file is encrypted at rest.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostSafeFile
+      description: |
+        Create an empty file reference, to upload its content later (POST
+        /safe/{file_id}/upload): its id can be referenced first. Requires the
+        SafeUploader privilege, except for a node. The file is published to and
+        made the responsibility of the caller's default group. Logged.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/upload:
+    post:
+      operationId: PostSafeUpload
+      description: |
+        Upload a new file into the safe. Requires the SafeUploader privilege,
+        except for a node. The file is encrypted at rest when the collector is
+        configured to (safe.encryption, safe.keys_file), stored in plaintext
+        otherwise, and published to and made the responsibility of the caller's
+        default group. Logged.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The content of the file.
+                name:
+                  type: string
+                  description: A name to tell the file by, the name of the uploaded file by default.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        413:
+          $ref: '#/components/responses/413'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}:
+    get:
+      operationId: GetSafeFile
+      description: |
+        Show a safe file, if the caller may see it (see GET /safe): an empty list
+        otherwise.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostSafeFileName
+      description: |
+        Rename a safe file, its content unchanged. The caller must be the uploader
+        of the file, in one of its responsible groups, or a Manager. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteSafeFile
+      description: |
+        Delete a safe file version: its row, its groups, and its content on disk
+        unless another row holds it. Same rights as the rename. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeInfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/upload:
+    post:
+      operationId: PostSafeFileUpload
+      description: |
+        Upload a new version of a file. The file keeps its id, which the safe://
+        references name; the previous version becomes a row of its own, listed by
+        GET /safe/{file_id}/history. Requires the SafeUploader privilege, except
+        for a node, and the responsibility of the file. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The content of the file.
+                name:
+                  type: string
+                  description: A name to tell the file by, the name of the uploaded file by default.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        413:
+          $ref: '#/components/responses/413'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/download:
+    get:
+      operationId: GetSafeFileDownload
+      description: |
+        Download the content of a safe file, decrypted when it is encrypted at
+        rest, and checked against the md5 recorded at upload (403 when it does not
+        match). 204 when the md5 the client announces is the file's: it already
+        has this version. The caller must be allowed to see the file. Each
+        download is written to the audit log.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - in: query
+          name: md5
+          required: false
+          description: The md5 of the copy the client has.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: The content of the file.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        204:
+          description: The client already has this version.
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/preview:
+    get:
+      operationId: GetSafeFilePreview
+      description: |
+        The content of a text safe file, base64-encoded, for display; 400 for
+        another content type. Same rights and checks as the download, and logged
+        likewise.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFilePreviewResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/history:
+    get:
+      operationId: GetSafeFileHistory
+      description: |
+        List the previous versions of a file, those the caller may see.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/usage:
+    get:
+      operationId: GetSafeFileUsage
+      description: |
+        Where a file is referenced: the services whose configuration names it
+        (`{safe://<id>}` or its stored name), and the variables of the rulesets
+        published to the caller's groups holding it. The caller must be allowed
+        to see the file.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileUsageResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/am_i_responsible:
+    get:
+      operationId: GetSafeFileAmIResponsible
+      description: |
+        Whether the caller may manage the file: its uploader, in one of its
+        responsible groups, or a Manager.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: boolean
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/publications:
+    get:
+      operationId: GetSafeFilePublications
+      description: |
+        List the groups the file is published to: their members can list, read and download it. The caller must be allowed to read the file.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeGroupListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/publications/{group}:
+    post:
+      operationId: PostSafeFilePublication
+      description: |
+        Add a group to those the file is published to: their members can list, read and download it. The caller must be the uploader of the
+        file, in one of its responsible groups, or a Manager. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - in: path
+          name: group
+          required: true
+          description: The id or the role of the group
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeInfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteSafeFilePublication
+      description: |
+        Remove a group from those the file is published to: their members can list, read and download it. Same rights as the addition. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - in: path
+          name: group
+          required: true
+          description: The id or the role of the group
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeInfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/responsibles:
+    get:
+      operationId: GetSafeFileResponsibles
+      description: |
+        List the groups responsible for the file: their members can manage it. The caller must be allowed to read the file.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeGroupListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/responsibles/{group}:
+    post:
+      operationId: PostSafeFileResponsible
+      description: |
+        Add a group to those responsible for the file: their members can manage it. The caller must be the uploader of the
+        file, in one of its responsible groups, or a Manager. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - in: path
+          name: group
+          required: true
+          description: The id or the role of the group
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeInfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteSafeFileResponsible
+      description: |
+        Remove a group from those responsible for the file: their members can manage it. Same rights as the addition. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - in: path
+          name: group
+          required: true
+          description: The id or the role of the group
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeInfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /groups:
     get:
       operationId: GetGroups
@@ -15198,6 +15906,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Problem"
+    '413':
+      description: Content Too Large
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
     '500':
       description: Internal Server Error
       content:
@@ -16217,6 +16931,136 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    SafeFileRow:
+      type: object
+      description: |
+        A version of a file of the collector safe. `uuid` is its stored name, the
+        one safe:// references may name. `md5`, `sha256` and `size` are those of
+        the plaintext. `encrypted` tells whether the file is encrypted at rest.
+        Every property is optional: the `props` query parameter selects which
+        columns the server returns.
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+        name:
+          type: string
+        size:
+          type: integer
+        md5:
+          type: string
+        sha256:
+          type: string
+          nullable: true
+        uploader:
+          type: integer
+          nullable: true
+        uploader_name:
+          type: string
+          nullable: true
+        uploaded_from:
+          type: string
+        uploaded_date:
+          type: string
+        encrypted:
+          type: boolean
+        safe_team_publication:
+          type: string
+          nullable: true
+          description: The roles of the groups the file is published to, comma-separated.
+        safe_team_responsible:
+          type: string
+          nullable: true
+          description: The roles of the groups responsible for the file, comma-separated.
+
+    SafeFileListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/SafeFileRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    SafeGroupListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            required: [id, role]
+            properties:
+              id:
+                type: integer
+              role:
+                type: string
+
+    SafeInfoResponse:
+      type: object
+      required: [info]
+      properties:
+        info:
+          type: string
+
+    SafeFilePreviewResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [content_type, data]
+          properties:
+            content_type:
+              type: string
+            data:
+              type: string
+              description: The content, base64-encoded.
+
+    SafeFileUsageResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [services, variables]
+          properties:
+            services:
+              type: array
+              items:
+                type: object
+                required: [svcname, svc_id]
+                properties:
+                  svcname:
+                    type: string
+                  svc_id:
+                    type: string
+            variables:
+              type: array
+              items:
+                type: object
+                required: [var_name, id, ruleset_name, ruleset_id]
+                properties:
+                  var_name:
+                    type: string
+                  id:
+                    type: integer
+                  ruleset_name:
+                    type: string
+                  ruleset_id:
+                    type: integer
 
     WorkflowListResponse:
       type: object

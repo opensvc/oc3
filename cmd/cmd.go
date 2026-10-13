@@ -191,6 +191,7 @@ func Root(args []string) *cobra.Command {
 		cmdWorker(),
 		cmdRunner(),
 		cmdMessenger(),
+		cmdSafe(),
 	)
 	return cmd
 }

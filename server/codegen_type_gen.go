@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
@@ -2541,6 +2542,87 @@ type RulesetsVariableRow struct {
 	VarValue         *string `json:"var_value,omitempty"`
 }
 
+// SafeFileListResponse defines model for SafeFileListResponse.
+type SafeFileListResponse struct {
+	Data SafeFileListResponse_Data `json:"data"`
+	Meta *ListMeta                 `json:"meta,omitempty"`
+}
+
+// SafeFileListResponseData0 defines model for .
+type SafeFileListResponseData0 = []SafeFileRow
+
+// SafeFileListResponseData1 defines model for .
+type SafeFileListResponseData1 map[string]map[string]int
+
+// SafeFileListResponse_Data defines model for SafeFileListResponse.Data.
+type SafeFileListResponse_Data struct {
+	union json.RawMessage
+}
+
+// SafeFilePreviewResponse defines model for SafeFilePreviewResponse.
+type SafeFilePreviewResponse struct {
+	Data struct {
+		ContentType string `json:"content_type"`
+
+		// Data The content, base64-encoded.
+		Data string `json:"data"`
+	} `json:"data"`
+}
+
+// SafeFileRow A version of a file of the collector safe. `uuid` is its stored name, the
+// one safe:// references may name. `md5`, `sha256` and `size` are those of
+// the plaintext. `encrypted` tells whether the file is encrypted at rest.
+// Every property is optional: the `props` query parameter selects which
+// columns the server returns.
+type SafeFileRow struct {
+	Encrypted *bool   `json:"encrypted,omitempty"`
+	Id        *int    `json:"id,omitempty"`
+	Md5       *string `json:"md5,omitempty"`
+	Name      *string `json:"name,omitempty"`
+
+	// SafeTeamPublication The roles of the groups the file is published to, comma-separated.
+	SafeTeamPublication *string `json:"safe_team_publication,omitempty"`
+
+	// SafeTeamResponsible The roles of the groups responsible for the file, comma-separated.
+	SafeTeamResponsible *string `json:"safe_team_responsible,omitempty"`
+	Sha256              *string `json:"sha256,omitempty"`
+	Size                *int    `json:"size,omitempty"`
+	UploadedDate        *string `json:"uploaded_date,omitempty"`
+	UploadedFrom        *string `json:"uploaded_from,omitempty"`
+	Uploader            *int    `json:"uploader,omitempty"`
+	UploaderName        *string `json:"uploader_name,omitempty"`
+	Uuid                *string `json:"uuid,omitempty"`
+}
+
+// SafeFileUsageResponse defines model for SafeFileUsageResponse.
+type SafeFileUsageResponse struct {
+	Data struct {
+		Services []struct {
+			SvcId   string `json:"svc_id"`
+			Svcname string `json:"svcname"`
+		} `json:"services"`
+		Variables []struct {
+			Id          int    `json:"id"`
+			RulesetId   int    `json:"ruleset_id"`
+			RulesetName string `json:"ruleset_name"`
+			VarName     string `json:"var_name"`
+		} `json:"variables"`
+	} `json:"data"`
+}
+
+// SafeGroupListResponse defines model for SafeGroupListResponse.
+type SafeGroupListResponse struct {
+	Data []struct {
+		Id   int    `json:"id"`
+		Role string `json:"role"`
+	} `json:"data"`
+}
+
+// SafeInfoResponse defines model for SafeInfoResponse.
+type SafeInfoResponse struct {
+	Info string `json:"info"`
+}
+
 // SanTopology defines model for SanTopology.
 type SanTopology struct {
 	Links []SanTopologyLink `json:"links"`
@@ -3163,6 +3245,9 @@ type N404 = Problem
 
 // N409 defines model for 409.
 type N409 = Problem
+
+// N413 defines model for 413.
+type N413 = Problem
 
 // N500 defines model for 500.
 type N500 = Problem
@@ -8906,6 +8991,208 @@ type GetResourceParams struct {
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
 
+// GetSafeFilesParams defines parameters for GetSafeFiles.
+type GetSafeFilesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// PostSafeFileJSONBody defines parameters for PostSafeFile.
+type PostSafeFileJSONBody struct {
+	Name *string `json:"name,omitempty"`
+}
+
+// PostSafeUploadMultipartBody defines parameters for PostSafeUpload.
+type PostSafeUploadMultipartBody struct {
+	// File The content of the file.
+	File openapi_types.File `json:"file"`
+
+	// Name A name to tell the file by, the name of the uploaded file by default.
+	Name *string `json:"name,omitempty"`
+}
+
+// GetSafeFileParams defines parameters for GetSafeFile.
+type GetSafeFileParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// PostSafeFileNameJSONBody defines parameters for PostSafeFileName.
+type PostSafeFileNameJSONBody struct {
+	Name string `json:"name"`
+}
+
+// GetSafeFileDownloadParams defines parameters for GetSafeFileDownload.
+type GetSafeFileDownloadParams struct {
+	// Md5 The md5 of the copy the client has.
+	Md5 *string `form:"md5,omitempty" json:"md5,omitempty"`
+}
+
+// GetSafeFileHistoryParams defines parameters for GetSafeFileHistory.
+type GetSafeFileHistoryParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// PostSafeFileUploadMultipartBody defines parameters for PostSafeFileUpload.
+type PostSafeFileUploadMultipartBody struct {
+	// File The content of the file.
+	File openapi_types.File `json:"file"`
+
+	// Name A name to tell the file by, the name of the uploaded file by default.
+	Name *string `json:"name,omitempty"`
+}
+
 // GetSanSwitchesParams defines parameters for GetSanSwitches.
 type GetSanSwitchesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -11027,6 +11314,18 @@ type PostOidcMappingJSONRequestBody = OidcMappingInput
 // PostReportsJSONRequestBody defines body for PostReports for application/json ContentType.
 type PostReportsJSONRequestBody PostReportsJSONBody
 
+// PostSafeFileJSONRequestBody defines body for PostSafeFile for application/json ContentType.
+type PostSafeFileJSONRequestBody PostSafeFileJSONBody
+
+// PostSafeUploadMultipartRequestBody defines body for PostSafeUpload for multipart/form-data ContentType.
+type PostSafeUploadMultipartRequestBody PostSafeUploadMultipartBody
+
+// PostSafeFileNameJSONRequestBody defines body for PostSafeFileName for application/json ContentType.
+type PostSafeFileNameJSONRequestBody PostSafeFileNameJSONBody
+
+// PostSafeFileUploadMultipartRequestBody defines body for PostSafeFileUpload for multipart/form-data ContentType.
+type PostSafeFileUploadMultipartRequestBody PostSafeFileUploadMultipartBody
+
 // DeleteServicesJSONRequestBody defines body for DeleteServices for application/json ContentType.
 type DeleteServicesJSONRequestBody DeleteServicesJSONBody
 
@@ -13064,6 +13363,68 @@ func (t RulesetsVariableListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *RulesetsVariableListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsSafeFileListResponseData0 returns the union data inside the SafeFileListResponse_Data as a SafeFileListResponseData0
+func (t SafeFileListResponse_Data) AsSafeFileListResponseData0() (SafeFileListResponseData0, error) {
+	var body SafeFileListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSafeFileListResponseData0 overwrites any union data inside the SafeFileListResponse_Data as the provided SafeFileListResponseData0
+func (t *SafeFileListResponse_Data) FromSafeFileListResponseData0(v SafeFileListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSafeFileListResponseData0 performs a merge with any union data inside the SafeFileListResponse_Data, using the provided SafeFileListResponseData0
+func (t *SafeFileListResponse_Data) MergeSafeFileListResponseData0(v SafeFileListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSafeFileListResponseData1 returns the union data inside the SafeFileListResponse_Data as a SafeFileListResponseData1
+func (t SafeFileListResponse_Data) AsSafeFileListResponseData1() (SafeFileListResponseData1, error) {
+	var body SafeFileListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSafeFileListResponseData1 overwrites any union data inside the SafeFileListResponse_Data as the provided SafeFileListResponseData1
+func (t *SafeFileListResponse_Data) FromSafeFileListResponseData1(v SafeFileListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSafeFileListResponseData1 performs a merge with any union data inside the SafeFileListResponse_Data, using the provided SafeFileListResponseData1
+func (t *SafeFileListResponse_Data) MergeSafeFileListResponseData1(v SafeFileListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SafeFileListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *SafeFileListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
