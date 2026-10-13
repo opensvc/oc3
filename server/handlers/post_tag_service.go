@@ -12,7 +12,7 @@ import (
 )
 
 // PostTagService handles POST /tags/{tag_id}/services/{svc_id}: attach a tag to a service.
-func (a *Api) PostTagService(c echo.Context, tagIdParam int, svcId string) error {
+func (a *Api) PostTagService(c echo.Context, tagIdParam string, svcId string) error {
 	log := echolog.GetLogHandler(c, "PostTagService")
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
@@ -25,7 +25,7 @@ func (a *Api) PostTagService(c echo.Context, tagIdParam int, svcId string) error
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
 
-	tag, err := a.resolveTagByRecordID(c, log, ctx, tagIdParam)
+	tag, err := a.resolveTagByKey(c, log, ctx, tagIdParam)
 	if err != nil {
 		return err
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 // PostTagNode handles POST /tags/{tag_id}/nodes/{node_id}: attach a tag to a node.
-func (a *Api) PostTagNode(c echo.Context, tagIdParam int, nodeId string) error {
+func (a *Api) PostTagNode(c echo.Context, tagIdParam string, nodeId string) error {
 	log := echolog.GetLogHandler(c, "PostTagNode")
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
@@ -25,7 +25,7 @@ func (a *Api) PostTagNode(c echo.Context, tagIdParam int, nodeId string) error {
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
 
-	tag, err := a.resolveTagByRecordID(c, log, ctx, tagIdParam)
+	tag, err := a.resolveTagByKey(c, log, ctx, tagIdParam)
 	if err != nil {
 		return err
 	}

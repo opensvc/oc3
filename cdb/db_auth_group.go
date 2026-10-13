@@ -309,6 +309,8 @@ func (oDb *DB) DeleteGroupCascade(ctx context.Context, groupID int64) error {
 
 	tables := []string{
 		"auth_membership",
+		"auth_oidc_memberships",
+		"auth_oidc_mapping_groups",
 		"apps_responsibles",
 		"forms_team_responsible",
 		"forms_team_publication",

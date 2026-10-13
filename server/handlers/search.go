@@ -139,12 +139,27 @@ var searchKinds = []searchKind{
 		},
 	},
 	{
+		// The organizational groups, the privilege ones being a kind of their own.
 		kind: "group", mapping: "auth_group",
 		match:   []string{"role", "description"},
 		props:   []string{"id", "role", "privilege", "description"},
 		orderby: "role",
 		// The private group of each user would drown the teams.
-		extra: []cdb.ColumnFilter{{Expr: `auth_group.role NOT LIKE 'user\_%'`}},
+		extra: []cdb.ColumnFilter{
+			{Expr: `auth_group.role NOT LIKE 'user\_%'`},
+			{Expr: `COALESCE(auth_group.privilege, 'F') <> 'T'`},
+		},
+		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
+			return a.ODB.GetGroups(ctx, p)
+		},
+	},
+	{
+		// The privilege groups: Manager, NodeManager…
+		kind: "privilege", mapping: "auth_group",
+		match:   []string{"role", "description"},
+		props:   []string{"id", "role", "privilege", "description"},
+		orderby: "role",
+		extra:   []cdb.ColumnFilter{{Expr: `auth_group.privilege = 'T'`}},
 		fetch: func(a *Api, ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 			return a.ODB.GetGroups(ctx, p)
 		},

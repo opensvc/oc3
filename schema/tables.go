@@ -17,6 +17,8 @@ var (
 	TAuthGroup                    = &Table{Name: "auth_group"}
 	TAuthMembership               = &Table{Name: "auth_membership"}
 	TAuthNode                     = &Table{Name: "auth_node"}
+	TAuthOidcMappingGroups        = &Table{Name: "auth_oidc_mapping_groups"}
+	TAuthOidcMappings             = &Table{Name: "auth_oidc_mappings"}
 	TAuthPermission               = &Table{Name: "auth_permission"}
 	TAuthUser                     = &Table{Name: "auth_user"}
 	TBActionErrors                = &Table{Name: "b_action_errors"}
@@ -282,6 +284,22 @@ var (
 	AuthMembershipUserID       = &Col{T: TAuthMembership, Name: "user_id", Nullable: true}
 	AuthMembershipGroupID      = &Col{T: TAuthMembership, Name: "group_id", Nullable: true}
 	AuthMembershipPrimaryGroup = &Col{T: TAuthMembership, Name: "primary_group", Nullable: true}
+)
+
+// Columns of auth_oidc_mapping_groups
+var (
+	AuthOidcMappingGroupsMappingID = &Col{T: TAuthOidcMappingGroups, Name: "mapping_id", Nullable: false}
+	AuthOidcMappingGroupsGroupID   = &Col{T: TAuthOidcMappingGroups, Name: "group_id", Nullable: false}
+)
+
+// Columns of auth_oidc_mappings
+var (
+	AuthOidcMappingsID          = &Col{T: TAuthOidcMappings, Name: "id", Nullable: false}
+	AuthOidcMappingsClaim       = &Col{T: TAuthOidcMappings, Name: "claim", Nullable: false}
+	AuthOidcMappingsValue       = &Col{T: TAuthOidcMappings, Name: "value", Nullable: false}
+	AuthOidcMappingsAllowAccess = &Col{T: TAuthOidcMappings, Name: "allow_access", Nullable: false}
+	AuthOidcMappingsAuthor      = &Col{T: TAuthOidcMappings, Name: "author", Nullable: true}
+	AuthOidcMappingsUpdated     = &Col{T: TAuthOidcMappings, Name: "updated", Nullable: false}
 )
 
 // Columns of auth_node
@@ -1563,6 +1581,7 @@ var (
 	ServicesSvcFlexTarget           = &Col{T: TServices, Name: "svc_flex_target", Nullable: true}
 	ServicesSvcSla                  = &Col{T: TServices, Name: "svc_sla", Nullable: true}
 	ServicesSvcAvailability         = &Col{T: TServices, Name: "svc_availability", Nullable: true}
+	ServicesSvcAvailabilityTrend    = &Col{T: TServices, Name: "svc_availability_trend", Nullable: true}
 	ServicesSvcAvailabilityUpdated  = &Col{T: TServices, Name: "svc_availability_updated", Nullable: true}
 )
 
@@ -1790,6 +1809,9 @@ var (
 	SvcactionsSid          = &Col{T: TSvcactions, Name: "sid", Nullable: true}
 	SvcactionsRid          = &Col{T: TSvcactions, Name: "rid", Nullable: true}
 	SvcactionsSubset       = &Col{T: TSvcactions, Name: "subset", Nullable: true}
+	SvcactionsCommand      = &Col{T: TSvcactions, Name: "command", Nullable: true}
+	SvcactionsOrigin       = &Col{T: TSvcactions, Name: "origin", Nullable: true}
+	SvcactionsLogType      = &Col{T: TSvcactions, Name: "log_type", Nullable: true}
 )
 
 // Columns of svcdisks
@@ -2076,6 +2098,14 @@ var AllCols = []*Col{
 	AuthMembershipUserID,
 	AuthMembershipGroupID,
 	AuthMembershipPrimaryGroup,
+	AuthOidcMappingGroupsMappingID,
+	AuthOidcMappingGroupsGroupID,
+	AuthOidcMappingsID,
+	AuthOidcMappingsClaim,
+	AuthOidcMappingsValue,
+	AuthOidcMappingsAllowAccess,
+	AuthOidcMappingsAuthor,
+	AuthOidcMappingsUpdated,
 	AuthNodeID,
 	AuthNodeNodename,
 	AuthNodeUuid,
@@ -2893,6 +2923,7 @@ var AllCols = []*Col{
 	ServicesSvcFlexTarget,
 	ServicesSvcSla,
 	ServicesSvcAvailability,
+	ServicesSvcAvailabilityTrend,
 	ServicesSvcAvailabilityUpdated,
 	ServicesLogID,
 	ServicesLogSvcAvailstatus,

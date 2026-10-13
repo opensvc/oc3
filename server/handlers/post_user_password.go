@@ -40,6 +40,12 @@ func (a *Api) PostUserSelfPassword(c echo.Context) error {
 	if IsImpersonating(c) {
 		return JSONProblemf(c, http.StatusForbidden, "a password cannot be changed while impersonating")
 	}
+	if identityManagedByProvider(c) {
+		return JSONProblemf(c, http.StatusForbidden, "your password is managed by your identity provider: change it there")
+	}
+	if !a.BasicUsers {
+		return JSONProblemf(c, http.StatusForbidden, "password sign-in is disabled on this collector")
+	}
 
 	var body server.PostUserSelfPasswordJSONRequestBody
 	if err := c.Bind(&body); err != nil {

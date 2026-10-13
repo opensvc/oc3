@@ -196,17 +196,26 @@ func (oDb *DB) ServicesStatusLog(ctx context.Context, svcIDs []string, days int)
 	return periods, acks, ackRows.Err()
 }
 
-// SetServicesAvailability stores the availability rate of services, nil
-// clearing it, with the time it was computed.
-func (oDb *DB) SetServicesAvailability(ctx context.Context, rates map[string]*float64) error {
-	for svcID, rate := range rates {
-		var value any
-		if rate != nil {
-			value = *rate
+// ServiceAvailability is the stored availability of a service: its rate, and the
+// change of that rate over the trend period, in points; nil when unknown.
+type ServiceAvailability struct {
+	Rate  *float64
+	Trend *float64
+}
+
+// SetServicesAvailability stores the availability rate of services and its
+// trend, nil clearing them, with the time they were computed.
+func (oDb *DB) SetServicesAvailability(ctx context.Context, rates map[string]ServiceAvailability) error {
+	value := func(v *float64) any {
+		if v == nil {
+			return nil
 		}
+		return *v
+	}
+	for svcID, a := range rates {
 		if _, err := oDb.DB.ExecContext(ctx,
-			"UPDATE services SET svc_availability = ?, svc_availability_updated = NOW() WHERE svc_id = ?",
-			value, svcID); err != nil {
+			"UPDATE services SET svc_availability = ?, svc_availability_trend = ?, svc_availability_updated = NOW() WHERE svc_id = ?",
+			value(a.Rate), value(a.Trend), svcID); err != nil {
 			return fmt.Errorf("setServicesAvailability: %w", err)
 		}
 	}

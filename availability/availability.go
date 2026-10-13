@@ -170,27 +170,56 @@ func Compute(periods []cdb.StatusPeriod, acks []cdb.StatusAck, days int, now tim
 // Days is the period of the stored availability rate of a service.
 const Days = 30
 
+// TrendDays is how far back the trend of the stored rate looks: the rate of the
+// last Days now, against the rate of the last Days as it was TrendDays ago.
+const TrendDays = 7
+
+// Trend is the change of the Days-day availability rate over the last TrendDays,
+// in points: positive when the service is more available than it was, negative
+// when less. Nil for a service with no status history TrendDays ago, whose past
+// rate would be made of nothing.
+func Trend(periods []cdb.StatusPeriod, acks []cdb.StatusAck, now time.Time) *float64 {
+	then := now.Add(-TrendDays * 24 * time.Hour)
+	var first time.Time
+	for _, p := range periods {
+		if b, ok := ParseCollectorTime(p.Begin); ok && (first.IsZero() || b.Before(first)) {
+			first = b
+		}
+	}
+	if first.IsZero() || first.After(then) {
+		return nil
+	}
+	before := Compute(periods, acks, Days, then)
+	if before.Counted <= 0 {
+		return nil
+	}
+	d := Compute(periods, acks, Days, now).Rate() - before.Rate()
+	return &d
+}
+
 // refreshBatch is how many services are read and written at once.
 const refreshBatch = 200
 
 // Refresh computes the availability rate of the last Days of the given
-// services, and stores it in services.svc_availability: NULL for a service
-// with no status recorded.
+// services, and its trend over the last TrendDays, and stores them in
+// services.svc_availability and svc_availability_trend: NULL for a service with
+// no status recorded, and the trend NULL without history TrendDays ago.
 func Refresh(ctx context.Context, odb *cdb.DB, svcIDs []string, now time.Time) error {
 	for start := 0; start < len(svcIDs); start += refreshBatch {
 		ids := svcIDs[start:min(start+refreshBatch, len(svcIDs))]
-		periods, acks, err := odb.ServicesStatusLog(ctx, ids, Days)
+		// The history of the rate TrendDays ago, as well as of today's.
+		periods, acks, err := odb.ServicesStatusLog(ctx, ids, Days+TrendDays)
 		if err != nil {
 			return err
 		}
-		rates := make(map[string]*float64, len(ids))
+		rates := make(map[string]cdb.ServiceAvailability, len(ids))
 		for _, id := range ids {
 			if len(periods[id]) == 0 {
-				rates[id] = nil
+				rates[id] = cdb.ServiceAvailability{}
 				continue
 			}
 			rate := Compute(periods[id], acks[id], Days, now).Rate()
-			rates[id] = &rate
+			rates[id] = cdb.ServiceAvailability{Rate: &rate, Trend: Trend(periods[id], acks[id], now)}
 		}
 		if err := odb.SetServicesAvailability(ctx, rates); err != nil {
 			return err

@@ -62,6 +62,13 @@ func (j joinStep) sql() string {
 	return fmt.Sprintf("%s %s ON %s = %s", keyword, j.newTable.Name, j.left.Qualified(), j.right.Qualified())
 }
 
+// rawJoin is a LEFT JOIN whose ON condition is written out, for a relation that
+// the Ref chain cannot express, such as one on two columns.
+type rawJoin struct {
+	table *schema.Table
+	on    string
+}
+
 // condition holds a WHERE clause fragment and its bound arguments.
 type condition struct {
 	col  *schema.Col // used for JOIN resolution; nil for raw conditions
@@ -76,6 +83,7 @@ type Query struct {
 	rawSelects []string        // raw SQL expressions (e.g. "COALESCE(apps.updated, '')")
 	via        []*schema.Table // explicit intermediate tables for join disambiguation
 	leftJoins  []*schema.Table // tables that must be joined with LEFT JOIN
+	rawJoins   []rawJoin       // LEFT JOINs on a condition of their own, see LeftJoinOn
 	wheres     []condition
 	distinct   bool
 }
@@ -121,6 +129,16 @@ func (q *Query) Via(tables ...*schema.Table) *Query {
 func (q *Query) LeftJoin(tables ...*schema.Table) *Query {
 	q.leftJoins = append(q.leftJoins, tables...)
 	q.via = append(q.via, tables...)
+	return q
+}
+
+// LeftJoinOn LEFT JOINs a table on the given ON condition, written out, for a
+// relation the Ref chain of schema/relations.go cannot express, such as one on two
+// columns. The table is then joined: its columns may be selected and filtered on
+// without JOIN resolution looking for a path to it. The condition may only name
+// the FROM table and the tables reached by declared relations.
+func (q *Query) LeftJoinOn(t *schema.Table, on string) *Query {
+	q.rawJoins = append(q.rawJoins, rawJoin{table: t, on: on})
 	return q
 }
 
@@ -196,6 +214,11 @@ func (q *Query) Build() (string, []any, error) {
 		}
 	}
 
+	// The tables joined on a condition of their own need no path.
+	for _, j := range q.rawJoins {
+		delete(needed, j.table)
+	}
+
 	// Build the LEFT JOIN set for resolveJoins.
 	leftJoinSet := make(map[*schema.Table]bool, len(q.leftJoins))
 	for _, t := range q.leftJoins {
@@ -223,6 +246,9 @@ func (q *Query) Build() (string, []any, error) {
 
 	for _, j := range joins {
 		fmt.Fprintf(sb, "\n%s", j.sql())
+	}
+	for _, j := range q.rawJoins {
+		fmt.Fprintf(sb, "\nLEFT JOIN %s ON %s", j.table.Name, j.on)
 	}
 
 	var args []any

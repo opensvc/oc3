@@ -12,15 +12,19 @@ import (
 )
 
 // GetTagServices handles GET /tags/{tag_id}/services
-func (a *Api) GetTagServices(c echo.Context, tagId int, params server.GetTagServicesParams) error {
+func (a *Api) GetTagServices(c echo.Context, tagIdParam string, params server.GetTagServicesParams) error {
 	log := echolog.GetLogHandler(c, "GetTagServices")
-	log.Info("called", logkey.TagID, tagId)
+	log.Info("called", logkey.TagID, tagIdParam)
+	tag, err := a.resolveTagByKey(c, log, c.Request().Context(), tagIdParam)
+	if err != nil {
+		return err
+	}
 
 	odb := a.ODB
 	return a.handleList(c, "GetTagServices", "service", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
-		return odb.GetTagServices(ctx, tagId, p)
+		return odb.GetTagServices(ctx, tag.ID, p)
 	})
 }

@@ -17,7 +17,7 @@ import (
 
 // DeleteTag handles DELETE /tags/{tag_id}: it deletes the tag and its
 // attachments to nodes and services.
-func (a *Api) DeleteTag(c echo.Context, tagIdParam int) error {
+func (a *Api) DeleteTag(c echo.Context, tagIdParam string) error {
 	log := echolog.GetLogHandler(c, "DeleteTag")
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
@@ -28,7 +28,7 @@ func (a *Api) DeleteTag(c echo.Context, tagIdParam int) error {
 
 	log.Info("called", logkey.TagID, tagIdParam)
 
-	tag, err := a.resolveTagByRecordID(c, log, ctx, tagIdParam)
+	tag, err := a.resolveTagByKey(c, log, ctx, tagIdParam)
 	if err != nil {
 		return err
 	}

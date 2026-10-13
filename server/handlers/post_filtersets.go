@@ -36,6 +36,21 @@ func (a *Api) PostFiltersets(c echo.Context) error {
 		return JSONProblemf(c, http.StatusBadRequest, "fset_stats must be one of %s", strings.Join(filtersetStatsValues, ", "))
 	}
 
+	if body.Entries != nil {
+		if body.Id != nil && *body.Id != "" {
+			return JSONProblemf(c, http.StatusBadRequest, "entries are accepted on creation only")
+		}
+		if body.FsetName == nil || *body.FsetName == "" {
+			return JSONProblemf(c, http.StatusBadRequest, "the fset_name property is mandatory")
+		}
+		fsetStats := "F"
+		if body.FsetStats != nil {
+			fsetStats = string(*body.FsetStats)
+		}
+		log.Info("called", "fset_name", *body.FsetName, "entries", len(*body.Entries))
+		return a.postFiltersetWithEntries(c, log, ctx, *body.FsetName, fsetStats, *body.Entries)
+	}
+
 	if body.Id != nil && *body.Id != "" {
 		log.Info("called", "filterset_id", *body.Id)
 		return a.postFiltersetUpdate(c, log, ctx, *body.Id, nil, stringPtr(body.FsetStats))

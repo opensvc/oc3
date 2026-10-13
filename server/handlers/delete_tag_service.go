@@ -10,14 +10,14 @@ import (
 )
 
 // DeleteTagService handles DELETE /tags/{tag_id}/services/{svc_id}: detach a tag from a service.
-func (a *Api) DeleteTagService(c echo.Context, tagIdParam int, svcId string) error {
+func (a *Api) DeleteTagService(c echo.Context, tagIdParam string, svcId string) error {
 	log := echolog.GetLogHandler(c, "DeleteTagService")
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
 	defer cancel()
 
 	log.Info("called", logkey.TagID, tagIdParam, "svc_id", svcId)
 
-	tag, err := a.resolveTagByRecordID(c, log, ctx, tagIdParam)
+	tag, err := a.resolveTagByKey(c, log, ctx, tagIdParam)
 	if err != nil {
 		return err
 	}

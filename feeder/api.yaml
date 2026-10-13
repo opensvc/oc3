@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc feeder api
-  version: 3.0.5
+  version: 3.0.6
 
 paths:
   /daemon/ping:
@@ -752,6 +752,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NodeCheck'
+        partial:
+          type: boolean
+          description: >
+            A checker failed during the run, so the data misses some of the
+            checks the node has. The checks reported are updated, and the
+            others are kept, with their alerts, where a complete feed
+            removes them.
 
     NodeCheck:
       type: object

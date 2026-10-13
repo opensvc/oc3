@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -90,22 +91,39 @@ func (t Track) init(id, author string) error {
 
 // Commit records a new content of the object's document.
 func (t Track) Commit(id, content, author string) error {
+	_, _, err := t.CommitMessage(id, content, author, "change")
+	return err
+}
+
+// CommitMessage records a new content of the object's document with a message,
+// and returns the id of the commit, or changed false when the content is the
+// one recorded last: nothing to commit then, which is not an error.
+func (t Track) CommitMessage(id, content, author, message string) (commit string, changed bool, err error) {
 	if !t.Exists(id) {
 		if err := t.init(id, author); err != nil {
-			return err
+			return "", false, err
 		}
 	}
 	_ = os.Remove(filepath.Join(t.repo(id), ".git", "index.lock"))
 	if err := os.WriteFile(filepath.Join(t.repo(id), t.File), []byte(content), 0o644); err != nil {
-		return err
+		return "", false, err
 	}
 	if err := t.gitIn(id, "add", t.File); err != nil {
-		return err
+		return "", false, err
 	}
-	args := append([]string{"commit", "-m", "change"}, authorArg(author)...)
-	// An unchanged content leaves nothing to commit: not an error.
-	_ = t.gitIn(id, append(args, "-a")...)
-	return nil
+	// Nothing staged against the last commit: the content did not change.
+	if _, err := t.git(id, "rev-parse", "--verify", "HEAD"); err == nil {
+		if err := t.gitIn(id, "diff", "--cached", "--quiet"); err == nil {
+			head, err := t.git(id, "rev-parse", "HEAD")
+			return strings.TrimSpace(head), false, err
+		}
+	}
+	args := append([]string{"commit", "-m", message}, authorArg(author)...)
+	if err := t.gitIn(id, args...); err != nil {
+		return "", false, err
+	}
+	head, err := t.git(id, "rev-parse", "HEAD")
+	return strings.TrimSpace(head), true, err
 }
 
 // Read returns the current content of the object's document.
@@ -259,4 +277,79 @@ func (t Track) Rollback(id, rev, author string) error {
 	args := append([]string{"commit", "-m", "rollback to " + date}, authorArg(author)...)
 	_ = t.gitIn(id, append(args, "-a")...)
 	return nil
+}
+
+// LogEntry is one commit of an object's history, its message included.
+type LogEntry struct {
+	ID      string `json:"id"`
+	Date    string `json:"date"`
+	Author  string `json:"author"`
+	Subject string `json:"subject"`
+	Body    string `json:"body"`
+}
+
+// Log returns the last n commits of the object, newest first, from rev when
+// given, from the last commit otherwise.
+func (t Track) Log(id string, n int, rev ...string) ([]LogEntry, error) {
+	if !t.Exists(id) {
+		return []LogEntry{}, nil
+	}
+	// Fields apart with the unit separator, commits with the record separator: a
+	// message may hold anything else.
+	args := []string{"log", "-n", strconv.Itoa(n), "--format=%H%x1f%aI%x1f%an <%ae>%x1f%s%x1f%b%x1e"}
+	out, err := t.git(id, append(args, rev...)...)
+	if err != nil {
+		// A repository without a commit yet has no log.
+		if _, headErr := t.git(id, "rev-parse", "--verify", "HEAD"); headErr != nil {
+			return []LogEntry{}, nil
+		}
+		return nil, err
+	}
+	commits := []LogEntry{}
+	for _, record := range strings.Split(out, "\x1e") {
+		fields := strings.Split(strings.TrimLeft(record, "\n"), "\x1f")
+		if len(fields) < 5 {
+			continue
+		}
+		commits = append(commits, LogEntry{
+			ID:      fields[0],
+			Date:    fields[1],
+			Author:  strings.TrimSuffix(fields[2], " <>"),
+			Subject: fields[3],
+			Body:    strings.TrimSpace(fields[4]),
+		})
+	}
+	return commits, nil
+}
+
+// ResolveCommit returns the full id of a commit of the object's history, and
+// false when rev names none.
+func (t Track) ResolveCommit(id, rev string) (string, bool) {
+	if !t.Exists(id) || !ValidRev(rev) {
+		return "", false
+	}
+	out, err := t.git(id, "rev-parse", "--verify", "--quiet", rev+"^{commit}")
+	if err != nil {
+		return "", false
+	}
+	return strings.TrimSpace(out), true
+}
+
+// Parent returns the commit before rev, and false for the first one.
+func (t Track) Parent(id, rev string) (string, bool) {
+	return t.ResolveCommit(id, rev+"^")
+}
+
+// FileAt returns the document as it was at a commit.
+func (t Track) FileAt(id, rev string) (string, error) {
+	return t.git(id, "show", rev+":"+t.File)
+}
+
+// DiffFile returns the change of the document from one commit to another, as
+// git diff prints it; from empty compares with nothing, for a first commit.
+func (t Track) DiffFile(id, from, to string) (string, error) {
+	if from == "" {
+		from = emptyTree
+	}
+	return t.git(id, "diff", from, to, "--", t.File)
 }

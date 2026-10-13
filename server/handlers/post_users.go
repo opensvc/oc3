@@ -69,6 +69,10 @@ func (a *Api) PostUsers(c echo.Context) error {
 		log.Error("invalid request body", logkey.Error, err)
 		return JSONProblem(c, http.StatusBadRequest, err.Error())
 	}
+	// With the passwords turned off, none is stored: it would sign nobody in.
+	if body.Password != nil && *body.Password != "" && !a.BasicUsers {
+		return JSONProblemf(c, http.StatusBadRequest, "password sign-in is disabled on this collector: create the user without a password")
+	}
 
 	email := strings.TrimSpace(body.Email)
 	if addr, err := mail.ParseAddress(email); err != nil || addr.Address != email {

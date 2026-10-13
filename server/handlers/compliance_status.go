@@ -180,3 +180,65 @@ func (a *Api) compLog(c echo.Context, action, format string, dict map[string]any
 		echolog.GetLogHandler(c, action).Error("cannot write audit log", logkey.Error, err)
 	}
 }
+
+// GetComplianceStatusSummary handles GET /compliance/status/summary: the counts of
+// the check runs that GET /compliance/status lists with the same filters, the
+// session filterset included, overall and per module, node or service, as the
+// historical compliance status view shows them above and beside its table.
+func (a *Api) GetComplianceStatusSummary(c echo.Context, params server.GetComplianceStatusSummaryParams) error {
+	log := echolog.GetLogHandler(c, "GetComplianceStatusSummary")
+	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
+	defer cancel()
+
+	mapping := propsMapping["comp_status"]
+	filters, err := buildFilters(params.Filter, mapping)
+	if err != nil {
+		return JSONProblem(c, http.StatusBadRequest, err.Error())
+	}
+	session, err := a.sessionFilters(c, mapping)
+	if err != nil {
+		log.Error("cannot apply the session filterset", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot apply the session filterset")
+	}
+	var by string
+	if params.By != nil {
+		by = string(*params.By)
+		switch by {
+		case "module", "node", "service":
+		default:
+			return JSONProblemf(c, http.StatusBadRequest, "by must be module, node or service, got %q", by)
+		}
+	}
+	totals, groups, err := a.ODB.ComplianceStatusSummary(ctx, by, cdb.ListParams{
+		Groups:    UserGroupsFromContext(c),
+		IsManager: IsManager(c),
+		Filters:   append(filters, session...),
+	})
+	if err != nil {
+		log.Error("cannot count the check runs", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot count the check runs")
+	}
+	data := make([]server.ComplianceStatusGroup, len(groups))
+	for i, g := range groups {
+		counts := compStatusCounts(g.CompStatusCounts)
+		data[i] = server.ComplianceStatusGroup{
+			Id: g.ID, Name: g.Name,
+			Total: counts.Total, Ok: counts.Ok, Nok: counts.Nok, Na: counts.Na, Obs: counts.Obs, Pct: counts.Pct,
+		}
+	}
+	return c.JSON(http.StatusOK, server.ComplianceStatusSummaryResponse{
+		Totals: compStatusCounts(totals),
+		Data:   data,
+	})
+}
+
+func compStatusCounts(c cdb.CompStatusCounts) server.ComplianceStatusCounts {
+	out := server.ComplianceStatusCounts{
+		Total: int(c.Total), Ok: int(c.OK), Nok: int(c.NOK), Na: int(c.NA), Obs: int(c.Obs),
+	}
+	if c.Pct != nil {
+		pct := int(*c.Pct)
+		out.Pct = &pct
+	}
+	return out
+}
