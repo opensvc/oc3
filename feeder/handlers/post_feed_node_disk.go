@@ -25,10 +25,12 @@ func (a *Api) PostNodeDisk(c echo.Context) error {
 
 	nodename := nodenameFromContext(c)
 	if nodename == "" {
+		log.Warn("conflict: empty nodename")
 		return JSONProblemf(c, http.StatusConflict, "refused: authenticated node doesn't define nodename")
 	}
 	clusterID := clusterIDFromContext(c)
 	if clusterID == "" {
+		log.Warn("conflict: empty cluster id")
 		return JSONProblemf(c, http.StatusConflict, "refused: authenticated node doesn't define cluster id")
 	}
 	var payload feeder.PostNodeDiskJSONRequestBody
