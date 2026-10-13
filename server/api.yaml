@@ -4094,7 +4094,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/StoredFormListResponse'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -4134,7 +4134,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/StoredFormListResponse'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -16131,6 +16131,85 @@ components:
         form_yaml:
           type: string
           nullable: true
+
+    StoredFormRow:
+      type: object
+      description: |
+        A step of a request: a form submitted as a workflow step, joined to the form
+        revision it was submitted with (`form_yaml`, `form_name`, `form_folder`,
+        `form_date`, `form_id`). `form_head_id` is the first step of its request,
+        `form_prev_id` the step it continues; `form_next_id` is null while the step
+        awaits a decision of `form_assignee`, the id of the next step once decided,
+        0 when the request closed with it. `form_data` is the submitted data as
+        stored, JSON text most of the time. Every property is optional: the `props`
+        query parameter selects which columns the server returns.
+      properties:
+        id:
+          type: integer
+        results_id:
+          type: integer
+          nullable: true
+        form_submitter:
+          type: string
+        form_submit_date:
+          type: string
+        form_data:
+          type: string
+          nullable: true
+        form_next_id:
+          type: integer
+          nullable: true
+        form_prev_id:
+          type: integer
+          nullable: true
+        form_assignee:
+          type: string
+          nullable: true
+        form_head_id:
+          type: integer
+          nullable: true
+        form_md5:
+          type: string
+          nullable: true
+        form_var_id:
+          type: integer
+          nullable: true
+        form_yaml:
+          type: string
+          nullable: true
+        form_date:
+          type: string
+          nullable: true
+        form_id:
+          type: integer
+          nullable: true
+        form_folder:
+          type: string
+          nullable: true
+        form_name:
+          type: string
+          nullable: true
+        form_definition:
+          nullable: true
+          description: form_yaml parsed, absent when it does not parse
+
+    StoredFormListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/StoredFormRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     WorkflowListResponse:
       type: object

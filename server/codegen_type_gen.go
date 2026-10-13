@@ -2803,6 +2803,53 @@ type StatusAck struct {
 	Comment string `json:"comment"`
 }
 
+// StoredFormListResponse defines model for StoredFormListResponse.
+type StoredFormListResponse struct {
+	Data StoredFormListResponse_Data `json:"data"`
+	Meta *ListMeta                   `json:"meta,omitempty"`
+}
+
+// StoredFormListResponseData0 defines model for .
+type StoredFormListResponseData0 = []StoredFormRow
+
+// StoredFormListResponseData1 defines model for .
+type StoredFormListResponseData1 map[string]map[string]int
+
+// StoredFormListResponse_Data defines model for StoredFormListResponse.Data.
+type StoredFormListResponse_Data struct {
+	union json.RawMessage
+}
+
+// StoredFormRow A step of a request: a form submitted as a workflow step, joined to the form
+// revision it was submitted with (`form_yaml`, `form_name`, `form_folder`,
+// `form_date`, `form_id`). `form_head_id` is the first step of its request,
+// `form_prev_id` the step it continues; `form_next_id` is null while the step
+// awaits a decision of `form_assignee`, the id of the next step once decided,
+// 0 when the request closed with it. `form_data` is the submitted data as
+// stored, JSON text most of the time. Every property is optional: the `props`
+// query parameter selects which columns the server returns.
+type StoredFormRow struct {
+	FormAssignee *string `json:"form_assignee,omitempty"`
+	FormData     *string `json:"form_data,omitempty"`
+	FormDate     *string `json:"form_date,omitempty"`
+
+	// FormDefinition form_yaml parsed, absent when it does not parse
+	FormDefinition interface{} `json:"form_definition,omitempty"`
+	FormFolder     *string     `json:"form_folder,omitempty"`
+	FormHeadId     *int        `json:"form_head_id,omitempty"`
+	FormId         *int        `json:"form_id,omitempty"`
+	FormMd5        *string     `json:"form_md5,omitempty"`
+	FormName       *string     `json:"form_name,omitempty"`
+	FormNextId     *int        `json:"form_next_id,omitempty"`
+	FormPrevId     *int        `json:"form_prev_id,omitempty"`
+	FormSubmitDate *string     `json:"form_submit_date,omitempty"`
+	FormSubmitter  *string     `json:"form_submitter,omitempty"`
+	FormVarId      *int        `json:"form_var_id,omitempty"`
+	FormYaml       *string     `json:"form_yaml,omitempty"`
+	Id             *int        `json:"id,omitempty"`
+	ResultsId      *int        `json:"results_id,omitempty"`
+}
+
 // SwitchPortListResponse defines model for SwitchPortListResponse.
 type SwitchPortListResponse struct {
 	Data SwitchPortListResponse_Data `json:"data"`
@@ -13141,6 +13188,68 @@ func (t ServiceListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ServiceListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsStoredFormListResponseData0 returns the union data inside the StoredFormListResponse_Data as a StoredFormListResponseData0
+func (t StoredFormListResponse_Data) AsStoredFormListResponseData0() (StoredFormListResponseData0, error) {
+	var body StoredFormListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStoredFormListResponseData0 overwrites any union data inside the StoredFormListResponse_Data as the provided StoredFormListResponseData0
+func (t *StoredFormListResponse_Data) FromStoredFormListResponseData0(v StoredFormListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStoredFormListResponseData0 performs a merge with any union data inside the StoredFormListResponse_Data, using the provided StoredFormListResponseData0
+func (t *StoredFormListResponse_Data) MergeStoredFormListResponseData0(v StoredFormListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsStoredFormListResponseData1 returns the union data inside the StoredFormListResponse_Data as a StoredFormListResponseData1
+func (t StoredFormListResponse_Data) AsStoredFormListResponseData1() (StoredFormListResponseData1, error) {
+	var body StoredFormListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStoredFormListResponseData1 overwrites any union data inside the StoredFormListResponse_Data as the provided StoredFormListResponseData1
+func (t *StoredFormListResponse_Data) FromStoredFormListResponseData1(v StoredFormListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStoredFormListResponseData1 performs a merge with any union data inside the StoredFormListResponse_Data, using the provided StoredFormListResponseData1
+func (t *StoredFormListResponse_Data) MergeStoredFormListResponseData1(v StoredFormListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t StoredFormListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *StoredFormListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
