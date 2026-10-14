@@ -65,7 +65,8 @@ func (a *Api) setAuthCookie(c echo.Context, name, value string, maxAge int) {
 	c.SetCookie(cookie)
 }
 
-// GetAuthInfo handles GET /auth/info: the sign-in modes, for the sign-in screen.
+// GetAuthInfo handles GET /auth/info: the sign-in modes, for the sign-in screen,
+// and the issuer and client id of the OpenID Connect provider.
 func (a *Api) GetAuthInfo(c echo.Context) error {
 	noStore(c)
 	info := server.AuthInfo{Basic: a.BasicUsers}
@@ -73,6 +74,10 @@ func (a *Api) GetAuthInfo(c echo.Context) error {
 		info.Oidc.Enabled = true
 		info.Oidc.Ready = a.OIDC.Ready()
 		info.Oidc.Name = a.OIDC.Config().DisplayName
+		// Both public: the discovery document gives the issuer, and the client id
+		// shows in the authorize URL of every sign-in.
+		info.Oidc.Issuer = a.OIDC.Config().Issuer
+		info.Oidc.ClientId = a.OIDC.Config().ClientID
 		if cookie, err := c.Cookie(a.OIDC.SessionCookieName()); err == nil {
 			if sess, err := a.OIDC.LoadSession(c.Request().Context(), cookie.Value); err == nil && sess != nil {
 				info.Session = true

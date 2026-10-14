@@ -17250,7 +17250,7 @@ components:
             passwords, at user creation and on the profile.
         oidc:
           type: object
-          required: [enabled, ready, name]
+          required: [enabled, ready, name, issuer, client_id]
           properties:
             enabled:
               type: boolean
@@ -17260,6 +17260,17 @@ components:
             name:
               type: string
               description: Name of the provider (display_name), for messages and logs; the sign-in screen does not show it
+            issuer:
+              type: string
+              description: |
+                Issuer identifier of the provider (server.auth.oidc.issuer), as its
+                discovery document gives it; empty when OpenID Connect is disabled.
+            client_id:
+              type: string
+              description: |
+                Client id of the collector at the provider (server.auth.oidc.client_id),
+                the one its sign-in uses; empty when OpenID Connect is disabled. The
+                client is confidential: its secret stays on the server.
         session:
           type: boolean
           description: Whether the request carries a valid OpenID Connect session

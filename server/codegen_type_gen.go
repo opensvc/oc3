@@ -1206,7 +1206,15 @@ type AuthInfo struct {
 	// passwords, at user creation and on the profile.
 	Basic bool `json:"basic"`
 	Oidc  struct {
-		Enabled bool `json:"enabled"`
+		// ClientId Client id of the collector at the provider (server.auth.oidc.client_id),
+		// the one its sign-in uses; empty when OpenID Connect is disabled. The
+		// client is confidential: its secret stays on the server.
+		ClientId string `json:"client_id"`
+		Enabled  bool   `json:"enabled"`
+
+		// Issuer Issuer identifier of the provider (server.auth.oidc.issuer), as its
+		// discovery document gives it; empty when OpenID Connect is disabled.
+		Issuer string `json:"issuer"`
 
 		// Name Name of the provider (display_name), for messages and logs; the sign-in screen does not show it
 		Name string `json:"name"`
