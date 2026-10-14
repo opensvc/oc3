@@ -876,10 +876,12 @@ const (
 	Block     GetNodeStatsParamsGroup = "block"
 	Blockdev  GetNodeStatsParamsGroup = "blockdev"
 	Cpu       GetNodeStatsParamsGroup = "cpu"
+	Fs        GetNodeStatsParamsGroup = "fs"
 	Mem       GetNodeStatsParamsGroup = "mem"
 	Netdev    GetNodeStatsParamsGroup = "netdev"
 	NetdevErr GetNodeStatsParamsGroup = "netdev_err"
 	Proc      GetNodeStatsParamsGroup = "proc"
+	Svc       GetNodeStatsParamsGroup = "svc"
 	Swap      GetNodeStatsParamsGroup = "swap"
 )
 
@@ -892,6 +894,8 @@ func (e GetNodeStatsParamsGroup) Valid() bool {
 		return true
 	case Cpu:
 		return true
+	case Fs:
+		return true
 	case Mem:
 		return true
 	case Netdev:
@@ -899,6 +903,8 @@ func (e GetNodeStatsParamsGroup) Valid() bool {
 	case NetdevErr:
 		return true
 	case Proc:
+		return true
+	case Svc:
 		return true
 	case Swap:
 		return true
@@ -9346,8 +9352,16 @@ type PostNodeSnoozeJSONBody struct {
 type GetNodeStatsParams struct {
 	Group GetNodeStatsParamsGroup `form:"group" json:"group"`
 
-	// Days Days of history, 1 by default, 1095 at most.
+	// Days Days of history, 1 by default, 1095 at most: before end when given,
+	// else before now. Ignored when begin is given.
 	Days *int `form:"days,omitempty" json:"days,omitempty"`
+
+	// Begin Start of the period. With end, the period may not exceed 1095 days;
+	// without, it runs to now.
+	Begin *time.Time `form:"begin,omitempty" json:"begin,omitempty"`
+
+	// End End of the period, now by default. Must be after begin.
+	End *time.Time `form:"end,omitempty" json:"end,omitempty"`
 }
 
 // GetNodeStatsParamsGroup defines parameters for GetNodeStats.

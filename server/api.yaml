@@ -8962,11 +8962,15 @@ paths:
     get:
       operationId: GetNodeStats
       description: |
-        The performance statistics of a node for one group, over the last days: one
-        series per metric (and per device for netdev, netdev_err and blockdev), each
+        The performance statistics of a node for one group, over the last days or
+        between two dates: one series per metric (and per device for netdev,
+        netdev_err and blockdev, per mount point for fs, per container for svc), each
         a list of [unix time, value] points, as the historical collector stored them
         in whisper files under stats/nodes/<node_id> (cpu/all, mem_u, swap, proc,
-        block, netdev/<dev>, netdev_err/<dev>, blockdev/<dev>). The resolution is the
+        block, netdev/<dev>, netdev_err/<dev>, blockdev/<dev>, fs_u/<mount point>,
+        svc/<container>). The fs series are the size in KB and the used share in
+        percent; the svc ones the container cpu and memory usage, their caps, rss,
+        swap, process count and paging. The resolution is the
         finest the files keep for the period: a minute over half an hour, ten minutes
         over three days, an hour over ninety days, a day beyond. A node without
         statistics returns an empty list.
@@ -8982,13 +8986,29 @@ paths:
           required: true
           schema:
             type: string
-            enum: [cpu, mem, swap, proc, block, netdev, netdev_err, blockdev]
+            enum: [cpu, mem, swap, proc, block, netdev, netdev_err, blockdev, fs, svc]
         - in: query
           name: days
-          description: Days of history, 1 by default, 1095 at most.
+          description: |
+            Days of history, 1 by default, 1095 at most: before end when given,
+            else before now. Ignored when begin is given.
           schema:
             type: integer
             minimum: 1
+        - in: query
+          name: begin
+          description: |
+            Start of the period. With end, the period may not exceed 1095 days;
+            without, it runs to now.
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: end
+          description: End of the period, now by default. Must be after begin.
+          schema:
+            type: string
+            format: date-time
       tags:
         - collector
       responses:
