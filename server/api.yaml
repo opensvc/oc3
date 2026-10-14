@@ -21494,6 +21494,15 @@ components:
         version:
           type: string
           example: "0.0.1"
+        service:
+          type: string
+          description: The oc3 component answering, server or feeder.
+          example: server
+        api_docs:
+          type: boolean
+          description: |
+            The API documentation (Swagger UI) is served, at the root of the API
+            path (`<ui.enable>` of the component's configuration).
 
   parameters:
     ObjectPathHeader:

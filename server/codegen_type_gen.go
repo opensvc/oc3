@@ -3766,7 +3766,13 @@ type WorkflowRow struct {
 
 // Version defines model for version.
 type Version struct {
-	Version string `json:"version"`
+	// ApiDocs The API documentation (Swagger UI) is served, at the root of the API
+	// path (`<ui.enable>` of the component's configuration).
+	ApiDocs *bool `json:"api_docs,omitempty"`
+
+	// Service The oc3 component answering, server or feeder.
+	Service *string `json:"service,omitempty"`
+	Version string  `json:"version"`
 }
 
 // InPathMsetId defines model for inPathMsetId.
