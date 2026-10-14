@@ -10304,6 +10304,48 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+    post:
+      operationId: PostServicesActions
+      description: |
+        Acknowledge a failed action (bulk form): the 'id' key selects it, the
+        acknowledgement is then handled as POST /services_actions/{action_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ServiceActionAckRequest'
+                - type: object
+                  required: [id]
+                  properties:
+                    id:
+                      type: integer
+                      format: int64
+                      description: The action, svcactions.id
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /services_actions/{action_id}:
     get:
       operationId: GetServicesAction
@@ -10327,6 +10369,52 @@ paths:
                 $ref: '#/components/schemas/ServiceActionListResponse'
         401:
           $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostServicesAction
+      description: |
+        Acknowledge a failed action, as the historical collector: by whom, when
+        and why. Only `ack`, which must be 1, and `acked_comment` are taken. An
+        action not failed is left as it is, the answer says so. Requires the
+        responsibility of the service (a Manager has it for every service). The
+        count of the unacknowledged errors of the instance and its "action
+        errors" alert follow at once. Logged.
+      parameters:
+        - in: path
+          name: action_id
+          required: true
+          description: Action record identifier (svcactions.id)
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceActionAckRequest'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -20935,6 +21023,18 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    ServiceActionAckRequest:
+      type: object
+      description: The acknowledgement of a failed action.
+      required: [ack]
+      properties:
+        ack:
+          type: integer
+          enum: [1]
+        acked_comment:
+          type: string
+          description: Why the failure needs nothing more.
 
     InfoResponse:
       type: object

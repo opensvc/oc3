@@ -349,6 +349,21 @@ func (e SearchGroupKind) Valid() bool {
 	}
 }
 
+// Defines values for ServiceActionAckRequestAck.
+const (
+	ServiceActionAckRequestAckN1 ServiceActionAckRequestAck = 1
+)
+
+// Valid indicates whether the value is a known member of the ServiceActionAckRequestAck enum.
+func (e ServiceActionAckRequestAck) Valid() bool {
+	switch e {
+	case ServiceActionAckRequestAckN1:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SysreportEntryKind.
 const (
 	SysreportEntryKindCommand SysreportEntryKind = "command"
@@ -886,6 +901,21 @@ func (e GetNodeStatsParamsGroup) Valid() bool {
 	case Proc:
 		return true
 	case Swap:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostServicesActionsJSONBodyAck.
+const (
+	PostServicesActionsJSONBodyAckN1 PostServicesActionsJSONBodyAck = 1
+)
+
+// Valid indicates whether the value is a known member of the PostServicesActionsJSONBodyAck enum.
+func (e PostServicesActionsJSONBodyAck) Valid() bool {
+	switch e {
+	case PostServicesActionsJSONBodyAckN1:
 		return true
 	default:
 		return false
@@ -3150,6 +3180,17 @@ type SearchGroupKind string
 type SearchResponse struct {
 	Data []SearchGroup `json:"data"`
 }
+
+// ServiceActionAckRequest The acknowledgement of a failed action.
+type ServiceActionAckRequest struct {
+	Ack ServiceActionAckRequestAck `json:"ack"`
+
+	// AckedComment Why the failure needs nothing more.
+	AckedComment *string `json:"acked_comment,omitempty"`
+}
+
+// ServiceActionAckRequestAck defines model for ServiceActionAckRequest.Ack.
+type ServiceActionAckRequestAck int
 
 // ServiceActionListResponse defines model for ServiceActionListResponse.
 type ServiceActionListResponse struct {
@@ -11026,6 +11067,20 @@ type GetServicesActionsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostServicesActionsJSONBody defines parameters for PostServicesActions.
+type PostServicesActionsJSONBody struct {
+	Ack PostServicesActionsJSONBodyAck `json:"ack"`
+
+	// AckedComment Why the failure needs nothing more.
+	AckedComment *string `json:"acked_comment,omitempty"`
+
+	// Id The action, svcactions.id
+	Id int64 `json:"id"`
+}
+
+// PostServicesActionsJSONBodyAck defines parameters for PostServicesActions.
+type PostServicesActionsJSONBodyAck int
+
 // GetServicesActionParams defines parameters for GetServicesAction.
 type GetServicesActionParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -12093,6 +12148,12 @@ type PostServiceJSONRequestBody PostServiceJSONBody
 
 // PutServiceStatusLogAckJSONRequestBody defines body for PutServiceStatusLogAck for application/json ContentType.
 type PutServiceStatusLogAckJSONRequestBody PutServiceStatusLogAckJSONBody
+
+// PostServicesActionsJSONRequestBody defines body for PostServicesActions for application/json ContentType.
+type PostServicesActionsJSONRequestBody PostServicesActionsJSONBody
+
+// PostServicesActionJSONRequestBody defines body for PostServicesAction for application/json ContentType.
+type PostServicesActionJSONRequestBody = ServiceActionAckRequest
 
 // DeleteServicesInstancesJSONRequestBody defines body for DeleteServicesInstances for application/json ContentType.
 type DeleteServicesInstancesJSONRequestBody DeleteServicesInstancesJSONBody

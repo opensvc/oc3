@@ -558,3 +558,49 @@ func (oDb *DB) GetServicesActions(ctx context.Context, p ListParams) ([]map[stri
 func (oDb *DB) GetServicesAction(ctx context.Context, id string, p ListParams) ([]map[string]any, error) {
 	return oDb.queryServiceActions(ctx, "", id, p)
 }
+
+// ServiceActionAck is an action the agents ran, as its acknowledgement needs it.
+type ServiceActionAck struct {
+	ID     int64
+	SvcID  string
+	NodeID string
+	// SID ties an action to the lines it logged, rows of their own.
+	SID    string
+	Status string
+	Acked  bool
+}
+
+// ServiceActionForAck returns an action, nil when there is none of that id.
+func (oDb *DB) ServiceActionForAck(ctx context.Context, id int64) (*ServiceActionAck, error) {
+	var a ServiceActionAck
+	err := oDb.DB.QueryRowContext(ctx, `SELECT id, IFNULL(svc_id, ""), IFNULL(node_id, ""),
+		IFNULL(sid, ""), IFNULL(status, ""), IFNULL(ack, 0) = 1 FROM svcactions WHERE id = ?`, id).
+		Scan(&a.ID, &a.SvcID, &a.NodeID, &a.SID, &a.Status, &a.Acked)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("serviceActionForAck: %w", err)
+	}
+	return &a, nil
+}
+
+// AckServiceAction acknowledges a failed action, by whom, when and why, and the
+// failed lines it logged, which the count of the action errors of the instance
+// counts too: without them, it would not come back to zero.
+func (oDb *DB) AckServiceAction(ctx context.Context, a *ServiceActionAck, by, comment string) error {
+	query := `UPDATE svcactions
+		SET ack = 1, acked_by = ?, acked_date = NOW(), acked_comment = ?
+		WHERE id = ?`
+	args := []any{by, comment, a.ID}
+	if a.SID != "" {
+		query += ` OR (sid = ? AND svc_id = ? AND node_id = ? AND IFNULL(log_type, "") = ""
+			AND status = "err" AND IFNULL(ack, 0) <> 1)`
+		args = append(args, a.SID, a.SvcID, a.NodeID)
+	}
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("ackServiceAction: %w", err)
+	}
+	oDb.SetChange("svcactions")
+	return nil
+}

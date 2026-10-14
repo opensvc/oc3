@@ -169,8 +169,8 @@ func (a *Api) refreshChecksInBackground(log *slog.Logger, types ...string) {
 	}()
 }
 
-// checksInfo is the answer of a write: its outcome message.
-func checksInfo(format string, args ...any) server.InfoResponse {
+// infoAnswer is the answer of a write that returns no record: its outcome message.
+func infoAnswer(format string, args ...any) server.InfoResponse {
 	info := fmt.Sprintf(format, args...)
 	return server.InfoResponse{Info: &info}
 }
@@ -201,7 +201,7 @@ func (a *Api) DeleteCheckLive(c echo.Context, id int64) error {
 	a.checksLog(c, ctx, log, "check.delete", "delete check instance %(data)s",
 		map[string]any{"data": check.Type + "-" + check.Instance}, check.NodeID, check.SvcID)
 	a.notifyChanges(log, ctx)
-	return c.JSON(http.StatusOK, checksInfo("check %s:%s deleted", check.Type, check.Instance))
+	return c.JSON(http.StatusOK, infoAnswer("check %s:%s deleted", check.Type, check.Instance))
 }
 
 func checkKey(nodeID string, svcID *string, chkType, chkInstance string) cdb.CheckKey {
@@ -263,7 +263,7 @@ func (a *Api) PostChecksSettings(c echo.Context) error {
 		return err
 	}
 	a.notifyChanges(log, ctx)
-	return c.JSON(http.StatusOK, checksInfo("thresholds of check %s:%s set to %d - %d", k.Type, k.Instance, low.Int64, high.Int64))
+	return c.JSON(http.StatusOK, infoAnswer("thresholds of check %s:%s set to %d - %d", k.Type, k.Instance, low.Int64, high.Int64))
 }
 
 // DeleteChecksSettings handles DELETE /checks/settings
@@ -299,7 +299,7 @@ func (a *Api) DeleteChecksSettings(c echo.Context) error {
 		return err
 	}
 	a.notifyChanges(log, ctx)
-	return c.JSON(http.StatusOK, checksInfo("thresholds of check %s:%s reset", k.Type, k.Instance))
+	return c.JSON(http.StatusOK, infoAnswer("thresholds of check %s:%s reset", k.Type, k.Instance))
 }
 
 // validChkType checks a check type: given, and as long as the column allows.
@@ -372,7 +372,7 @@ func (a *Api) PostChecksDefaults(c echo.Context) error {
 		map[string]any{"chk_type": d.Type, "chk_inst": d.Inst}, "", "")
 	a.notifyChanges(log, ctx)
 	a.refreshChecksInBackground(log, d.Type)
-	return c.JSON(http.StatusOK, server.CheckIdResponse{Id: id, Info: checksInfo("check default %d added", id).Info})
+	return c.JSON(http.StatusOK, server.CheckIdResponse{Id: id, Info: infoAnswer("check default %d added", id).Info})
 }
 
 // PostCheckDefault handles POST /checks/defaults/{id}
@@ -424,7 +424,7 @@ func (a *Api) PostCheckDefault(c echo.Context, id int64) error {
 		map[string]any{"id": id, "changes": checkDefaultChanges(before, *d)}, "", "")
 	a.notifyChanges(log, ctx)
 	a.refreshChecksInBackground(log, before.Type, d.Type)
-	return c.JSON(http.StatusOK, checksInfo("check default %d changed", id))
+	return c.JSON(http.StatusOK, infoAnswer("check default %d changed", id))
 }
 
 func formatNull(v sql.NullInt64) string {
@@ -473,7 +473,7 @@ func (a *Api) DeleteCheckDefault(c echo.Context, id int64) error {
 		map[string]any{"chk_type": d.Type, "chk_inst": d.Inst}, "", "")
 	a.notifyChanges(log, ctx)
 	a.refreshChecksInBackground(log, d.Type)
-	return c.JSON(http.StatusOK, checksInfo("check default %d deleted", id))
+	return c.JSON(http.StatusOK, infoAnswer("check default %d deleted", id))
 }
 
 // contextualFilterset returns the name of the filterset of contextual
@@ -539,7 +539,7 @@ func (a *Api) PostChecksContextual(c echo.Context) error {
 		map[string]any{"data": fmt.Sprintf("%s %s:%s %d:%d", name, t.Type, t.Instance, t.Low, t.High)}, "", "")
 	a.notifyChanges(log, ctx)
 	a.refreshChecksInBackground(log, t.Type)
-	return c.JSON(http.StatusOK, server.CheckIdResponse{Id: id, Info: checksInfo("checks contextual instance %d added", id).Info})
+	return c.JSON(http.StatusOK, server.CheckIdResponse{Id: id, Info: infoAnswer("checks contextual instance %d added", id).Info})
 }
 
 // PostCheckContextual handles POST /checks/contextual_settings/{id}
@@ -595,7 +595,7 @@ func (a *Api) PostCheckContextual(c echo.Context, id int64) error {
 		map[string]any{"id": id, "data": fmt.Sprintf("%s %s:%s %d:%d", name, t.Type, t.Instance, t.Low, t.High)}, "", "")
 	a.notifyChanges(log, ctx)
 	a.refreshChecksInBackground(log, before.Type, t.Type)
-	return c.JSON(http.StatusOK, checksInfo("contextual thresholds %d changed", id))
+	return c.JSON(http.StatusOK, infoAnswer("contextual thresholds %d changed", id))
 }
 
 // DeleteCheckContextual handles DELETE /checks/contextual_settings/{id}
@@ -622,5 +622,5 @@ func (a *Api) DeleteCheckContextual(c echo.Context, id int64) error {
 		map[string]any{"data": fmt.Sprintf("%s %s:%s %d:%d", t.FsetName, t.Type, t.Instance, t.Low, t.High)}, "", "")
 	a.notifyChanges(log, ctx)
 	a.refreshChecksInBackground(log, t.Type)
-	return c.JSON(http.StatusOK, checksInfo("contextual thresholds %d deleted", id))
+	return c.JSON(http.StatusOK, infoAnswer("contextual thresholds %d deleted", id))
 }
