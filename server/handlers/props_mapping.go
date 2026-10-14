@@ -1134,10 +1134,60 @@ var propsMapping = map[string]propMapping{
 			"chk_created":            colStr(schema.ChecksLiveChkCreated),
 			"chk_updated":            colStr(schema.ChecksLiveChkUpdated),
 		},
-		// A check points at its object by id only, the name lives in the
-		// joined table.
+		// A check points at its node and its object by id only, the names
+		// live in the joined tables.
 		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
 			"services": {MappingKey: "service"},
+		},
+	},
+	// The thresholds set on a check, which take precedence over the others.
+	"check_setting": {
+		Available: []string{
+			"id", "node_id", "svc_id", "chk_type", "chk_instance",
+			"chk_low", "chk_high", "chk_changed", "chk_changed_by",
+		},
+		Props: map[string]propDef{
+			"id":             col(schema.ChecksSettingsID),
+			"node_id":        colStr(schema.ChecksSettingsNodeID),
+			"svc_id":         colStr(schema.ChecksSettingsSvcID),
+			"chk_type":       colStr(schema.ChecksSettingsChkType),
+			"chk_instance":   colStr(schema.ChecksSettingsChkInstance),
+			"chk_low":        col(schema.ChecksSettingsChkLow),
+			"chk_high":       col(schema.ChecksSettingsChkHigh),
+			"chk_changed":    colStr(schema.ChecksSettingsChkChanged),
+			"chk_changed_by": colStr(schema.ChecksSettingsChkChangedBy),
+		},
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
+		},
+	},
+	// The default thresholds of a check type.
+	"check_default": {
+		Available: []string{"id", "chk_type", "chk_inst", "chk_low", "chk_high", "chk_prio"},
+		Props: map[string]propDef{
+			"id":       col(schema.ChecksDefaultsID),
+			"chk_type": colStr(schema.ChecksDefaultsChkType),
+			"chk_inst": colStr(schema.ChecksDefaultsChkInst),
+			"chk_low":  col(schema.ChecksDefaultsChkLow),
+			"chk_high": col(schema.ChecksDefaultsChkHigh),
+			"chk_prio": colInt(schema.ChecksDefaultsChkPrio),
+		},
+	},
+	// The thresholds of the checks of the nodes and objects a filterset selects.
+	"check_contextual": {
+		Available: []string{"id", "fset_id", "chk_type", "chk_instance", "chk_low", "chk_high"},
+		Props: map[string]propDef{
+			"id":           col(schema.GenFiltersetCheckThresholdID),
+			"fset_id":      col(schema.GenFiltersetCheckThresholdFsetID),
+			"chk_type":     colStr(schema.GenFiltersetCheckThresholdChkType),
+			"chk_instance": colStr(schema.GenFiltersetCheckThresholdChkInstance),
+			"chk_low":      col(schema.GenFiltersetCheckThresholdChkLow),
+			"chk_high":     col(schema.GenFiltersetCheckThresholdChkHigh),
+		},
+		Joins: map[string]JoinDef{
+			"gen_filtersets": {MappingKey: "filterset"},
 		},
 	},
 	"resource": {

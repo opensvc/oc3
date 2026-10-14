@@ -7817,6 +7817,472 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /checks/live:
+    get:
+      operationId: GetChecksLive
+      description: |
+        List the checks the agents report, with the thresholds the collector
+        sets them, and the node and the object of each (`nodes.*` and
+        `services.*` props). Managers see every check; other users the
+        checks of the nodes whose app they are responsible for. The session
+        filterset applies.
+      tags:
+        - checks
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/live/{id}:
+    delete:
+      operationId: DeleteCheckLive
+      description: |
+        Delete a check and its alerts. The agent reports it again at its next
+        check run if the check still exists. Requires the CheckExec privilege
+        and the responsibility of the node. The deletion is logged.
+      tags:
+        - checks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The check, checks_live.id
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/settings:
+    get:
+      operationId: GetChecksSettings
+      description: |
+        List the thresholds set on checks, which take precedence over the
+        contextual and the default ones. Visibility as GET /checks/live.
+      tags:
+        - checks
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckSettingListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostChecksSettings
+      description: |
+        Set the thresholds of a check, named by its node, its object, its type
+        and its instance. A threshold not given keeps the value the check has
+        now; both must be known. The thresholds and the alerts of the node's
+        checks are set again at once. Requires the CheckExec privilege and the
+        responsibility of the node. Logged.
+      tags:
+        - checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckSettingsRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChecksSettings
+      description: |
+        Remove the thresholds set on a check: it takes the contextual or the
+        default ones again, at once, with its alerts. Requires the CheckExec
+        privilege and the responsibility of the node. Logged.
+      tags:
+        - checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckKey'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/defaults:
+    get:
+      operationId: GetChecksDefaults
+      description: |
+        List the default thresholds of the check types. A check takes, among
+        the defaults of its type whose instance pattern matches its instance
+        (anchored regular expression; empty matches every instance), the one
+        of the highest priority, then of the longest pattern.
+      tags:
+        - checks
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckDefaultListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostChecksDefaults
+      description: |
+        Add default thresholds. Requires the CheckManager privilege. The checks
+        of the type take them in the background, with their alerts. Logged.
+      tags:
+        - checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckDefaultRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckIdResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/defaults/{id}:
+    post:
+      operationId: PostCheckDefault
+      description: |
+        Modify default thresholds: the properties given. Requires the
+        CheckManager privilege. The checks of the type take them in the
+        background, with their alerts. Logged.
+      tags:
+        - checks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The default thresholds, checks_defaults.id
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckDefaultRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteCheckDefault
+      description: |
+        Delete default thresholds. Requires the CheckManager privilege. The
+        checks of the type take the next matching defaults in the background,
+        or none. Logged.
+      tags:
+        - checks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The default thresholds, checks_defaults.id
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/contextual_settings:
+    get:
+      operationId: GetChecksContextual
+      description: |
+        List the contextual thresholds: those of the checks of a type and of
+        the instances a pattern matches (unanchored regular expression), on
+        the nodes, and objects, a filterset selects. They take precedence over
+        the defaults; the settings of a check over them.
+      tags:
+        - checks
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckContextualListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostChecksContextual
+      description: |
+        Add contextual thresholds. Requires the ContextCheckManager privilege.
+        The checks of the type take them in the background, with their
+        alerts. Logged.
+      tags:
+        - checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckContextualRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckIdResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/contextual_settings/{id}:
+    post:
+      operationId: PostCheckContextual
+      description: |
+        Modify contextual thresholds: the properties given. Requires the
+        ContextCheckManager privilege. Applied in the background. Logged.
+      tags:
+        - checks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The contextual thresholds, gen_filterset_check_threshold.id
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckContextualRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteCheckContextual
+      description: |
+        Delete contextual thresholds. Requires the ContextCheckManager
+        privilege. Applied in the background. Logged.
+      tags:
+        - checks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The contextual thresholds, gen_filterset_check_threshold.id
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /nodes/{node_id}/checks:
     get:
       operationId: GetNodeChecks
@@ -20184,6 +20650,218 @@ components:
         services.svcname:
           type: string
           nullable: true
+        nodes.nodename:
+          type: string
+          nullable: true
+
+    CheckKey:
+      type: object
+      description: A check, by its node, its object (empty for the node), its type and its instance.
+      required: [node_id, chk_type, chk_instance]
+      properties:
+        node_id:
+          type: string
+        svc_id:
+          type: string
+        chk_type:
+          type: string
+        chk_instance:
+          type: string
+
+    CheckSettingsRequest:
+      allOf:
+        - $ref: '#/components/schemas/CheckKey'
+        - type: object
+          properties:
+            chk_low:
+              type: integer
+              format: int64
+            chk_high:
+              type: integer
+              format: int64
+
+    CheckSettingRow:
+      type: object
+      description: Thresholds set on a check. Every property is optional, see `props`.
+      properties:
+        id:
+          type: integer
+        node_id:
+          type: string
+        svc_id:
+          type: string
+        chk_type:
+          type: string
+        chk_instance:
+          type: string
+        chk_low:
+          type: integer
+          format: int64
+          nullable: true
+        chk_high:
+          type: integer
+          format: int64
+          nullable: true
+        chk_changed:
+          type: string
+        chk_changed_by:
+          type: string
+        nodes.nodename:
+          type: string
+          nullable: true
+        services.svcname:
+          type: string
+          nullable: true
+
+    CheckDefaultRequest:
+      type: object
+      description: |
+        Default thresholds. On creation chk_type is required; chk_inst, the
+        instance pattern, empty for every instance.
+      properties:
+        chk_type:
+          type: string
+        chk_inst:
+          type: string
+        chk_low:
+          type: integer
+          format: int64
+          nullable: true
+        chk_high:
+          type: integer
+          format: int64
+          nullable: true
+        chk_prio:
+          type: integer
+          format: int64
+
+    CheckDefaultRow:
+      type: object
+      description: Default thresholds of a check type. Every property is optional, see `props`.
+      properties:
+        id:
+          type: integer
+        chk_type:
+          type: string
+        chk_inst:
+          type: string
+        chk_low:
+          type: integer
+          format: int64
+          nullable: true
+        chk_high:
+          type: integer
+          format: int64
+          nullable: true
+        chk_prio:
+          type: integer
+
+    CheckContextualRequest:
+      type: object
+      description: |
+        Contextual thresholds. On creation every property is required;
+        chk_instance is an unanchored regular expression.
+      properties:
+        fset_id:
+          type: integer
+          format: int64
+        chk_type:
+          type: string
+        chk_instance:
+          type: string
+        chk_low:
+          type: integer
+          format: int64
+        chk_high:
+          type: integer
+          format: int64
+
+    CheckContextualRow:
+      type: object
+      description: Contextual thresholds. Every property is optional, see `props`.
+      properties:
+        id:
+          type: integer
+        fset_id:
+          type: integer
+        chk_type:
+          type: string
+        chk_instance:
+          type: string
+        chk_low:
+          type: integer
+          format: int64
+        chk_high:
+          type: integer
+          format: int64
+        gen_filtersets.fset_name:
+          type: string
+          nullable: true
+
+    CheckIdResponse:
+      type: object
+      description: The id of the record created, and the outcome message.
+      required: [id]
+      properties:
+        id:
+          type: integer
+          format: int64
+        info:
+          type: string
+
+    CheckSettingListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/CheckSettingRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    CheckDefaultListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/CheckDefaultRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    CheckContextualListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/CheckContextualRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     CheckListResponse:
       type: object

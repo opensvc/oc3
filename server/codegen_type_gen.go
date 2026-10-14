@@ -1234,6 +1234,95 @@ type ChartSeries struct {
 	Unit   *string     `json:"unit,omitempty"`
 }
 
+// CheckContextualListResponse defines model for CheckContextualListResponse.
+type CheckContextualListResponse struct {
+	Data CheckContextualListResponse_Data `json:"data"`
+	Meta *ListMeta                        `json:"meta,omitempty"`
+}
+
+// CheckContextualListResponseData0 defines model for .
+type CheckContextualListResponseData0 = []CheckContextualRow
+
+// CheckContextualListResponseData1 defines model for .
+type CheckContextualListResponseData1 map[string]map[string]int
+
+// CheckContextualListResponse_Data defines model for CheckContextualListResponse.Data.
+type CheckContextualListResponse_Data struct {
+	union json.RawMessage
+}
+
+// CheckContextualRequest Contextual thresholds. On creation every property is required;
+// chk_instance is an unanchored regular expression.
+type CheckContextualRequest struct {
+	ChkHigh     *int64  `json:"chk_high,omitempty"`
+	ChkInstance *string `json:"chk_instance,omitempty"`
+	ChkLow      *int64  `json:"chk_low,omitempty"`
+	ChkType     *string `json:"chk_type,omitempty"`
+	FsetId      *int64  `json:"fset_id,omitempty"`
+}
+
+// CheckContextualRow Contextual thresholds. Every property is optional, see `props`.
+type CheckContextualRow struct {
+	ChkHigh               *int64  `json:"chk_high,omitempty"`
+	ChkInstance           *string `json:"chk_instance,omitempty"`
+	ChkLow                *int64  `json:"chk_low,omitempty"`
+	ChkType               *string `json:"chk_type,omitempty"`
+	FsetId                *int    `json:"fset_id,omitempty"`
+	GenFiltersetsFsetName *string `json:"gen_filtersets.fset_name,omitempty"`
+	Id                    *int    `json:"id,omitempty"`
+}
+
+// CheckDefaultListResponse defines model for CheckDefaultListResponse.
+type CheckDefaultListResponse struct {
+	Data CheckDefaultListResponse_Data `json:"data"`
+	Meta *ListMeta                     `json:"meta,omitempty"`
+}
+
+// CheckDefaultListResponseData0 defines model for .
+type CheckDefaultListResponseData0 = []CheckDefaultRow
+
+// CheckDefaultListResponseData1 defines model for .
+type CheckDefaultListResponseData1 map[string]map[string]int
+
+// CheckDefaultListResponse_Data defines model for CheckDefaultListResponse.Data.
+type CheckDefaultListResponse_Data struct {
+	union json.RawMessage
+}
+
+// CheckDefaultRequest Default thresholds. On creation chk_type is required; chk_inst, the
+// instance pattern, empty for every instance.
+type CheckDefaultRequest struct {
+	ChkHigh *int64  `json:"chk_high,omitempty"`
+	ChkInst *string `json:"chk_inst,omitempty"`
+	ChkLow  *int64  `json:"chk_low,omitempty"`
+	ChkPrio *int64  `json:"chk_prio,omitempty"`
+	ChkType *string `json:"chk_type,omitempty"`
+}
+
+// CheckDefaultRow Default thresholds of a check type. Every property is optional, see `props`.
+type CheckDefaultRow struct {
+	ChkHigh *int64  `json:"chk_high,omitempty"`
+	ChkInst *string `json:"chk_inst,omitempty"`
+	ChkLow  *int64  `json:"chk_low,omitempty"`
+	ChkPrio *int    `json:"chk_prio,omitempty"`
+	ChkType *string `json:"chk_type,omitempty"`
+	Id      *int    `json:"id,omitempty"`
+}
+
+// CheckIdResponse The id of the record created, and the outcome message.
+type CheckIdResponse struct {
+	Id   int64   `json:"id"`
+	Info *string `json:"info,omitempty"`
+}
+
+// CheckKey A check, by its node, its object (empty for the node), its type and its instance.
+type CheckKey struct {
+	ChkInstance string  `json:"chk_instance"`
+	ChkType     string  `json:"chk_type"`
+	NodeId      string  `json:"node_id"`
+	SvcId       *string `json:"svc_id,omitempty"`
+}
+
 // CheckListResponse defines model for CheckListResponse.
 type CheckListResponse struct {
 	Data CheckListResponse_Data `json:"data"`
@@ -1271,10 +1360,53 @@ type CheckRow struct {
 	ChkValue             *int64  `json:"chk_value,omitempty"`
 	Id                   *int    `json:"id,omitempty"`
 	NodeId               *string `json:"node_id,omitempty"`
+	NodesNodename        *string `json:"nodes.nodename,omitempty"`
 	ServicesSvcname      *string `json:"services.svcname,omitempty"`
 
 	// SvcId The object the check is attributed to, empty for the node.
 	SvcId *string `json:"svc_id,omitempty"`
+}
+
+// CheckSettingListResponse defines model for CheckSettingListResponse.
+type CheckSettingListResponse struct {
+	Data CheckSettingListResponse_Data `json:"data"`
+	Meta *ListMeta                     `json:"meta,omitempty"`
+}
+
+// CheckSettingListResponseData0 defines model for .
+type CheckSettingListResponseData0 = []CheckSettingRow
+
+// CheckSettingListResponseData1 defines model for .
+type CheckSettingListResponseData1 map[string]map[string]int
+
+// CheckSettingListResponse_Data defines model for CheckSettingListResponse.Data.
+type CheckSettingListResponse_Data struct {
+	union json.RawMessage
+}
+
+// CheckSettingRow Thresholds set on a check. Every property is optional, see `props`.
+type CheckSettingRow struct {
+	ChkChanged      *string `json:"chk_changed,omitempty"`
+	ChkChangedBy    *string `json:"chk_changed_by,omitempty"`
+	ChkHigh         *int64  `json:"chk_high,omitempty"`
+	ChkInstance     *string `json:"chk_instance,omitempty"`
+	ChkLow          *int64  `json:"chk_low,omitempty"`
+	ChkType         *string `json:"chk_type,omitempty"`
+	Id              *int    `json:"id,omitempty"`
+	NodeId          *string `json:"node_id,omitempty"`
+	NodesNodename   *string `json:"nodes.nodename,omitempty"`
+	ServicesSvcname *string `json:"services.svcname,omitempty"`
+	SvcId           *string `json:"svc_id,omitempty"`
+}
+
+// CheckSettingsRequest defines model for CheckSettingsRequest.
+type CheckSettingsRequest struct {
+	ChkHigh     *int64  `json:"chk_high,omitempty"`
+	ChkInstance string  `json:"chk_instance"`
+	ChkLow      *int64  `json:"chk_low,omitempty"`
+	ChkType     string  `json:"chk_type"`
+	NodeId      string  `json:"node_id"`
+	SvcId       *string `json:"svc_id,omitempty"`
 }
 
 // ClusterListResponse defines model for ClusterListResponse.
@@ -4359,6 +4491,230 @@ type GetChartParams struct {
 type GetChartSamplesParams struct {
 	// Days Days of history, 365 by default, 1825 at most.
 	Days *int `form:"days,omitempty" json:"days,omitempty"`
+}
+
+// GetChecksContextualParams defines parameters for GetChecksContextual.
+type GetChecksContextualParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetChecksDefaultsParams defines parameters for GetChecksDefaults.
+type GetChecksDefaultsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetChecksLiveParams defines parameters for GetChecksLive.
+type GetChecksLiveParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetChecksSettingsParams defines parameters for GetChecksSettings.
+type GetChecksSettingsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
 // GetClustersParams defines parameters for GetClusters.
@@ -11465,6 +11821,24 @@ type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
 // PostChartsJSONRequestBody defines body for PostCharts for application/json ContentType.
 type PostChartsJSONRequestBody PostChartsJSONBody
 
+// PostChecksContextualJSONRequestBody defines body for PostChecksContextual for application/json ContentType.
+type PostChecksContextualJSONRequestBody = CheckContextualRequest
+
+// PostCheckContextualJSONRequestBody defines body for PostCheckContextual for application/json ContentType.
+type PostCheckContextualJSONRequestBody = CheckContextualRequest
+
+// PostChecksDefaultsJSONRequestBody defines body for PostChecksDefaults for application/json ContentType.
+type PostChecksDefaultsJSONRequestBody = CheckDefaultRequest
+
+// PostCheckDefaultJSONRequestBody defines body for PostCheckDefault for application/json ContentType.
+type PostCheckDefaultJSONRequestBody = CheckDefaultRequest
+
+// DeleteChecksSettingsJSONRequestBody defines body for DeleteChecksSettings for application/json ContentType.
+type DeleteChecksSettingsJSONRequestBody = CheckKey
+
+// PostChecksSettingsJSONRequestBody defines body for PostChecksSettings for application/json ContentType.
+type PostChecksSettingsJSONRequestBody = CheckSettingsRequest
+
 // PostComplianceHistoryJSONRequestBody defines body for PostComplianceHistory for application/json ContentType.
 type PostComplianceHistoryJSONRequestBody PostComplianceHistoryJSONBody
 
@@ -11951,6 +12325,130 @@ func (t *ChartListResponse_Data) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsCheckContextualListResponseData0 returns the union data inside the CheckContextualListResponse_Data as a CheckContextualListResponseData0
+func (t CheckContextualListResponse_Data) AsCheckContextualListResponseData0() (CheckContextualListResponseData0, error) {
+	var body CheckContextualListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckContextualListResponseData0 overwrites any union data inside the CheckContextualListResponse_Data as the provided CheckContextualListResponseData0
+func (t *CheckContextualListResponse_Data) FromCheckContextualListResponseData0(v CheckContextualListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckContextualListResponseData0 performs a merge with any union data inside the CheckContextualListResponse_Data, using the provided CheckContextualListResponseData0
+func (t *CheckContextualListResponse_Data) MergeCheckContextualListResponseData0(v CheckContextualListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCheckContextualListResponseData1 returns the union data inside the CheckContextualListResponse_Data as a CheckContextualListResponseData1
+func (t CheckContextualListResponse_Data) AsCheckContextualListResponseData1() (CheckContextualListResponseData1, error) {
+	var body CheckContextualListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckContextualListResponseData1 overwrites any union data inside the CheckContextualListResponse_Data as the provided CheckContextualListResponseData1
+func (t *CheckContextualListResponse_Data) FromCheckContextualListResponseData1(v CheckContextualListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckContextualListResponseData1 performs a merge with any union data inside the CheckContextualListResponse_Data, using the provided CheckContextualListResponseData1
+func (t *CheckContextualListResponse_Data) MergeCheckContextualListResponseData1(v CheckContextualListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CheckContextualListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CheckContextualListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsCheckDefaultListResponseData0 returns the union data inside the CheckDefaultListResponse_Data as a CheckDefaultListResponseData0
+func (t CheckDefaultListResponse_Data) AsCheckDefaultListResponseData0() (CheckDefaultListResponseData0, error) {
+	var body CheckDefaultListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckDefaultListResponseData0 overwrites any union data inside the CheckDefaultListResponse_Data as the provided CheckDefaultListResponseData0
+func (t *CheckDefaultListResponse_Data) FromCheckDefaultListResponseData0(v CheckDefaultListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckDefaultListResponseData0 performs a merge with any union data inside the CheckDefaultListResponse_Data, using the provided CheckDefaultListResponseData0
+func (t *CheckDefaultListResponse_Data) MergeCheckDefaultListResponseData0(v CheckDefaultListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCheckDefaultListResponseData1 returns the union data inside the CheckDefaultListResponse_Data as a CheckDefaultListResponseData1
+func (t CheckDefaultListResponse_Data) AsCheckDefaultListResponseData1() (CheckDefaultListResponseData1, error) {
+	var body CheckDefaultListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckDefaultListResponseData1 overwrites any union data inside the CheckDefaultListResponse_Data as the provided CheckDefaultListResponseData1
+func (t *CheckDefaultListResponse_Data) FromCheckDefaultListResponseData1(v CheckDefaultListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckDefaultListResponseData1 performs a merge with any union data inside the CheckDefaultListResponse_Data, using the provided CheckDefaultListResponseData1
+func (t *CheckDefaultListResponse_Data) MergeCheckDefaultListResponseData1(v CheckDefaultListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CheckDefaultListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CheckDefaultListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsCheckListResponseData0 returns the union data inside the CheckListResponse_Data as a CheckListResponseData0
 func (t CheckListResponse_Data) AsCheckListResponseData0() (CheckListResponseData0, error) {
 	var body CheckListResponseData0
@@ -12009,6 +12507,68 @@ func (t CheckListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *CheckListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsCheckSettingListResponseData0 returns the union data inside the CheckSettingListResponse_Data as a CheckSettingListResponseData0
+func (t CheckSettingListResponse_Data) AsCheckSettingListResponseData0() (CheckSettingListResponseData0, error) {
+	var body CheckSettingListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckSettingListResponseData0 overwrites any union data inside the CheckSettingListResponse_Data as the provided CheckSettingListResponseData0
+func (t *CheckSettingListResponse_Data) FromCheckSettingListResponseData0(v CheckSettingListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckSettingListResponseData0 performs a merge with any union data inside the CheckSettingListResponse_Data, using the provided CheckSettingListResponseData0
+func (t *CheckSettingListResponse_Data) MergeCheckSettingListResponseData0(v CheckSettingListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCheckSettingListResponseData1 returns the union data inside the CheckSettingListResponse_Data as a CheckSettingListResponseData1
+func (t CheckSettingListResponse_Data) AsCheckSettingListResponseData1() (CheckSettingListResponseData1, error) {
+	var body CheckSettingListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckSettingListResponseData1 overwrites any union data inside the CheckSettingListResponse_Data as the provided CheckSettingListResponseData1
+func (t *CheckSettingListResponse_Data) FromCheckSettingListResponseData1(v CheckSettingListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckSettingListResponseData1 performs a merge with any union data inside the CheckSettingListResponse_Data, using the provided CheckSettingListResponseData1
+func (t *CheckSettingListResponse_Data) MergeCheckSettingListResponseData1(v CheckSettingListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CheckSettingListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CheckSettingListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
