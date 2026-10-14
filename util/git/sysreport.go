@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -45,7 +44,7 @@ func (s Sysreport) git(nodeID string, args ...string) (string, error) {
 		return "", ErrNoSysreport
 	}
 	// quotepath off: paths are printed as they are, not octal-escaped.
-	cmd := exec.Command("git", append([]string{"--git-dir=" + gitDir, "-c", "core.quotepath=off"}, args...)...)
+	cmd := command(append([]string{"--git-dir=" + gitDir, "-c", "core.quotepath=off"}, args...)...)
 	var out, errOut bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &errOut

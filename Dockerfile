@@ -22,12 +22,14 @@ FROM alpine:3.22.4
 ARG BUILDTIME
 
 # git keeps the history of the form definitions (forms revisions) and of
-# the sysreports.
-RUN apk add --no-cache bash git
+# the sysreports. tini runs as PID 1 and reaps the processes orphaned in the
+# container, a detached "git gc --auto" or a form script's background child,
+# which oc3 would leave as zombies: a Go program only waits for its own children.
+RUN apk add --no-cache bash git tini
 
 COPY --from=builder /opt/oc3/dist/oc3 /usr/bin/oc3
 
-ENTRYPOINT ["/usr/bin/oc3"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/bin/oc3"]
 CMD ["worker"]
 
 LABEL \
