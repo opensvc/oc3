@@ -850,3 +850,13 @@ func (oDb *DB) GroupIDByRole(ctx context.Context, role string) (int64, bool, err
 	}
 	return id, true, nil
 }
+
+// OrgGroupExists tells whether an organizational group is named role.
+func (oDb *DB) OrgGroupExists(ctx context.Context, role string) (bool, error) {
+	var n int
+	if err := oDb.DB.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM auth_group WHERE role = ? AND privilege = 'F'", role).Scan(&n); err != nil {
+		return false, fmt.Errorf("OrgGroupExists: %w", err)
+	}
+	return n > 0, nil
+}

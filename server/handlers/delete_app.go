@@ -26,8 +26,10 @@ func (a *Api) deleteAppByID(c echo.Context, handlerName, appId string) error {
 		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
 	}
 
+	// An AppManager, as the historical collector checks it, then responsible
+	// for the app below; a Manager is both.
 	isManager := IsManager(c)
-	if !isManager {
+	if !IsAppManager(c) {
 		return JSONProblemf(c, http.StatusForbidden, "AppManager privilege required")
 	}
 

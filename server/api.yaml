@@ -688,7 +688,13 @@ paths:
   /apps/{app_id}:
     post:
       operationId: PostApp
-      description: Change an application code properties
+      description: |
+        Change the properties of an application code. Renaming it renames it on its
+        nodes and services too. app is trimmed and may be neither empty, nor longer
+        than 64 characters, nor the code of another application, compared without
+        regard to case (409); app_domain is 64 characters at most; app_team_ops is
+        empty or the name of an organizational group. Requires the AppManager
+        privilege and the responsibility of the app, which a Manager has.
       parameters:
         - in: path
           name: app_id
@@ -728,6 +734,8 @@ paths:
           $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
         500:
           $ref: '#/components/responses/500'
       security:
