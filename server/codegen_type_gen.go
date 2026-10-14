@@ -2018,6 +2018,34 @@ type FormRow struct {
 	Id       *int    `json:"id,omitempty"`
 }
 
+// GroupHiddenMenuEffect defines model for GroupHiddenMenuEffect.
+type GroupHiddenMenuEffect struct {
+	// Entries The entries the group hides, sorted by key.
+	Entries []struct {
+		Members []struct {
+			Email string `json:"email"`
+
+			// Hidden The member does not see the entry.
+			Hidden bool `json:"hidden"`
+
+			// KeptBy The groups of the member showing the entry.
+			KeptBy []struct {
+				GroupId int64 `json:"group_id"`
+
+				// Personal The member's own group, user_<id>.
+				Personal bool   `json:"personal"`
+				Role     string `json:"role"`
+			} `json:"kept_by"`
+			Name   string `json:"name"`
+			UserId int64  `json:"user_id"`
+		} `json:"members"`
+		MenuEntry string `json:"menu_entry"`
+	} `json:"entries"`
+
+	// Members The count of members of the group.
+	Members int `json:"members"`
+}
+
 // GroupListResponse defines model for GroupListResponse.
 type GroupListResponse struct {
 	Data GroupListResponse_Data `json:"data"`

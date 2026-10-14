@@ -5969,6 +5969,47 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /groups/{group_id}/hidden_menu_entries/effect:
+    get:
+      operationId: GetGroupHiddenMenuEffect
+      description: |
+        The effect of the menu entries the group hides on its members: for each
+        entry, every member, whether the member really does not see it, and the
+        groups of the member that keep it shown otherwise. An entry is hidden to
+        a user only when every organizational group of the user hides it, the
+        Everybody group and the privilege groups apart, the personal group of
+        the user (user_<id>) included. Managers see every group; other users the
+        groups they belong to. A privilege group hides no entry: 400.
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier (auth_group.id or role)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupHiddenMenuEffect'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /groups/{group_id}/hidden_menu_entries:
     get:
       operationId: GetGroupHiddenMenuEntries
@@ -21073,6 +21114,54 @@ components:
         acked_comment:
           type: string
           description: Why the failure needs nothing more.
+
+    GroupHiddenMenuEffect:
+      type: object
+      required: [members, entries]
+      properties:
+        members:
+          type: integer
+          description: The count of members of the group.
+        entries:
+          type: array
+          description: The entries the group hides, sorted by key.
+          items:
+            type: object
+            required: [menu_entry, members]
+            properties:
+              menu_entry:
+                type: string
+              members:
+                type: array
+                items:
+                  type: object
+                  required: [user_id, name, email, hidden, kept_by]
+                  properties:
+                    user_id:
+                      type: integer
+                      format: int64
+                    name:
+                      type: string
+                    email:
+                      type: string
+                    hidden:
+                      type: boolean
+                      description: The member does not see the entry.
+                    kept_by:
+                      type: array
+                      description: The groups of the member showing the entry.
+                      items:
+                        type: object
+                        required: [group_id, role, personal]
+                        properties:
+                          group_id:
+                            type: integer
+                            format: int64
+                          role:
+                            type: string
+                          personal:
+                            type: boolean
+                            description: The member's own group, user_<id>.
 
     HiddenMenuEntriesResponse:
       type: object
