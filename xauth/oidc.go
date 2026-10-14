@@ -56,6 +56,9 @@ type OIDCConfig struct {
 	AutoCreateUsers bool
 	IdleTimeout     time.Duration
 	MaxLifetime     time.Duration
+	// TokenKey encrypts the provider's tokens kept in the sessions (LoadTokenKey);
+	// without it, they are not kept.
+	TokenKey []byte
 	// CookieSecure sets the Secure attribute and the __Host- prefix on the cookies.
 	// False only for a development origin served over plain http.
 	CookieSecure bool

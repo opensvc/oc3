@@ -170,7 +170,7 @@ func (a *Api) GetAuthCallback(c echo.Context, params server.GetAuthCallbackParam
 		return c.Redirect(http.StatusSeeOther, withAuthError(returnTo, reason))
 	}
 
-	sessionID, err := a.OIDC.CreateSession(ctx, xauth.Session{
+	session := xauth.Session{
 		UserID:  user.ID,
 		Email:   user.Email,
 		Issuer:  claims.Issuer,
@@ -178,7 +178,11 @@ func (a *Api) GetAuthCallback(c echo.Context, params server.GetAuthCallbackParam
 		SID:     claims.SID,
 		IDToken: idToken,
 		Claims:  claims.Raw,
-	})
+	}
+	// The provider's tokens, kept encrypted when a token key is configured, for
+	// the services oc3 calls on the user's behalf (the AI assistant).
+	session.WithToken(claims.Token())
+	sessionID, err := a.OIDC.CreateSession(ctx, session)
 	if err != nil {
 		log.Error("cannot open a session", logkey.Error, err)
 		return c.Redirect(http.StatusSeeOther, withAuthError(returnTo, authErrorUnavailable))

@@ -46,6 +46,10 @@ type (
 
 		// Safe reads and writes the files of the collector safe.
 		Safe *safe.Service
+
+		// Assistant is the AI agent the assistant routes are relayed to; nil when
+		// it is not configured.
+		Assistant *AssistantConfig
 	}
 )
 

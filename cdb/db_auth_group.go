@@ -757,3 +757,29 @@ func (oDb *DB) DeleteDashboardAppWithoutResponsible(ctx context.Context, app str
 	oDb.SetChange("dashboard")
 	return nil
 }
+
+// PrivilegeRoles returns those of the roles that are privilege groups
+// (auth_group.privilege = 'T'), the others being organizational groups.
+func (oDb *DB) PrivilegeRoles(ctx context.Context, roles []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(roles) == 0 {
+		return out, nil
+	}
+	args := make([]any, len(roles))
+	for i, r := range roles {
+		args[i] = r
+	}
+	rows, err := oDb.DB.QueryContext(ctx, "SELECT role FROM auth_group WHERE privilege = 'T' AND role IN ("+Placeholders(len(roles))+")", args...)
+	if err != nil {
+		return nil, fmt.Errorf("privilegeRoles: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var role string
+		if err := rows.Scan(&role); err != nil {
+			return nil, fmt.Errorf("privilegeRoles: %w", err)
+		}
+		out[role] = true
+	}
+	return out, rows.Err()
+}

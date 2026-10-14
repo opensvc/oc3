@@ -33,6 +33,11 @@ type Session struct {
 	Subject string `json:"sub"`
 	SID     string `json:"sid,omitempty"`
 	IDToken string `json:"id_token"`
+	// Tokens are the provider's access and refresh tokens of the user, encrypted
+	// (oidc_tokens.go); empty when no token key is configured.
+	Tokens string `json:"tokens,omitempty"`
+	// token is the provider's token CreateSession keeps, set with WithToken.
+	token *oauth2.Token
 	// Claims are the claims of the ID token a rule may use, shown on the Claim
 	// mappings page to those who write the rules.
 	Claims  map[string]any `json:"claims,omitempty"`
@@ -53,6 +58,8 @@ type Claims struct {
 	FamilyName        string
 	Name              string
 	SID               string
+	// token is the provider's token response, for the session to keep.
+	token *oauth2.Token
 	// Raw holds every claim of the ID token, for the claim rules.
 	Raw map[string]any
 }
@@ -169,6 +176,7 @@ func (o *OIDC) FinishLogin(ctx context.Context, loginID, state, code string) (*C
 	if err != nil {
 		return nil, tx.ReturnTo, "", fmt.Errorf("%w: %w", ErrLoginToken, err)
 	}
+	claims.token = token
 	return claims, tx.ReturnTo, raw, nil
 }
 
@@ -205,6 +213,13 @@ func (o *OIDC) CreateSession(ctx context.Context, s Session) (string, error) {
 		s.Claims = displayedClaims(s.Claims)
 	}
 	s.Expires = now.Add(o.cfg.MaxLifetime)
+	if s.token != nil && o.KeepsTokens() && s.token.AccessToken != "" {
+		sealed, err := o.sealTokens(&s, sessionTokens{AccessToken: s.token.AccessToken, RefreshToken: s.token.RefreshToken, Expiry: s.token.Expiry})
+		if err != nil {
+			return "", fmt.Errorf("oidc: cannot keep the tokens: %w", err)
+		}
+		s.Tokens = sealed
+	}
 	b, err := json.Marshal(s)
 	if err != nil {
 		return "", err

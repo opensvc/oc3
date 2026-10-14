@@ -5,6 +5,7 @@ package server
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -14,6 +15,147 @@ const (
 	BasicAuthScopes  basicAuthContextKey  = "basicAuth.Scopes"
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
+
+// Defines values for AssistantConfirmationRequestDecision.
+const (
+	Approve AssistantConfirmationRequestDecision = "approve"
+	Reject  AssistantConfirmationRequestDecision = "reject"
+)
+
+// Valid indicates whether the value is a known member of the AssistantConfirmationRequestDecision enum.
+func (e AssistantConfirmationRequestDecision) Valid() bool {
+	switch e {
+	case Approve:
+		return true
+	case Reject:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantMessageRole.
+const (
+	AssistantMessageRoleAssistant AssistantMessageRole = "assistant"
+	AssistantMessageRoleUser      AssistantMessageRole = "user"
+)
+
+// Valid indicates whether the value is a known member of the AssistantMessageRole enum.
+func (e AssistantMessageRole) Valid() bool {
+	switch e {
+	case AssistantMessageRoleAssistant:
+		return true
+	case AssistantMessageRoleUser:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantStatusReason.
+const (
+	Disabled         AssistantStatusReason = "disabled"
+	Impersonating    AssistantStatusReason = "impersonating"
+	PasswordSignIn   AssistantStatusReason = "password_sign_in"
+	TokenUnavailable AssistantStatusReason = "token_unavailable"
+)
+
+// Valid indicates whether the value is a known member of the AssistantStatusReason enum.
+func (e AssistantStatusReason) Valid() bool {
+	switch e {
+	case Disabled:
+		return true
+	case Impersonating:
+		return true
+	case PasswordSignIn:
+		return true
+	case TokenUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantStreamEventCode.
+const (
+	AgentFailed    AssistantStreamEventCode = "agent_failed"
+	RequestTimeout AssistantStreamEventCode = "request_timeout"
+	ToolCallLimit  AssistantStreamEventCode = "tool_call_limit"
+)
+
+// Valid indicates whether the value is a known member of the AssistantStreamEventCode enum.
+func (e AssistantStreamEventCode) Valid() bool {
+	switch e {
+	case AgentFailed:
+		return true
+	case RequestTimeout:
+		return true
+	case ToolCallLimit:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantStreamEventFinishReason.
+const (
+	AssistantStreamEventFinishReasonCompleted     AssistantStreamEventFinishReason = "completed"
+	AssistantStreamEventFinishReasonContentFilter AssistantStreamEventFinishReason = "content_filter"
+	AssistantStreamEventFinishReasonLength        AssistantStreamEventFinishReason = "length"
+	AssistantStreamEventFinishReasonOther         AssistantStreamEventFinishReason = "other"
+	AssistantStreamEventFinishReasonToolCalls     AssistantStreamEventFinishReason = "tool_calls"
+)
+
+// Valid indicates whether the value is a known member of the AssistantStreamEventFinishReason enum.
+func (e AssistantStreamEventFinishReason) Valid() bool {
+	switch e {
+	case AssistantStreamEventFinishReasonCompleted:
+		return true
+	case AssistantStreamEventFinishReasonContentFilter:
+		return true
+	case AssistantStreamEventFinishReasonLength:
+		return true
+	case AssistantStreamEventFinishReasonOther:
+		return true
+	case AssistantStreamEventFinishReasonToolCalls:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantStreamEventType.
+const (
+	AssistantStreamEventTypeCompleted            AssistantStreamEventType = "completed"
+	AssistantStreamEventTypeConfirmationRequired AssistantStreamEventType = "confirmation_required"
+	AssistantStreamEventTypeError                AssistantStreamEventType = "error"
+	AssistantStreamEventTypeTextDelta            AssistantStreamEventType = "text_delta"
+	AssistantStreamEventTypeToolFinished         AssistantStreamEventType = "tool_finished"
+	AssistantStreamEventTypeToolStarted          AssistantStreamEventType = "tool_started"
+	AssistantStreamEventTypeUsage                AssistantStreamEventType = "usage"
+)
+
+// Valid indicates whether the value is a known member of the AssistantStreamEventType enum.
+func (e AssistantStreamEventType) Valid() bool {
+	switch e {
+	case AssistantStreamEventTypeCompleted:
+		return true
+	case AssistantStreamEventTypeConfirmationRequired:
+		return true
+	case AssistantStreamEventTypeError:
+		return true
+	case AssistantStreamEventTypeTextDelta:
+		return true
+	case AssistantStreamEventTypeToolFinished:
+		return true
+	case AssistantStreamEventTypeToolStarted:
+		return true
+	case AssistantStreamEventTypeUsage:
+		return true
+	default:
+		return false
+	}
+}
 
 // Defines values for ComplianceVersionSource.
 const (
@@ -273,6 +415,30 @@ func (e SysreportFileStatKind) Valid() bool {
 	case SysreportFileStatKindCommand:
 		return true
 	case SysreportFileStatKindFile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WhoamiAuthSource.
+const (
+	WhoamiAuthSourceBasic   WhoamiAuthSource = "basic"
+	WhoamiAuthSourceBearer  WhoamiAuthSource = "bearer"
+	WhoamiAuthSourceNode    WhoamiAuthSource = "node"
+	WhoamiAuthSourceSession WhoamiAuthSource = "session"
+)
+
+// Valid indicates whether the value is a known member of the WhoamiAuthSource enum.
+func (e WhoamiAuthSource) Valid() bool {
+	switch e {
+	case WhoamiAuthSourceBasic:
+		return true
+	case WhoamiAuthSourceBearer:
+		return true
+	case WhoamiAuthSourceNode:
+		return true
+	case WhoamiAuthSourceSession:
 		return true
 	default:
 		return false
@@ -843,6 +1009,158 @@ type AppRow struct {
 	Description *string `json:"description,omitempty"`
 	Id          *int    `json:"id,omitempty"`
 	Updated     *string `json:"updated,omitempty"`
+}
+
+// AssistantConfirmation defines model for AssistantConfirmation.
+type AssistantConfirmation struct {
+	// Arguments The exact arguments of the call that runs if the user approves it.
+	Arguments interface{} `json:"arguments"`
+	ExpiresAt time.Time   `json:"expires_at"`
+	Id        string      `json:"id"`
+	Tool      struct {
+		Destructive bool   `json:"destructive"`
+		Name        string `json:"name"`
+		Title       string `json:"title"`
+	} `json:"tool"`
+	TurnId string `json:"turn_id"`
+}
+
+// AssistantConfirmationRequest defines model for AssistantConfirmationRequest.
+type AssistantConfirmationRequest struct {
+	// ConfirmationId The `id` of the confirmation.
+	ConfirmationId string                               `json:"confirmation_id"`
+	Decision       AssistantConfirmationRequestDecision `json:"decision"`
+}
+
+// AssistantConfirmationRequestDecision defines model for AssistantConfirmationRequest.Decision.
+type AssistantConfirmationRequestDecision string
+
+// AssistantConversation defines model for AssistantConversation.
+type AssistantConversation struct {
+	CreatedAt time.Time `json:"created_at"`
+
+	// ExpiresAt Pushed back by each completed turn.
+	ExpiresAt time.Time `json:"expires_at"`
+	Id        string    `json:"id"`
+
+	// StoredBytes The size of the stored history.
+	StoredBytes int `json:"stored_bytes"`
+
+	// Title Empty until the first successful turn, which derives it from its prompt, or until a rename.
+	Title     string    `json:"title"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// AssistantConversationEnvelope defines model for AssistantConversationEnvelope.
+type AssistantConversationEnvelope struct {
+	Conversation        AssistantConversation  `json:"conversation"`
+	PendingConfirmation *AssistantConfirmation `json:"pending_confirmation,omitempty"`
+}
+
+// AssistantConversationList defines model for AssistantConversationList.
+type AssistantConversationList struct {
+	Conversations []AssistantConversation `json:"conversations"`
+}
+
+// AssistantError defines model for AssistantError.
+type AssistantError struct {
+	Error struct {
+		// Code A stable error code.
+		Code string `json:"code"`
+
+		// Message A human-readable message.
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+// AssistantMessage defines model for AssistantMessage.
+type AssistantMessage struct {
+	CreatedAt time.Time            `json:"created_at"`
+	Id        string               `json:"id"`
+	Role      AssistantMessageRole `json:"role"`
+	Text      string               `json:"text"`
+	TurnId    string               `json:"turn_id"`
+}
+
+// AssistantMessageRole defines model for AssistantMessage.Role.
+type AssistantMessageRole string
+
+// AssistantMessagePage defines model for AssistantMessagePage.
+type AssistantMessagePage struct {
+	// Messages In chronological order.
+	Messages []AssistantMessage `json:"messages"`
+
+	// NextCursor Pass it as `before` to read the previous page; empty when there is none.
+	NextCursor string `json:"next_cursor"`
+}
+
+// AssistantStatus defines model for AssistantStatus.
+type AssistantStatus struct {
+	// Available Whether the caller can use it now.
+	Available bool `json:"available"`
+
+	// Enabled Whether oc3 is configured with an AI agent (server.assistant).
+	Enabled bool `json:"enabled"`
+
+	// Reason Why it is not available.
+	Reason *AssistantStatusReason `json:"reason,omitempty"`
+}
+
+// AssistantStatusReason Why it is not available.
+type AssistantStatusReason string
+
+// AssistantStreamEvent One event of a streamed turn. The SSE event name equals `type`.
+type AssistantStreamEvent struct {
+	// Code `error`: why the turn failed. `tool_call_limit`: the model asked for more than 8 tools in one answer, or more than 16 in the turn.
+	Code         *AssistantStreamEventCode `json:"code,omitempty"`
+	Confirmation *AssistantConfirmation    `json:"confirmation,omitempty"`
+
+	// FinishReason `completed`: why the model stopped.
+	FinishReason *AssistantStreamEventFinishReason `json:"finish_reason,omitempty"`
+
+	// Iteration The model iteration of the turn.
+	Iteration *int `json:"iteration,omitempty"`
+
+	// Message `error`: a human-readable message.
+	Message *string `json:"message,omitempty"`
+
+	// TextDelta `text_delta`: the next piece of the answer.
+	TextDelta *string `json:"text_delta,omitempty"`
+
+	// ToolError `tool_finished`: whether the tool failed.
+	ToolError *bool `json:"tool_error,omitempty"`
+
+	// ToolName `tool_started`, `tool_finished`: the MCP tool.
+	ToolName *string                  `json:"tool_name,omitempty"`
+	Type     AssistantStreamEventType `json:"type"`
+
+	// Usage `usage`: the tokens of one model call.
+	Usage *struct {
+		InputTokens  *int `json:"input_tokens,omitempty"`
+		OutputTokens *int `json:"output_tokens,omitempty"`
+		TotalTokens  *int `json:"total_tokens,omitempty"`
+	} `json:"usage,omitempty"`
+}
+
+// AssistantStreamEventCode `error`: why the turn failed. `tool_call_limit`: the model asked for more than 8 tools in one answer, or more than 16 in the turn.
+type AssistantStreamEventCode string
+
+// AssistantStreamEventFinishReason `completed`: why the model stopped.
+type AssistantStreamEventFinishReason string
+
+// AssistantStreamEventType defines model for AssistantStreamEvent.Type.
+type AssistantStreamEventType string
+
+// AssistantTitleRequest defines model for AssistantTitleRequest.
+type AssistantTitleRequest struct {
+	// Title Control characters are replaced by spaces and whitespace is normalized.
+	Title string `json:"title"`
+}
+
+// AssistantTurnRequest defines model for AssistantTurnRequest.
+type AssistantTurnRequest struct {
+	// Prompt The question of the user, at most 32 KiB, not blank.
+	Prompt string `json:"prompt"`
 }
 
 // AuthInfo defines model for AuthInfo.
@@ -3152,6 +3470,53 @@ type UserRow struct {
 	Username                *string `json:"username,omitempty"`
 }
 
+// Whoami defines model for Whoami.
+type Whoami struct {
+	// AuthSource How the request, or the impersonator, signed in.
+	AuthSource WhoamiAuthSource `json:"auth_source"`
+	Email      *string          `json:"email,omitempty"`
+
+	// Expires When the session, or the access token, ends whatever the activity.
+	Expires *time.Time `json:"expires,omitempty"`
+
+	// Groups The other groups of the user, sorted.
+	Groups []string `json:"groups"`
+
+	// IdleExpires When an idle session ends.
+	IdleExpires *time.Time `json:"idle_expires,omitempty"`
+
+	// Impersonator The Manager impersonating the user, if any.
+	Impersonator *struct {
+		Email  string `json:"email"`
+		Name   string `json:"name"`
+		UserId int    `json:"user_id"`
+	} `json:"impersonator,omitempty"`
+
+	// Issuer The provider of a single sign-on.
+	Issuer *string `json:"issuer,omitempty"`
+	Name   *string `json:"name,omitempty"`
+
+	// Node The node, for a node's credentials.
+	Node *struct {
+		App       *string `json:"app,omitempty"`
+		ClusterId *string `json:"cluster_id,omitempty"`
+		NodeId    string  `json:"node_id"`
+		Nodename  string  `json:"nodename"`
+	} `json:"node,omitempty"`
+
+	// Privileges The privilege groups of the user, sorted.
+	Privileges []string `json:"privileges"`
+
+	// Subject The user's identity at the provider.
+	Subject *string `json:"subject,omitempty"`
+
+	// UserId The user, none for a node.
+	UserId *int `json:"user_id,omitempty"`
+}
+
+// WhoamiAuthSource How the request, or the impersonator, signed in.
+type WhoamiAuthSource string
+
 // WorkflowListResponse defines model for WorkflowListResponse.
 type WorkflowListResponse struct {
 	Data WorkflowListResponse_Data `json:"data"`
@@ -3885,6 +4250,14 @@ type GetArraysParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetAssistantMessagesParams defines parameters for GetAssistantMessages.
+type GetAssistantMessagesParams struct {
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Before The next_cursor of the previous page.
+	Before *string `form:"before,omitempty" json:"before,omitempty"`
 }
 
 // PostAuthBackchannelLogoutFormdataBody defines parameters for PostAuthBackchannelLogout.
@@ -11073,6 +11446,15 @@ type DeleteAppsResponsiblesJSONRequestBody DeleteAppsResponsiblesJSONBody
 
 // PostAppsResponsiblesJSONRequestBody defines body for PostAppsResponsibles for application/json ContentType.
 type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
+
+// PatchAssistantConversationJSONRequestBody defines body for PatchAssistantConversation for application/json ContentType.
+type PatchAssistantConversationJSONRequestBody = AssistantTitleRequest
+
+// PostAssistantTurnJSONRequestBody defines body for PostAssistantTurn for application/json ContentType.
+type PostAssistantTurnJSONRequestBody = AssistantTurnRequest
+
+// PostAssistantConfirmationJSONRequestBody defines body for PostAssistantConfirmation for application/json ContentType.
+type PostAssistantConfirmationJSONRequestBody = AssistantConfirmationRequest
 
 // PostAuthBackchannelLogoutFormdataRequestBody defines body for PostAuthBackchannelLogout for application/x-www-form-urlencoded ContentType.
 type PostAuthBackchannelLogoutFormdataRequestBody PostAuthBackchannelLogoutFormdataBody

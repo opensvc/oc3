@@ -1537,6 +1537,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthInfo'
 
+  /auth/whoami:
+    get:
+      operationId: GetAuthWhoami
+      description: |
+        Who the request is authenticated as, and how: the source of the sign-in
+        (session for a single sign-on session cookie, bearer for a provider's
+        access token, basic for a password, node for a node's credentials), the
+        user, their privilege groups and their other groups, and, for a single
+        sign-on, the identity at the provider and when the sign-in ends.
+
+        While impersonating, the user, privileges and groups are those of the
+        impersonated user; auth_source, issuer, subject and the ends describe the
+        sign-in of the impersonator, given in impersonator.
+
+        No token, password nor session id appears. The answer is not cached; it
+        reads the current state of each request, do not poll it.
+      tags:
+        - auth
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      responses:
+        200:
+          description: OK
+          headers:
+            Cache-Control:
+              description: no-store
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Whoami'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+
   /auth/login:
     get:
       operationId: GetAuthLogin
@@ -4891,6 +4929,601 @@ paths:
           $ref: '#/components/responses/404'
         500:
           $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/status:
+    get:
+      operationId: GetAssistantStatus
+      description: |
+        Whether the AI assistant is configured, and whether the caller can use it: a
+        user signed in with single sign-on, whose session keeps an access token, or
+        calling with a bearer token. Answered by oc3, without calling the agent.
+      tags:
+        - assistant
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantStatus'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/conversations:
+    get:
+      operationId: GetAssistantConversations
+      description: |
+        List the conversations of the caller, the most recently updated first.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantConversationList'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostAssistantConversation
+      description: |
+        Create an empty conversation for the caller.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      responses:
+        201:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantConversationEnvelope'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        409:
+          description: The caller reached the conversation limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/conversations/{conversation_id}:
+    get:
+      operationId: GetAssistantConversation
+      description: |
+        Read a conversation, and the action it waits a decision on, if any.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantConversationEnvelope'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    patch:
+      operationId: PatchAssistantConversation
+      description: |
+        Rename a conversation.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssistantTitleRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantConversationEnvelope'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        400:
+          description: Invalid title.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteAssistantConversation
+      description: |
+        Delete a conversation and its history.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: Deleted.
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/conversations/{conversation_id}/messages:
+    get:
+      operationId: GetAssistantMessages
+      description: |
+        Read the stored messages of a conversation, the most recent page first; tool calls and results are never returned.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - in: query
+          name: before
+          description: The next_cursor of the previous page.
+          schema:
+            type: string
+            maxLength: 39
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantMessagePage'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        400:
+          description: Invalid query.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/conversations/{conversation_id}/turns:
+    post:
+      operationId: PostAssistantTurn
+      description: |
+        Send a prompt and stream the turn of the agent; send the new prompt only, the agent keeps the history.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssistantTurnRequest'
+      responses:
+        200:
+          description: The turn, streamed as server-sent events.
+          content:
+            text/event-stream:
+              schema:
+                description: "The schema of each event of the stream, written as `event: <type>` then `data: <the event as JSON>` and an empty line; the stream ends after completed, confirmation_required or error."
+                allOf:
+                  - $ref: '#/components/schemas/AssistantStreamEvent'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        400:
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        409:
+          description: A turn is running, an action waits a decision, or a limit is reached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        413:
+          description: The prompt is too large.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/conversations/{conversation_id}/turns/{turn_id}/confirmation:
+    post:
+      operationId: PostAssistantConfirmation
+      description: |
+        Approve or reject the action a turn waits on, and stream the rest of the turn.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: turn_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssistantConfirmationRequest'
+      responses:
+        200:
+          description: The turn, streamed as server-sent events.
+          content:
+            text/event-stream:
+              schema:
+                description: "The schema of each event of the stream, written as `event: <type>` then `data: <the event as JSON>` and an empty line; the stream ends after completed, confirmation_required or error."
+                allOf:
+                  - $ref: '#/components/schemas/AssistantStreamEvent'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        400:
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        409:
+          description: A turn is running, an action waits a decision, or a limit is reached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        413:
+          description: The prompt is too large.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
@@ -17061,6 +17694,335 @@ components:
                     type: string
                   ruleset_id:
                     type: integer
+
+    AssistantConversation:
+      type: object
+      required:
+      - id
+      - title
+      - created_at
+      - updated_at
+      - expires_at
+      - stored_bytes
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          maxLength: 80
+          description: Empty until the first successful turn, which derives it from its prompt, or until a rename.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          description: Pushed back by each completed turn.
+        stored_bytes:
+          type: integer
+          minimum: 0
+          description: The size of the stored history.
+    AssistantConversationList:
+      type: object
+      required:
+      - conversations
+      properties:
+        conversations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssistantConversation'
+    AssistantConversationEnvelope:
+      type: object
+      required:
+      - conversation
+      properties:
+        conversation:
+          $ref: '#/components/schemas/AssistantConversation'
+        pending_confirmation:
+          $ref: '#/components/schemas/AssistantConfirmation'
+          description: The action the conversation waits a decision on. Only the conversation read returns it.
+    AssistantTitleRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+          description: Control characters are replaced by spaces and whitespace is normalized.
+    AssistantTurnRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - prompt
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+          description: The question of the user, at most 32 KiB, not blank.
+    AssistantConfirmationRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - confirmation_id
+      - decision
+      properties:
+        confirmation_id:
+          type: string
+          minLength: 1
+          description: The `id` of the confirmation.
+        decision:
+          type: string
+          enum:
+          - approve
+          - reject
+    AssistantConfirmation:
+      type: object
+      required:
+      - id
+      - turn_id
+      - tool
+      - arguments
+      - expires_at
+      properties:
+        id:
+          type: string
+        turn_id:
+          type: string
+        tool:
+          type: object
+          required:
+          - name
+          - title
+          - destructive
+          properties:
+            name:
+              type: string
+            title:
+              type: string
+            destructive:
+              type: boolean
+        arguments:
+          description: The exact arguments of the call that runs if the user approves it.
+        expires_at:
+          type: string
+          format: date-time
+    AssistantMessage:
+      type: object
+      required:
+      - id
+      - turn_id
+      - role
+      - text
+      - created_at
+      properties:
+        id:
+          type: string
+        turn_id:
+          type: string
+        role:
+          type: string
+          enum:
+          - user
+          - assistant
+        text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    AssistantMessagePage:
+      type: object
+      required:
+      - messages
+      - next_cursor
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssistantMessage'
+          description: In chronological order.
+        next_cursor:
+          type: string
+          description: Pass it as `before` to read the previous page; empty when there is none.
+    AssistantStreamEvent:
+      type: object
+      required:
+      - type
+      description: One event of a streamed turn. The SSE event name equals `type`.
+      properties:
+        type:
+          type: string
+          enum:
+          - text_delta
+          - tool_started
+          - tool_finished
+          - usage
+          - completed
+          - confirmation_required
+          - error
+        iteration:
+          type: integer
+          minimum: 1
+          description: The model iteration of the turn.
+        text_delta:
+          type: string
+          description: '`text_delta`: the next piece of the answer.'
+        tool_name:
+          type: string
+          description: '`tool_started`, `tool_finished`: the MCP tool.'
+        tool_error:
+          type: boolean
+          description: '`tool_finished`: whether the tool failed.'
+        usage:
+          type: object
+          description: '`usage`: the tokens of one model call.'
+          properties:
+            input_tokens:
+              type: integer
+            output_tokens:
+              type: integer
+            total_tokens:
+              type: integer
+        finish_reason:
+          type: string
+          enum:
+          - completed
+          - tool_calls
+          - length
+          - content_filter
+          - other
+          description: '`completed`: why the model stopped.'
+        confirmation:
+          $ref: '#/components/schemas/AssistantConfirmation'
+          description: '`confirmation_required`: the action waiting a decision; the turn ends until it is given.'
+        code:
+          type: string
+          enum:
+          - agent_failed
+          - request_timeout
+          - tool_call_limit
+          description: '`error`: why the turn failed. `tool_call_limit`: the model asked for more than 8 tools in one answer, or more than 16 in the turn.'
+        message:
+          type: string
+          description: '`error`: a human-readable message.'
+    AssistantError:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: A stable error code.
+            message:
+              type: string
+              description: A human-readable message.
+    AssistantStatus:
+      type: object
+      required:
+      - enabled
+      - available
+      properties:
+        enabled:
+          type: boolean
+          description: Whether oc3 is configured with an AI agent (server.assistant).
+        available:
+          type: boolean
+          description: Whether the caller can use it now.
+        reason:
+          type: string
+          enum:
+          - disabled
+          - password_sign_in
+          - impersonating
+          - token_unavailable
+          description: Why it is not available.
+
+    Whoami:
+      type: object
+      required:
+        - auth_source
+        - privileges
+        - groups
+      properties:
+        auth_source:
+          type: string
+          enum: [session, bearer, basic, node]
+          description: How the request, or the impersonator, signed in.
+        user_id:
+          type: integer
+          nullable: true
+          description: The user, none for a node.
+        email:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        issuer:
+          type: string
+          nullable: true
+          description: The provider of a single sign-on.
+        subject:
+          type: string
+          nullable: true
+          description: The user's identity at the provider.
+        privileges:
+          type: array
+          items:
+            type: string
+          description: The privilege groups of the user, sorted.
+        groups:
+          type: array
+          items:
+            type: string
+          description: The other groups of the user, sorted.
+        expires:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the session, or the access token, ends whatever the activity.
+        idle_expires:
+          type: string
+          format: date-time
+          nullable: true
+          description: When an idle session ends.
+        impersonator:
+          type: object
+          nullable: true
+          description: The Manager impersonating the user, if any.
+          required: [user_id, email, name]
+          properties:
+            user_id:
+              type: integer
+            email:
+              type: string
+            name:
+              type: string
+        node:
+          type: object
+          nullable: true
+          description: The node, for a node's credentials.
+          required: [node_id, nodename]
+          properties:
+            node_id:
+              type: string
+            nodename:
+              type: string
+            cluster_id:
+              type: string
+            app:
+              type: string
 
     WorkflowListResponse:
       type: object

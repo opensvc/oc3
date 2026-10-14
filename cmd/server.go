@@ -26,6 +26,8 @@ type (
 		// oidc is the OpenID Connect sign-in; nil when server.oidc.enable is false.
 		oidc *xauth.OIDC
 		safe *safe.Service
+		// assistant is the AI agent the assistant routes are relayed to.
+		assistant *handlers.AssistantConfig
 	}
 )
 
@@ -38,6 +40,9 @@ func newServer() (*server, error) {
 	// A keys file configured but unreadable stops the server: it would otherwise
 	// store in plaintext what the operator asked to encrypt.
 	if t.safe, err = newSafeService(); err != nil {
+		return nil, err
+	}
+	if t.assistant, err = newAssistant(t.section); err != nil {
 		return nil, err
 	}
 	// A wrong OIDC configuration stops the server rather than leaving it to run
@@ -67,6 +72,7 @@ func (t *server) apiRegister(e *echo.Echo) {
 		OIDC:        t.oidc,
 		BasicUsers:  viper.GetBool(t.section + ".auth.basic_users"),
 		Safe:        t.safe,
+		Assistant:   t.assistant,
 	}
 	// With a messenger, the changes made through the api are announced like those
 	// of the workers, and the websocket clients get their tokens from the api.
