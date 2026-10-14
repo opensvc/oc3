@@ -247,8 +247,12 @@ func (oDb *DB) InstancePingFromNodeID(ctx context.Context, nodeID string) (updat
 		qUpdateResmon = `UPDATE resmon SET updated = NOW()
 			WHERE node_id = ? AND updated < DATE_SUB(NOW(), INTERVAL 30 SECOND)`
 
-		qUpdateResmonLogLast = `UPDATE resmon_log_last SET res_end = NOW()
-			WHERE node_id = ? AND res_end < DATE_SUB(NOW(), INTERVAL 30 SECOND)`
+		// Only the resources the node still has: res_end of a resource gone
+		// stays when it went, which the scrub_resmon task purges by.
+		qUpdateResmonLogLast = `UPDATE resmon_log_last l
+			JOIN resmon r ON r.svc_id = l.svc_id AND r.node_id = l.node_id AND r.rid = l.rid
+			SET l.res_end = NOW()
+			WHERE l.node_id = ? AND l.res_end < DATE_SUB(NOW(), INTERVAL 30 SECOND)`
 	)
 	var (
 		count int64

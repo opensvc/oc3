@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 
@@ -90,9 +91,10 @@ type (
 	     `res_end` datetime NOT NULL,
 	     `res_log` text DEFAULT NULL,
 	     PRIMARY KEY (`id`),
-	     UNIQUE KEY `uk` (`node_id`,`svc_id`,`rid`),
-	     KEY `idx1` (`node_id`,`svc_id`,`rid`)
+	     UNIQUE KEY `uk` (`node_id`,`svc_id`,`rid`)
 	   ) ENGINE=InnoDB AUTO_INCREMENT=40132 DEFAULT CHARSET=utf8
+
+	   idx1 (node_id, svc_id), a prefix of uk, dropped in migration.sql (2026-10-14).
 	*/
 	DBResmonLog struct {
 		SvcID  string
@@ -141,8 +143,11 @@ func (t ResourceMeta) String() string {
 func (oDb *DB) ResmonRefreshTimestamp(ctx context.Context, nodeID string, objectIDs ...string) (updates bool, err error) {
 	defer logDuration("ResmonRefreshTimestamp", time.Now())
 	const (
-		qUpdateResmon        = "UPDATE `resmon` SET `updated` = NOW() WHERE `node_id` = ? AND `svc_id` IN (%s)"
-		qUpdateResmonLogLast = "UPDATE `resmon_log_last` SET `res_end` = NOW() WHERE `node_id` = ? AND `svc_id` IN (%s)"
+		qUpdateResmon = "UPDATE `resmon` SET `updated` = NOW() WHERE `node_id` = ? AND `svc_id` IN (%s)"
+		// Only the resources the instances still have, see InstancePingFromNodeID.
+		qUpdateResmonLogLast = "UPDATE `resmon_log_last` l" +
+			" JOIN `resmon` r ON r.`svc_id` = l.`svc_id` AND r.`node_id` = l.`node_id` AND r.`rid` = l.`rid`" +
+			" SET l.`res_end` = NOW() WHERE l.`node_id` = ? AND l.`svc_id` IN (%s)"
 	)
 	var (
 		count int64
@@ -282,6 +287,43 @@ func (oDb *DB) ResourceUpdateStatus(ctx context.Context, resources []ResourceMet
 	return n, err
 }
 
+// resmonLogLastPurgeBatch is the count of rows a purge of resmon_log_last deletes
+// in one statement, each its own transaction.
+const resmonLogLastPurgeBatch = 10000
+
+// PurgeResmonLogLastOrphans deletes the current status logs of the resources gone
+// for maxAge: no resmon row, and a res_end older, which stops moving when the
+// resource goes (InstancePingFromNodeID, ResmonRefreshTimestamp). A resource gone
+// for a moment, an instance missing from a feed, keeps its log and the begin of
+// its status. Nothing else deletes them but the deletion of a node or an object,
+// and the table used to grow without end.
+func (oDb *DB) PurgeResmonLogLastOrphans(ctx context.Context, maxAge time.Duration) (int64, error) {
+	defer logDuration("PurgeResmonLogLastOrphans", time.Now())
+	query := "DELETE FROM `resmon_log_last`" +
+		" WHERE `res_end` < DATE_SUB(NOW(), INTERVAL ? SECOND)" +
+		" AND NOT EXISTS (SELECT 1 FROM `resmon` r WHERE r.`svc_id` = `resmon_log_last`.`svc_id`" +
+		" AND r.`node_id` = `resmon_log_last`.`node_id` AND r.`rid` = `resmon_log_last`.`rid`)" +
+		" LIMIT " + strconv.Itoa(resmonLogLastPurgeBatch)
+	var total int64
+	for {
+		count, err := oDb.execCountContext(ctx, query, maxAgeSeconds(maxAge))
+		if err != nil {
+			return total, fmt.Errorf("purgeResmonLogLastOrphans: %w", err)
+		}
+		total += count
+		if count < resmonLogLastPurgeBatch {
+			break
+		}
+		if err := ctx.Err(); err != nil {
+			return total, err
+		}
+	}
+	if total > 0 {
+		oDb.SetChange("resmon_log_last")
+	}
+	return total, nil
+}
+
 func (oDb *DB) PurgeResmonOutdated(ctx context.Context, maxAge time.Duration) error {
 	var query = `DELETE
 		FROM resmon
@@ -295,25 +337,26 @@ func (oDb *DB) PurgeResmonOutdated(ctx context.Context, maxAge time.Duration) er
 	return nil
 }
 
-func (oDb *DB) ResmonLogLastFromObjectIDs(ctx context.Context, objectIDs ...string) ([]*DBResmonLog, error) {
-	if len(objectIDs) == 0 {
+// ResmonLogLastFromObjectIDs returns the current status logs of the resources
+// of the objects on the nodes. Both lists bound the read to the uk index range
+// (node_id, svc_id): with the objects alone, the whole table would be scanned.
+func (oDb *DB) ResmonLogLastFromObjectIDs(ctx context.Context, nodeIDs []string, objectIDs ...string) ([]*DBResmonLog, error) {
+	if len(objectIDs) == 0 || len(nodeIDs) == 0 {
 		return nil, nil
 	}
 	var (
-		querySelect = "SELECT `svc_id`, `node_id`, `rid`, `res_status`, `res_log`, `res_begin`, `res_end` FROM `resmon_log_last` WHERE `svc_id` IN (%s)"
-		args        = make([]any, len(objectIDs))
+		querySelect = "SELECT `svc_id`, `node_id`, `rid`, `res_status`, `res_log`, `res_begin`, `res_end` FROM `resmon_log_last` WHERE `node_id` IN (%s) AND `svc_id` IN (%s)"
+		args        = make([]any, 0, len(nodeIDs)+len(objectIDs))
 
 		l = make([]*DBResmonLog, 0)
 	)
 
-	if len(objectIDs) == 0 {
-		return nil, nil
+	query := fmt.Sprintf(querySelect, Placeholders(len(nodeIDs)), Placeholders(len(objectIDs)))
+	for _, v := range nodeIDs {
+		args = append(args, v)
 	}
-	placeholders := strings.Repeat("?,", len(objectIDs)-1) + "?"
-	query := fmt.Sprintf(querySelect, placeholders)
-
-	for i, v := range objectIDs {
-		args[i] = v
+	for _, v := range objectIDs {
+		args = append(args, v)
 	}
 
 	rows, err := oDb.DB.QueryContext(ctx, query, args...)

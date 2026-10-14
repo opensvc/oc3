@@ -457,6 +457,12 @@ func taskScrubResmon(ctx context.Context, task *Task) error {
 	if err := odb.PurgeResmonOutdated(ctx, age); err != nil {
 		return err
 	}
+	// The status logs of the resources gone for as long, after the resources.
+	if count, err := odb.PurgeResmonLogLastOrphans(ctx, age); err != nil {
+		return err
+	} else if count > 0 {
+		slog.Info(fmt.Sprintf("scrub_resmon: purged %d resmon_log_last rows of resources gone", count))
+	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {
 		return err
 	}
