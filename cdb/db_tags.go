@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-sql-driver/mysql"
+
 	"github.com/opensvc/oc3/schema"
 )
 
@@ -739,4 +741,18 @@ func (oDb *DB) InsertTag(ctx context.Context, tagName string, tagExclude, tagDat
 		return nil, fmt.Errorf("InsertTag: tag %s not found after insert", tagName)
 	}
 	return tag, nil
+}
+
+// CheckTagExclude tells whether the database accepts an exclusion pattern as a
+// regular expression, as the candidate tag queries apply it: a pattern it
+// refuses would make them fail for every object carrying the tag. It returns
+// the refusal of the database, or nil.
+func (oDb *DB) CheckTagExclude(ctx context.Context, pattern string) (refusal error, err error) {
+	var matched sql.NullBool
+	err = oDb.DB.QueryRowContext(ctx, "SELECT '' REGEXP ?", pattern).Scan(&matched)
+	var myErr *mysql.MySQLError
+	if errors.As(err, &myErr) && myErr.Number == 1139 {
+		return errors.New(myErr.Message), nil
+	}
+	return nil, err
 }

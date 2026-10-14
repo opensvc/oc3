@@ -11891,6 +11891,8 @@ paths:
           $ref: '#/components/responses/401'
         403:
           $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -12155,7 +12157,13 @@ paths:
   /tags/{tag_id}:
     post:
       operationId: PostTag
-      description: Update a tag properties
+      description: |
+        Update the properties of a tag. tag_name is trimmed and may be neither
+        empty, nor longer than 128 characters, nor the name of another tag (409).
+        tag_exclude, 128 characters at most, is a regular expression (MySQL
+        REGEXP) of the tag names an object carrying this tag may not carry; an
+        expression the database refuses is answered with a 400. The empty string
+        excludes nothing.
       parameters:
         - in: path
           name: tag_id
