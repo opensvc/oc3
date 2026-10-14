@@ -783,3 +783,47 @@ func (oDb *DB) PrivilegeRoles(ctx context.Context, roles []string) (map[string]b
 	}
 	return out, rows.Err()
 }
+
+// HiddenMenuEntriesOf returns the menu entries hidden to a user of these
+// groups, as the historical collector computes them (menu.js store_data, with
+// /users/<id>/hidden_menu_entries): an entry is hidden when every organizational
+// group of the user hides it, the Everybody group and the privilege groups
+// apart. A user of no such group sees every entry.
+func (oDb *DB) HiddenMenuEntriesOf(ctx context.Context, roles []string) ([]string, error) {
+	out := []string{}
+	privileged, err := oDb.PrivilegeRoles(ctx, roles)
+	if err != nil {
+		return nil, err
+	}
+	var org []any
+	seen := map[string]bool{}
+	for _, role := range roles {
+		if role == "Everybody" || privileged[role] || seen[role] {
+			continue
+		}
+		seen[role] = true
+		org = append(org, role)
+	}
+	if len(org) == 0 {
+		return out, nil
+	}
+	query := `SELECT h.menu_entry FROM group_hidden_menu_entries h
+		JOIN auth_group g ON g.id = h.group_id
+		WHERE g.role IN (` + Placeholders(len(org)) + `) AND h.menu_entry IS NOT NULL
+		GROUP BY h.menu_entry
+		HAVING COUNT(DISTINCT h.group_id) = ?
+		ORDER BY h.menu_entry`
+	rows, err := oDb.DB.QueryContext(ctx, query, append(org, len(org))...)
+	if err != nil {
+		return nil, fmt.Errorf("hiddenMenuEntriesOf: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var entry string
+		if err := rows.Scan(&entry); err != nil {
+			return nil, fmt.Errorf("hiddenMenuEntriesOf: %w", err)
+		}
+		out = append(out, entry)
+	}
+	return out, rows.Err()
+}

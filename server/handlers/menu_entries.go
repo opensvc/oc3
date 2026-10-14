@@ -1,13 +1,19 @@
 package serverhandlers
 
 var validMenuEntries = map[string]struct{}{
-	"key-f":                        {},
-	"key-n":                        {},
-	"key-r":                        {},
-	"key-s":                        {},
-	"key-esc":                      {},
-	"help-api":                     {},
-	"view-dashboard":               {},
+	"key-f":          {},
+	"key-n":          {},
+	"key-r":          {},
+	"key-s":          {},
+	"key-esc":        {},
+	"help-api":       {},
+	"view-dashboard": {},
+	// Views of oc3 the historical collector did not have.
+	"view-ai":                      {},
+	"view-clusters":                {},
+	"adm-groups":                   {},
+	"adm-claim-mappings":           {},
+	"adm-chk-ctx":                  {},
 	"view-app":                     {},
 	"view-services":                {},
 	"view-service-instances":       {},

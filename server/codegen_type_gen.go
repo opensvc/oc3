@@ -2074,6 +2074,11 @@ type HbaRow struct {
 	Updated *string `json:"updated,omitempty"`
 }
 
+// HiddenMenuEntriesResponse The keys of the menu entries hidden to the user, sorted.
+type HiddenMenuEntriesResponse struct {
+	Data []string `json:"data"`
+}
+
 // Impersonation defines model for Impersonation.
 type Impersonation struct {
 	Email string `json:"email"`

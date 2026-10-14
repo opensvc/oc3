@@ -12958,6 +12958,44 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /users/{user_id}/hidden_menu_entries:
+    get:
+      operationId: GetUserHiddenMenuEntries
+      description: |
+        The menu entries hidden to a user, as the historical collector computes
+        them: an entry is hidden when every organizational group of the user
+        hides it (see /groups/{group_id}/hidden_menu_entries), the Everybody
+        group and the privilege groups apart; a user of no such group sees every
+        entry. For "self", the user the requests are made as, impersonation
+        included. Another user's requires the UserManager privilege.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: User identifier, auth_user.id, or "self" for the authenticated user.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HiddenMenuEntriesResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /users/{user_id}/impersonate:
     post:
       operationId: PostUserImpersonate
@@ -21035,6 +21073,16 @@ components:
         acked_comment:
           type: string
           description: Why the failure needs nothing more.
+
+    HiddenMenuEntriesResponse:
+      type: object
+      description: The keys of the menu entries hidden to the user, sorted.
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            type: string
 
     InfoResponse:
       type: object
