@@ -2,10 +2,11 @@ package serverhandlers
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/labstack/echo/v4"
 
@@ -29,7 +30,13 @@ func requireGroupPrivilege(c echo.Context, privilege *string) error {
 	return nil
 }
 
-// PostGroup handles POST /groups/{group_id}
+// groupRoleMaxLen is the size of the auth_group.role column.
+const groupRoleMaxLen = 255
+
+// PostGroup handles POST /groups/{group_id}: it renames a group, changes its
+// description or makes it a privilege group or an organizational one. The name
+// is trimmed, and refused when empty, too long or carried by another group. A
+// privilege group, and the privilege flag, are changed by a Manager only.
 func (a *Api) PostGroup(c echo.Context, groupId string) error {
 	log := echolog.GetLogHandler(c, "PostGroup")
 	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
@@ -82,12 +89,41 @@ func (a *Api) postGroupUpdate(c echo.Context, ctx context.Context, log *slog.Log
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot resolve group %s", groupId)
 	}
 	if group == nil {
-		return c.JSON(http.StatusOK, map[string]string{
-			"error": fmt.Sprintf("Group %s does not exist", groupId),
-		})
+		if isManager {
+			return JSONProblemf(c, http.StatusNotFound, "group %s does not exist", groupId)
+		}
+		return JSONProblemf(c, http.StatusNotFound, "group %s does not exist or you are not member of it", groupId)
 	}
 	if group.Role == "Everybody" {
 		return JSONProblemf(c, http.StatusBadRequest, "the 'Everybody' group is immutable")
+	}
+	// A privilege group grants its privilege by its name: renaming it, or making
+	// it an organizational group, is for a Manager, as making a group a privilege
+	// one is.
+	if group.Privilege && !isManager {
+		return denyRequest(c, http.StatusForbidden, "changing a privilege group requires the Manager privilege")
+	}
+	if privilege != nil && *privilege != "T" && *privilege != "F" {
+		return JSONProblemf(c, http.StatusBadRequest, "privilege must be T or F")
+	}
+	if role != nil {
+		name := strings.TrimSpace(*role)
+		switch {
+		case name == "":
+			return JSONProblemf(c, http.StatusBadRequest, "the group name may not be empty")
+		case utf8.RuneCountInString(name) > groupRoleMaxLen:
+			return JSONProblemf(c, http.StatusBadRequest, "the group name may not exceed %d characters", groupRoleMaxLen)
+		}
+		// role is unique: refused here with its reason rather than by the database.
+		otherID, taken, err := odb.GroupIDByRole(ctx, name)
+		if err != nil {
+			log.Error("cannot check group existence", "role", name, logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot check group existence")
+		}
+		if taken && otherID != group.ID {
+			return JSONProblemf(c, http.StatusConflict, "group '%s' already exists", name)
+		}
+		role = &name
 	}
 
 	fields := cdb.UpdateGroupFields{
@@ -122,6 +158,10 @@ func (a *Api) postGroupUpdate(c echo.Context, ctx context.Context, log *slog.Log
 	}
 	return a.handleItem(c, "PostGroup", "auth_group", "id", newGroupId, listEndpointParams{},
 		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
+			// Read whatever the caller's groups: a non-Manager sees their groups by
+			// the names of their authentication, which still hold the former name
+			// of a group they just renamed. They may change it, so may read it.
+			p.IsManager = true
 			return odb.GetGroup(ctx, strconv.FormatInt(group.ID, 10), p)
 		})
 }

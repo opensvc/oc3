@@ -5681,7 +5681,13 @@ paths:
     post:
       operationId: PostGroup
       description: |
-        Modify a group's properties
+        Modify the properties of a group: role (its name), description, privilege.
+        The name is trimmed and may be neither empty, nor longer than 255 characters,
+        nor the name of another group (409). privilege is T or F. Requires the
+        GroupManager privilege; a caller who is not a Manager may change only the
+        organizational groups they are member of. Changing a privilege group, or the
+        privilege flag to T, requires the Manager privilege. The Everybody group is
+        immutable.
       parameters:
         - in: path
           name: group_id
@@ -5718,6 +5724,10 @@ paths:
           $ref: '#/components/responses/401'
         403:
           $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
         500:
           $ref: '#/components/responses/500'
       security:

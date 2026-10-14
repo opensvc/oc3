@@ -404,9 +404,19 @@ func (oDb *DB) GroupQuotaExceeded(ctx context.Context, userID int64) (bool, erro
 // InsertGroup creates a new auth_group
 func (oDb *DB) InsertGroup(ctx context.Context, role, description, privilege string) (*AuthGroup, error) {
 	const query = `INSERT INTO auth_group (role, description, privilege) VALUES (?, ?, ?)`
+	// T or F, as the column default and the readers expect: a group created
+	// without the flag is an organizational one, not one with a NULL flag that
+	// neither the T nor the F filter finds. "true" is the spelling the privilege
+	// check accepts too.
+	if privilege == "true" {
+		privilege = "T"
+	}
+	if privilege != "T" {
+		privilege = "F"
+	}
 	result, err := oDb.DB.ExecContext(ctx, query, role,
 		sql.NullString{String: description, Valid: description != ""},
-		sql.NullString{String: privilege, Valid: privilege != ""},
+		privilege,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("InsertGroup: %w", err)
@@ -826,4 +836,17 @@ func (oDb *DB) HiddenMenuEntriesOf(ctx context.Context, roles []string) ([]strin
 		out = append(out, entry)
 	}
 	return out, rows.Err()
+}
+
+// GroupIDByRole returns the id of the group named role, and whether one is.
+func (oDb *DB) GroupIDByRole(ctx context.Context, role string) (int64, bool, error) {
+	var id int64
+	err := oDb.DB.QueryRowContext(ctx, "SELECT id FROM auth_group WHERE role = ? LIMIT 1", role).Scan(&id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return 0, false, nil
+	case err != nil:
+		return 0, false, fmt.Errorf("GroupIDByRole: %w", err)
+	}
+	return id, true, nil
 }
