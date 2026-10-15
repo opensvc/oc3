@@ -2,6 +2,7 @@ package serverhandlers
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/opensvc/oc3/server"
@@ -23,6 +24,29 @@ func TestBuildGroupByJoinedColumn(t *testing.T) {
 		gb := server.InQueryGroupby(bad)
 		if _, err := buildGroupBy(&gb, mapping); err == nil {
 			t.Errorf("%s: expected an error", bad)
+		}
+	}
+}
+
+// The default props of every list resolve: a joined one names a join of the
+// mapping and a column its mapping offers, a plain one a prop of the mapping.
+func TestDefaultPropsResolve(t *testing.T) {
+	for key, mapping := range propsMapping {
+		for _, prop := range mapping.Default {
+			if table, column, ok := strings.Cut(prop, "."); ok {
+				jd, known := mapping.Joins[table]
+				if !known {
+					t.Errorf("%s: default prop %q names no join", key, prop)
+					continue
+				}
+				if !slices.Contains(propsMapping[jd.MappingKey].Available, column) {
+					t.Errorf("%s: default prop %q is not a column of %s", key, prop, jd.MappingKey)
+				}
+				continue
+			}
+			if _, ok := mapping.Props[prop]; !ok && !slices.Contains(mapping.Available, prop) {
+				t.Errorf("%s: default prop %q is not a prop", key, prop)
+			}
 		}
 	}
 }

@@ -1384,6 +1384,7 @@ paths:
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
         - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
       tags:
         - collector
       responses:
@@ -1393,6 +1394,56 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListResponse'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/disks:
+    get:
+      operationId: GetArrayDisks
+      description: |
+        The luns of a storage array, as the historical collector listed them: each
+        lun as the array reports it (diskinfo), joined to its uses as the nodes
+        report them (svcdisks), one row per node and service using it, a lun no
+        node reports in a row of its own. The array is given by its name or its
+        id. The columns of each table read as <table>.<column>: diskinfo,
+        svcdisks, stor_array, nodes and services; they can be filtered, sorted
+        and grouped on, groupby=diskinfo.disk_id giving one row per lun. Without
+        props, the main columns of the lun, its use and its array.
+        A caller who is not a Manager sees the luns used by the nodes of the apps
+        their groups are responsible for.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Array name or record id
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
         500:
           $ref: '#/components/responses/500'
       security:

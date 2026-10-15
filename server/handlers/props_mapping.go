@@ -449,6 +449,92 @@ var propsMapping = map[string]propMapping{
 			"stor_array_tgtid": {MappingKey: "array_tgtid"},
 		},
 	},
+	// The luns of an array, as the arrays report them (diskinfo), each with the
+	// nodes and services using it (svcdisks), one row per use, and none for a lun
+	// no node reports. The columns of each table read as <table>.<column>.
+	"array_disk": {
+		PrimaryKey: []*schema.Col{schema.DiskinfoID, schema.SvcdisksID},
+		Available: []string{
+			"id", "disk_id", "disk_devid", "disk_name", "disk_size", "disk_alloc", "disk_group",
+			"disk_raid", "disk_level", "disk_controller", "disk_arrayid", "disk_updated", "disk_created",
+		},
+		// The historical API returned every column of its three tables: the forms
+		// read the lun, its uses and its array from them without asking.
+		Default: []string{
+			"diskinfo.id", "diskinfo.disk_id", "diskinfo.disk_devid", "diskinfo.disk_name",
+			"diskinfo.disk_size", "diskinfo.disk_alloc", "diskinfo.disk_group", "diskinfo.disk_raid",
+			"diskinfo.disk_updated",
+			"svcdisks.node_id", "svcdisks.svc_id", "svcdisks.disk_dg", "svcdisks.disk_used",
+			"stor_array.id", "stor_array.array_name", "stor_array.array_model", "stor_array.array_comment",
+		},
+		Props: map[string]propDef{
+			"id":              col(schema.DiskinfoID),
+			"disk_id":         colStr(schema.DiskinfoDiskID),
+			"disk_devid":      colStr(schema.DiskinfoDiskDevid),
+			"disk_name":       colStr(schema.DiskinfoDiskName),
+			"disk_size":       colInt(schema.DiskinfoDiskSize),
+			"disk_alloc":      colInt(schema.DiskinfoDiskAlloc),
+			"disk_group":      colStr(schema.DiskinfoDiskGroup),
+			"disk_raid":       colStr(schema.DiskinfoDiskRaid),
+			"disk_level":      colInt(schema.DiskinfoDiskLevel),
+			"disk_controller": colStr(schema.DiskinfoDiskController),
+			"disk_arrayid":    colStr(schema.DiskinfoDiskArrayid),
+			"disk_updated":    colStr(schema.DiskinfoDiskUpdated),
+			"disk_created":    colStr(schema.DiskinfoDiskCreated),
+		},
+		Joins: map[string]JoinDef{
+			"diskinfo":   {MappingKey: "diskinfo"},
+			"svcdisks":   {MappingKey: "svcdisks"},
+			"stor_array": {MappingKey: "array"},
+			"nodes":      {MappingKey: "node"},
+			"services":   {MappingKey: "service"},
+		},
+	},
+	// The columns of diskinfo, for the lists joining it.
+	"diskinfo": {
+		Available: []string{
+			"id", "disk_id", "disk_devid", "disk_name", "disk_size", "disk_alloc", "disk_group",
+			"disk_raid", "disk_level", "disk_controller", "disk_arrayid", "disk_updated", "disk_created",
+		},
+		Props: map[string]propDef{
+			"id":              col(schema.DiskinfoID),
+			"disk_id":         colStr(schema.DiskinfoDiskID),
+			"disk_devid":      colStr(schema.DiskinfoDiskDevid),
+			"disk_name":       colStr(schema.DiskinfoDiskName),
+			"disk_size":       colInt(schema.DiskinfoDiskSize),
+			"disk_alloc":      colInt(schema.DiskinfoDiskAlloc),
+			"disk_group":      colStr(schema.DiskinfoDiskGroup),
+			"disk_raid":       colStr(schema.DiskinfoDiskRaid),
+			"disk_level":      colInt(schema.DiskinfoDiskLevel),
+			"disk_controller": colStr(schema.DiskinfoDiskController),
+			"disk_arrayid":    colStr(schema.DiskinfoDiskArrayid),
+			"disk_updated":    colStr(schema.DiskinfoDiskUpdated),
+			"disk_created":    colStr(schema.DiskinfoDiskCreated),
+		},
+	},
+	// The columns of svcdisks, the disks as the nodes report them, for the lists
+	// joining it.
+	"svcdisks": {
+		Available: []string{
+			"id", "disk_id", "node_id", "svc_id", "app_id", "disk_size", "disk_used",
+			"disk_vendor", "disk_model", "disk_dg", "disk_local", "disk_region", "disk_updated",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.SvcdisksID),
+			"disk_id":      colStr(schema.SvcdisksDiskID),
+			"node_id":      colStr(schema.SvcdisksNodeID),
+			"svc_id":       colStr(schema.SvcdisksSvcID),
+			"app_id":       colInt(schema.SvcdisksAppID),
+			"disk_size":    colInt(schema.SvcdisksDiskSize),
+			"disk_used":    colInt(schema.SvcdisksDiskUsed),
+			"disk_vendor":  colStr(schema.SvcdisksDiskVendor),
+			"disk_model":   colStr(schema.SvcdisksDiskModel),
+			"disk_dg":      colStr(schema.SvcdisksDiskDG),
+			"disk_local":   colStr(schema.SvcdisksDiskLocal),
+			"disk_region":  colStr(schema.SvcdisksDiskRegion),
+			"disk_updated": colStr(schema.SvcdisksDiskUpdated),
+		},
+	},
 	// The disk groups of an array, the columns of the array reachable as
 	// stor_array.<column>. The sizes are in MB.
 	"array_dg": {

@@ -9,10 +9,11 @@ import (
 	"github.com/opensvc/oc3/schema"
 )
 
-func buildArraysQuery(selectExprs []string) (string, []any, error) {
+func buildArraysQuery(selectExprs []string, filters []ColumnFilter) (string, []any, error) {
 	q := From(schema.TStorArray).
 		RawSelect(selectExprs...).
-		Where(schema.StorArrayID, ">", 0)
+		Where(schema.StorArrayID, ">", 0).
+		WhereFilters(filters)
 
 	query, args, err := q.Build()
 	if err != nil {
@@ -22,7 +23,7 @@ func buildArraysQuery(selectExprs []string) (string, []any, error) {
 }
 
 func (oDb *DB) GetArrays(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args, err := buildArraysQuery(p.SelectExprs)
+	query, args, err := buildArraysQuery(p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +83,54 @@ func (oDb *DB) GetArrayDiskgroups(ctx context.Context, arrayID int64, p ListPara
 	rows, err := oDb.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("getArrayDiskgroups: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	return scanRowsToMaps(rows, p.Props, p.TypeHints)
+}
+
+// GetArrayDisks returns the luns of an array, as the historical
+// /arrays/<id>/disks listed them: diskinfo joined to the uses the nodes report
+// (svcdisks), one row per use, and to the array, the nodes and the services. A
+// caller who is not a Manager sees the uses on the nodes of the apps their
+// groups are responsible for, as the historical q_filter on svcdisks.node_id.
+func (oDb *DB) GetArrayDisks(ctx context.Context, arrayID int64, p ListParams) ([]map[string]any, error) {
+	if len(p.SelectExprs) == 0 {
+		return nil, fmt.Errorf("getArrayDisks: no columns selected")
+	}
+	q := From(schema.TDiskinfo).
+		RawSelect(p.SelectExprs...).
+		LeftJoinOn(schema.TSvcdisks, "svcdisks.disk_id = diskinfo.disk_id").
+		LeftJoinOn(schema.TStorArray, "stor_array.array_name = diskinfo.disk_arrayid").
+		LeftJoinOn(schema.TNodes, "nodes.node_id = svcdisks.node_id").
+		LeftJoinOn(schema.TServices, "services.svc_id = svcdisks.svc_id").
+		Where(schema.StorArrayID, "=", arrayID)
+	if !p.IsManager {
+		groups := cleanGroups(p.Groups)
+		if len(groups) == 0 {
+			q = q.WhereRaw("1=0")
+		} else {
+			q = q.WhereRaw("svcdisks.node_id IN ("+
+				"SELECT n.node_id FROM nodes n"+
+				" JOIN apps a ON n.app = a.app"+
+				" JOIN apps_responsibles ar ON ar.app_id = a.id"+
+				" JOIN auth_group ag ON ag.id = ar.group_id"+
+				" WHERE ag.role IN ("+Placeholders(len(groups))+"))", stringsToAny(groups)...)
+		}
+	}
+	q = q.WhereFilters(p.Filters)
+	query, args, err := q.Build()
+	if err != nil {
+		return nil, fmt.Errorf("getArrayDisks: %w", err)
+	}
+	if gb := p.GroupByClause(""); gb != "" {
+		query += " " + gb
+	}
+	query += " " + p.OrderByClause("diskinfo.disk_id, svcdisks.node_id")
+	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
+
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("getArrayDisks: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
