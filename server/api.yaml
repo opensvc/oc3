@@ -5636,6 +5636,159 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /assistant/conversations/{conversation_id}/turns/{turn_id}/feedback:
+    parameters:
+      - in: path
+        name: conversation_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: turn_id
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: PutAssistantFeedback
+      description: |
+        Give or replace the feedback of the user on a completed turn: up or down,
+        and for down, the reasons and what was expected. The agent keeps a copy
+        of the turn for review, without the identity of the user.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssistantFeedbackRequest'
+      responses:
+        200:
+          description: The feedback is stored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantFeedbackEnvelope'
+        400:
+          description: Invalid request, invalid feedback, or the turn is not completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation or the turn does not exist, or has no feedback to delete (feedback_target_not_found).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        409:
+          description: The feedback limit of the agent is reached (feedback_limit).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        413:
+          description: The body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteAssistantFeedback
+      description: |
+        Withdraw the feedback of the user on a turn.
+
+        Relayed by oc3 to the AI agent, as the other assistant routes.
+      tags:
+        - assistant
+      responses:
+        204:
+          description: The feedback was deleted.
+        400:
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation or the turn does not exist, or has no feedback to delete (feedback_target_not_found).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /groups:
     get:
       operationId: GetGroups
@@ -18603,6 +18756,72 @@ components:
           type: string
           minLength: 1
           description: The question of the user, at most 32 KiB, not blank.
+    AssistantFeedbackReason:
+      type: string
+      description: |
+        Why an answer falls short: it does not answer the question, information
+        is missing, it is incorrect or outdated, it is hard to understand, the
+        expected action was not done.
+      enum:
+      - not_answered
+      - missing_information
+      - incorrect_or_outdated
+      - hard_to_understand
+      - action_not_done
+    AssistantFeedback:
+      type: object
+      required:
+      - rating
+      - reasons
+      - expected
+      properties:
+        rating:
+          type: string
+          enum:
+          - up
+          - down
+        reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssistantFeedbackReason'
+        expected:
+          type: string
+    AssistantFeedbackRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - rating
+      properties:
+        rating:
+          type: string
+          enum:
+          - up
+          - down
+        reasons:
+          type: array
+          uniqueItems: true
+          description: Only with down.
+          items:
+            $ref: '#/components/schemas/AssistantFeedbackReason'
+        expected:
+          type: string
+          maxLength: 1000
+          description: What the user would have expected, free text.
+    AssistantFeedbackEnvelope:
+      type: object
+      required:
+      - feedback
+      - created_at
+      - updated_at
+      properties:
+        feedback:
+          $ref: '#/components/schemas/AssistantFeedback'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
     AssistantConfirmationRequest:
       type: object
       additionalProperties: false
@@ -18673,6 +18892,9 @@ components:
         created_at:
           type: string
           format: date-time
+        feedback:
+          $ref: '#/components/schemas/AssistantFeedback'
+          description: On an assistant message, the feedback of the user on its turn, if any.
     AssistantMessagePage:
       type: object
       required:

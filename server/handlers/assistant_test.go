@@ -140,3 +140,38 @@ func TestAssistantRefusals(t *testing.T) {
 	c.Set(XImpersonator, auth.NewUserInfo("manager@example.com", "1", nil, nil))
 	check("impersonating", assistantAPI(t, agent.URL), c, rec, http.StatusForbidden, "assistant_forbidden")
 }
+
+// The feedback on a turn is relayed with its body, and withdrawn; a turn id that
+// is not one never reaches the agent.
+func TestAssistantFeedbackRelay(t *testing.T) {
+	var seen fakeAgent
+	agent := newFakeAgent(t, &seen)
+	a := assistantAPI(t, agent.URL)
+
+	body := `{"rating":"down","reasons":["missing_information"],"expected":"the quota"}`
+	c, rec := assistantRequest(http.MethodPut, "/", body, xauth.AuthSourceBearer)
+	if err := a.PutAssistantFeedback(c, "c1", "t1"); err != nil {
+		t.Fatal(err)
+	}
+	if rec.Code != http.StatusOK || seen.method != http.MethodPut || seen.path != "/base/v1/oc3/conversations/c1/turns/t1/feedback" ||
+		seen.body != body || seen.contentType != "application/json" {
+		t.Fatalf("put: %d %+v", rec.Code, seen)
+	}
+
+	c, _ = assistantRequest(http.MethodDelete, "/", "", xauth.AuthSourceBearer)
+	if err := a.DeleteAssistantFeedback(c, "c1", "t1"); err != nil {
+		t.Fatal(err)
+	}
+	if seen.method != http.MethodDelete || seen.path != "/base/v1/oc3/conversations/c1/turns/t1/feedback" || seen.body != "" {
+		t.Fatalf("delete: %+v", seen)
+	}
+
+	for _, bad := range []string{"../t", "t/x", ""} {
+		seen = fakeAgent{}
+		c, rec = assistantRequest(http.MethodPut, "/", body, xauth.AuthSourceBearer)
+		_ = a.PutAssistantFeedback(c, "c1", bad)
+		if rec.Code != http.StatusBadRequest || seen.method != "" {
+			t.Errorf("turn %q: %d, agent called: %v", bad, rec.Code, seen.method != "")
+		}
+	}
+}

@@ -261,3 +261,19 @@ func (a *Api) PostAssistantConfirmation(c echo.Context, conversationId string, t
 	}
 	return a.assistantRelay(c, http.MethodPost, conversationPath(conversationId, "turns", turnId, "confirmation"), nil, true, true)
 }
+
+// PutAssistantFeedback handles PUT /assistant/conversations/{conversation_id}/turns/{turn_id}/feedback.
+func (a *Api) PutAssistantFeedback(c echo.Context, conversationId string, turnId string) error {
+	if !regexpAssistantID.MatchString(turnId) {
+		return assistantError(c, http.StatusBadRequest, "invalid_request", "invalid conversation or turn id")
+	}
+	return a.assistantRelay(c, http.MethodPut, conversationPath(conversationId, "turns", turnId, "feedback"), nil, true, false)
+}
+
+// DeleteAssistantFeedback handles DELETE /assistant/conversations/{conversation_id}/turns/{turn_id}/feedback.
+func (a *Api) DeleteAssistantFeedback(c echo.Context, conversationId string, turnId string) error {
+	if !regexpAssistantID.MatchString(turnId) {
+		return assistantError(c, http.StatusBadRequest, "invalid_request", "invalid conversation or turn id")
+	}
+	return a.assistantRelay(c, http.MethodDelete, conversationPath(conversationId, "turns", turnId, "feedback"), nil, false, false)
+}

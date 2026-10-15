@@ -34,6 +34,69 @@ func (e AssistantConfirmationRequestDecision) Valid() bool {
 	}
 }
 
+// Defines values for AssistantFeedbackRating.
+const (
+	AssistantFeedbackRatingDown AssistantFeedbackRating = "down"
+	AssistantFeedbackRatingUp   AssistantFeedbackRating = "up"
+)
+
+// Valid indicates whether the value is a known member of the AssistantFeedbackRating enum.
+func (e AssistantFeedbackRating) Valid() bool {
+	switch e {
+	case AssistantFeedbackRatingDown:
+		return true
+	case AssistantFeedbackRatingUp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantFeedbackReason.
+const (
+	ActionNotDone       AssistantFeedbackReason = "action_not_done"
+	HardToUnderstand    AssistantFeedbackReason = "hard_to_understand"
+	IncorrectOrOutdated AssistantFeedbackReason = "incorrect_or_outdated"
+	MissingInformation  AssistantFeedbackReason = "missing_information"
+	NotAnswered         AssistantFeedbackReason = "not_answered"
+)
+
+// Valid indicates whether the value is a known member of the AssistantFeedbackReason enum.
+func (e AssistantFeedbackReason) Valid() bool {
+	switch e {
+	case ActionNotDone:
+		return true
+	case HardToUnderstand:
+		return true
+	case IncorrectOrOutdated:
+		return true
+	case MissingInformation:
+		return true
+	case NotAnswered:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantFeedbackRequestRating.
+const (
+	AssistantFeedbackRequestRatingDown AssistantFeedbackRequestRating = "down"
+	AssistantFeedbackRequestRatingUp   AssistantFeedbackRequestRating = "up"
+)
+
+// Valid indicates whether the value is a known member of the AssistantFeedbackRequestRating enum.
+func (e AssistantFeedbackRequestRating) Valid() bool {
+	switch e {
+	case AssistantFeedbackRequestRatingDown:
+		return true
+	case AssistantFeedbackRequestRatingUp:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AssistantMessageRole.
 const (
 	AssistantMessageRoleAssistant AssistantMessageRole = "assistant"
@@ -1109,9 +1172,45 @@ type AssistantError struct {
 	} `json:"error"`
 }
 
+// AssistantFeedback defines model for AssistantFeedback.
+type AssistantFeedback struct {
+	Expected string                    `json:"expected"`
+	Rating   AssistantFeedbackRating   `json:"rating"`
+	Reasons  []AssistantFeedbackReason `json:"reasons"`
+}
+
+// AssistantFeedbackRating defines model for AssistantFeedback.Rating.
+type AssistantFeedbackRating string
+
+// AssistantFeedbackEnvelope defines model for AssistantFeedbackEnvelope.
+type AssistantFeedbackEnvelope struct {
+	CreatedAt time.Time         `json:"created_at"`
+	Feedback  AssistantFeedback `json:"feedback"`
+	UpdatedAt time.Time         `json:"updated_at"`
+}
+
+// AssistantFeedbackReason Why an answer falls short: it does not answer the question, information
+// is missing, it is incorrect or outdated, it is hard to understand, the
+// expected action was not done.
+type AssistantFeedbackReason string
+
+// AssistantFeedbackRequest defines model for AssistantFeedbackRequest.
+type AssistantFeedbackRequest struct {
+	// Expected What the user would have expected, free text.
+	Expected *string                        `json:"expected,omitempty"`
+	Rating   AssistantFeedbackRequestRating `json:"rating"`
+
+	// Reasons Only with down.
+	Reasons *[]AssistantFeedbackReason `json:"reasons,omitempty"`
+}
+
+// AssistantFeedbackRequestRating defines model for AssistantFeedbackRequest.Rating.
+type AssistantFeedbackRequestRating string
+
 // AssistantMessage defines model for AssistantMessage.
 type AssistantMessage struct {
 	CreatedAt time.Time            `json:"created_at"`
+	Feedback  *AssistantFeedback   `json:"feedback,omitempty"`
 	Id        string               `json:"id"`
 	Role      AssistantMessageRole `json:"role"`
 	Text      string               `json:"text"`
@@ -12133,6 +12232,9 @@ type PostAssistantTurnJSONRequestBody = AssistantTurnRequest
 
 // PostAssistantConfirmationJSONRequestBody defines body for PostAssistantConfirmation for application/json ContentType.
 type PostAssistantConfirmationJSONRequestBody = AssistantConfirmationRequest
+
+// PutAssistantFeedbackJSONRequestBody defines body for PutAssistantFeedback for application/json ContentType.
+type PutAssistantFeedbackJSONRequestBody = AssistantFeedbackRequest
 
 // PostAuthBackchannelLogoutFormdataRequestBody defines body for PostAuthBackchannelLogout for application/x-www-form-urlencoded ContentType.
 type PostAuthBackchannelLogoutFormdataRequestBody PostAuthBackchannelLogoutFormdataBody
