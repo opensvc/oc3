@@ -1059,7 +1059,10 @@ paths:
   /apps/{app_id}/quotas:
     get:
       operationId: GetAppQuotas
-      description: List storage disk group quotas usage for the application code
+      description: |
+        The storage disk group quotas of the application code and their usage,
+        read from v_disk_quota: one row per disk group the app has a quota on.
+        Every prop can be filtered on, array_id:567 or dg_id:12 say.
       parameters:
         - in: path
           name: app_id
@@ -1074,6 +1077,7 @@ paths:
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
         - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
       tags:
         - collector
       responses:
@@ -1389,6 +1393,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListResponse'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/diskgroups:
+    get:
+      operationId: GetArrayDiskgroups
+      description: |
+        The disk groups of a storage array, as the historical collector listed
+        them: name, size, used, free and reserved space, in MB. The array is
+        given by its name or its id. Its columns read as stor_array.<column>
+        (id, array_name, array_model, array_comment...), and can be filtered,
+        sorted and grouped on.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Array name or record id
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -9111,6 +9160,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HbaListResponse'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/targets:
+    get:
+      operationId: GetNodeTargets
+      description: |
+        The array target ports visible through the node storage host bus adapters,
+        as the historical collector listed them: one row per adapter and target
+        port the node reports (stor_zone), joined to the array owning the port.
+        A port no array declares is left out. The columns of the array read as
+        stor_array.<column> (id, array_name, array_model, array_comment,
+        array_firmware, array_cache, array_level, array_updated), those of its
+        port declaration as stor_array_tgtid.<column>; they can be filtered,
+        sorted and grouped on, groupby=stor_array.id giving one row per array.
+        A caller who is not a Manager sees the targets of the nodes of the apps
+        their groups are responsible for.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID or nodename)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
         404:
           $ref: '#/components/responses/404'
         500:

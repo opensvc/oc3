@@ -288,28 +288,32 @@ var propsMapping = map[string]propMapping{
 			"updated":      colStr(schema.DiskinfoDiskUpdated),
 		},
 	},
+	// The disk groups and the quota of an application code on each, read from the
+	// v_disk_quota view: each prop names the view column it reads, for sorting
+	// and filtering.
 	"disk_quota": {
 		Available: []string{
 			"array_name", "array_model", "dg_name",
 			"dg_free", "dg_used", "dg_size", "dg_reserved", "dg_reservable",
 			"app", "quota", "quota_used",
-			"dg_id", "array_id", "app_id",
+			"dg_id", "array_id", "app_id", "id",
 		},
 		Props: map[string]propDef{
-			"array_name":    {SQLExpr: "COALESCE(array_name, '') AS array_name", Kind: "string"},
-			"array_model":   {SQLExpr: "COALESCE(array_model, '') AS array_model", Kind: "string"},
-			"dg_name":       {SQLExpr: "COALESCE(dg_name, '') AS dg_name", Kind: "string"},
-			"dg_free":       {SQLExpr: "COALESCE(dg_free, 0) AS dg_free", Kind: "int64"},
-			"dg_used":       {SQLExpr: "COALESCE(dg_used, 0) AS dg_used", Kind: "int64"},
-			"dg_size":       {SQLExpr: "COALESCE(dg_size, 0) AS dg_size", Kind: "int64"},
-			"dg_reserved":   {SQLExpr: "COALESCE(dg_reserved, 0) AS dg_reserved", Kind: "int64"},
-			"dg_reservable": {SQLExpr: "COALESCE(dg_reservable, 0) AS dg_reservable", Kind: "int64"},
-			"app":           {SQLExpr: "COALESCE(app, '') AS app", Kind: "string"},
-			"quota":         {SQLExpr: "COALESCE(quota, 0) AS quota", Kind: "int64"},
-			"quota_used":    {SQLExpr: "COALESCE(quota_used, 0) AS quota_used", Kind: "int64"},
-			"dg_id":         {SQLExpr: "COALESCE(dg_id, 0) AS dg_id", Kind: "int64"},
-			"array_id":      {SQLExpr: "COALESCE(array_id, 0) AS array_id", Kind: "int64"},
-			"app_id":        {SQLExpr: "COALESCE(app_id, 0) AS app_id", Kind: "int64"},
+			"array_name":    {Col: cdb.DiskQuotaCol("array_name"), SQLExpr: "COALESCE(array_name, '') AS array_name", Kind: "string"},
+			"array_model":   {Col: cdb.DiskQuotaCol("array_model"), SQLExpr: "COALESCE(array_model, '') AS array_model", Kind: "string"},
+			"dg_name":       {Col: cdb.DiskQuotaCol("dg_name"), SQLExpr: "COALESCE(dg_name, '') AS dg_name", Kind: "string"},
+			"dg_free":       {Col: cdb.DiskQuotaCol("dg_free"), SQLExpr: "COALESCE(dg_free, 0) AS dg_free", Kind: "int64"},
+			"dg_used":       {Col: cdb.DiskQuotaCol("dg_used"), SQLExpr: "COALESCE(dg_used, 0) AS dg_used", Kind: "int64"},
+			"dg_size":       {Col: cdb.DiskQuotaCol("dg_size"), SQLExpr: "COALESCE(dg_size, 0) AS dg_size", Kind: "int64"},
+			"dg_reserved":   {Col: cdb.DiskQuotaCol("dg_reserved"), SQLExpr: "COALESCE(dg_reserved, 0) AS dg_reserved", Kind: "int64"},
+			"dg_reservable": {Col: cdb.DiskQuotaCol("dg_reservable"), SQLExpr: "COALESCE(dg_reservable, 0) AS dg_reservable", Kind: "int64"},
+			"app":           {Col: cdb.DiskQuotaCol("app"), SQLExpr: "COALESCE(app, '') AS app", Kind: "string"},
+			"quota":         {Col: cdb.DiskQuotaCol("quota"), SQLExpr: "COALESCE(quota, 0) AS quota", Kind: "int64"},
+			"quota_used":    {Col: cdb.DiskQuotaCol("quota_used"), SQLExpr: "COALESCE(quota_used, 0) AS quota_used", Kind: "int64"},
+			"dg_id":         {Col: cdb.DiskQuotaCol("dg_id"), SQLExpr: "COALESCE(dg_id, 0) AS dg_id", Kind: "int64"},
+			"array_id":      {Col: cdb.DiskQuotaCol("array_id"), SQLExpr: "COALESCE(array_id, 0) AS array_id", Kind: "int64"},
+			"app_id":        {Col: cdb.DiskQuotaCol("app_id"), SQLExpr: "COALESCE(app_id, 0) AS app_id", Kind: "int64"},
+			"id":            {Col: cdb.DiskQuotaCol("id"), SQLExpr: "id", Kind: "int64"},
 		},
 	},
 	// Addresses of the nodes, read from the v_nodenetworks view. Each prop keeps
@@ -422,6 +426,56 @@ var propsMapping = map[string]propMapping{
 			"hba_id":   colStr(schema.NodeHBAHBAID),
 			"hba_type": colStr(schema.NodeHBAHBAType),
 			"updated":  colStr(schema.NodeHBAUpdated),
+		},
+	},
+	// The array ports a node sees through its host bus adapters: the stor_zone
+	// rows of the node, joined to the array owning each port, whose columns read
+	// as stor_array.<column> and stor_array_tgtid.<column>.
+	"node_target": {
+		Available: []string{"id", "node_id", "hba_id", "tgt_id", "updated"},
+		Default: []string{
+			"hba_id", "tgt_id", "updated",
+			"stor_array.id", "stor_array.array_name", "stor_array.array_model", "stor_array.array_comment",
+		},
+		Props: map[string]propDef{
+			"id":      col(schema.StorZoneID),
+			"node_id": colStr(schema.StorZoneNodeID),
+			"hba_id":  colStr(schema.StorZoneHBAID),
+			"tgt_id":  colStr(schema.StorZoneTgtID),
+			"updated": colStr(schema.StorZoneUpdated),
+		},
+		Joins: map[string]JoinDef{
+			"stor_array":       {MappingKey: "array"},
+			"stor_array_tgtid": {MappingKey: "array_tgtid"},
+		},
+	},
+	// The disk groups of an array, the columns of the array reachable as
+	// stor_array.<column>. The sizes are in MB.
+	"array_dg": {
+		Available: []string{
+			"id", "array_id", "dg_name", "dg_size", "dg_used", "dg_free", "dg_reserved", "dg_updated",
+		},
+		Props: map[string]propDef{
+			"id":          col(schema.StorArrayDGID),
+			"array_id":    colStr(schema.StorArrayDGArrayID),
+			"dg_name":     colStr(schema.StorArrayDGDGName),
+			"dg_size":     colInt(schema.StorArrayDGDGSize),
+			"dg_used":     colInt(schema.StorArrayDGDGUsed),
+			"dg_free":     colInt(schema.StorArrayDGDGFree),
+			"dg_reserved": colInt(schema.StorArrayDGDGReserved),
+			"dg_updated":  colStr(schema.StorArrayDGDGUpdated),
+		},
+		Joins: map[string]JoinDef{
+			"stor_array": {MappingKey: "array"},
+		},
+	},
+	"array_tgtid": {
+		Available: []string{"id", "array_id", "array_tgtid", "updated"},
+		Props: map[string]propDef{
+			"id":          col(schema.StorArrayTgtidID),
+			"array_id":    colStr(schema.StorArrayTgtidArrayID),
+			"array_tgtid": colStr(schema.StorArrayTgtidArrayTgtid),
+			"updated":     colStr(schema.StorArrayTgtidUpdated),
 		},
 	},
 	"array": {

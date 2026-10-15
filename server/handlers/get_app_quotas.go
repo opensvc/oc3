@@ -12,7 +12,9 @@ import (
 	"github.com/opensvc/oc3/util/logkey"
 )
 
-// GetAppQuotas handles GET /apps/{app_id}/quotas
+// GetAppQuotas handles GET /apps/{app_id}/quotas: the disk groups and the quota
+// of the application code on each, as the historical rest_get_app_quotas listed
+// them from v_disk_quota, filtered on its columns.
 func (a *Api) GetAppQuotas(c echo.Context, appId string, params server.GetAppQuotasParams) error {
 	log := echolog.GetLogHandler(c, "GetAppQuotas")
 	odb := a.ODB
@@ -37,6 +39,7 @@ func (a *Api) GetAppQuotas(c echo.Context, appId string, params server.GetAppQuo
 		stats:   params.Stats,
 		orderby: params.Orderby,
 		groupby: params.Groupby,
+		filter:  params.Filter,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return odb.GetAppQuotas(ctx, appId, p)
 	})

@@ -64,13 +64,11 @@ func buildGroupBy(groupby *server.InQueryGroupby, mapping propMapping) ([]string
 		if token == "" {
 			continue
 		}
-		def, ok := mapping.Props[token]
-		if !ok {
-			return nil, fmt.Errorf("unknown groupby prop %q", token)
-		}
-		col := def.Col
-		if col == nil {
-			return nil, fmt.Errorf("prop %q cannot be used in groupby (no column reference)", token)
+		// As a sort or a filter: a prop of the list, or a column of a joined table
+		// as table.column, stor_array.id say.
+		col, err := resolvePropCol(token, mapping, "groupby")
+		if err != nil {
+			return nil, err
 		}
 		exprs = append(exprs, col.Qualified())
 	}

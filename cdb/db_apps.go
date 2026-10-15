@@ -431,7 +431,17 @@ func (oDb *DB) GetAppServices(ctx context.Context, appIDOrName string, p ListPar
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
-// GetAppQuotas returns rows from v_disk_quota for an App
+// TDiskQuota is the v_disk_quota view: the disk groups of the arrays, with the
+// quota of each application code on them and what its disks use of it.
+var TDiskQuota = &schema.Table{Name: "v_disk_quota"}
+
+// DiskQuotaCol is a column of the v_disk_quota view, for sorting and filtering.
+func DiskQuotaCol(name string) *schema.Col {
+	return &schema.Col{T: TDiskQuota, Name: name, Nullable: true}
+}
+
+// GetAppQuotas returns rows from v_disk_quota for an App, the filters of the
+// request applied.
 func (oDb *DB) GetAppQuotas(ctx context.Context, appIDOrName string, p ListParams) ([]map[string]any, error) {
 	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
 	if err != nil {
@@ -456,6 +466,11 @@ func (oDb *DB) GetAppQuotas(ctx context.Context, appIDOrName string, p ListParam
 	}
 	query := fmt.Sprintf("SELECT %s FROM v_disk_quota WHERE app = ?", strings.Join(p.SelectExprs, ", "))
 	args := []any{targetApp.App}
+	conds, condArgs := p.FilterConditions()
+	for _, cond := range conds {
+		query += " AND " + cond
+	}
+	args = append(args, condArgs...)
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}
