@@ -268,13 +268,19 @@ func defString(m map[string]any, key string) string {
 	return s
 }
 
-// defBool reads a boolean property of a form definition element.
+// defBool reads a boolean property of a form definition element, as the
+// historical collector read the forms with PyYAML (YAML 1.1): yes, true and on,
+// in any case. yaml.v3 follows YAML 1.2 and leaves "Yes" or "On" as strings,
+// which would silently drop `Mandatory: Yes`.
 func defBool(m map[string]any, key string) bool {
 	switch t := m[key].(type) {
 	case bool:
 		return t
 	case string:
-		return t == "yes" || t == "true" || t == "True"
+		switch strings.ToLower(t) {
+		case "yes", "true", "on":
+			return true
+		}
 	}
 	return false
 }

@@ -131,3 +131,18 @@ func TestInternalForms(t *testing.T) {
 		t.Error("internal form -11 must not exist")
 	}
 }
+
+// The forms were read with PyYAML: Yes, True and On are booleans, in any case.
+func TestDefBool(t *testing.T) {
+	for v, want := range map[any]bool{
+		true: true, false: false, "Yes": true, "yes": true, "YES": true, "True": true,
+		"true": true, "On": true, "No": false, "False": false, "": false, "1": false,
+	} {
+		if got := defBool(map[string]any{"Mandatory": v}, "Mandatory"); got != want {
+			t.Errorf("defBool(%#v) = %v, want %v", v, got, want)
+		}
+	}
+	if defBool(map[string]any{}, "Mandatory") {
+		t.Error("a missing key is false")
+	}
+}
