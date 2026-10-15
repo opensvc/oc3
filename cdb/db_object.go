@@ -82,7 +82,11 @@ type (
 		// NullConfig is true when db svc_config is NULL
 		NullConfig bool
 
-		// The `services.updated` column tracks the last time the service configuration
+		// Updated is the `services.updated` column: the last time the service
+		// configuration was pushed or its properties were changed via the api.
+		// It is not touched by status updates or pings (see `svc_status_updated`),
+		// because the "service configuration not updated" dashboard alert relies
+		// on it. Use GREATEST(updated, svc_status_updated) for "row last changed".
 		Updated time.Time
 	}
 
@@ -291,14 +295,21 @@ func (oDb *DB) ObjectCreate(ctx context.Context, objectName, clusterID, candidat
 	}
 }
 
-// ObjectPing updates services.svc_status_updated and services_log_last.svc_end
+// ObjectsPing updates services.svc_status_updated and services_log_last.svc_end
+// when they are older than 30s.
 func (oDb *DB) ObjectsPing(ctx context.Context, ids []string) (updates bool, err error) {
 	defer logDuration("ObjectsPing", time.Now())
-	const UpdateServicesSvcStatusUpdated = "UPDATE `services` SET `svc_status_updated` = NOW() WHERE `svc_id` IN (%s)"
-	const updateSvcLogLastSvc = "UPDATE `services_log_last` SET `svc_end` = NOW() WHERE `svc_id` IN (%s)"
+	const UpdateServicesSvcStatusUpdated = "" +
+		"UPDATE `services` SET `svc_status_updated` = NOW()" +
+		" WHERE `svc_id` IN (%s)" +
+		"   AND (`svc_status_updated` < DATE_SUB(NOW(), INTERVAL 30 SECOND) OR `svc_status_updated` IS NULL)"
+	const updateSvcLogLastSvc = "" +
+		"UPDATE `services_log_last` SET `svc_end` = NOW()" +
+		" WHERE `svc_id` IN (%s)" +
+		"   AND `svc_end` < DATE_SUB(NOW(), INTERVAL 30 SECOND)"
 	var count int64
 
-	if len(ids) > 0 {
+	if len(ids) == 0 {
 		return false, nil
 	}
 	placeholders := strings.Repeat("?,", len(ids)-1) + "?"
@@ -332,6 +343,10 @@ func (oDb *DB) ObjectsPing(ctx context.Context, ids []string) (updates bool, err
 	return
 }
 
+// ObjectStatusUpdate inserts or updates the services status columns.
+//
+// `updated` is only set on insert: on existing rows it is owned by config
+// pushes and api changes, and must not be overwritten by a stale cached value.
 func (oDb *DB) ObjectStatusUpdate(ctx context.Context, l ...*DBObject) error {
 	defer logDuration("ObjectStatusUpdate", time.Now())
 	const (
@@ -345,8 +360,7 @@ func (oDb *DB) ObjectStatusUpdate(ctx context.Context, l ...*DBObject) error {
 			"`svc_placement`=VALUES(`svc_placement`)," +
 			"`svc_frozen`=VALUES(`svc_frozen`)," +
 			"`svc_provisioned`=VALUES(`svc_provisioned`)," +
-			"`svc_status_updated`=VALUES(`svc_status_updated`)," +
-			"`updated`=VALUES(`updated`)"
+			"`svc_status_updated`=VALUES(`svc_status_updated`)"
 	)
 	if len(l) == 0 {
 		return nil
@@ -583,17 +597,19 @@ func (oDb *DB) insertOrUpdateObjectForNodeAndCandidateApp(ctx context.Context, o
 }
 
 // InsertOrUpdateObjectConfig will insert or update object config with svcID.
+// It also sets svc_config_updated and updated to NOW().
 func (oDb *DB) InsertOrUpdateObjectConfig(ctx context.Context, c *DBObjectConfig) (bool, error) {
 	const query = "" +
 		"INSERT INTO `services` (`svcname`, `cluster_id`, `svc_id`, `svc_nodes`, `svc_drpnode`, `svc_drpnodes`" +
 		" , `svc_app`, `svc_env`, `svc_comment`, `svc_flex_min_nodes`, `svc_flex_max_nodes`, `svc_flex_target`" +
-		" , `svc_ha`, `svc_topology`, `svc_config`, `updated`)" +
-		" VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())" +
+		" , `svc_ha`, `svc_topology`, `svc_config`, `svc_config_updated`, `updated`)" +
+		" VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())" +
 		" ON DUPLICATE KEY UPDATE  `svcname`=VALUES(`svcname`), `cluster_id`=VALUES(`cluster_id`)" + "" +
 		"   , `svc_nodes`=VALUES(`svc_nodes`), `svc_drpnode`=VALUES(`svc_drpnode`), `svc_drpnodes`=VALUES(`svc_drpnodes`)" +
 		"   , `svc_app`=VALUES(`svc_app`), `svc_env`=VALUES(`svc_env`), `svc_comment`=VALUES(`svc_comment`)" + "" +
 		"   , `svc_flex_min_nodes`=VALUES(`svc_flex_min_nodes`), `svc_flex_max_nodes`=VALUES(`svc_flex_max_nodes`)" +
-		"   , `svc_flex_target`=VALUES(`svc_flex_target`), `svc_ha`=VALUES(`svc_ha`), `svc_topology`=VALUES(`svc_topology`), `svc_config`=VALUES(`svc_config`), `updated`=VALUES(`updated`)"
+		"   , `svc_flex_target`=VALUES(`svc_flex_target`), `svc_ha`=VALUES(`svc_ha`), `svc_topology`=VALUES(`svc_topology`), `svc_config`=VALUES(`svc_config`)" +
+		"   , `svc_config_updated`=VALUES(`svc_config_updated`), `updated`=VALUES(`updated`)"
 	var nodes, drpNode, drpNodes, app, env any
 	if c.Nodes != nil {
 		nodes = *c.Nodes
