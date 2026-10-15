@@ -135,9 +135,17 @@ func statsByDatabase(ctx context.Context, fetch listFetcher, base cdb.ListParams
 	if err != nil {
 		return nil, 0, err
 	}
+	// The values counted are those a filter of the column compares: for a prop
+	// filtered on another expression (a log message, its format with its data),
+	// the values of that expression, so that a value picked from the counts
+	// selects its rows, and that the counts tell how varied the column really is.
+	expr := exprs[0]
+	if def, ok := mapping.Props[prop]; ok && def.FilterExpr != "" {
+		expr = def.FilterExpr
+	}
 	// By position: the select expression may carry an alias of its own.
 	p := base
-	p.SelectExprs = []string{exprs[0], "COUNT(*)"}
+	p.SelectExprs = []string{expr, "COUNT(*)"}
 	p.Props = []string{"value", "count"}
 	p.TypeHints = map[string]string{"count": "int64"}
 	if kind := buildTypeHints([]string{prop}, mapping)[prop]; kind != "" {
@@ -165,7 +173,7 @@ func statsByDatabase(ctx context.Context, fetch listFetcher, base cdb.ListParams
 
 	// The values were cut: their number needs a count of the groups.
 	p.CountOnly = true
-	p.SelectExprs = []string{exprs[0], "COUNT(*) OVER ()"}
+	p.SelectExprs = []string{expr, "COUNT(*) OVER ()"}
 	p.Props = []string{"value", "groups"}
 	p.TypeHints = map[string]string{"groups": "int64"}
 	p.OrderBy = nil
