@@ -146,3 +146,28 @@ func TestDefBool(t *testing.T) {
 		t.Error("a missing key is false")
 	}
 }
+
+// A candidate row from oc3, flat keys of joined tables, reads as the historical
+// API gave it: one table as plain columns, several nested by table.
+func TestLegacyRowShape(t *testing.T) {
+	one := legacyRowShape(map[string]any{"stor_array.id": 5, "stor_array.array_name": "a"})
+	if v, err := formGetVal(one, "id"); err != nil || v != 5 {
+		t.Errorf("single table: got %v %v", v, err)
+	}
+	if v, err := formGetVal(one, "array_name"); err != nil || v != "a" {
+		t.Errorf("single table: got %v %v", v, err)
+	}
+	several := legacyRowShape(map[string]any{"diskinfo.disk_id": "d1", "stor_array.array_name": "a", "x": 1})
+	if v, err := formGetVal(several, "diskinfo.disk_id"); err != nil || v != "d1" {
+		t.Errorf("several tables: got %v %v", v, err)
+	}
+	if v, err := formGetVal(several, "x"); err != nil || v != 1 {
+		t.Errorf("plain column: got %v %v", v, err)
+	}
+	if v, err := formGetVal(map[string]any{"a.b": 2}, "a.b"); err != nil || v != 2 {
+		t.Errorf("flat key: got %v %v", v, err)
+	}
+	if got := legacyRowShape("text"); got != "text" {
+		t.Errorf("a non row: got %v", got)
+	}
+}

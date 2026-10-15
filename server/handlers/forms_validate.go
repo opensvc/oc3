@@ -188,7 +188,7 @@ func (s *formSubmission) validateInput(ctx context.Context, data map[string]any,
 		if m, ok := resp.body.(map[string]any); ok {
 			list, _ := m["data"].([]any)
 			for _, candidate := range list {
-				cv, err := formGetVal(candidate, key)
+				cv, err := formGetVal(legacyRowShape(candidate), key)
 				if err != nil {
 					return httpErrorf(http.StatusBadRequest, "Key '%s' not in candidates", key)
 				}
