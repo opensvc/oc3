@@ -10463,6 +10463,41 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /packages/{pkg_id}:
+    get:
+      operationId: GetPackage
+      description: |
+        Display a package installed on a node the user can see, as a row of
+        GET /packages: 404 when unknown, or on a node the user cannot see.
+      parameters:
+        - in: path
+          name: pkg_id
+          required: true
+          description: Id of the package record (packages.id)
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /packages/diff:
     get:
       operationId: GetPackagesDiff

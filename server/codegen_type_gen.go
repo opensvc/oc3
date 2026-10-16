@@ -10210,6 +10210,12 @@ type GetPackagesDiffParams struct {
 	Encap *bool `form:"encap,omitempty" json:"encap,omitempty"`
 }
 
+// GetPackageParams defines parameters for GetPackage.
+type GetPackageParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetReportsParams defines parameters for GetReports.
 type GetReportsParams struct {
 	// Props A list of properties to include in each data dictionnary.
