@@ -7855,6 +7855,41 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /nodes/hardware/{hw_id}:
+    get:
+      operationId: GetNodesHardwareComponent
+      description: |
+        Display a hardware component of a node the user can see, as a row of
+        GET /nodes/hardware: 404 when unknown, or on a node the user cannot see.
+      parameters:
+        - in: path
+          name: hw_id
+          required: true
+          description: Id of the component (node_hw.id)
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeHardwareListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /nodes/hbas:
     get:
       operationId: GetNodesHbas

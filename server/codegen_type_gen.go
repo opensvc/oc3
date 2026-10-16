@@ -9063,6 +9063,12 @@ type GetNodesHardwareParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetNodesHardwareComponentParams defines parameters for GetNodesHardwareComponent.
+type GetNodesHardwareComponentParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetNodesHbasParams defines parameters for GetNodesHbas.
 type GetNodesHbasParams struct {
 	// Props A list of properties to include in each data dictionnary.

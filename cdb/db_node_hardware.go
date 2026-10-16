@@ -48,7 +48,9 @@ func buildNodeHardwareQuery(groups []string, isManager bool, selectExprs []strin
 	return query, args, nil
 }
 
-func (oDb *DB) queryHardware(ctx context.Context, nodeID string, defaultOrderBy string, p ListParams) ([]map[string]any, error) {
+// queryHardware reads the hardware components the caller may see, of one node when
+// nodeID is set, the one of id hwID when it is not 0.
+func (oDb *DB) queryHardware(ctx context.Context, nodeID string, hwID int, defaultOrderBy string, p ListParams) ([]map[string]any, error) {
 	query, args, err := buildNodeHardwareQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
@@ -56,6 +58,10 @@ func (oDb *DB) queryHardware(ctx context.Context, nodeID string, defaultOrderBy 
 	if nodeID != "" {
 		query += " AND node_hw.node_id = ?"
 		args = append(args, nodeID)
+	}
+	if hwID != 0 {
+		query += " AND node_hw.id = ?"
+		args = append(args, hwID)
 	}
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
@@ -73,9 +79,15 @@ func (oDb *DB) queryHardware(ctx context.Context, nodeID string, defaultOrderBy 
 }
 
 func (oDb *DB) GetNodesHardware(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	return oDb.queryHardware(ctx, "", "node_hw.node_id, node_hw.hw_type, node_hw.hw_path", p)
+	return oDb.queryHardware(ctx, "", 0, "node_hw.node_id, node_hw.hw_type, node_hw.hw_path", p)
 }
 
 func (oDb *DB) GetNodeHardware(ctx context.Context, nodeID string, p ListParams) ([]map[string]any, error) {
-	return oDb.queryHardware(ctx, nodeID, "node_hw.hw_type, node_hw.hw_path", p)
+	return oDb.queryHardware(ctx, nodeID, 0, "node_hw.hw_type, node_hw.hw_path", p)
+}
+
+// GetNodeHardwareComponent returns the hardware component of the given id, none
+// when unknown or on a node the caller may not see.
+func (oDb *DB) GetNodeHardwareComponent(ctx context.Context, id int, p ListParams) ([]map[string]any, error) {
+	return oDb.queryHardware(ctx, "", id, "node_hw.id", p)
 }
