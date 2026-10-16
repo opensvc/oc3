@@ -13090,7 +13090,9 @@ paths:
   /tags/{tag_id}/services:
     get:
       operationId: GetTagServices
-      description: List services where the tag is attached
+      description: |
+        List services where the tag is attached, among those the caller may see,
+        with the column filters of the services list.
       parameters:
         - in: path
           name: tag_id
@@ -13104,6 +13106,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
