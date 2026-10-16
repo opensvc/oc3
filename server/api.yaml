@@ -12763,7 +12763,9 @@ paths:
   /tags/{tag_id}/nodes:
     get:
       operationId: GetTagNodes
-      description: Get nodes where the tag is attached
+      description: |
+        Get nodes where the tag is attached, among those the caller may see, with
+        the column filters and the value statistics of the nodes list.
       parameters:
         - in: path
           name: tag_id
@@ -12774,6 +12776,8 @@ paths:
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryStats'
       tags:
         - collector
       responses:
@@ -12782,9 +12786,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
+                $ref: '#/components/schemas/ListResponse'
         404:
           description: Tag not found
         500:
