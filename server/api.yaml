@@ -12870,7 +12870,7 @@ paths:
       operationId: GetTagNodes
       description: |
         Get nodes where the tag is attached, among those the caller may see, with
-        the column filters and the value statistics of the nodes list.
+        the column filters, the sort and the value statistics of the nodes list.
       parameters:
         - in: path
           name: tag_id
@@ -12883,6 +12883,7 @@ paths:
         - $ref: '#/components/parameters/inQueryOffset'
         - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
       tags:
         - collector
       responses:

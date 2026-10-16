@@ -12141,6 +12141,9 @@ type GetTagNodesParams struct {
 	// A count taking longer than 5 seconds is refused with a 400, asking to
 	// narrow the selection.
 	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
 }
 
 // PostTagNodeJSONBody defines parameters for PostTagNode.
