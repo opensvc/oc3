@@ -8,6 +8,7 @@ import (
 	"github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/safe"
 	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/xauth"
 )
@@ -42,6 +43,13 @@ type (
 		// password (HTTP Basic), as server.auth.basic_users says: the sign-in
 		// screen reads it, and without it no password is set.
 		BasicUsers bool
+
+		// Safe reads and writes the files of the collector safe.
+		Safe *safe.Service
+
+		// Assistant is the AI agent the assistant routes are relayed to; nil when
+		// it is not configured.
+		Assistant *AssistantConfig
 	}
 )
 

@@ -24,6 +24,7 @@ func (a *Api) GetTagServices(c echo.Context, tagIdParam string, params server.Ge
 	return a.handleList(c, "GetTagServices", "service", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
+		filter: params.Filter,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return odb.GetTagServices(ctx, tag.ID, p)
 	})

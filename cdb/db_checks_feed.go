@@ -319,6 +319,14 @@ func (oDb *DB) checksLiveThresholdsFromDefaults(ctx context.Context, rows []Chec
 // alerts of the checks of the node no longer out of them, and the "check
 // value not updated" alerts of the node, which just updated its checks.
 func (oDb *DB) DashboardUpdateChecksOutOfBounds(ctx context.Context, nodeID string, now time.Time) error {
+	return oDb.dashboardUpdateChecksOutOfBounds(ctx, nodeID, now, true)
+}
+
+// dashboardUpdateChecksOutOfBounds alerts the checks of the node out of their
+// thresholds, an alert already there taking the value and the thresholds of
+// now, and removes the alerts of the checks back within them. fed tells the
+// node just sent its checks: its "check value not updated" alerts go then.
+func (oDb *DB) dashboardUpdateChecksOutOfBounds(ctx context.Context, nodeID string, now time.Time, fed bool) error {
 	defer logDuration("DashboardUpdateChecksOutOfBounds", time.Now())
 	env := "TST"
 	var nodeEnv sql.NullString
@@ -350,7 +358,8 @@ func (oDb *DB) DashboardUpdateChecksOutOfBounds(ctx context.Context, nodeID stri
 			t.node_id = ? AND
 			t.chk_updated >= DATE_SUB(?, INTERVAL 1 DAY) AND
 			(t.chk_value < t.chk_low OR t.chk_value > t.chk_high)
-		ON DUPLICATE KEY UPDATE dash_updated = ?`
+		ON DUPLICATE KEY UPDATE dash_updated = ?, dash_dict = VALUES(dash_dict),
+			dash_dict_md5 = VALUES(dash_dict_md5), dash_severity = VALUES(dash_severity)`
 	if count, err := oDb.execCountContext(ctx, query, severity, now, env, now, nodeID, now, now); err != nil {
 		return fmt.Errorf("DashboardUpdateChecksOutOfBounds: %w", err)
 	} else if count > 0 {
@@ -358,8 +367,11 @@ func (oDb *DB) DashboardUpdateChecksOutOfBounds(ctx context.Context, nodeID stri
 	}
 	query = `DELETE FROM dashboard
 		WHERE node_id = ? AND (
-			(dash_type = "check out of bounds" AND (dash_updated < ? OR dash_updated IS NULL)) OR
-			dash_type = "check value not updated")`
+			(dash_type = "check out of bounds" AND (dash_updated < ? OR dash_updated IS NULL))`
+	if fed {
+		query += ` OR dash_type = "check value not updated"`
+	}
+	query += `)`
 	if count, err := oDb.execCountContext(ctx, query, nodeID, now); err != nil {
 		return fmt.Errorf("DashboardUpdateChecksOutOfBounds: %w", err)
 	} else if count > 0 {

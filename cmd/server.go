@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/safe"
 	api "github.com/opensvc/oc3/server"
 	handlers "github.com/opensvc/oc3/server/handlers"
 	"github.com/opensvc/oc3/xauth"
@@ -24,6 +25,9 @@ type (
 		redis   *redis.Client
 		// oidc is the OpenID Connect sign-in; nil when server.oidc.enable is false.
 		oidc *xauth.OIDC
+		safe *safe.Service
+		// assistant is the AI agent the assistant routes are relayed to.
+		assistant *handlers.AssistantConfig
 	}
 )
 
@@ -33,6 +37,14 @@ func newServer() (*server, error) {
 		return nil, err
 	}
 	t := &server{db: db, section: sectionServer, redis: newRedis()}
+	// A keys file configured but unreadable stops the server: it would otherwise
+	// store in plaintext what the operator asked to encrypt.
+	if t.safe, err = newSafeService(); err != nil {
+		return nil, err
+	}
+	if t.assistant, err = newAssistant(t.section); err != nil {
+		return nil, err
+	}
 	// A wrong OIDC configuration stops the server rather than leaving it to run
 	// with weaker settings than the operator asked for.
 	if t.oidc, err = newOIDC(context.Background(), t.section, t.redis, db); err != nil {
@@ -59,6 +71,8 @@ func (t *server) apiRegister(e *echo.Echo) {
 		SubSystem:   t.section,
 		OIDC:        t.oidc,
 		BasicUsers:  viper.GetBool(t.section + ".auth.basic_users"),
+		Safe:        t.safe,
+		Assistant:   t.assistant,
 	}
 	// With a messenger, the changes made through the api are announced like those
 	// of the workers, and the websocket clients get their tokens from the api.

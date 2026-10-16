@@ -288,28 +288,32 @@ var propsMapping = map[string]propMapping{
 			"updated":      colStr(schema.DiskinfoDiskUpdated),
 		},
 	},
+	// The disk groups and the quota of an application code on each, read from the
+	// v_disk_quota view: each prop names the view column it reads, for sorting
+	// and filtering.
 	"disk_quota": {
 		Available: []string{
 			"array_name", "array_model", "dg_name",
 			"dg_free", "dg_used", "dg_size", "dg_reserved", "dg_reservable",
 			"app", "quota", "quota_used",
-			"dg_id", "array_id", "app_id",
+			"dg_id", "array_id", "app_id", "id",
 		},
 		Props: map[string]propDef{
-			"array_name":    {SQLExpr: "COALESCE(array_name, '') AS array_name", Kind: "string"},
-			"array_model":   {SQLExpr: "COALESCE(array_model, '') AS array_model", Kind: "string"},
-			"dg_name":       {SQLExpr: "COALESCE(dg_name, '') AS dg_name", Kind: "string"},
-			"dg_free":       {SQLExpr: "COALESCE(dg_free, 0) AS dg_free", Kind: "int64"},
-			"dg_used":       {SQLExpr: "COALESCE(dg_used, 0) AS dg_used", Kind: "int64"},
-			"dg_size":       {SQLExpr: "COALESCE(dg_size, 0) AS dg_size", Kind: "int64"},
-			"dg_reserved":   {SQLExpr: "COALESCE(dg_reserved, 0) AS dg_reserved", Kind: "int64"},
-			"dg_reservable": {SQLExpr: "COALESCE(dg_reservable, 0) AS dg_reservable", Kind: "int64"},
-			"app":           {SQLExpr: "COALESCE(app, '') AS app", Kind: "string"},
-			"quota":         {SQLExpr: "COALESCE(quota, 0) AS quota", Kind: "int64"},
-			"quota_used":    {SQLExpr: "COALESCE(quota_used, 0) AS quota_used", Kind: "int64"},
-			"dg_id":         {SQLExpr: "COALESCE(dg_id, 0) AS dg_id", Kind: "int64"},
-			"array_id":      {SQLExpr: "COALESCE(array_id, 0) AS array_id", Kind: "int64"},
-			"app_id":        {SQLExpr: "COALESCE(app_id, 0) AS app_id", Kind: "int64"},
+			"array_name":    {Col: cdb.DiskQuotaCol("array_name"), SQLExpr: "COALESCE(array_name, '') AS array_name", Kind: "string"},
+			"array_model":   {Col: cdb.DiskQuotaCol("array_model"), SQLExpr: "COALESCE(array_model, '') AS array_model", Kind: "string"},
+			"dg_name":       {Col: cdb.DiskQuotaCol("dg_name"), SQLExpr: "COALESCE(dg_name, '') AS dg_name", Kind: "string"},
+			"dg_free":       {Col: cdb.DiskQuotaCol("dg_free"), SQLExpr: "COALESCE(dg_free, 0) AS dg_free", Kind: "int64"},
+			"dg_used":       {Col: cdb.DiskQuotaCol("dg_used"), SQLExpr: "COALESCE(dg_used, 0) AS dg_used", Kind: "int64"},
+			"dg_size":       {Col: cdb.DiskQuotaCol("dg_size"), SQLExpr: "COALESCE(dg_size, 0) AS dg_size", Kind: "int64"},
+			"dg_reserved":   {Col: cdb.DiskQuotaCol("dg_reserved"), SQLExpr: "COALESCE(dg_reserved, 0) AS dg_reserved", Kind: "int64"},
+			"dg_reservable": {Col: cdb.DiskQuotaCol("dg_reservable"), SQLExpr: "COALESCE(dg_reservable, 0) AS dg_reservable", Kind: "int64"},
+			"app":           {Col: cdb.DiskQuotaCol("app"), SQLExpr: "COALESCE(app, '') AS app", Kind: "string"},
+			"quota":         {Col: cdb.DiskQuotaCol("quota"), SQLExpr: "COALESCE(quota, 0) AS quota", Kind: "int64"},
+			"quota_used":    {Col: cdb.DiskQuotaCol("quota_used"), SQLExpr: "COALESCE(quota_used, 0) AS quota_used", Kind: "int64"},
+			"dg_id":         {Col: cdb.DiskQuotaCol("dg_id"), SQLExpr: "COALESCE(dg_id, 0) AS dg_id", Kind: "int64"},
+			"array_id":      {Col: cdb.DiskQuotaCol("array_id"), SQLExpr: "COALESCE(array_id, 0) AS array_id", Kind: "int64"},
+			"app_id":        {Col: cdb.DiskQuotaCol("app_id"), SQLExpr: "COALESCE(app_id, 0) AS app_id", Kind: "int64"},
+			"id":            {Col: cdb.DiskQuotaCol("id"), SQLExpr: "id", Kind: "int64"},
 		},
 	},
 	// Addresses of the nodes, read from the v_nodenetworks view. Each prop keeps
@@ -422,6 +426,142 @@ var propsMapping = map[string]propMapping{
 			"hba_id":   colStr(schema.NodeHBAHBAID),
 			"hba_type": colStr(schema.NodeHBAHBAType),
 			"updated":  colStr(schema.NodeHBAUpdated),
+		},
+	},
+	// The array ports a node sees through its host bus adapters: the stor_zone
+	// rows of the node, joined to the array owning each port, whose columns read
+	// as stor_array.<column> and stor_array_tgtid.<column>.
+	"node_target": {
+		Available: []string{"id", "node_id", "hba_id", "tgt_id", "updated"},
+		Default: []string{
+			"hba_id", "tgt_id", "updated",
+			"stor_array.id", "stor_array.array_name", "stor_array.array_model", "stor_array.array_comment",
+		},
+		Props: map[string]propDef{
+			"id":      col(schema.StorZoneID),
+			"node_id": colStr(schema.StorZoneNodeID),
+			"hba_id":  colStr(schema.StorZoneHBAID),
+			"tgt_id":  colStr(schema.StorZoneTgtID),
+			"updated": colStr(schema.StorZoneUpdated),
+		},
+		Joins: map[string]JoinDef{
+			"stor_array":       {MappingKey: "array"},
+			"stor_array_tgtid": {MappingKey: "array_tgtid"},
+		},
+	},
+	// The luns of an array, as the arrays report them (diskinfo), each with the
+	// nodes and services using it (svcdisks), one row per use, and none for a lun
+	// no node reports. The columns of each table read as <table>.<column>.
+	"array_disk": {
+		PrimaryKey: []*schema.Col{schema.DiskinfoID, schema.SvcdisksID},
+		Available: []string{
+			"id", "disk_id", "disk_devid", "disk_name", "disk_size", "disk_alloc", "disk_group",
+			"disk_raid", "disk_level", "disk_controller", "disk_arrayid", "disk_updated", "disk_created",
+		},
+		// The historical API returned every column of its three tables: the forms
+		// read the lun, its uses and its array from them without asking.
+		Default: []string{
+			"diskinfo.id", "diskinfo.disk_id", "diskinfo.disk_devid", "diskinfo.disk_name",
+			"diskinfo.disk_size", "diskinfo.disk_alloc", "diskinfo.disk_group", "diskinfo.disk_raid",
+			"diskinfo.disk_updated",
+			"svcdisks.node_id", "svcdisks.svc_id", "svcdisks.disk_dg", "svcdisks.disk_used",
+			"stor_array.id", "stor_array.array_name", "stor_array.array_model", "stor_array.array_comment",
+		},
+		Props: map[string]propDef{
+			"id":              col(schema.DiskinfoID),
+			"disk_id":         colStr(schema.DiskinfoDiskID),
+			"disk_devid":      colStr(schema.DiskinfoDiskDevid),
+			"disk_name":       colStr(schema.DiskinfoDiskName),
+			"disk_size":       colInt(schema.DiskinfoDiskSize),
+			"disk_alloc":      colInt(schema.DiskinfoDiskAlloc),
+			"disk_group":      colStr(schema.DiskinfoDiskGroup),
+			"disk_raid":       colStr(schema.DiskinfoDiskRaid),
+			"disk_level":      colInt(schema.DiskinfoDiskLevel),
+			"disk_controller": colStr(schema.DiskinfoDiskController),
+			"disk_arrayid":    colStr(schema.DiskinfoDiskArrayid),
+			"disk_updated":    colStr(schema.DiskinfoDiskUpdated),
+			"disk_created":    colStr(schema.DiskinfoDiskCreated),
+		},
+		Joins: map[string]JoinDef{
+			"diskinfo":   {MappingKey: "diskinfo"},
+			"svcdisks":   {MappingKey: "svcdisks"},
+			"stor_array": {MappingKey: "array"},
+			"nodes":      {MappingKey: "node"},
+			"services":   {MappingKey: "service"},
+		},
+	},
+	// The columns of diskinfo, for the lists joining it.
+	"diskinfo": {
+		Available: []string{
+			"id", "disk_id", "disk_devid", "disk_name", "disk_size", "disk_alloc", "disk_group",
+			"disk_raid", "disk_level", "disk_controller", "disk_arrayid", "disk_updated", "disk_created",
+		},
+		Props: map[string]propDef{
+			"id":              col(schema.DiskinfoID),
+			"disk_id":         colStr(schema.DiskinfoDiskID),
+			"disk_devid":      colStr(schema.DiskinfoDiskDevid),
+			"disk_name":       colStr(schema.DiskinfoDiskName),
+			"disk_size":       colInt(schema.DiskinfoDiskSize),
+			"disk_alloc":      colInt(schema.DiskinfoDiskAlloc),
+			"disk_group":      colStr(schema.DiskinfoDiskGroup),
+			"disk_raid":       colStr(schema.DiskinfoDiskRaid),
+			"disk_level":      colInt(schema.DiskinfoDiskLevel),
+			"disk_controller": colStr(schema.DiskinfoDiskController),
+			"disk_arrayid":    colStr(schema.DiskinfoDiskArrayid),
+			"disk_updated":    colStr(schema.DiskinfoDiskUpdated),
+			"disk_created":    colStr(schema.DiskinfoDiskCreated),
+		},
+	},
+	// The columns of svcdisks, the disks as the nodes report them, for the lists
+	// joining it.
+	"svcdisks": {
+		Available: []string{
+			"id", "disk_id", "node_id", "svc_id", "app_id", "disk_size", "disk_used",
+			"disk_vendor", "disk_model", "disk_dg", "disk_local", "disk_region", "disk_updated",
+		},
+		Props: map[string]propDef{
+			"id":           col(schema.SvcdisksID),
+			"disk_id":      colStr(schema.SvcdisksDiskID),
+			"node_id":      colStr(schema.SvcdisksNodeID),
+			"svc_id":       colStr(schema.SvcdisksSvcID),
+			"app_id":       colInt(schema.SvcdisksAppID),
+			"disk_size":    colInt(schema.SvcdisksDiskSize),
+			"disk_used":    colInt(schema.SvcdisksDiskUsed),
+			"disk_vendor":  colStr(schema.SvcdisksDiskVendor),
+			"disk_model":   colStr(schema.SvcdisksDiskModel),
+			"disk_dg":      colStr(schema.SvcdisksDiskDG),
+			"disk_local":   colStr(schema.SvcdisksDiskLocal),
+			"disk_region":  colStr(schema.SvcdisksDiskRegion),
+			"disk_updated": colStr(schema.SvcdisksDiskUpdated),
+		},
+	},
+	// The disk groups of an array, the columns of the array reachable as
+	// stor_array.<column>. The sizes are in MB.
+	"array_dg": {
+		Available: []string{
+			"id", "array_id", "dg_name", "dg_size", "dg_used", "dg_free", "dg_reserved", "dg_updated",
+		},
+		Props: map[string]propDef{
+			"id":          col(schema.StorArrayDGID),
+			"array_id":    colStr(schema.StorArrayDGArrayID),
+			"dg_name":     colStr(schema.StorArrayDGDGName),
+			"dg_size":     colInt(schema.StorArrayDGDGSize),
+			"dg_used":     colInt(schema.StorArrayDGDGUsed),
+			"dg_free":     colInt(schema.StorArrayDGDGFree),
+			"dg_reserved": colInt(schema.StorArrayDGDGReserved),
+			"dg_updated":  colStr(schema.StorArrayDGDGUpdated),
+		},
+		Joins: map[string]JoinDef{
+			"stor_array": {MappingKey: "array"},
+		},
+	},
+	"array_tgtid": {
+		Available: []string{"id", "array_id", "array_tgtid", "updated"},
+		Props: map[string]propDef{
+			"id":          col(schema.StorArrayTgtidID),
+			"array_id":    colStr(schema.StorArrayTgtidArrayID),
+			"array_tgtid": colStr(schema.StorArrayTgtidArrayTgtid),
+			"updated":     colStr(schema.StorArrayTgtidUpdated),
 		},
 	},
 	"array": {
@@ -541,6 +681,49 @@ var propsMapping = map[string]propMapping{
 			"form_id":          col(schema.FormsRevisionsFormID),
 			"form_folder":      colStr(schema.FormsRevisionsFormFolder),
 			"form_name":        colStr(schema.FormsRevisionsFormName),
+		},
+	},
+	// Files of the collector safe, a row per version, as the historical v_safe
+	// view lists them: with the uploader's name and the groups linked. md5,
+	// sha256 and size are those of the plaintext; encrypted tells whether the
+	// file is encrypted at rest. The encryption keys are never props.
+	"safe": {
+		Available: []string{
+			"id", "uuid", "name", "size", "md5", "sha256", "uploader", "uploader_name",
+			"uploaded_from", "uploaded_date", "encrypted", "safe_team_publication", "safe_team_responsible",
+		},
+		Default: []string{
+			"id", "uuid", "name", "size", "md5", "uploader", "uploader_name", "uploaded_from",
+			"uploaded_date", "encrypted", "safe_team_publication", "safe_team_responsible",
+		},
+		Props: map[string]propDef{
+			"id":            col(schema.SafeID),
+			"uuid":          colStr(schema.SafeUuid),
+			"name":          colStr(schema.SafeName),
+			"size":          colInt(schema.SafeSize),
+			"md5":           colStr(schema.SafeMD5),
+			"sha256":        {Col: schema.SafeSha256, Kind: "string"},
+			"uploader":      {Col: schema.SafeUploader, Kind: "int64"},
+			"uploaded_from": colStr(schema.SafeUploadedFrom),
+			"uploaded_date": colStr(schema.SafeUploadedDate),
+			"uploader_name": {
+				SQLExpr: "TRIM(CONCAT(COALESCE(auth_user.first_name, ''), ' ', COALESCE(auth_user.last_name, '')))",
+				Kind:    "string",
+			},
+			"encrypted": {
+				SQLExpr: "(safe.enc_version IS NOT NULL AND safe.enc_uuid = safe.uuid)",
+				Kind:    "bool",
+			},
+			"safe_team_publication": {
+				SQLExpr: "(SELECT GROUP_CONCAT(ag.role ORDER BY ag.role SEPARATOR ', ') FROM safe_team_publication x" +
+					" JOIN auth_group ag ON ag.id = x.group_id WHERE x.file_id = safe.id)",
+				Kind: "string",
+			},
+			"safe_team_responsible": {
+				SQLExpr: "(SELECT GROUP_CONCAT(ag.role ORDER BY ag.role SEPARATOR ', ') FROM safe_team_responsible x" +
+					" JOIN auth_group ag ON ag.id = x.group_id WHERE x.file_id = safe.id)",
+				Kind: "string",
+			},
 		},
 	},
 	// Workflows chaining stored forms: the requests. form_name, form_folder and
@@ -1091,10 +1274,60 @@ var propsMapping = map[string]propMapping{
 			"chk_created":            colStr(schema.ChecksLiveChkCreated),
 			"chk_updated":            colStr(schema.ChecksLiveChkUpdated),
 		},
-		// A check points at its object by id only, the name lives in the
-		// joined table.
+		// A check points at its node and its object by id only, the names
+		// live in the joined tables.
 		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
 			"services": {MappingKey: "service"},
+		},
+	},
+	// The thresholds set on a check, which take precedence over the others.
+	"check_setting": {
+		Available: []string{
+			"id", "node_id", "svc_id", "chk_type", "chk_instance",
+			"chk_low", "chk_high", "chk_changed", "chk_changed_by",
+		},
+		Props: map[string]propDef{
+			"id":             col(schema.ChecksSettingsID),
+			"node_id":        colStr(schema.ChecksSettingsNodeID),
+			"svc_id":         colStr(schema.ChecksSettingsSvcID),
+			"chk_type":       colStr(schema.ChecksSettingsChkType),
+			"chk_instance":   colStr(schema.ChecksSettingsChkInstance),
+			"chk_low":        col(schema.ChecksSettingsChkLow),
+			"chk_high":       col(schema.ChecksSettingsChkHigh),
+			"chk_changed":    colStr(schema.ChecksSettingsChkChanged),
+			"chk_changed_by": colStr(schema.ChecksSettingsChkChangedBy),
+		},
+		Joins: map[string]JoinDef{
+			"nodes":    {MappingKey: "node"},
+			"services": {MappingKey: "service"},
+		},
+	},
+	// The default thresholds of a check type.
+	"check_default": {
+		Available: []string{"id", "chk_type", "chk_inst", "chk_low", "chk_high", "chk_prio"},
+		Props: map[string]propDef{
+			"id":       col(schema.ChecksDefaultsID),
+			"chk_type": colStr(schema.ChecksDefaultsChkType),
+			"chk_inst": colStr(schema.ChecksDefaultsChkInst),
+			"chk_low":  col(schema.ChecksDefaultsChkLow),
+			"chk_high": col(schema.ChecksDefaultsChkHigh),
+			"chk_prio": colInt(schema.ChecksDefaultsChkPrio),
+		},
+	},
+	// The thresholds of the checks of the nodes and objects a filterset selects.
+	"check_contextual": {
+		Available: []string{"id", "fset_id", "chk_type", "chk_instance", "chk_low", "chk_high"},
+		Props: map[string]propDef{
+			"id":           col(schema.GenFiltersetCheckThresholdID),
+			"fset_id":      col(schema.GenFiltersetCheckThresholdFsetID),
+			"chk_type":     colStr(schema.GenFiltersetCheckThresholdChkType),
+			"chk_instance": colStr(schema.GenFiltersetCheckThresholdChkInstance),
+			"chk_low":      col(schema.GenFiltersetCheckThresholdChkLow),
+			"chk_high":     col(schema.GenFiltersetCheckThresholdChkHigh),
+		},
+		Joins: map[string]JoinDef{
+			"gen_filtersets": {MappingKey: "filterset"},
 		},
 	},
 	"resource": {
@@ -1312,6 +1545,25 @@ var propsMapping = map[string]propMapping{
 			"f_author":  colStr(schema.GenFiltersFAuthor),
 			"f_cksum":   colStr(schema.GenFiltersFCksum),
 			"f_label":   colStr(schema.GenFiltersFLabel),
+		},
+	},
+	// The constraints of the attributes of a kind of object, from the derived table
+	// of cdb.GetFieldConstraintList.
+	"field_constraint": {
+		Available: []string{
+			"object_kind", "field", "mode", "values", "value_count", "pattern", "allowed",
+			"updated", "updated_by",
+		},
+		Props: map[string]propDef{
+			"object_kind": colStr(cdb.FieldConstraintTableCol("object_kind")),
+			"field":       colStr(cdb.FieldConstraintTableCol("field")),
+			"mode":        colStr(cdb.FieldConstraintTableCol("mode")),
+			"values":      colStr(cdb.FieldConstraintTableCol("values_json")),
+			"value_count": colInt(cdb.FieldConstraintTableCol("value_count")),
+			"pattern":     colStr(cdb.FieldConstraintTableCol("pattern")),
+			"allowed":     colStr(cdb.FieldConstraintTableCol("allowed")),
+			"updated":     colStr(cdb.FieldConstraintTableCol("updated")),
+			"updated_by":  colStr(cdb.FieldConstraintTableCol("updated_by")),
 		},
 	},
 	"oidc_mapping": {

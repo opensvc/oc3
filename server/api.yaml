@@ -688,7 +688,16 @@ paths:
   /apps/{app_id}:
     post:
       operationId: PostApp
-      description: Change an application code properties
+      description: |
+        Change the properties of an application code. Renaming it renames it on its
+        nodes and services too. app is trimmed and may be neither empty, nor longer
+        than 64 characters, nor the code of another application, compared without
+        regard to case (409); app_domain is 64 characters at most; app_team_ops is
+        empty or the name of an organizational group. Requires the AppManager
+        privilege and the responsibility of the app, which a Manager has.
+        app_domain constrained in strict or regex mode (see /field_constraints)
+        may only take an allowed value, an empty one or the value it holds: 400
+        otherwise.
       parameters:
         - in: path
           name: app_id
@@ -728,6 +737,8 @@ paths:
           $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -1051,7 +1062,10 @@ paths:
   /apps/{app_id}/quotas:
     get:
       operationId: GetAppQuotas
-      description: List storage disk group quotas usage for the application code
+      description: |
+        The storage disk group quotas of the application code and their usage,
+        read from v_disk_quota: one row per disk group the app has a quota on.
+        Every prop can be filtered on, array_id:567 or dg_id:12 say.
       parameters:
         - in: path
           name: app_id
@@ -1066,6 +1080,7 @@ paths:
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
         - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
       tags:
         - collector
       responses:
@@ -1372,6 +1387,7 @@ paths:
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
         - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
       tags:
         - collector
       responses:
@@ -1381,6 +1397,101 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListResponse'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/disks:
+    get:
+      operationId: GetArrayDisks
+      description: |
+        The luns of a storage array, as the historical collector listed them: each
+        lun as the array reports it (diskinfo), joined to its uses as the nodes
+        report them (svcdisks), one row per node and service using it, a lun no
+        node reports in a row of its own. The array is given by its name or its
+        id. The columns of each table read as <table>.<column>: diskinfo,
+        svcdisks, stor_array, nodes and services; they can be filtered, sorted
+        and grouped on, groupby=diskinfo.disk_id giving one row per lun. Without
+        props, the main columns of the lun, its use and its array.
+        A caller who is not a Manager sees the luns used by the nodes of the apps
+        their groups are responsible for.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Array name or record id
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/diskgroups:
+    get:
+      operationId: GetArrayDiskgroups
+      description: |
+        The disk groups of a storage array, as the historical collector listed
+        them: name, size, used, free and reserved space, in MB. The array is
+        given by its name or its id. Its columns read as stor_array.<column>
+        (id, array_name, array_model, array_comment...), and can be filtered,
+        sorted and grouped on.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Array name or record id
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -1536,6 +1647,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthInfo'
+
+  /auth/whoami:
+    get:
+      operationId: GetAuthWhoami
+      description: |
+        Who the request is authenticated as, and how: the source of the sign-in
+        (session for a single sign-on session cookie, bearer for a provider's
+        access token, basic for a password, node for a node's credentials), the
+        user, their privilege groups and their other groups, and, for a single
+        sign-on, the identity at the provider and when the sign-in ends.
+
+        While impersonating, the user, privileges and groups are those of the
+        impersonated user; auth_source, issuer, subject and the ends describe the
+        sign-in of the impersonator, given in impersonator.
+
+        No token, password nor session id appears. The answer is not cached; it
+        reads the current state of each request, do not poll it.
+      tags:
+        - auth
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      responses:
+        200:
+          description: OK
+          headers:
+            Cache-Control:
+              description: no-store
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Whoami'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
 
   /auth/login:
     get:
@@ -3329,6 +3478,13 @@ paths:
         structure, also stored and readable with GET /form_output_results/{id}. A
         negative id designates an internal form. The form must be published to the
         caller, unless a manager.
+
+        A submission continuing a request (`prev_wfid`, a form with a workflow
+        output) decides on that step: the form must be one of the next forms the
+        step names (the `NextForms` of its workflow output, those of its `Scripts`
+        outcomes included), and the caller its assignee, by full name or through
+        one of their groups, a manager included; 403 otherwise, 404 when the step
+        does not exist.
       parameters:
         - in: path
           name: form_id
@@ -3346,7 +3502,7 @@ paths:
                   data:
                     description: The information the form expects, as an object, a list of objects or their JSON string form.
                   prev_wfid:
-                    description: The previous step id in an existing workflow.
+                    description: The id of the step of an existing workflow this submission decides on (forms_store.id).
       tags:
         - collector
       responses:
@@ -4094,7 +4250,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/StoredFormListResponse'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -4134,7 +4290,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListResponse'
+                $ref: '#/components/schemas/StoredFormListResponse'
         400:
           $ref: '#/components/responses/400'
         401:
@@ -4176,6 +4332,1462 @@ paths:
           $ref: '#/components/responses/404'
         500:
           $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe:
+    get:
+      operationId: GetSafeFiles
+      description: |
+        List the files of the collector safe the caller may see: a Manager every
+        file; a user those they uploaded or published to one of their groups; a
+        node those published to its responsible team. Each version of a file is a
+        row. `md5`, `sha256` and `size` are those of the plaintext; `encrypted`
+        tells whether the file is encrypted at rest.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostSafeFile
+      description: |
+        Create an empty file reference, to upload its content later (POST
+        /safe/{file_id}/upload): its id can be referenced first. Requires the
+        SafeUploader privilege, except for a node. The file is published to and
+        made the responsibility of the caller's default group. Logged.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/upload:
+    post:
+      operationId: PostSafeUpload
+      description: |
+        Upload a new file into the safe. Requires the SafeUploader privilege,
+        except for a node. The file is encrypted at rest when the collector is
+        configured to (safe.encryption, safe.keys_file), stored in plaintext
+        otherwise, and published to and made the responsibility of the caller's
+        default group. Logged.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The content of the file.
+                name:
+                  type: string
+                  description: A name to tell the file by, the name of the uploaded file by default.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        413:
+          $ref: '#/components/responses/413'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}:
+    get:
+      operationId: GetSafeFile
+      description: |
+        Show a safe file, if the caller may see it (see GET /safe): an empty list
+        otherwise.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostSafeFileName
+      description: |
+        Rename a safe file, its content unchanged. The caller must be the uploader
+        of the file, in one of its responsible groups, or a Manager. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteSafeFile
+      description: |
+        Delete a safe file version: its row, its groups, and its content on disk
+        unless another row holds it. Same rights as the rename. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeInfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/upload:
+    post:
+      operationId: PostSafeFileUpload
+      description: |
+        Upload a new version of a file. The file keeps its id, which the safe://
+        references name; the previous version becomes a row of its own, listed by
+        GET /safe/{file_id}/history. Requires the SafeUploader privilege, except
+        for a node, and the responsibility of the file. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The content of the file.
+                name:
+                  type: string
+                  description: A name to tell the file by, the name of the uploaded file by default.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        413:
+          $ref: '#/components/responses/413'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/download:
+    get:
+      operationId: GetSafeFileDownload
+      description: |
+        Download the content of a safe file, decrypted when it is encrypted at
+        rest, and checked against the md5 recorded at upload (403 when it does not
+        match). 204 when the md5 the client announces is the file's: it already
+        has this version. The caller must be allowed to see the file. Each
+        download is written to the audit log.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - in: query
+          name: md5
+          required: false
+          description: The md5 of the copy the client has.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: The content of the file.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        204:
+          description: The client already has this version.
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/preview:
+    get:
+      operationId: GetSafeFilePreview
+      description: |
+        The content of a text safe file, base64-encoded, for display; 400 for
+        another content type. Same rights and checks as the download, and logged
+        likewise.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFilePreviewResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/history:
+    get:
+      operationId: GetSafeFileHistory
+      description: |
+        List the previous versions of a file, those the caller may see.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/usage:
+    get:
+      operationId: GetSafeFileUsage
+      description: |
+        Where a file is referenced: the services whose configuration names it
+        (`{safe://<id>}` or its stored name), and the variables of the rulesets
+        published to the caller's groups holding it. The caller must be allowed
+        to see the file.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeFileUsageResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/am_i_responsible:
+    get:
+      operationId: GetSafeFileAmIResponsible
+      description: |
+        Whether the caller may manage the file: its uploader, in one of its
+        responsible groups, or a Manager.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: boolean
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/publications:
+    get:
+      operationId: GetSafeFilePublications
+      description: |
+        List the groups the file is published to: their members can list, read and download it. The caller must be allowed to read the file.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeGroupListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/publications/{group}:
+    post:
+      operationId: PostSafeFilePublication
+      description: |
+        Add a group to those the file is published to: their members can list, read and download it. The caller must be the uploader of the
+        file, in one of its responsible groups, or a Manager. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - in: path
+          name: group
+          required: true
+          description: The id or the role of the group
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeInfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteSafeFilePublication
+      description: |
+        Remove a group from those the file is published to: their members can list, read and download it. Same rights as the addition. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - in: path
+          name: group
+          required: true
+          description: The id or the role of the group
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeInfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/responsibles:
+    get:
+      operationId: GetSafeFileResponsibles
+      description: |
+        List the groups responsible for the file: their members can manage it. The caller must be allowed to read the file.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeGroupListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /safe/{file_id}/responsibles/{group}:
+    post:
+      operationId: PostSafeFileResponsible
+      description: |
+        Add a group to those responsible for the file: their members can manage it. The caller must be the uploader of the
+        file, in one of its responsible groups, or a Manager. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - in: path
+          name: group
+          required: true
+          description: The id or the role of the group
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeInfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteSafeFileResponsible
+      description: |
+        Remove a group from those responsible for the file: their members can manage it. Same rights as the addition. Logged.
+      parameters:
+        - in: path
+          name: file_id
+          required: true
+          description: The id of the file (safe.id), or its stored name (safe.uuid, as in safe://safe.uuid.<key>.<name>.<ext>)
+          schema:
+            type: string
+        - in: path
+          name: group
+          required: true
+          description: The id or the role of the group
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeInfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/status:
+    get:
+      operationId: GetAssistantStatus
+      description: |
+        Whether the AI assistant is configured, and whether the caller can use it: a
+        user signed in with single sign-on, whose session keeps an access token, or
+        calling with a bearer token. Answered by oc3, without calling the agent.
+      tags:
+        - assistant
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantStatus'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/conversations:
+    get:
+      operationId: GetAssistantConversations
+      description: |
+        List the conversations of the caller, the most recently updated first.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantConversationList'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostAssistantConversation
+      description: |
+        Create an empty conversation for the caller.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      responses:
+        201:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantConversationEnvelope'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        409:
+          description: The caller reached the conversation limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/conversations/{conversation_id}:
+    get:
+      operationId: GetAssistantConversation
+      description: |
+        Read a conversation, and the action it waits a decision on, if any.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantConversationEnvelope'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    patch:
+      operationId: PatchAssistantConversation
+      description: |
+        Rename a conversation.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssistantTitleRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantConversationEnvelope'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        400:
+          description: Invalid title.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteAssistantConversation
+      description: |
+        Delete a conversation and its history.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: Deleted.
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/conversations/{conversation_id}/messages:
+    get:
+      operationId: GetAssistantMessages
+      description: |
+        Read the stored messages of a conversation, the most recent page first; tool calls and results are never returned.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - in: query
+          name: before
+          description: The next_cursor of the previous page.
+          schema:
+            type: string
+            maxLength: 39
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantMessagePage'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        400:
+          description: Invalid query.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/conversations/{conversation_id}/turns:
+    post:
+      operationId: PostAssistantTurn
+      description: |
+        Send a prompt and stream the turn of the agent; send the new prompt only, the agent keeps the history.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssistantTurnRequest'
+      responses:
+        200:
+          description: The turn, streamed as server-sent events.
+          content:
+            text/event-stream:
+              schema:
+                description: "The schema of each event of the stream, written as `event: <type>` then `data: <the event as JSON>` and an empty line; the stream ends after completed, confirmation_required or error."
+                allOf:
+                  - $ref: '#/components/schemas/AssistantStreamEvent'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        400:
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        409:
+          description: A turn is running, an action waits a decision, or a limit is reached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        413:
+          description: The prompt is too large.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/conversations/{conversation_id}/turns/{turn_id}/confirmation:
+    post:
+      operationId: PostAssistantConfirmation
+      description: |
+        Approve or reject the action a turn waits on, and stream the rest of the turn.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      parameters:
+        - in: path
+          name: conversation_id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: turn_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssistantConfirmationRequest'
+      responses:
+        200:
+          description: The turn, streamed as server-sent events.
+          content:
+            text/event-stream:
+              schema:
+                description: "The schema of each event of the stream, written as `event: <type>` then `data: <the event as JSON>` and an empty line; the stream ends after completed, confirmation_required or error."
+                allOf:
+                  - $ref: '#/components/schemas/AssistantStreamEvent'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        400:
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        409:
+          description: A turn is running, an action waits a decision, or a limit is reached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        413:
+          description: The prompt is too large.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/conversations/{conversation_id}/turns/{turn_id}/feedback:
+    parameters:
+      - in: path
+        name: conversation_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: turn_id
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: PutAssistantFeedback
+      description: |
+        Give or replace the feedback of the user on a completed turn: up or down,
+        and for down, the reasons and what was expected. The agent keeps a copy
+        of the turn for review, without the identity of the user.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssistantFeedbackRequest'
+      responses:
+        200:
+          description: The feedback is stored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantFeedbackEnvelope'
+        400:
+          description: Invalid request, invalid feedback, or the turn is not completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation or the turn does not exist, or has no feedback to delete (feedback_target_not_found).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        409:
+          description: The feedback limit of the agent is reached (feedback_limit).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        413:
+          description: The body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteAssistantFeedback
+      description: |
+        Withdraw the feedback of the user on a turn.
+
+        Relayed by oc3 to the AI agent, as the other assistant routes.
+      tags:
+        - assistant
+      responses:
+        204:
+          description: The feedback was deleted.
+        400:
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        401:
+          description: No access token for the caller - a password sign-in, or a single sign-on session to open again (assistant_token_unavailable) - or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the conversation or the turn does not exist, or has no feedback to delete (feedback_target_not_found).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        410:
+          description: The conversation has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
@@ -4333,7 +5945,13 @@ paths:
     post:
       operationId: PostGroup
       description: |
-        Modify a group's properties
+        Modify the properties of a group: role (its name), description, privilege.
+        The name is trimmed and may be neither empty, nor longer than 255 characters,
+        nor the name of another group (409). privilege is T or F. Requires the
+        GroupManager privilege; a caller who is not a Manager may change only the
+        organizational groups they are member of. Changing a privilege group, or the
+        privilege flag to T, requires the Manager privilege. The Everybody group is
+        immutable.
       parameters:
         - in: path
           name: group_id
@@ -4370,6 +5988,10 @@ paths:
           $ref: '#/components/responses/401'
         403:
           $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -4615,6 +6237,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListResponse'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /groups/{group_id}/hidden_menu_entries/effect:
+    get:
+      operationId: GetGroupHiddenMenuEffect
+      description: |
+        The effect of the menu entries the group hides on its members: for each
+        entry, every member, whether the member really does not see it, and the
+        groups of the member that keep it shown otherwise. An entry is hidden to
+        a user only when every organizational group of the user hides it, the
+        Everybody group and the privilege groups apart, the personal group of
+        the user (user_<id>) included. Managers see every group; other users the
+        groups they belong to. A privilege group hides no entry: 400.
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          description: Group identifier (auth_group.id or role)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupHiddenMenuEffect'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -5651,6 +7314,41 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /san-switches/{port_id}:
+    get:
+      operationId: GetSanSwitchPort
+      description: |
+        Display the properties of a port of a SAN switch, as a row of
+        GET /san-switches. Any authenticated user sees every port.
+      parameters:
+        - in: path
+          name: port_id
+          required: true
+          description: Id of the port (switches.id)
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwitchPortListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /search:
     get:
       operationId: GetSearch
@@ -5874,7 +7572,10 @@ paths:
   /nodes:
     post:
       operationId: PostNodes
-      description: Create or update a node (by nodename or node_id)
+      description: |
+        Create or update a node (by nodename or node_id). The attributes a user
+        sets are checked against the strict and regex constraints, as by
+        POST /nodes/{node_id}.
       requestBody:
         required: true
         content:
@@ -6154,6 +7855,41 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /nodes/hardware/{hw_id}:
+    get:
+      operationId: GetNodesHardwareComponent
+      description: |
+        Display a hardware component of a node the user can see, as a row of
+        GET /nodes/hardware: 404 when unknown, or on a node the user cannot see.
+      parameters:
+        - in: path
+          name: hw_id
+          required: true
+          description: Id of the component (node_hw.id)
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeHardwareListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /nodes/hbas:
     get:
       operationId: GetNodesHbas
@@ -6184,7 +7920,12 @@ paths:
   /nodes/{node_id}:
     post:
       operationId: PostNode
-      description: Update a node properties
+      description: |
+        Update a node properties. A user may only set an attribute constrained in
+        strict mode (see /field_constraints) to one of its allowed values, one
+        constrained in regex mode to a value matching its pattern, or either to an
+        empty value or the value it holds: 400 otherwise. The node itself is not
+        checked.
       parameters:
         - in: path
           name: node_id
@@ -6461,6 +8202,472 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AlertListResponse'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/live:
+    get:
+      operationId: GetChecksLive
+      description: |
+        List the checks the agents report, with the thresholds the collector
+        sets them, and the node and the object of each (`nodes.*` and
+        `services.*` props). Managers see every check; other users the
+        checks of the nodes whose app they are responsible for. The session
+        filterset applies.
+      tags:
+        - checks
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/live/{id}:
+    delete:
+      operationId: DeleteCheckLive
+      description: |
+        Delete a check and its alerts. The agent reports it again at its next
+        check run if the check still exists. Requires the CheckExec privilege
+        and the responsibility of the node. The deletion is logged.
+      tags:
+        - checks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The check, checks_live.id
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/settings:
+    get:
+      operationId: GetChecksSettings
+      description: |
+        List the thresholds set on checks, which take precedence over the
+        contextual and the default ones. Visibility as GET /checks/live.
+      tags:
+        - checks
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckSettingListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostChecksSettings
+      description: |
+        Set the thresholds of a check, named by its node, its object, its type
+        and its instance. A threshold not given keeps the value the check has
+        now; both must be known. The thresholds and the alerts of the node's
+        checks are set again at once. Requires the CheckExec privilege and the
+        responsibility of the node. Logged.
+      tags:
+        - checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckSettingsRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChecksSettings
+      description: |
+        Remove the thresholds set on a check: it takes the contextual or the
+        default ones again, at once, with its alerts. Requires the CheckExec
+        privilege and the responsibility of the node. Logged.
+      tags:
+        - checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckKey'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/defaults:
+    get:
+      operationId: GetChecksDefaults
+      description: |
+        List the default thresholds of the check types. A check takes, among
+        the defaults of its type whose instance pattern matches its instance
+        (anchored regular expression; empty matches every instance), the one
+        of the highest priority, then of the longest pattern.
+      tags:
+        - checks
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckDefaultListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostChecksDefaults
+      description: |
+        Add default thresholds. Requires the CheckManager privilege. The checks
+        of the type take them in the background, with their alerts. Logged.
+      tags:
+        - checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckDefaultRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckIdResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/defaults/{id}:
+    post:
+      operationId: PostCheckDefault
+      description: |
+        Modify default thresholds: the properties given. Requires the
+        CheckManager privilege. The checks of the type take them in the
+        background, with their alerts. Logged.
+      tags:
+        - checks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The default thresholds, checks_defaults.id
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckDefaultRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteCheckDefault
+      description: |
+        Delete default thresholds. Requires the CheckManager privilege. The
+        checks of the type take the next matching defaults in the background,
+        or none. Logged.
+      tags:
+        - checks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The default thresholds, checks_defaults.id
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/contextual_settings:
+    get:
+      operationId: GetChecksContextual
+      description: |
+        List the contextual thresholds: those of the checks of a type and of
+        the instances a pattern matches (unanchored regular expression), on
+        the nodes, and objects, a filterset selects. They take precedence over
+        the defaults; the settings of a check over them.
+      tags:
+        - checks
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckContextualListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostChecksContextual
+      description: |
+        Add contextual thresholds. Requires the ContextCheckManager privilege.
+        The checks of the type take them in the background, with their
+        alerts. Logged.
+      tags:
+        - checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckContextualRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckIdResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /checks/contextual_settings/{id}:
+    post:
+      operationId: PostCheckContextual
+      description: |
+        Modify contextual thresholds: the properties given. Requires the
+        ContextCheckManager privilege. Applied in the background. Logged.
+      tags:
+        - checks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The contextual thresholds, gen_filterset_check_threshold.id
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckContextualRequest'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteCheckContextual
+      description: |
+        Delete contextual thresholds. Requires the ContextCheckManager
+        privilege. Applied in the background. Logged.
+      tags:
+        - checks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: The contextual thresholds, gen_filterset_check_threshold.id
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -7107,11 +9314,15 @@ paths:
     get:
       operationId: GetNodeStats
       description: |
-        The performance statistics of a node for one group, over the last days: one
-        series per metric (and per device for netdev, netdev_err and blockdev), each
+        The performance statistics of a node for one group, over the last days or
+        between two dates: one series per metric (and per device for netdev,
+        netdev_err and blockdev, per mount point for fs, per container for svc), each
         a list of [unix time, value] points, as the historical collector stored them
         in whisper files under stats/nodes/<node_id> (cpu/all, mem_u, swap, proc,
-        block, netdev/<dev>, netdev_err/<dev>, blockdev/<dev>). The resolution is the
+        block, netdev/<dev>, netdev_err/<dev>, blockdev/<dev>, fs_u/<mount point>,
+        svc/<container>). The fs series are the size in KB and the used share in
+        percent; the svc ones the container cpu and memory usage, their caps, rss,
+        swap, process count and paging. The resolution is the
         finest the files keep for the period: a minute over half an hour, ten minutes
         over three days, an hour over ninety days, a day beyond. A node without
         statistics returns an empty list.
@@ -7127,13 +9338,29 @@ paths:
           required: true
           schema:
             type: string
-            enum: [cpu, mem, swap, proc, block, netdev, netdev_err, blockdev]
+            enum: [cpu, mem, swap, proc, block, netdev, netdev_err, blockdev, fs, svc]
         - in: query
           name: days
-          description: Days of history, 1 by default, 1095 at most.
+          description: |
+            Days of history, 1 by default, 1095 at most: before end when given,
+            else before now. Ignored when begin is given.
           schema:
             type: integer
             minimum: 1
+        - in: query
+          name: begin
+          description: |
+            Start of the period. With end, the period may not exceed 1095 days;
+            without, it runs to now.
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: end
+          description: End of the period, now by default. Must be after begin.
+          schema:
+            type: string
+            format: date-time
       tags:
         - collector
       responses:
@@ -7218,6 +9445,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HbaListResponse'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/targets:
+    get:
+      operationId: GetNodeTargets
+      description: |
+        The array target ports visible through the node storage host bus adapters,
+        as the historical collector listed them: one row per adapter and target
+        port the node reports (stor_zone), joined to the array owning the port.
+        A port no array declares is left out. The columns of the array read as
+        stor_array.<column> (id, array_name, array_model, array_comment,
+        array_firmware, array_cache, array_level, array_updated), those of its
+        port declaration as stor_array_tgtid.<column>; they can be filtered,
+        sorted and grouped on, groupby=stor_array.id giving one row per array.
+        A caller who is not a Manager sees the targets of the nodes of the apps
+        their groups are responsible for.
+      parameters:
+        - in: path
+          name: node_id
+          required: true
+          description: Node identifier (node_id UUID or nodename)
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+        400:
+          $ref: '#/components/responses/400'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -7815,6 +10090,169 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /field_constraints:
+    get:
+      operationId: GetFieldConstraintList
+      description: |
+        The constrained attributes of every kind of object as a list, with the
+        column filters, sort, pagination and value statistics of the other lists:
+        one row per constraint, the attributes without one being free text. For
+        the dropdowns, GET /field_constraints/{object_kind} returns the values of
+        one kind typed. Any signed-in user may read them.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - nodes
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FieldConstraintRowListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /field_constraints/{object_kind}:
+    get:
+      operationId: GetFieldConstraints
+      description: |
+        The attributes of the kind of object whose values are constrained, one
+        entry each: suggest (the list is offered, another value is accepted),
+        strict (the api refuses any other value set by a user, except clearing the
+        attribute or keeping the value it holds) or regex (the value set by a user
+        must match the whole pattern, with the same exceptions). An attribute
+        absent from data is
+        free text, the default. fields lists the attributes that may be
+        constrained. The writes of the nodes themselves are not checked: they
+        report what the node has. Any signed-in user may read them, to fill the
+        dropdowns.
+      parameters:
+        - in: path
+          name: object_kind
+          required: true
+          schema:
+            $ref: '#/components/schemas/FieldConstraintObjectKind'
+      tags:
+        - nodes
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FieldConstraintListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /field_constraints/{object_kind}/{field}:
+    post:
+      operationId: PostFieldConstraint
+      description: |
+        Set the mode and the values allowed for an attribute, creating its
+        constraint or replacing it as a whole. Modes suggest and strict take
+        values: trimmed, empty ones and duplicates dropped, order kept. Mode regex
+        takes a pattern, in RE2 syntax, which the whole value must match (as if
+        written ^(?:pattern)$): 400 when it does not compile. The values the
+        objects already hold are not changed, even when they do not comply.
+        Manager only.
+      parameters:
+        - in: path
+          name: object_kind
+          required: true
+          schema:
+            $ref: '#/components/schemas/FieldConstraintObjectKind'
+        - in: path
+          name: field
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FieldConstraintInput'
+      tags:
+        - nodes
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FieldConstraintListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteFieldConstraint
+      description: |
+        Remove the constraint of an attribute, which becomes free text again, the
+        default. The values the objects hold are not changed. 404 when the
+        attribute cannot be constrained or has no constraint. Manager only.
+      parameters:
+        - in: path
+          name: object_kind
+          required: true
+          schema:
+            $ref: '#/components/schemas/FieldConstraintObjectKind'
+        - in: path
+          name: field
+          required: true
+          schema:
+            type: string
+      tags:
+        - nodes
+      responses:
+        200:
+          $ref: '#/components/responses/200'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /oidc_mappings:
     get:
       operationId: GetOidcMappings
@@ -8019,6 +10457,41 @@ paths:
                 $ref: '#/components/schemas/PackageListResponse'
         401:
           $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /packages/{pkg_id}:
+    get:
+      operationId: GetPackage
+      description: |
+        Display a package installed on a node the user can see, as a row of
+        GET /packages: 404 when unknown, or on a node the user cannot see.
+      parameters:
+        - in: path
+          name: pkg_id
+          required: true
+          description: Id of the package record (packages.id)
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -8262,7 +10735,10 @@ paths:
 
     post:
       operationId: PostService
-      description: Update a service properties
+      description: |
+        Update a service properties. An attribute constrained in strict or regex
+        mode (see /field_constraints) may only take an allowed value, an empty one
+        or the value it holds: 400 otherwise.
       parameters:
         - in: path
           name: svc_id
@@ -8490,6 +10966,48 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+    post:
+      operationId: PostServicesActions
+      description: |
+        Acknowledge a failed action (bulk form): the 'id' key selects it, the
+        acknowledgement is then handled as POST /services_actions/{action_id}.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/ServiceActionAckRequest'
+                - type: object
+                  required: [id]
+                  properties:
+                    id:
+                      type: integer
+                      format: int64
+                      description: The action, svcactions.id
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /services_actions/{action_id}:
     get:
       operationId: GetServicesAction
@@ -8513,6 +11031,52 @@ paths:
                 $ref: '#/components/schemas/ServiceActionListResponse'
         401:
           $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostServicesAction
+      description: |
+        Acknowledge a failed action, as the historical collector: by whom, when
+        and why. Only `ack`, which must be 1, and `acked_comment` are taken. An
+        action not failed is left as it is, the answer says so. Requires the
+        responsibility of the service (a Manager has it for every service). The
+        count of the unacknowledged errors of the instance and its "action
+        errors" alert follow at once. Logged.
+      parameters:
+        - in: path
+          name: action_id
+          required: true
+          description: Action record identifier (svcactions.id)
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceActionAckRequest'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -9928,6 +12492,8 @@ paths:
           $ref: '#/components/responses/401'
         403:
           $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -10192,7 +12758,13 @@ paths:
   /tags/{tag_id}:
     post:
       operationId: PostTag
-      description: Update a tag properties
+      description: |
+        Update the properties of a tag. tag_name is trimmed and may be neither
+        empty, nor longer than 128 characters, nor the name of another tag (409).
+        tag_exclude, 128 characters at most, is a regular expression (MySQL
+        REGEXP) of the tag names an object carrying this tag may not carry; an
+        expression the database refuses is answered with a 400. The empty string
+        excludes nothing.
       parameters:
         - in: path
           name: tag_id
@@ -10296,7 +12868,9 @@ paths:
   /tags/{tag_id}/nodes:
     get:
       operationId: GetTagNodes
-      description: Get nodes where the tag is attached
+      description: |
+        Get nodes where the tag is attached, among those the caller may see, with
+        the column filters, the sort and the value statistics of the nodes list.
       parameters:
         - in: path
           name: tag_id
@@ -10307,6 +12881,9 @@ paths:
         - $ref: '#/components/parameters/inQueryProps'
         - $ref: '#/components/parameters/inQueryLimit'
         - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
       tags:
         - collector
       responses:
@@ -10315,9 +12892,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
+                $ref: '#/components/schemas/ListResponse'
         404:
           description: Tag not found
         500:
@@ -10515,7 +13090,9 @@ paths:
   /tags/{tag_id}/services:
     get:
       operationId: GetTagServices
-      description: List services where the tag is attached
+      description: |
+        List services where the tag is attached, among those the caller may see,
+        with the column filters of the services list.
       parameters:
         - in: path
           name: tag_id
@@ -10529,6 +13106,7 @@ paths:
         - $ref: '#/components/parameters/inQueryMeta'
         - $ref: '#/components/parameters/inQueryStats'
         - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
         - $ref: '#/components/parameters/inQueryGroupby'
       tags:
         - collector
@@ -11050,6 +13628,44 @@ paths:
           $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /users/{user_id}/hidden_menu_entries:
+    get:
+      operationId: GetUserHiddenMenuEntries
+      description: |
+        The menu entries hidden to a user, as the historical collector computes
+        them: an entry is hidden when every organizational group of the user
+        hides it (see /groups/{group_id}/hidden_menu_entries), the Everybody
+        group and the privilege groups apart; a user of no such group sees every
+        entry. For "self", the user the requests are made as, impersonation
+        included. Another user's requires the UserManager privilege.
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          description: User identifier, auth_user.id, or "self" for the authenticated user.
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HiddenMenuEntriesResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -15191,6 +17807,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Problem"
+    '413':
+      description: Content Too Large
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
     '500':
       description: Internal Server Error
       content:
@@ -15217,7 +17839,7 @@ components:
             passwords, at user creation and on the profile.
         oidc:
           type: object
-          required: [enabled, ready, name]
+          required: [enabled, ready, name, issuer, client_id]
           properties:
             enabled:
               type: boolean
@@ -15227,6 +17849,17 @@ components:
             name:
               type: string
               description: Name of the provider (display_name), for messages and logs; the sign-in screen does not show it
+            issuer:
+              type: string
+              description: |
+                Issuer identifier of the provider (server.auth.oidc.issuer), as its
+                discovery document gives it; empty when OpenID Connect is disabled.
+            client_id:
+              type: string
+              description: |
+                Client id of the collector at the provider (server.auth.oidc.client_id),
+                the one its sign-in uses; empty when OpenID Connect is disabled. The
+                client is confidential: its secret stays on the server.
         session:
           type: boolean
           description: Whether the request carries a valid OpenID Connect session
@@ -16131,6 +18764,613 @@ components:
         form_yaml:
           type: string
           nullable: true
+
+    StoredFormRow:
+      type: object
+      description: |
+        A step of a request: a form submitted as a workflow step, joined to the form
+        revision it was submitted with (`form_yaml`, `form_name`, `form_folder`,
+        `form_date`, `form_id`). `form_head_id` is the first step of its request,
+        `form_prev_id` the step it continues; `form_next_id` is null while the step
+        awaits a decision of `form_assignee`, the id of the next step once decided,
+        0 when the request closed with it. `form_data` is the submitted data as
+        stored, JSON text most of the time. Every property is optional: the `props`
+        query parameter selects which columns the server returns.
+      properties:
+        id:
+          type: integer
+        results_id:
+          type: integer
+          nullable: true
+        form_submitter:
+          type: string
+        form_submit_date:
+          type: string
+        form_data:
+          type: string
+          nullable: true
+        form_next_id:
+          type: integer
+          nullable: true
+        form_prev_id:
+          type: integer
+          nullable: true
+        form_assignee:
+          type: string
+          nullable: true
+        form_head_id:
+          type: integer
+          nullable: true
+        form_md5:
+          type: string
+          nullable: true
+        form_var_id:
+          type: integer
+          nullable: true
+        form_yaml:
+          type: string
+          nullable: true
+        form_date:
+          type: string
+          nullable: true
+        form_id:
+          type: integer
+          nullable: true
+        form_folder:
+          type: string
+          nullable: true
+        form_name:
+          type: string
+          nullable: true
+        form_definition:
+          nullable: true
+          description: form_yaml parsed, absent when it does not parse
+
+    StoredFormListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/StoredFormRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    SafeFileRow:
+      type: object
+      description: |
+        A version of a file of the collector safe. `uuid` is its stored name, the
+        one safe:// references may name. `md5`, `sha256` and `size` are those of
+        the plaintext. `encrypted` tells whether the file is encrypted at rest.
+        Every property is optional: the `props` query parameter selects which
+        columns the server returns.
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+        name:
+          type: string
+        size:
+          type: integer
+        md5:
+          type: string
+        sha256:
+          type: string
+          nullable: true
+        uploader:
+          type: integer
+          nullable: true
+        uploader_name:
+          type: string
+          nullable: true
+        uploaded_from:
+          type: string
+        uploaded_date:
+          type: string
+        encrypted:
+          type: boolean
+        safe_team_publication:
+          type: string
+          nullable: true
+          description: The roles of the groups the file is published to, comma-separated.
+        safe_team_responsible:
+          type: string
+          nullable: true
+          description: The roles of the groups responsible for the file, comma-separated.
+
+    SafeFileListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/SafeFileRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    SafeGroupListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            required: [id, role]
+            properties:
+              id:
+                type: integer
+              role:
+                type: string
+
+    SafeInfoResponse:
+      type: object
+      required: [info]
+      properties:
+        info:
+          type: string
+
+    SafeFilePreviewResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [content_type, data]
+          properties:
+            content_type:
+              type: string
+            data:
+              type: string
+              description: The content, base64-encoded.
+
+    SafeFileUsageResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [services, variables]
+          properties:
+            services:
+              type: array
+              items:
+                type: object
+                required: [svcname, svc_id]
+                properties:
+                  svcname:
+                    type: string
+                  svc_id:
+                    type: string
+            variables:
+              type: array
+              items:
+                type: object
+                required: [var_name, id, ruleset_name, ruleset_id]
+                properties:
+                  var_name:
+                    type: string
+                  id:
+                    type: integer
+                  ruleset_name:
+                    type: string
+                  ruleset_id:
+                    type: integer
+
+    AssistantConversation:
+      type: object
+      required:
+      - id
+      - title
+      - created_at
+      - updated_at
+      - expires_at
+      - stored_bytes
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          maxLength: 80
+          description: Empty until the first successful turn, which derives it from its prompt, or until a rename.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          description: Pushed back by each completed turn.
+        stored_bytes:
+          type: integer
+          minimum: 0
+          description: The size of the stored history.
+    AssistantConversationList:
+      type: object
+      required:
+      - conversations
+      properties:
+        conversations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssistantConversation'
+    AssistantConversationEnvelope:
+      type: object
+      required:
+      - conversation
+      properties:
+        conversation:
+          $ref: '#/components/schemas/AssistantConversation'
+        pending_confirmation:
+          $ref: '#/components/schemas/AssistantConfirmation'
+          description: The action the conversation waits a decision on. Only the conversation read returns it.
+    AssistantTitleRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+          description: Control characters are replaced by spaces and whitespace is normalized.
+    AssistantTurnRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - prompt
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+          description: The question of the user, at most 32 KiB, not blank.
+    AssistantFeedbackReason:
+      type: string
+      description: |
+        Why an answer falls short: it does not answer the question, information
+        is missing, it is incorrect or outdated, it is hard to understand, the
+        expected action was not done.
+      enum:
+      - not_answered
+      - missing_information
+      - incorrect_or_outdated
+      - hard_to_understand
+      - action_not_done
+    AssistantFeedback:
+      type: object
+      required:
+      - rating
+      - reasons
+      - expected
+      properties:
+        rating:
+          type: string
+          enum:
+          - up
+          - down
+        reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssistantFeedbackReason'
+        expected:
+          type: string
+    AssistantFeedbackRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - rating
+      properties:
+        rating:
+          type: string
+          enum:
+          - up
+          - down
+        reasons:
+          type: array
+          uniqueItems: true
+          description: Only with down.
+          items:
+            $ref: '#/components/schemas/AssistantFeedbackReason'
+        expected:
+          type: string
+          maxLength: 1000
+          description: What the user would have expected, free text.
+    AssistantFeedbackEnvelope:
+      type: object
+      required:
+      - feedback
+      - created_at
+      - updated_at
+      properties:
+        feedback:
+          $ref: '#/components/schemas/AssistantFeedback'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    AssistantConfirmationRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - confirmation_id
+      - decision
+      properties:
+        confirmation_id:
+          type: string
+          minLength: 1
+          description: The `id` of the confirmation.
+        decision:
+          type: string
+          enum:
+          - approve
+          - reject
+    AssistantConfirmation:
+      type: object
+      required:
+      - id
+      - turn_id
+      - tool
+      - arguments
+      - expires_at
+      properties:
+        id:
+          type: string
+        turn_id:
+          type: string
+        tool:
+          type: object
+          required:
+          - name
+          - title
+          - destructive
+          properties:
+            name:
+              type: string
+            title:
+              type: string
+            destructive:
+              type: boolean
+        arguments:
+          description: The exact arguments of the call that runs if the user approves it.
+        expires_at:
+          type: string
+          format: date-time
+    AssistantMessage:
+      type: object
+      required:
+      - id
+      - turn_id
+      - role
+      - text
+      - created_at
+      properties:
+        id:
+          type: string
+        turn_id:
+          type: string
+        role:
+          type: string
+          enum:
+          - user
+          - assistant
+        text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        feedback:
+          $ref: '#/components/schemas/AssistantFeedback'
+          description: On an assistant message, the feedback of the user on its turn, if any.
+    AssistantMessagePage:
+      type: object
+      required:
+      - messages
+      - next_cursor
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssistantMessage'
+          description: In chronological order.
+        next_cursor:
+          type: string
+          description: Pass it as `before` to read the previous page; empty when there is none.
+    AssistantStreamEvent:
+      type: object
+      required:
+      - type
+      description: One event of a streamed turn. The SSE event name equals `type`.
+      properties:
+        type:
+          type: string
+          enum:
+          - text_delta
+          - tool_started
+          - tool_finished
+          - usage
+          - completed
+          - confirmation_required
+          - error
+        iteration:
+          type: integer
+          minimum: 1
+          description: The model iteration of the turn.
+        text_delta:
+          type: string
+          description: '`text_delta`: the next piece of the answer.'
+        tool_name:
+          type: string
+          description: '`tool_started`, `tool_finished`: the MCP tool.'
+        tool_error:
+          type: boolean
+          description: '`tool_finished`: whether the tool failed.'
+        usage:
+          type: object
+          description: '`usage`: the tokens of one model call.'
+          properties:
+            input_tokens:
+              type: integer
+            output_tokens:
+              type: integer
+            total_tokens:
+              type: integer
+        finish_reason:
+          type: string
+          enum:
+          - completed
+          - tool_calls
+          - length
+          - content_filter
+          - other
+          description: '`completed`: why the model stopped.'
+        confirmation:
+          $ref: '#/components/schemas/AssistantConfirmation'
+          description: '`confirmation_required`: the action waiting a decision; the turn ends until it is given.'
+        code:
+          type: string
+          enum:
+          - agent_failed
+          - request_timeout
+          - tool_call_limit
+          description: '`error`: why the turn failed. `tool_call_limit`: the model asked for more than 8 tools in one answer, or more than 16 in the turn.'
+        message:
+          type: string
+          description: '`error`: a human-readable message.'
+    AssistantError:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: A stable error code.
+            message:
+              type: string
+              description: A human-readable message.
+    AssistantStatus:
+      type: object
+      required:
+      - enabled
+      - available
+      properties:
+        enabled:
+          type: boolean
+          description: Whether oc3 is configured with an AI agent (server.assistant).
+        available:
+          type: boolean
+          description: Whether the caller can use it now.
+        reason:
+          type: string
+          enum:
+          - disabled
+          - password_sign_in
+          - impersonating
+          - token_unavailable
+          description: Why it is not available.
+
+    Whoami:
+      type: object
+      required:
+        - auth_source
+        - privileges
+        - groups
+      properties:
+        auth_source:
+          type: string
+          enum: [session, bearer, basic, node]
+          description: How the request, or the impersonator, signed in.
+        user_id:
+          type: integer
+          nullable: true
+          description: The user, none for a node.
+        email:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        issuer:
+          type: string
+          nullable: true
+          description: The provider of a single sign-on.
+        subject:
+          type: string
+          nullable: true
+          description: The user's identity at the provider.
+        privileges:
+          type: array
+          items:
+            type: string
+          description: The privilege groups of the user, sorted.
+        groups:
+          type: array
+          items:
+            type: string
+          description: The other groups of the user, sorted.
+        expires:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the session, or the access token, ends whatever the activity.
+        idle_expires:
+          type: string
+          format: date-time
+          nullable: true
+          description: When an idle session ends.
+        impersonator:
+          type: object
+          nullable: true
+          description: The Manager impersonating the user, if any.
+          required: [user_id, email, name]
+          properties:
+            user_id:
+              type: integer
+            email:
+              type: string
+            name:
+              type: string
+        node:
+          type: object
+          nullable: true
+          description: The node, for a node's credentials.
+          required: [node_id, nodename]
+          properties:
+            node_id:
+              type: string
+            nodename:
+              type: string
+            cluster_id:
+              type: string
+            app:
+              type: string
 
     WorkflowListResponse:
       type: object
@@ -17408,6 +20648,134 @@ components:
           items:
             type: integer
 
+    FieldConstraintObjectKind:
+      type: string
+      description: |
+        The kind of object whose attributes are constrained, and so the detail
+        panel and the table they belong to: node (nodes), service (services), app
+        (apps).
+      enum: [node, service, app]
+
+    FieldConstraintMode:
+      type: string
+      description: |
+        suggest: the values are offered, another one is accepted; strict: a user
+        may only set one of the values, clear the attribute or keep the value it
+        holds; regex: a user may only set a value matching the whole pattern, clear
+        the attribute or keep the value it holds. An attribute without a
+        constraint is free text.
+      enum: [suggest, strict, regex]
+      x-enum-varnames: [FieldConstraintModeSuggest, FieldConstraintModeStrict, FieldConstraintModeRegex]
+
+    FieldConstraint:
+      type: object
+      required: [object_kind, field, mode, values, pattern, updated, updated_by]
+      properties:
+        object_kind:
+          $ref: '#/components/schemas/FieldConstraintObjectKind'
+        field:
+          type: string
+        mode:
+          $ref: '#/components/schemas/FieldConstraintMode'
+        values:
+          type: array
+          description: The allowed values, in display order; empty in mode regex
+          items:
+            type: string
+        pattern:
+          type: string
+          description: In mode regex, the RE2 pattern the whole value must match; empty otherwise
+        updated:
+          type: string
+          description: Date of the last change
+        updated_by:
+          type: string
+          description: Email of the author of the last change
+
+    FieldConstraintListResponse:
+      type: object
+      required: [data, fields]
+      properties:
+        data:
+          type: array
+          description: The constrained attributes; the others are free text
+          items:
+            $ref: '#/components/schemas/FieldConstraint'
+        fields:
+          type: array
+          description: The attributes of the kind of object that may be constrained, in display order
+          items:
+            type: string
+
+    FieldConstraintRow:
+      type: object
+      description: |
+        A constraint, as a row of the list. Every property is optional: the props
+        query parameter selects which columns the server returns.
+      properties:
+        object_kind:
+          type: string
+        field:
+          type: string
+        mode:
+          type: string
+          description: suggest, strict or regex
+        values:
+          type: string
+          description: The allowed values, a JSON array of strings in display order; [] in mode regex
+        value_count:
+          type: integer
+          description: The number of allowed values; 0 in mode regex
+        pattern:
+          type: string
+          description: In mode regex, the pattern; empty otherwise
+        allowed:
+          type: string
+          description: |
+            What is allowed, as text for filtering and sorting: the pattern in mode
+            regex, the values separated by ", " otherwise.
+        updated:
+          type: string
+        updated_by:
+          type: string
+
+    FieldConstraintRowListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/FieldConstraintRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    FieldConstraintInput:
+      type: object
+      required: [mode]
+      properties:
+        mode:
+          $ref: '#/components/schemas/FieldConstraintMode'
+        values:
+          type: array
+          description: |
+            Modes suggest and strict: at least one value, at most 2000, each up to
+            255 characters. Ignored in mode regex.
+          items:
+            type: string
+        pattern:
+          type: string
+          description: |
+            Mode regex: the RE2 pattern the whole value must match, up to 1024
+            characters. Ignored in the other modes.
+
     FiltersetRow:
       type: object
       description: |
@@ -18292,6 +21660,218 @@ components:
         services.svcname:
           type: string
           nullable: true
+        nodes.nodename:
+          type: string
+          nullable: true
+
+    CheckKey:
+      type: object
+      description: A check, by its node, its object (empty for the node), its type and its instance.
+      required: [node_id, chk_type, chk_instance]
+      properties:
+        node_id:
+          type: string
+        svc_id:
+          type: string
+        chk_type:
+          type: string
+        chk_instance:
+          type: string
+
+    CheckSettingsRequest:
+      allOf:
+        - $ref: '#/components/schemas/CheckKey'
+        - type: object
+          properties:
+            chk_low:
+              type: integer
+              format: int64
+            chk_high:
+              type: integer
+              format: int64
+
+    CheckSettingRow:
+      type: object
+      description: Thresholds set on a check. Every property is optional, see `props`.
+      properties:
+        id:
+          type: integer
+        node_id:
+          type: string
+        svc_id:
+          type: string
+        chk_type:
+          type: string
+        chk_instance:
+          type: string
+        chk_low:
+          type: integer
+          format: int64
+          nullable: true
+        chk_high:
+          type: integer
+          format: int64
+          nullable: true
+        chk_changed:
+          type: string
+        chk_changed_by:
+          type: string
+        nodes.nodename:
+          type: string
+          nullable: true
+        services.svcname:
+          type: string
+          nullable: true
+
+    CheckDefaultRequest:
+      type: object
+      description: |
+        Default thresholds. On creation chk_type is required; chk_inst, the
+        instance pattern, empty for every instance.
+      properties:
+        chk_type:
+          type: string
+        chk_inst:
+          type: string
+        chk_low:
+          type: integer
+          format: int64
+          nullable: true
+        chk_high:
+          type: integer
+          format: int64
+          nullable: true
+        chk_prio:
+          type: integer
+          format: int64
+
+    CheckDefaultRow:
+      type: object
+      description: Default thresholds of a check type. Every property is optional, see `props`.
+      properties:
+        id:
+          type: integer
+        chk_type:
+          type: string
+        chk_inst:
+          type: string
+        chk_low:
+          type: integer
+          format: int64
+          nullable: true
+        chk_high:
+          type: integer
+          format: int64
+          nullable: true
+        chk_prio:
+          type: integer
+
+    CheckContextualRequest:
+      type: object
+      description: |
+        Contextual thresholds. On creation every property is required;
+        chk_instance is an unanchored regular expression.
+      properties:
+        fset_id:
+          type: integer
+          format: int64
+        chk_type:
+          type: string
+        chk_instance:
+          type: string
+        chk_low:
+          type: integer
+          format: int64
+        chk_high:
+          type: integer
+          format: int64
+
+    CheckContextualRow:
+      type: object
+      description: Contextual thresholds. Every property is optional, see `props`.
+      properties:
+        id:
+          type: integer
+        fset_id:
+          type: integer
+        chk_type:
+          type: string
+        chk_instance:
+          type: string
+        chk_low:
+          type: integer
+          format: int64
+        chk_high:
+          type: integer
+          format: int64
+        gen_filtersets.fset_name:
+          type: string
+          nullable: true
+
+    CheckIdResponse:
+      type: object
+      description: The id of the record created, and the outcome message.
+      required: [id]
+      properties:
+        id:
+          type: integer
+          format: int64
+        info:
+          type: string
+
+    CheckSettingListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/CheckSettingRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    CheckDefaultListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/CheckDefaultRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    CheckContextualListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/CheckContextualRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     CheckListResponse:
       type: object
@@ -18365,6 +21945,76 @@ components:
                   type: integer
         meta:
           $ref: '#/components/schemas/ListMeta'
+
+    ServiceActionAckRequest:
+      type: object
+      description: The acknowledgement of a failed action.
+      required: [ack]
+      properties:
+        ack:
+          type: integer
+          enum: [1]
+        acked_comment:
+          type: string
+          description: Why the failure needs nothing more.
+
+    GroupHiddenMenuEffect:
+      type: object
+      required: [members, entries]
+      properties:
+        members:
+          type: integer
+          description: The count of members of the group.
+        entries:
+          type: array
+          description: The entries the group hides, sorted by key.
+          items:
+            type: object
+            required: [menu_entry, members]
+            properties:
+              menu_entry:
+                type: string
+              members:
+                type: array
+                items:
+                  type: object
+                  required: [user_id, name, email, hidden, kept_by]
+                  properties:
+                    user_id:
+                      type: integer
+                      format: int64
+                    name:
+                      type: string
+                    email:
+                      type: string
+                    hidden:
+                      type: boolean
+                      description: The member does not see the entry.
+                    kept_by:
+                      type: array
+                      description: The groups of the member showing the entry.
+                      items:
+                        type: object
+                        required: [group_id, role, personal]
+                        properties:
+                          group_id:
+                            type: integer
+                            format: int64
+                          role:
+                            type: string
+                          personal:
+                            type: boolean
+                            description: The member's own group, user_<id>.
+
+    HiddenMenuEntriesResponse:
+      type: object
+      description: The keys of the menu entries hidden to the user, sorted.
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            type: string
 
     InfoResponse:
       type: object
@@ -18687,6 +22337,15 @@ components:
         version:
           type: string
           example: "0.0.1"
+        service:
+          type: string
+          description: The oc3 component answering, server or feeder.
+          example: server
+        api_docs:
+          type: boolean
+          description: |
+            The API documentation (Swagger UI) is served, at the root of the API
+            path (`<ui.enable>` of the component's configuration).
 
   parameters:
     ObjectPathHeader:

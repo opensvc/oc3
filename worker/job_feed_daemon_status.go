@@ -488,7 +488,13 @@ func (d *jobFeedDaemonStatus) dbFindInstances(ctx context.Context) error {
 		}
 	}
 
-	if resmonLogLastL, err := d.oDb.ResmonLogLastFromObjectIDs(ctx, objectIDs...); err != nil {
+	// The rows of the nodes of the cluster only: the others are of no use here,
+	// the instances being looked up by node, and reading them scanned the table.
+	nodeIDs := make([]string, 0, len(d.byNodeID))
+	for nodeID := range d.byNodeID {
+		nodeIDs = append(nodeIDs, nodeID)
+	}
+	if resmonLogLastL, err := d.oDb.ResmonLogLastFromObjectIDs(ctx, nodeIDs, objectIDs...); err != nil {
 		return fmt.Errorf("dbFindInstances ResmonLogLastFromObjectIDs: %w", err)
 	} else {
 		for _, r := range resmonLogLastL {

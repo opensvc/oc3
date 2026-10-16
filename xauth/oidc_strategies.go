@@ -20,6 +20,18 @@ import (
 // the session cookie of an OIDC sign-in, AuthSourceBearer for an access token,
 // AuthSourceBasic for a password. Requests made with the session cookie are the
 // only ones exposed to cross-site request forgery.
+// XIssuer and XSubject are the identity at the provider a session or an access
+// token was established for; XExpires is when the session, or the token, ends
+// whatever the activity, and XIdleExpires when an idle session ends, both in
+// RFC 3339. A password sign-in has none of them. They describe the sign-in: the
+// tokens themselves never leave the server.
+const (
+	XIssuer      = "iss"
+	XSubject     = "sub"
+	XExpires     = "expires"
+	XIdleExpires = "idle_expires"
+)
+
 const (
 	XAuthSource       = "auth_source"
 	AuthSourceSession = "session"
@@ -44,12 +56,16 @@ var errNoSession = errors.New("no session")
 
 // userInfo builds the identity of an account, its roles read from the database at
 // every request as the Basic strategy does: a withdrawn privilege applies at once.
-func userInfo(ctx context.Context, db *sql.DB, userID int64, email, source string, roles []string) auth.Info {
+// more are extensions of the sign-in, such as XIssuer and XExpires.
+func userInfo(ctx context.Context, db *sql.DB, userID int64, email, source string, roles []string, more map[string]string) auth.Info {
 	ext := make(auth.Extensions)
 	id := strconv.FormatInt(userID, 10)
 	ext.Set(XUserID, id)
 	ext.Set(XUserEmail, email)
 	ext.Set(XAuthSource, source)
+	for k, v := range more {
+		ext.Set(k, v)
+	}
 	return auth.NewUserInfo(email, id, roles, ext)
 }
 
@@ -120,7 +136,7 @@ func (s *oidcSession) Authenticate(ctx context.Context, r *http.Request) (auth.I
 	if err != nil {
 		return nil, err
 	}
-	return userInfo(ctx, s.db, sess.UserID, email.String, AuthSourceSession, roles), nil
+	return userInfo(ctx, s.db, sess.UserID, email.String, AuthSourceSession, roles, sessionExtensions(sess, s.o.cfg.IdleTimeout)), nil
 }
 
 // verifiedToken is an access token already verified, kept until it expires.
@@ -269,7 +285,32 @@ func (b *oidcBearer) Authenticate(ctx context.Context, r *http.Request) (auth.In
 		}
 		roles = append(kept, outcome.GrantedRoles...)
 	}
-	return userInfo(ctx, b.db, userID, email.String, AuthSourceBearer, roles), nil
+	return userInfo(ctx, b.db, userID, email.String, AuthSourceBearer, roles, bearerExtensions(token)), nil
+}
+
+// sessionExtensions describes a session sign-in: its identity at the provider,
+// its absolute end, and its idle end, the one the store keeps it for: its last
+// write plus the idle timeout, within its absolute end.
+func sessionExtensions(sess *Session, idleTimeout time.Duration) map[string]string {
+	idle := sess.LastSeen.Add(idleTimeout)
+	if sess.Expires.Before(idle) {
+		idle = sess.Expires
+	}
+	return map[string]string{
+		XIssuer:      sess.Issuer,
+		XSubject:     sess.Subject,
+		XExpires:     sess.Expires.UTC().Format(time.RFC3339),
+		XIdleExpires: idle.UTC().Format(time.RFC3339),
+	}
+}
+
+// bearerExtensions describes an access token sign-in: its identity and expiry.
+func bearerExtensions(token *verifiedToken) map[string]string {
+	return map[string]string{
+		XIssuer:  token.issuer,
+		XSubject: token.subject,
+		XExpires: token.expires.UTC().Format(time.RFC3339),
+	}
 }
 
 func contains(list []string, s string) bool {

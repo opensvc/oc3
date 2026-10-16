@@ -1392,14 +1392,19 @@ var (
 
 // Columns of safe
 var (
-	SafeID           = &Col{T: TSafe, Name: "id", Nullable: false}
-	SafeUploader     = &Col{T: TSafe, Name: "uploader", Nullable: true}
-	SafeUploadedFrom = &Col{T: TSafe, Name: "uploaded_from", Nullable: true}
-	SafeUploadedDate = &Col{T: TSafe, Name: "uploaded_date", Nullable: false}
-	SafeName         = &Col{T: TSafe, Name: "name", Nullable: true}
-	SafeSize         = &Col{T: TSafe, Name: "size", Nullable: true}
-	SafeUuid         = &Col{T: TSafe, Name: "uuid", Nullable: true}
-	SafeMD5          = &Col{T: TSafe, Name: "md5", Nullable: true}
+	SafeID            = &Col{T: TSafe, Name: "id", Nullable: false}
+	SafeUploader      = &Col{T: TSafe, Name: "uploader", Nullable: true}
+	SafeUploadedFrom  = &Col{T: TSafe, Name: "uploaded_from", Nullable: true}
+	SafeUploadedDate  = &Col{T: TSafe, Name: "uploaded_date", Nullable: false}
+	SafeName          = &Col{T: TSafe, Name: "name", Nullable: true}
+	SafeSize          = &Col{T: TSafe, Name: "size", Nullable: true}
+	SafeUuid          = &Col{T: TSafe, Name: "uuid", Nullable: true}
+	SafeMD5           = &Col{T: TSafe, Name: "md5", Nullable: true}
+	SafeEncVersion    = &Col{T: TSafe, Name: "enc_version", Nullable: true}
+	SafeEncUuid       = &Col{T: TSafe, Name: "enc_uuid", Nullable: true}
+	SafeEncKeyID      = &Col{T: TSafe, Name: "enc_key_id", Nullable: true}
+	SafeEncWrappedKey = &Col{T: TSafe, Name: "enc_wrapped_key", Nullable: true}
+	SafeSha256        = &Col{T: TSafe, Name: "sha256", Nullable: true}
 )
 
 // Columns of safe_log
@@ -2790,6 +2795,11 @@ var AllCols = []*Col{
 	SafeSize,
 	SafeUuid,
 	SafeMD5,
+	SafeEncVersion,
+	SafeEncUuid,
+	SafeEncKeyID,
+	SafeEncWrappedKey,
+	SafeSha256,
 	SafeLogID,
 	SafeLogSafeID,
 	SafeLogUuid,

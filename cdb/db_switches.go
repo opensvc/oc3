@@ -13,11 +13,22 @@ import (
 // No access control beyond authentication, as in the historical SAN switches
 // table: a switch port has no owner, and the view is the map of the fabric.
 func (oDb *DB) GetSwitches(ctx context.Context, p ListParams) ([]map[string]any, error) {
-	query, args, err := From(schema.TVSwitches).
+	return oDb.getSwitches(ctx, nil, p)
+}
+
+// GetSwitchPort returns the port of a SAN switch of the given id, none when unknown.
+func (oDb *DB) GetSwitchPort(ctx context.Context, id int, p ListParams) ([]map[string]any, error) {
+	return oDb.getSwitches(ctx, &id, p)
+}
+
+func (oDb *DB) getSwitches(ctx context.Context, id *int, p ListParams) ([]map[string]any, error) {
+	q := From(schema.TVSwitches).
 		RawSelect(p.SelectExprs...).
-		Where(schema.VSwitchesID, ">", 0).
-		WhereFilters(p.Filters).
-		Build()
+		Where(schema.VSwitchesID, ">", 0)
+	if id != nil {
+		q = q.Where(schema.VSwitchesID, "=", *id)
+	}
+	query, args, err := q.WhereFilters(p.Filters).Build()
 	if err != nil {
 		return nil, fmt.Errorf("GetSwitches: %w", err)
 	}

@@ -22,7 +22,11 @@ FROM alpine:3.22.4
 ARG BUILDTIME
 
 # git keeps the history of the form definitions (forms revisions) and of
-# the sysreports.
+# the sysreports. oc3 is the PID 1 of the container and runs its git commands
+# with their automatic gc in the foreground (util/git/command.go), which leaves
+# no process behind. A process another program orphans, a background child of
+# a form script for instance, is not reaped: run the container with an init
+# (docker run --init) where such programs run.
 RUN apk add --no-cache bash git
 
 COPY --from=builder /opt/oc3/dist/oc3 /usr/bin/oc3

@@ -35,6 +35,16 @@ func checkRow[T any](err error, valid bool, value T) (T, bool, error) {
 
 // converts a raw value to the Go type indicated by kind.
 func convertTyped(v any, kind string) any {
+	// A condition selected as a column, 0 or 1, reads as a boolean.
+	if kind == "bool" {
+		switch t := v.(type) {
+		case int64:
+			return t != 0
+		case []byte:
+			return string(t) != "0" && string(t) != ""
+		}
+		return v
+	}
 	b, ok := v.([]byte)
 	if !ok {
 		return v

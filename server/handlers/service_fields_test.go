@@ -22,3 +22,18 @@ func TestParseSLA(t *testing.T) {
 		}
 	}
 }
+
+// The notifications of a service are stored as the collector's "T"/"F", not as
+// the 1/0 a Go bool would give, which alertd reads as neither.
+func TestServiceFieldsNotifications(t *testing.T) {
+	on, off := true, false
+	for v, want := range map[*bool]string{&on: "T", &off: "F"} {
+		got := serviceBodyFields{SvcNotifications: v}.toFields()["svc_notifications"]
+		if got != want {
+			t.Errorf("svc_notifications %v: got %#v, want %q", *v, got, want)
+		}
+	}
+	if _, set := (serviceBodyFields{}).toFields()["svc_notifications"]; set {
+		t.Error("an absent notifications flag is left alone")
+	}
+}

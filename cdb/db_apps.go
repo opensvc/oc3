@@ -431,7 +431,17 @@ func (oDb *DB) GetAppServices(ctx context.Context, appIDOrName string, p ListPar
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
-// GetAppQuotas returns rows from v_disk_quota for an App
+// TDiskQuota is the v_disk_quota view: the disk groups of the arrays, with the
+// quota of each application code on them and what its disks use of it.
+var TDiskQuota = &schema.Table{Name: "v_disk_quota"}
+
+// DiskQuotaCol is a column of the v_disk_quota view, for sorting and filtering.
+func DiskQuotaCol(name string) *schema.Col {
+	return &schema.Col{T: TDiskQuota, Name: name, Nullable: true}
+}
+
+// GetAppQuotas returns rows from v_disk_quota for an App, the filters of the
+// request applied.
 func (oDb *DB) GetAppQuotas(ctx context.Context, appIDOrName string, p ListParams) ([]map[string]any, error) {
 	targetApp, err := oDb.GetApp(ctx, appIDOrName, nil, true)
 	if err != nil {
@@ -456,6 +466,11 @@ func (oDb *DB) GetAppQuotas(ctx context.Context, appIDOrName string, p ListParam
 	}
 	query := fmt.Sprintf("SELECT %s FROM v_disk_quota WHERE app = ?", strings.Join(p.SelectExprs, ", "))
 	args := []any{targetApp.App}
+	conds, condArgs := p.FilterConditions()
+	for _, cond := range conds {
+		query += " AND " + cond
+	}
+	args = append(args, condArgs...)
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
 	}
@@ -670,8 +685,10 @@ func (oDb *DB) AppQuotaExceeded(ctx context.Context, userID int64) (bool, error)
 
 func (oDb *DB) InsertApp(ctx context.Context, app, description, appDomain, appTeamOps string) (*App, error) {
 	const query = `INSERT INTO apps (app, description, app_domain, app_team_ops) VALUES (?, ?, ?, ?)`
+	// description is NOT NULL, defaulting to the empty string: an app created
+	// without one keeps it empty rather than failing.
 	result, err := oDb.DB.ExecContext(ctx, query, app,
-		sql.NullString{String: description, Valid: description != ""},
+		description,
 		sql.NullString{String: appDomain, Valid: appDomain != ""},
 		sql.NullString{String: appTeamOps, Valid: appTeamOps != ""},
 	)
@@ -715,6 +732,8 @@ func (oDb *DB) UpdateApp(ctx context.Context, appID int64, fields UpdateAppField
 	if len(setClauses) == 0 {
 		return nil
 	}
+	// updated follows every change, as the historical collector's field did.
+	setClauses = append(setClauses, "updated = NOW()")
 	query := "UPDATE apps SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
 	args = append(args, appID)
 	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
@@ -862,4 +881,14 @@ func (oDb *DB) AppsWithoutResponsible(ctx context.Context) (apps []string, err e
 		return
 	}
 	return
+}
+
+// AppIDByName returns the id of the application code named app, compared as the
+// column collation compares it, and whether one is.
+func (oDb *DB) AppIDByName(ctx context.Context, app string) (int64, bool, error) {
+	ok, found, err := oDb.appFromAppName(ctx, app)
+	if err != nil || !ok || found == nil {
+		return 0, false, err
+	}
+	return found.ID, true, nil
 }

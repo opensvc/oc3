@@ -2,6 +2,7 @@ package serverhandlers
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -18,5 +19,16 @@ func (a *Api) GetNodesHardware(c echo.Context, params server.GetNodesHardwarePar
 		filter: params.Filter,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return odb.GetNodesHardware(ctx, p)
+	})
+}
+
+// GetNodesHardwareComponent handles GET /nodes/hardware/{hw_id}: one component, as
+// a row of the list, among those of the nodes the caller may see.
+func (a *Api) GetNodesHardwareComponent(c echo.Context, hwId int, params server.GetNodesHardwareComponentParams) error {
+	odb := a.ODB
+	return a.handleItem(c, "GetNodesHardwareComponent", "node_hw", "hw_id", strconv.Itoa(hwId), listEndpointParams{
+		props: params.Props,
+	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
+		return odb.GetNodeHardwareComponent(ctx, hwId, p)
 	})
 }

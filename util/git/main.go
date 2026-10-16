@@ -29,7 +29,7 @@ func Commit(repoDir string) error {
 			{"config", "user.name", "collector"},
 		}
 		for _, args := range cmds {
-			cmd := exec.Command("git", args...)
+			cmd := command(args...)
 			cmd.Dir = repoDir
 			if out, err := cmd.CombinedOutput(); err != nil {
 				return fmt.Errorf("git %v failed: %s: %w", args, out, err)
@@ -39,13 +39,13 @@ func Commit(repoDir string) error {
 
 	_ = os.Remove(filepath.Join(gitDir, "index.lock"))
 
-	cmd := exec.Command("git", "add", ".")
+	cmd := command("add", ".")
 	cmd.Dir = repoDir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("git add failed: %s: %w", out, err)
 	}
 
-	cmd = exec.Command("git", "commit", "-m", "sysreport", "-a")
+	cmd = command("commit", "-m", "sysreport", "-a")
 	cmd.Dir = repoDir
 	_ = cmd.Run()
 

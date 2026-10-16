@@ -51,7 +51,14 @@ func (f serviceBodyFields) toFields() map[string]any {
 	}
 	setBool := func(key string, v *bool) {
 		if v != nil {
-			m[key] = *v
+			// svc_notifications is a varchar(1) holding the collector's "T"/"F"
+			// convention, as the notifications of a node: a Go bool would store
+			// "1"/"0", which alertd reads as neither, disabling the notifications.
+			if *v {
+				m[key] = "T"
+			} else {
+				m[key] = "F"
+			}
 		}
 	}
 	setStr("svcname", f.Svcname)

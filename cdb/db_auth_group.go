@@ -404,9 +404,19 @@ func (oDb *DB) GroupQuotaExceeded(ctx context.Context, userID int64) (bool, erro
 // InsertGroup creates a new auth_group
 func (oDb *DB) InsertGroup(ctx context.Context, role, description, privilege string) (*AuthGroup, error) {
 	const query = `INSERT INTO auth_group (role, description, privilege) VALUES (?, ?, ?)`
+	// T or F, as the column default and the readers expect: a group created
+	// without the flag is an organizational one, not one with a NULL flag that
+	// neither the T nor the F filter finds. "true" is the spelling the privilege
+	// check accepts too.
+	if privilege == "true" {
+		privilege = "T"
+	}
+	if privilege != "T" {
+		privilege = "F"
+	}
 	result, err := oDb.DB.ExecContext(ctx, query, role,
 		sql.NullString{String: description, Valid: description != ""},
-		sql.NullString{String: privilege, Valid: privilege != ""},
+		privilege,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("InsertGroup: %w", err)
@@ -756,4 +766,97 @@ func (oDb *DB) DeleteDashboardAppWithoutResponsible(ctx context.Context, app str
 	}
 	oDb.SetChange("dashboard")
 	return nil
+}
+
+// PrivilegeRoles returns those of the roles that are privilege groups
+// (auth_group.privilege = 'T'), the others being organizational groups.
+func (oDb *DB) PrivilegeRoles(ctx context.Context, roles []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(roles) == 0 {
+		return out, nil
+	}
+	args := make([]any, len(roles))
+	for i, r := range roles {
+		args[i] = r
+	}
+	rows, err := oDb.DB.QueryContext(ctx, "SELECT role FROM auth_group WHERE privilege = 'T' AND role IN ("+Placeholders(len(roles))+")", args...)
+	if err != nil {
+		return nil, fmt.Errorf("privilegeRoles: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var role string
+		if err := rows.Scan(&role); err != nil {
+			return nil, fmt.Errorf("privilegeRoles: %w", err)
+		}
+		out[role] = true
+	}
+	return out, rows.Err()
+}
+
+// HiddenMenuEntriesOf returns the menu entries hidden to a user of these
+// groups, as the historical collector computes them (menu.js store_data, with
+// /users/<id>/hidden_menu_entries): an entry is hidden when every organizational
+// group of the user hides it, the Everybody group and the privilege groups
+// apart. A user of no such group sees every entry.
+func (oDb *DB) HiddenMenuEntriesOf(ctx context.Context, roles []string) ([]string, error) {
+	out := []string{}
+	privileged, err := oDb.PrivilegeRoles(ctx, roles)
+	if err != nil {
+		return nil, err
+	}
+	var org []any
+	seen := map[string]bool{}
+	for _, role := range roles {
+		if role == "Everybody" || privileged[role] || seen[role] {
+			continue
+		}
+		seen[role] = true
+		org = append(org, role)
+	}
+	if len(org) == 0 {
+		return out, nil
+	}
+	query := `SELECT h.menu_entry FROM group_hidden_menu_entries h
+		JOIN auth_group g ON g.id = h.group_id
+		WHERE g.role IN (` + Placeholders(len(org)) + `) AND h.menu_entry IS NOT NULL
+		GROUP BY h.menu_entry
+		HAVING COUNT(DISTINCT h.group_id) = ?
+		ORDER BY h.menu_entry`
+	rows, err := oDb.DB.QueryContext(ctx, query, append(org, len(org))...)
+	if err != nil {
+		return nil, fmt.Errorf("hiddenMenuEntriesOf: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var entry string
+		if err := rows.Scan(&entry); err != nil {
+			return nil, fmt.Errorf("hiddenMenuEntriesOf: %w", err)
+		}
+		out = append(out, entry)
+	}
+	return out, rows.Err()
+}
+
+// GroupIDByRole returns the id of the group named role, and whether one is.
+func (oDb *DB) GroupIDByRole(ctx context.Context, role string) (int64, bool, error) {
+	var id int64
+	err := oDb.DB.QueryRowContext(ctx, "SELECT id FROM auth_group WHERE role = ? LIMIT 1", role).Scan(&id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return 0, false, nil
+	case err != nil:
+		return 0, false, fmt.Errorf("GroupIDByRole: %w", err)
+	}
+	return id, true, nil
+}
+
+// OrgGroupExists tells whether an organizational group is named role.
+func (oDb *DB) OrgGroupExists(ctx context.Context, role string) (bool, error) {
+	var n int
+	if err := oDb.DB.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM auth_group WHERE role = ? AND privilege = 'F'", role).Scan(&n); err != nil {
+		return false, fmt.Errorf("OrgGroupExists: %w", err)
+	}
+	return n > 0, nil
 }

@@ -83,9 +83,25 @@ func buildPackagesQuery(groups []string, isManager bool, selectExprs []string, f
 // GetPackages lists packages, ordered by node, name and architecture by default,
 // as the historical packages table.
 func (oDb *DB) GetPackages(ctx context.Context, p ListParams) ([]map[string]any, error) {
+	return oDb.getPackages(ctx, 0, p)
+}
+
+// GetPackage returns the package of the given id, none when unknown or on a node
+// the caller may not see.
+func (oDb *DB) GetPackage(ctx context.Context, id int, p ListParams) ([]map[string]any, error) {
+	return oDb.getPackages(ctx, id, p)
+}
+
+// getPackages reads the packages the caller may see, the one of id pkgID when it
+// is not 0.
+func (oDb *DB) getPackages(ctx context.Context, pkgID int, p ListParams) ([]map[string]any, error) {
 	query, args, err := buildPackagesQuery(p.Groups, p.IsManager, p.SelectExprs, p.Filters)
 	if err != nil {
 		return nil, err
+	}
+	if pkgID != 0 {
+		query += " AND packages.id = ?"
+		args = append(args, pkgID)
 	}
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb

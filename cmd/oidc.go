@@ -41,8 +41,20 @@ func newOIDC(ctx context.Context, section string, rdb *redis.Client, db *sql.DB)
 			return nil, fmt.Errorf("oidc: cannot read client_secret_file: %w", err)
 		}
 	}
+	// The key encrypting the provider's tokens kept in the sessions; without it,
+	// they are not kept and the services needing them (the AI assistant) are
+	// unavailable. A key configured but unreadable stops the server.
+	var tokenKey []byte
+	if path := viper.GetString(s + ".token_key_file"); path != "" {
+		key, err := xauth.LoadTokenKey(path)
+		if err != nil {
+			return nil, err
+		}
+		tokenKey = key
+	}
 	cfg := xauth.OIDCConfig{
 		Enable:                true,
+		TokenKey:              tokenKey,
 		Issuer:                viper.GetString(s + ".issuer"),
 		ClientID:              viper.GetString(s + ".client_id"),
 		ClientSecret:          secret,
@@ -63,6 +75,6 @@ func newOIDC(ctx context.Context, section string, rdb *redis.Client, db *sql.DB)
 	}
 	slog.Info("oidc: enabled", "issuer", cfg.Issuer, "client_id", cfg.ClientID, "redirect_url", cfg.RedirectURL,
 		"basic_users", viper.GetBool(section+".auth.basic_users"),
-		"auto_create_users", cfg.AutoCreateUsers)
+		"auto_create_users", cfg.AutoCreateUsers, "keeps_tokens", len(tokenKey) > 0)
 	return o, nil
 }

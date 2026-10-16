@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -32,7 +31,7 @@ func ValidRev(s string) bool { return revPattern.MatchString(s) }
 func (t Track) repo(id string) string { return filepath.Join(t.Dir, id) }
 
 func (t Track) git(id string, args ...string) (string, error) {
-	cmd := exec.Command("git", append([]string{"--git-dir=" + filepath.Join(t.repo(id), ".git")}, args...)...)
+	cmd := command(append([]string{"--git-dir=" + filepath.Join(t.repo(id), ".git")}, args...)...)
 	var out, errOut bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &errOut
@@ -43,7 +42,7 @@ func (t Track) git(id string, args ...string) (string, error) {
 }
 
 func (t Track) gitIn(id string, args ...string) error {
-	cmd := exec.Command("git", args...)
+	cmd := command(args...)
 	cmd.Dir = t.repo(id)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("git %s: %w: %s", args[0], err, strings.TrimSpace(string(out)))

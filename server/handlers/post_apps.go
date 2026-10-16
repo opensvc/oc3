@@ -25,7 +25,7 @@ func (a *Api) PostApps(c echo.Context) error {
 		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
 	}
 
-	if !IsManager(c) {
+	if !IsAppManager(c) {
 		return JSONProblemf(c, http.StatusForbidden, "AppManager privilege required")
 	}
 

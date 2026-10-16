@@ -166,3 +166,19 @@ func TestTopValues(t *testing.T) {
 		t.Errorf("no limit: got %v", got)
 	}
 }
+
+// A prop filtered on another expression is counted on that expression: the
+// values are those a filter of the column can pick.
+func TestListStatsGroupsOnFilterExpr(t *testing.T) {
+	mapping := propMapping{Props: map[string]propDef{
+		"log_fmt": {SQLExpr: "COALESCE(log.log_fmt, '')", FilterExpr: "CONCAT_WS(' ', log.log_fmt, log.log_dict)"},
+	}}
+	f := &statsFake{rows: statsRows()}
+	if _, err := listStats(context.Background(), quietLog, f.fetch, cdb.ListParams{}, []string{"log_fmt"}, mapping, nil, 0, false); err != nil {
+		t.Fatal(err)
+	}
+	grouped := f.calls[1]
+	if grouped.SelectExprs[0] != "CONCAT_WS(' ', log.log_fmt, log.log_dict)" {
+		t.Errorf("grouped on %q, want the filter expression", grouped.SelectExprs[0])
+	}
+}

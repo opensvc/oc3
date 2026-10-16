@@ -5,14 +5,220 @@ package server
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
 	BasicAuthScopes  basicAuthContextKey  = "basicAuth.Scopes"
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
+
+// Defines values for AssistantConfirmationRequestDecision.
+const (
+	Approve AssistantConfirmationRequestDecision = "approve"
+	Reject  AssistantConfirmationRequestDecision = "reject"
+)
+
+// Valid indicates whether the value is a known member of the AssistantConfirmationRequestDecision enum.
+func (e AssistantConfirmationRequestDecision) Valid() bool {
+	switch e {
+	case Approve:
+		return true
+	case Reject:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantFeedbackRating.
+const (
+	AssistantFeedbackRatingDown AssistantFeedbackRating = "down"
+	AssistantFeedbackRatingUp   AssistantFeedbackRating = "up"
+)
+
+// Valid indicates whether the value is a known member of the AssistantFeedbackRating enum.
+func (e AssistantFeedbackRating) Valid() bool {
+	switch e {
+	case AssistantFeedbackRatingDown:
+		return true
+	case AssistantFeedbackRatingUp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantFeedbackReason.
+const (
+	ActionNotDone       AssistantFeedbackReason = "action_not_done"
+	HardToUnderstand    AssistantFeedbackReason = "hard_to_understand"
+	IncorrectOrOutdated AssistantFeedbackReason = "incorrect_or_outdated"
+	MissingInformation  AssistantFeedbackReason = "missing_information"
+	NotAnswered         AssistantFeedbackReason = "not_answered"
+)
+
+// Valid indicates whether the value is a known member of the AssistantFeedbackReason enum.
+func (e AssistantFeedbackReason) Valid() bool {
+	switch e {
+	case ActionNotDone:
+		return true
+	case HardToUnderstand:
+		return true
+	case IncorrectOrOutdated:
+		return true
+	case MissingInformation:
+		return true
+	case NotAnswered:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantFeedbackRequestRating.
+const (
+	AssistantFeedbackRequestRatingDown AssistantFeedbackRequestRating = "down"
+	AssistantFeedbackRequestRatingUp   AssistantFeedbackRequestRating = "up"
+)
+
+// Valid indicates whether the value is a known member of the AssistantFeedbackRequestRating enum.
+func (e AssistantFeedbackRequestRating) Valid() bool {
+	switch e {
+	case AssistantFeedbackRequestRatingDown:
+		return true
+	case AssistantFeedbackRequestRatingUp:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantMessageRole.
+const (
+	AssistantMessageRoleAssistant AssistantMessageRole = "assistant"
+	AssistantMessageRoleUser      AssistantMessageRole = "user"
+)
+
+// Valid indicates whether the value is a known member of the AssistantMessageRole enum.
+func (e AssistantMessageRole) Valid() bool {
+	switch e {
+	case AssistantMessageRoleAssistant:
+		return true
+	case AssistantMessageRoleUser:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantStatusReason.
+const (
+	Disabled         AssistantStatusReason = "disabled"
+	Impersonating    AssistantStatusReason = "impersonating"
+	PasswordSignIn   AssistantStatusReason = "password_sign_in"
+	TokenUnavailable AssistantStatusReason = "token_unavailable"
+)
+
+// Valid indicates whether the value is a known member of the AssistantStatusReason enum.
+func (e AssistantStatusReason) Valid() bool {
+	switch e {
+	case Disabled:
+		return true
+	case Impersonating:
+		return true
+	case PasswordSignIn:
+		return true
+	case TokenUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantStreamEventCode.
+const (
+	AgentFailed    AssistantStreamEventCode = "agent_failed"
+	RequestTimeout AssistantStreamEventCode = "request_timeout"
+	ToolCallLimit  AssistantStreamEventCode = "tool_call_limit"
+)
+
+// Valid indicates whether the value is a known member of the AssistantStreamEventCode enum.
+func (e AssistantStreamEventCode) Valid() bool {
+	switch e {
+	case AgentFailed:
+		return true
+	case RequestTimeout:
+		return true
+	case ToolCallLimit:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantStreamEventFinishReason.
+const (
+	AssistantStreamEventFinishReasonCompleted     AssistantStreamEventFinishReason = "completed"
+	AssistantStreamEventFinishReasonContentFilter AssistantStreamEventFinishReason = "content_filter"
+	AssistantStreamEventFinishReasonLength        AssistantStreamEventFinishReason = "length"
+	AssistantStreamEventFinishReasonOther         AssistantStreamEventFinishReason = "other"
+	AssistantStreamEventFinishReasonToolCalls     AssistantStreamEventFinishReason = "tool_calls"
+)
+
+// Valid indicates whether the value is a known member of the AssistantStreamEventFinishReason enum.
+func (e AssistantStreamEventFinishReason) Valid() bool {
+	switch e {
+	case AssistantStreamEventFinishReasonCompleted:
+		return true
+	case AssistantStreamEventFinishReasonContentFilter:
+		return true
+	case AssistantStreamEventFinishReasonLength:
+		return true
+	case AssistantStreamEventFinishReasonOther:
+		return true
+	case AssistantStreamEventFinishReasonToolCalls:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantStreamEventType.
+const (
+	AssistantStreamEventTypeCompleted            AssistantStreamEventType = "completed"
+	AssistantStreamEventTypeConfirmationRequired AssistantStreamEventType = "confirmation_required"
+	AssistantStreamEventTypeError                AssistantStreamEventType = "error"
+	AssistantStreamEventTypeTextDelta            AssistantStreamEventType = "text_delta"
+	AssistantStreamEventTypeToolFinished         AssistantStreamEventType = "tool_finished"
+	AssistantStreamEventTypeToolStarted          AssistantStreamEventType = "tool_started"
+	AssistantStreamEventTypeUsage                AssistantStreamEventType = "usage"
+)
+
+// Valid indicates whether the value is a known member of the AssistantStreamEventType enum.
+func (e AssistantStreamEventType) Valid() bool {
+	switch e {
+	case AssistantStreamEventTypeCompleted:
+		return true
+	case AssistantStreamEventTypeConfirmationRequired:
+		return true
+	case AssistantStreamEventTypeError:
+		return true
+	case AssistantStreamEventTypeTextDelta:
+		return true
+	case AssistantStreamEventTypeToolFinished:
+		return true
+	case AssistantStreamEventTypeToolStarted:
+		return true
+	case AssistantStreamEventTypeUsage:
+		return true
+	default:
+		return false
+	}
+}
 
 // Defines values for ComplianceVersionSource.
 const (
@@ -29,6 +235,48 @@ func (e ComplianceVersionSource) Valid() bool {
 	case ComplianceVersionSourceElsewhere:
 		return true
 	case ComplianceVersionSourceEmpty:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FieldConstraintMode.
+const (
+	FieldConstraintModeRegex   FieldConstraintMode = "regex"
+	FieldConstraintModeStrict  FieldConstraintMode = "strict"
+	FieldConstraintModeSuggest FieldConstraintMode = "suggest"
+)
+
+// Valid indicates whether the value is a known member of the FieldConstraintMode enum.
+func (e FieldConstraintMode) Valid() bool {
+	switch e {
+	case FieldConstraintModeRegex:
+		return true
+	case FieldConstraintModeStrict:
+		return true
+	case FieldConstraintModeSuggest:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FieldConstraintObjectKind.
+const (
+	FieldConstraintObjectKindApp     FieldConstraintObjectKind = "app"
+	FieldConstraintObjectKindNode    FieldConstraintObjectKind = "node"
+	FieldConstraintObjectKindService FieldConstraintObjectKind = "service"
+)
+
+// Valid indicates whether the value is a known member of the FieldConstraintObjectKind enum.
+func (e FieldConstraintObjectKind) Valid() bool {
+	switch e {
+	case FieldConstraintObjectKindApp:
+		return true
+	case FieldConstraintObjectKindNode:
+		return true
+	case FieldConstraintObjectKindService:
 		return true
 	default:
 		return false
@@ -206,6 +454,21 @@ func (e SearchGroupKind) Valid() bool {
 	}
 }
 
+// Defines values for ServiceActionAckRequestAck.
+const (
+	ServiceActionAckRequestAckN1 ServiceActionAckRequestAck = 1
+)
+
+// Valid indicates whether the value is a known member of the ServiceActionAckRequestAck enum.
+func (e ServiceActionAckRequestAck) Valid() bool {
+	switch e {
+	case ServiceActionAckRequestAckN1:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SysreportEntryKind.
 const (
 	SysreportEntryKindCommand SysreportEntryKind = "command"
@@ -272,6 +535,30 @@ func (e SysreportFileStatKind) Valid() bool {
 	case SysreportFileStatKindCommand:
 		return true
 	case SysreportFileStatKindFile:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WhoamiAuthSource.
+const (
+	WhoamiAuthSourceBasic   WhoamiAuthSource = "basic"
+	WhoamiAuthSourceBearer  WhoamiAuthSource = "bearer"
+	WhoamiAuthSourceNode    WhoamiAuthSource = "node"
+	WhoamiAuthSourceSession WhoamiAuthSource = "session"
+)
+
+// Valid indicates whether the value is a known member of the WhoamiAuthSource enum.
+func (e WhoamiAuthSource) Valid() bool {
+	switch e {
+	case WhoamiAuthSourceBasic:
+		return true
+	case WhoamiAuthSourceBearer:
+		return true
+	case WhoamiAuthSourceNode:
+		return true
+	case WhoamiAuthSourceSession:
 		return true
 	default:
 		return false
@@ -382,19 +669,19 @@ func (e PutComplianceRulesetVariableJSONBodyAction) Valid() bool {
 
 // Defines values for GetComplianceStatusSummaryParamsBy.
 const (
-	GetComplianceStatusSummaryParamsByModule  GetComplianceStatusSummaryParamsBy = "module"
-	GetComplianceStatusSummaryParamsByNode    GetComplianceStatusSummaryParamsBy = "node"
-	GetComplianceStatusSummaryParamsByService GetComplianceStatusSummaryParamsBy = "service"
+	Module  GetComplianceStatusSummaryParamsBy = "module"
+	Node    GetComplianceStatusSummaryParamsBy = "node"
+	Service GetComplianceStatusSummaryParamsBy = "service"
 )
 
 // Valid indicates whether the value is a known member of the GetComplianceStatusSummaryParamsBy enum.
 func (e GetComplianceStatusSummaryParamsBy) Valid() bool {
 	switch e {
-	case GetComplianceStatusSummaryParamsByModule:
+	case Module:
 		return true
-	case GetComplianceStatusSummaryParamsByNode:
+	case Node:
 		return true
-	case GetComplianceStatusSummaryParamsByService:
+	case Service:
 		return true
 	default:
 		return false
@@ -694,10 +981,12 @@ const (
 	Block     GetNodeStatsParamsGroup = "block"
 	Blockdev  GetNodeStatsParamsGroup = "blockdev"
 	Cpu       GetNodeStatsParamsGroup = "cpu"
+	Fs        GetNodeStatsParamsGroup = "fs"
 	Mem       GetNodeStatsParamsGroup = "mem"
 	Netdev    GetNodeStatsParamsGroup = "netdev"
 	NetdevErr GetNodeStatsParamsGroup = "netdev_err"
 	Proc      GetNodeStatsParamsGroup = "proc"
+	Svc       GetNodeStatsParamsGroup = "svc"
 	Swap      GetNodeStatsParamsGroup = "swap"
 )
 
@@ -710,6 +999,8 @@ func (e GetNodeStatsParamsGroup) Valid() bool {
 		return true
 	case Cpu:
 		return true
+	case Fs:
+		return true
 	case Mem:
 		return true
 	case Netdev:
@@ -718,7 +1009,24 @@ func (e GetNodeStatsParamsGroup) Valid() bool {
 		return true
 	case Proc:
 		return true
+	case Svc:
+		return true
 	case Swap:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostServicesActionsJSONBodyAck.
+const (
+	PostServicesActionsJSONBodyAckN1 PostServicesActionsJSONBodyAck = 1
+)
+
+// Valid indicates whether the value is a known member of the PostServicesActionsJSONBodyAck enum.
+func (e PostServicesActionsJSONBodyAck) Valid() bool {
+	switch e {
+	case PostServicesActionsJSONBodyAckN1:
 		return true
 	default:
 		return false
@@ -844,6 +1152,194 @@ type AppRow struct {
 	Updated     *string `json:"updated,omitempty"`
 }
 
+// AssistantConfirmation defines model for AssistantConfirmation.
+type AssistantConfirmation struct {
+	// Arguments The exact arguments of the call that runs if the user approves it.
+	Arguments interface{} `json:"arguments"`
+	ExpiresAt time.Time   `json:"expires_at"`
+	Id        string      `json:"id"`
+	Tool      struct {
+		Destructive bool   `json:"destructive"`
+		Name        string `json:"name"`
+		Title       string `json:"title"`
+	} `json:"tool"`
+	TurnId string `json:"turn_id"`
+}
+
+// AssistantConfirmationRequest defines model for AssistantConfirmationRequest.
+type AssistantConfirmationRequest struct {
+	// ConfirmationId The `id` of the confirmation.
+	ConfirmationId string                               `json:"confirmation_id"`
+	Decision       AssistantConfirmationRequestDecision `json:"decision"`
+}
+
+// AssistantConfirmationRequestDecision defines model for AssistantConfirmationRequest.Decision.
+type AssistantConfirmationRequestDecision string
+
+// AssistantConversation defines model for AssistantConversation.
+type AssistantConversation struct {
+	CreatedAt time.Time `json:"created_at"`
+
+	// ExpiresAt Pushed back by each completed turn.
+	ExpiresAt time.Time `json:"expires_at"`
+	Id        string    `json:"id"`
+
+	// StoredBytes The size of the stored history.
+	StoredBytes int `json:"stored_bytes"`
+
+	// Title Empty until the first successful turn, which derives it from its prompt, or until a rename.
+	Title     string    `json:"title"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// AssistantConversationEnvelope defines model for AssistantConversationEnvelope.
+type AssistantConversationEnvelope struct {
+	Conversation        AssistantConversation  `json:"conversation"`
+	PendingConfirmation *AssistantConfirmation `json:"pending_confirmation,omitempty"`
+}
+
+// AssistantConversationList defines model for AssistantConversationList.
+type AssistantConversationList struct {
+	Conversations []AssistantConversation `json:"conversations"`
+}
+
+// AssistantError defines model for AssistantError.
+type AssistantError struct {
+	Error struct {
+		// Code A stable error code.
+		Code string `json:"code"`
+
+		// Message A human-readable message.
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+// AssistantFeedback defines model for AssistantFeedback.
+type AssistantFeedback struct {
+	Expected string                    `json:"expected"`
+	Rating   AssistantFeedbackRating   `json:"rating"`
+	Reasons  []AssistantFeedbackReason `json:"reasons"`
+}
+
+// AssistantFeedbackRating defines model for AssistantFeedback.Rating.
+type AssistantFeedbackRating string
+
+// AssistantFeedbackEnvelope defines model for AssistantFeedbackEnvelope.
+type AssistantFeedbackEnvelope struct {
+	CreatedAt time.Time         `json:"created_at"`
+	Feedback  AssistantFeedback `json:"feedback"`
+	UpdatedAt time.Time         `json:"updated_at"`
+}
+
+// AssistantFeedbackReason Why an answer falls short: it does not answer the question, information
+// is missing, it is incorrect or outdated, it is hard to understand, the
+// expected action was not done.
+type AssistantFeedbackReason string
+
+// AssistantFeedbackRequest defines model for AssistantFeedbackRequest.
+type AssistantFeedbackRequest struct {
+	// Expected What the user would have expected, free text.
+	Expected *string                        `json:"expected,omitempty"`
+	Rating   AssistantFeedbackRequestRating `json:"rating"`
+
+	// Reasons Only with down.
+	Reasons *[]AssistantFeedbackReason `json:"reasons,omitempty"`
+}
+
+// AssistantFeedbackRequestRating defines model for AssistantFeedbackRequest.Rating.
+type AssistantFeedbackRequestRating string
+
+// AssistantMessage defines model for AssistantMessage.
+type AssistantMessage struct {
+	CreatedAt time.Time            `json:"created_at"`
+	Feedback  *AssistantFeedback   `json:"feedback,omitempty"`
+	Id        string               `json:"id"`
+	Role      AssistantMessageRole `json:"role"`
+	Text      string               `json:"text"`
+	TurnId    string               `json:"turn_id"`
+}
+
+// AssistantMessageRole defines model for AssistantMessage.Role.
+type AssistantMessageRole string
+
+// AssistantMessagePage defines model for AssistantMessagePage.
+type AssistantMessagePage struct {
+	// Messages In chronological order.
+	Messages []AssistantMessage `json:"messages"`
+
+	// NextCursor Pass it as `before` to read the previous page; empty when there is none.
+	NextCursor string `json:"next_cursor"`
+}
+
+// AssistantStatus defines model for AssistantStatus.
+type AssistantStatus struct {
+	// Available Whether the caller can use it now.
+	Available bool `json:"available"`
+
+	// Enabled Whether oc3 is configured with an AI agent (server.assistant).
+	Enabled bool `json:"enabled"`
+
+	// Reason Why it is not available.
+	Reason *AssistantStatusReason `json:"reason,omitempty"`
+}
+
+// AssistantStatusReason Why it is not available.
+type AssistantStatusReason string
+
+// AssistantStreamEvent One event of a streamed turn. The SSE event name equals `type`.
+type AssistantStreamEvent struct {
+	// Code `error`: why the turn failed. `tool_call_limit`: the model asked for more than 8 tools in one answer, or more than 16 in the turn.
+	Code         *AssistantStreamEventCode `json:"code,omitempty"`
+	Confirmation *AssistantConfirmation    `json:"confirmation,omitempty"`
+
+	// FinishReason `completed`: why the model stopped.
+	FinishReason *AssistantStreamEventFinishReason `json:"finish_reason,omitempty"`
+
+	// Iteration The model iteration of the turn.
+	Iteration *int `json:"iteration,omitempty"`
+
+	// Message `error`: a human-readable message.
+	Message *string `json:"message,omitempty"`
+
+	// TextDelta `text_delta`: the next piece of the answer.
+	TextDelta *string `json:"text_delta,omitempty"`
+
+	// ToolError `tool_finished`: whether the tool failed.
+	ToolError *bool `json:"tool_error,omitempty"`
+
+	// ToolName `tool_started`, `tool_finished`: the MCP tool.
+	ToolName *string                  `json:"tool_name,omitempty"`
+	Type     AssistantStreamEventType `json:"type"`
+
+	// Usage `usage`: the tokens of one model call.
+	Usage *struct {
+		InputTokens  *int `json:"input_tokens,omitempty"`
+		OutputTokens *int `json:"output_tokens,omitempty"`
+		TotalTokens  *int `json:"total_tokens,omitempty"`
+	} `json:"usage,omitempty"`
+}
+
+// AssistantStreamEventCode `error`: why the turn failed. `tool_call_limit`: the model asked for more than 8 tools in one answer, or more than 16 in the turn.
+type AssistantStreamEventCode string
+
+// AssistantStreamEventFinishReason `completed`: why the model stopped.
+type AssistantStreamEventFinishReason string
+
+// AssistantStreamEventType defines model for AssistantStreamEvent.Type.
+type AssistantStreamEventType string
+
+// AssistantTitleRequest defines model for AssistantTitleRequest.
+type AssistantTitleRequest struct {
+	// Title Control characters are replaced by spaces and whitespace is normalized.
+	Title string `json:"title"`
+}
+
+// AssistantTurnRequest defines model for AssistantTurnRequest.
+type AssistantTurnRequest struct {
+	// Prompt The question of the user, at most 32 KiB, not blank.
+	Prompt string `json:"prompt"`
+}
+
 // AuthInfo defines model for AuthInfo.
 type AuthInfo struct {
 	// Basic Whether users may sign in with their collector password
@@ -851,7 +1347,15 @@ type AuthInfo struct {
 	// passwords, at user creation and on the profile.
 	Basic bool `json:"basic"`
 	Oidc  struct {
-		Enabled bool `json:"enabled"`
+		// ClientId Client id of the collector at the provider (server.auth.oidc.client_id),
+		// the one its sign-in uses; empty when OpenID Connect is disabled. The
+		// client is confidential: its secret stays on the server.
+		ClientId string `json:"client_id"`
+		Enabled  bool   `json:"enabled"`
+
+		// Issuer Issuer identifier of the provider (server.auth.oidc.issuer), as its
+		// discovery document gives it; empty when OpenID Connect is disabled.
+		Issuer string `json:"issuer"`
 
 		// Name Name of the provider (display_name), for messages and logs; the sign-in screen does not show it
 		Name string `json:"name"`
@@ -915,6 +1419,95 @@ type ChartSeries struct {
 	Unit   *string     `json:"unit,omitempty"`
 }
 
+// CheckContextualListResponse defines model for CheckContextualListResponse.
+type CheckContextualListResponse struct {
+	Data CheckContextualListResponse_Data `json:"data"`
+	Meta *ListMeta                        `json:"meta,omitempty"`
+}
+
+// CheckContextualListResponseData0 defines model for .
+type CheckContextualListResponseData0 = []CheckContextualRow
+
+// CheckContextualListResponseData1 defines model for .
+type CheckContextualListResponseData1 map[string]map[string]int
+
+// CheckContextualListResponse_Data defines model for CheckContextualListResponse.Data.
+type CheckContextualListResponse_Data struct {
+	union json.RawMessage
+}
+
+// CheckContextualRequest Contextual thresholds. On creation every property is required;
+// chk_instance is an unanchored regular expression.
+type CheckContextualRequest struct {
+	ChkHigh     *int64  `json:"chk_high,omitempty"`
+	ChkInstance *string `json:"chk_instance,omitempty"`
+	ChkLow      *int64  `json:"chk_low,omitempty"`
+	ChkType     *string `json:"chk_type,omitempty"`
+	FsetId      *int64  `json:"fset_id,omitempty"`
+}
+
+// CheckContextualRow Contextual thresholds. Every property is optional, see `props`.
+type CheckContextualRow struct {
+	ChkHigh               *int64  `json:"chk_high,omitempty"`
+	ChkInstance           *string `json:"chk_instance,omitempty"`
+	ChkLow                *int64  `json:"chk_low,omitempty"`
+	ChkType               *string `json:"chk_type,omitempty"`
+	FsetId                *int    `json:"fset_id,omitempty"`
+	GenFiltersetsFsetName *string `json:"gen_filtersets.fset_name,omitempty"`
+	Id                    *int    `json:"id,omitempty"`
+}
+
+// CheckDefaultListResponse defines model for CheckDefaultListResponse.
+type CheckDefaultListResponse struct {
+	Data CheckDefaultListResponse_Data `json:"data"`
+	Meta *ListMeta                     `json:"meta,omitempty"`
+}
+
+// CheckDefaultListResponseData0 defines model for .
+type CheckDefaultListResponseData0 = []CheckDefaultRow
+
+// CheckDefaultListResponseData1 defines model for .
+type CheckDefaultListResponseData1 map[string]map[string]int
+
+// CheckDefaultListResponse_Data defines model for CheckDefaultListResponse.Data.
+type CheckDefaultListResponse_Data struct {
+	union json.RawMessage
+}
+
+// CheckDefaultRequest Default thresholds. On creation chk_type is required; chk_inst, the
+// instance pattern, empty for every instance.
+type CheckDefaultRequest struct {
+	ChkHigh *int64  `json:"chk_high,omitempty"`
+	ChkInst *string `json:"chk_inst,omitempty"`
+	ChkLow  *int64  `json:"chk_low,omitempty"`
+	ChkPrio *int64  `json:"chk_prio,omitempty"`
+	ChkType *string `json:"chk_type,omitempty"`
+}
+
+// CheckDefaultRow Default thresholds of a check type. Every property is optional, see `props`.
+type CheckDefaultRow struct {
+	ChkHigh *int64  `json:"chk_high,omitempty"`
+	ChkInst *string `json:"chk_inst,omitempty"`
+	ChkLow  *int64  `json:"chk_low,omitempty"`
+	ChkPrio *int    `json:"chk_prio,omitempty"`
+	ChkType *string `json:"chk_type,omitempty"`
+	Id      *int    `json:"id,omitempty"`
+}
+
+// CheckIdResponse The id of the record created, and the outcome message.
+type CheckIdResponse struct {
+	Id   int64   `json:"id"`
+	Info *string `json:"info,omitempty"`
+}
+
+// CheckKey A check, by its node, its object (empty for the node), its type and its instance.
+type CheckKey struct {
+	ChkInstance string  `json:"chk_instance"`
+	ChkType     string  `json:"chk_type"`
+	NodeId      string  `json:"node_id"`
+	SvcId       *string `json:"svc_id,omitempty"`
+}
+
 // CheckListResponse defines model for CheckListResponse.
 type CheckListResponse struct {
 	Data CheckListResponse_Data `json:"data"`
@@ -952,10 +1545,53 @@ type CheckRow struct {
 	ChkValue             *int64  `json:"chk_value,omitempty"`
 	Id                   *int    `json:"id,omitempty"`
 	NodeId               *string `json:"node_id,omitempty"`
+	NodesNodename        *string `json:"nodes.nodename,omitempty"`
 	ServicesSvcname      *string `json:"services.svcname,omitempty"`
 
 	// SvcId The object the check is attributed to, empty for the node.
 	SvcId *string `json:"svc_id,omitempty"`
+}
+
+// CheckSettingListResponse defines model for CheckSettingListResponse.
+type CheckSettingListResponse struct {
+	Data CheckSettingListResponse_Data `json:"data"`
+	Meta *ListMeta                     `json:"meta,omitempty"`
+}
+
+// CheckSettingListResponseData0 defines model for .
+type CheckSettingListResponseData0 = []CheckSettingRow
+
+// CheckSettingListResponseData1 defines model for .
+type CheckSettingListResponseData1 map[string]map[string]int
+
+// CheckSettingListResponse_Data defines model for CheckSettingListResponse.Data.
+type CheckSettingListResponse_Data struct {
+	union json.RawMessage
+}
+
+// CheckSettingRow Thresholds set on a check. Every property is optional, see `props`.
+type CheckSettingRow struct {
+	ChkChanged      *string `json:"chk_changed,omitempty"`
+	ChkChangedBy    *string `json:"chk_changed_by,omitempty"`
+	ChkHigh         *int64  `json:"chk_high,omitempty"`
+	ChkInstance     *string `json:"chk_instance,omitempty"`
+	ChkLow          *int64  `json:"chk_low,omitempty"`
+	ChkType         *string `json:"chk_type,omitempty"`
+	Id              *int    `json:"id,omitempty"`
+	NodeId          *string `json:"node_id,omitempty"`
+	NodesNodename   *string `json:"nodes.nodename,omitempty"`
+	ServicesSvcname *string `json:"services.svcname,omitempty"`
+	SvcId           *string `json:"svc_id,omitempty"`
+}
+
+// CheckSettingsRequest defines model for CheckSettingsRequest.
+type CheckSettingsRequest struct {
+	ChkHigh     *int64  `json:"chk_high,omitempty"`
+	ChkInstance string  `json:"chk_instance"`
+	ChkLow      *int64  `json:"chk_low,omitempty"`
+	ChkType     string  `json:"chk_type"`
+	NodeId      string  `json:"node_id"`
+	SvcId       *string `json:"svc_id,omitempty"`
 }
 
 // ClusterListResponse defines model for ClusterListResponse.
@@ -1272,6 +1908,115 @@ type DiskRow struct {
 	Updated     *string `json:"updated,omitempty"`
 }
 
+// FieldConstraint defines model for FieldConstraint.
+type FieldConstraint struct {
+	Field string `json:"field"`
+
+	// Mode suggest: the values are offered, another one is accepted; strict: a user
+	// may only set one of the values, clear the attribute or keep the value it
+	// holds; regex: a user may only set a value matching the whole pattern, clear
+	// the attribute or keep the value it holds. An attribute without a
+	// constraint is free text.
+	Mode FieldConstraintMode `json:"mode"`
+
+	// ObjectKind The kind of object whose attributes are constrained, and so the detail
+	// panel and the table they belong to: node (nodes), service (services), app
+	// (apps).
+	ObjectKind FieldConstraintObjectKind `json:"object_kind"`
+
+	// Pattern In mode regex, the RE2 pattern the whole value must match; empty otherwise
+	Pattern string `json:"pattern"`
+
+	// Updated Date of the last change
+	Updated string `json:"updated"`
+
+	// UpdatedBy Email of the author of the last change
+	UpdatedBy string `json:"updated_by"`
+
+	// Values The allowed values, in display order; empty in mode regex
+	Values []string `json:"values"`
+}
+
+// FieldConstraintInput defines model for FieldConstraintInput.
+type FieldConstraintInput struct {
+	// Mode suggest: the values are offered, another one is accepted; strict: a user
+	// may only set one of the values, clear the attribute or keep the value it
+	// holds; regex: a user may only set a value matching the whole pattern, clear
+	// the attribute or keep the value it holds. An attribute without a
+	// constraint is free text.
+	Mode FieldConstraintMode `json:"mode"`
+
+	// Pattern Mode regex: the RE2 pattern the whole value must match, up to 1024
+	// characters. Ignored in the other modes.
+	Pattern *string `json:"pattern,omitempty"`
+
+	// Values Modes suggest and strict: at least one value, at most 2000, each up to
+	// 255 characters. Ignored in mode regex.
+	Values *[]string `json:"values,omitempty"`
+}
+
+// FieldConstraintListResponse defines model for FieldConstraintListResponse.
+type FieldConstraintListResponse struct {
+	// Data The constrained attributes; the others are free text
+	Data []FieldConstraint `json:"data"`
+
+	// Fields The attributes of the kind of object that may be constrained, in display order
+	Fields []string `json:"fields"`
+}
+
+// FieldConstraintMode suggest: the values are offered, another one is accepted; strict: a user
+// may only set one of the values, clear the attribute or keep the value it
+// holds; regex: a user may only set a value matching the whole pattern, clear
+// the attribute or keep the value it holds. An attribute without a
+// constraint is free text.
+type FieldConstraintMode string
+
+// FieldConstraintObjectKind The kind of object whose attributes are constrained, and so the detail
+// panel and the table they belong to: node (nodes), service (services), app
+// (apps).
+type FieldConstraintObjectKind string
+
+// FieldConstraintRow A constraint, as a row of the list. Every property is optional: the props
+// query parameter selects which columns the server returns.
+type FieldConstraintRow struct {
+	// Allowed What is allowed, as text for filtering and sorting: the pattern in mode
+	// regex, the values separated by ", " otherwise.
+	Allowed *string `json:"allowed,omitempty"`
+	Field   *string `json:"field,omitempty"`
+
+	// Mode suggest, strict or regex
+	Mode       *string `json:"mode,omitempty"`
+	ObjectKind *string `json:"object_kind,omitempty"`
+
+	// Pattern In mode regex, the pattern; empty otherwise
+	Pattern   *string `json:"pattern,omitempty"`
+	Updated   *string `json:"updated,omitempty"`
+	UpdatedBy *string `json:"updated_by,omitempty"`
+
+	// ValueCount The number of allowed values; 0 in mode regex
+	ValueCount *int `json:"value_count,omitempty"`
+
+	// Values The allowed values, a JSON array of strings in display order; [] in mode regex
+	Values *string `json:"values,omitempty"`
+}
+
+// FieldConstraintRowListResponse defines model for FieldConstraintRowListResponse.
+type FieldConstraintRowListResponse struct {
+	Data FieldConstraintRowListResponse_Data `json:"data"`
+	Meta *ListMeta                           `json:"meta,omitempty"`
+}
+
+// FieldConstraintRowListResponseData0 defines model for .
+type FieldConstraintRowListResponseData0 = []FieldConstraintRow
+
+// FieldConstraintRowListResponseData1 defines model for .
+type FieldConstraintRowListResponseData1 map[string]map[string]int
+
+// FieldConstraintRowListResponse_Data defines model for FieldConstraintRowListResponse.Data.
+type FieldConstraintRowListResponse_Data struct {
+	union json.RawMessage
+}
+
 // FilterListResponse defines model for FilterListResponse.
 type FilterListResponse struct {
 	Data FilterListResponse_Data `json:"data"`
@@ -1537,6 +2282,34 @@ type FormRow struct {
 	Id       *int    `json:"id,omitempty"`
 }
 
+// GroupHiddenMenuEffect defines model for GroupHiddenMenuEffect.
+type GroupHiddenMenuEffect struct {
+	// Entries The entries the group hides, sorted by key.
+	Entries []struct {
+		Members []struct {
+			Email string `json:"email"`
+
+			// Hidden The member does not see the entry.
+			Hidden bool `json:"hidden"`
+
+			// KeptBy The groups of the member showing the entry.
+			KeptBy []struct {
+				GroupId int64 `json:"group_id"`
+
+				// Personal The member's own group, user_<id>.
+				Personal bool   `json:"personal"`
+				Role     string `json:"role"`
+			} `json:"kept_by"`
+			Name   string `json:"name"`
+			UserId int64  `json:"user_id"`
+		} `json:"members"`
+		MenuEntry string `json:"menu_entry"`
+	} `json:"entries"`
+
+	// Members The count of members of the group.
+	Members int `json:"members"`
+}
+
 // GroupListResponse defines model for GroupListResponse.
 type GroupListResponse struct {
 	Data GroupListResponse_Data `json:"data"`
@@ -1591,6 +2364,11 @@ type HbaRow struct {
 	Id      *int    `json:"id,omitempty"`
 	NodeId  *string `json:"node_id,omitempty"`
 	Updated *string `json:"updated,omitempty"`
+}
+
+// HiddenMenuEntriesResponse The keys of the menu entries hidden to the user, sorted.
+type HiddenMenuEntriesResponse struct {
+	Data []string `json:"data"`
 }
 
 // Impersonation defines model for Impersonation.
@@ -2541,6 +3319,87 @@ type RulesetsVariableRow struct {
 	VarValue         *string `json:"var_value,omitempty"`
 }
 
+// SafeFileListResponse defines model for SafeFileListResponse.
+type SafeFileListResponse struct {
+	Data SafeFileListResponse_Data `json:"data"`
+	Meta *ListMeta                 `json:"meta,omitempty"`
+}
+
+// SafeFileListResponseData0 defines model for .
+type SafeFileListResponseData0 = []SafeFileRow
+
+// SafeFileListResponseData1 defines model for .
+type SafeFileListResponseData1 map[string]map[string]int
+
+// SafeFileListResponse_Data defines model for SafeFileListResponse.Data.
+type SafeFileListResponse_Data struct {
+	union json.RawMessage
+}
+
+// SafeFilePreviewResponse defines model for SafeFilePreviewResponse.
+type SafeFilePreviewResponse struct {
+	Data struct {
+		ContentType string `json:"content_type"`
+
+		// Data The content, base64-encoded.
+		Data string `json:"data"`
+	} `json:"data"`
+}
+
+// SafeFileRow A version of a file of the collector safe. `uuid` is its stored name, the
+// one safe:// references may name. `md5`, `sha256` and `size` are those of
+// the plaintext. `encrypted` tells whether the file is encrypted at rest.
+// Every property is optional: the `props` query parameter selects which
+// columns the server returns.
+type SafeFileRow struct {
+	Encrypted *bool   `json:"encrypted,omitempty"`
+	Id        *int    `json:"id,omitempty"`
+	Md5       *string `json:"md5,omitempty"`
+	Name      *string `json:"name,omitempty"`
+
+	// SafeTeamPublication The roles of the groups the file is published to, comma-separated.
+	SafeTeamPublication *string `json:"safe_team_publication,omitempty"`
+
+	// SafeTeamResponsible The roles of the groups responsible for the file, comma-separated.
+	SafeTeamResponsible *string `json:"safe_team_responsible,omitempty"`
+	Sha256              *string `json:"sha256,omitempty"`
+	Size                *int    `json:"size,omitempty"`
+	UploadedDate        *string `json:"uploaded_date,omitempty"`
+	UploadedFrom        *string `json:"uploaded_from,omitempty"`
+	Uploader            *int    `json:"uploader,omitempty"`
+	UploaderName        *string `json:"uploader_name,omitempty"`
+	Uuid                *string `json:"uuid,omitempty"`
+}
+
+// SafeFileUsageResponse defines model for SafeFileUsageResponse.
+type SafeFileUsageResponse struct {
+	Data struct {
+		Services []struct {
+			SvcId   string `json:"svc_id"`
+			Svcname string `json:"svcname"`
+		} `json:"services"`
+		Variables []struct {
+			Id          int    `json:"id"`
+			RulesetId   int    `json:"ruleset_id"`
+			RulesetName string `json:"ruleset_name"`
+			VarName     string `json:"var_name"`
+		} `json:"variables"`
+	} `json:"data"`
+}
+
+// SafeGroupListResponse defines model for SafeGroupListResponse.
+type SafeGroupListResponse struct {
+	Data []struct {
+		Id   int    `json:"id"`
+		Role string `json:"role"`
+	} `json:"data"`
+}
+
+// SafeInfoResponse defines model for SafeInfoResponse.
+type SafeInfoResponse struct {
+	Info string `json:"info"`
+}
+
 // SanTopology defines model for SanTopology.
 type SanTopology struct {
 	Links []SanTopologyLink `json:"links"`
@@ -2618,6 +3477,17 @@ type SearchGroupKind string
 type SearchResponse struct {
 	Data []SearchGroup `json:"data"`
 }
+
+// ServiceActionAckRequest The acknowledgement of a failed action.
+type ServiceActionAckRequest struct {
+	Ack ServiceActionAckRequestAck `json:"ack"`
+
+	// AckedComment Why the failure needs nothing more.
+	AckedComment *string `json:"acked_comment,omitempty"`
+}
+
+// ServiceActionAckRequestAck defines model for ServiceActionAckRequest.Ack.
+type ServiceActionAckRequestAck int
 
 // ServiceActionListResponse defines model for ServiceActionListResponse.
 type ServiceActionListResponse struct {
@@ -2801,6 +3671,53 @@ type StatusAck struct {
 	AckedBy string `json:"acked_by"`
 	AckedOn string `json:"acked_on"`
 	Comment string `json:"comment"`
+}
+
+// StoredFormListResponse defines model for StoredFormListResponse.
+type StoredFormListResponse struct {
+	Data StoredFormListResponse_Data `json:"data"`
+	Meta *ListMeta                   `json:"meta,omitempty"`
+}
+
+// StoredFormListResponseData0 defines model for .
+type StoredFormListResponseData0 = []StoredFormRow
+
+// StoredFormListResponseData1 defines model for .
+type StoredFormListResponseData1 map[string]map[string]int
+
+// StoredFormListResponse_Data defines model for StoredFormListResponse.Data.
+type StoredFormListResponse_Data struct {
+	union json.RawMessage
+}
+
+// StoredFormRow A step of a request: a form submitted as a workflow step, joined to the form
+// revision it was submitted with (`form_yaml`, `form_name`, `form_folder`,
+// `form_date`, `form_id`). `form_head_id` is the first step of its request,
+// `form_prev_id` the step it continues; `form_next_id` is null while the step
+// awaits a decision of `form_assignee`, the id of the next step once decided,
+// 0 when the request closed with it. `form_data` is the submitted data as
+// stored, JSON text most of the time. Every property is optional: the `props`
+// query parameter selects which columns the server returns.
+type StoredFormRow struct {
+	FormAssignee *string `json:"form_assignee,omitempty"`
+	FormData     *string `json:"form_data,omitempty"`
+	FormDate     *string `json:"form_date,omitempty"`
+
+	// FormDefinition form_yaml parsed, absent when it does not parse
+	FormDefinition interface{} `json:"form_definition,omitempty"`
+	FormFolder     *string     `json:"form_folder,omitempty"`
+	FormHeadId     *int        `json:"form_head_id,omitempty"`
+	FormId         *int        `json:"form_id,omitempty"`
+	FormMd5        *string     `json:"form_md5,omitempty"`
+	FormName       *string     `json:"form_name,omitempty"`
+	FormNextId     *int        `json:"form_next_id,omitempty"`
+	FormPrevId     *int        `json:"form_prev_id,omitempty"`
+	FormSubmitDate *string     `json:"form_submit_date,omitempty"`
+	FormSubmitter  *string     `json:"form_submitter,omitempty"`
+	FormVarId      *int        `json:"form_var_id,omitempty"`
+	FormYaml       *string     `json:"form_yaml,omitempty"`
+	Id             *int        `json:"id,omitempty"`
+	ResultsId      *int        `json:"results_id,omitempty"`
 }
 
 // SwitchPortListResponse defines model for SwitchPortListResponse.
@@ -3023,6 +3940,53 @@ type UserRow struct {
 	Username                *string `json:"username,omitempty"`
 }
 
+// Whoami defines model for Whoami.
+type Whoami struct {
+	// AuthSource How the request, or the impersonator, signed in.
+	AuthSource WhoamiAuthSource `json:"auth_source"`
+	Email      *string          `json:"email,omitempty"`
+
+	// Expires When the session, or the access token, ends whatever the activity.
+	Expires *time.Time `json:"expires,omitempty"`
+
+	// Groups The other groups of the user, sorted.
+	Groups []string `json:"groups"`
+
+	// IdleExpires When an idle session ends.
+	IdleExpires *time.Time `json:"idle_expires,omitempty"`
+
+	// Impersonator The Manager impersonating the user, if any.
+	Impersonator *struct {
+		Email  string `json:"email"`
+		Name   string `json:"name"`
+		UserId int    `json:"user_id"`
+	} `json:"impersonator,omitempty"`
+
+	// Issuer The provider of a single sign-on.
+	Issuer *string `json:"issuer,omitempty"`
+	Name   *string `json:"name,omitempty"`
+
+	// Node The node, for a node's credentials.
+	Node *struct {
+		App       *string `json:"app,omitempty"`
+		ClusterId *string `json:"cluster_id,omitempty"`
+		NodeId    string  `json:"node_id"`
+		Nodename  string  `json:"nodename"`
+	} `json:"node,omitempty"`
+
+	// Privileges The privilege groups of the user, sorted.
+	Privileges []string `json:"privileges"`
+
+	// Subject The user's identity at the provider.
+	Subject *string `json:"subject,omitempty"`
+
+	// UserId The user, none for a node.
+	UserId *int `json:"user_id,omitempty"`
+}
+
+// WhoamiAuthSource How the request, or the impersonator, signed in.
+type WhoamiAuthSource string
+
 // WorkflowListResponse defines model for WorkflowListResponse.
 type WorkflowListResponse struct {
 	Data WorkflowListResponse_Data `json:"data"`
@@ -3066,7 +4030,13 @@ type WorkflowRow struct {
 
 // Version defines model for version.
 type Version struct {
-	Version string `json:"version"`
+	// ApiDocs The API documentation (Swagger UI) is served, at the root of the API
+	// path (`<ui.enable>` of the component's configuration).
+	ApiDocs *bool `json:"api_docs,omitempty"`
+
+	// Service The oc3 component answering, server or feeder.
+	Service *string `json:"service,omitempty"`
+	Version string  `json:"version"`
 }
 
 // InPathMsetId defines model for inPathMsetId.
@@ -3102,6 +4072,9 @@ type InQueryProps = string
 // InQueryStats defines model for inQueryStats.
 type InQueryStats = string
 
+// N200 defines model for 200.
+type N200 = Problem
+
 // N400 defines model for 400.
 type N400 = Problem
 
@@ -3116,6 +4089,9 @@ type N404 = Problem
 
 // N409 defines model for 409.
 type N409 = Problem
+
+// N413 defines model for 413.
+type N413 = Problem
 
 // N500 defines model for 500.
 type N500 = Problem
@@ -3606,6 +4582,25 @@ type GetAppQuotasParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
 // GetAppResponsiblesParams defines parameters for GetAppResponsibles.
@@ -3753,6 +4748,145 @@ type GetArraysParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetArrayDiskgroupsParams defines parameters for GetArrayDiskgroups.
+type GetArrayDiskgroupsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetArrayDisksParams defines parameters for GetArrayDisks.
+type GetArrayDisksParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetAssistantMessagesParams defines parameters for GetAssistantMessages.
+type GetAssistantMessagesParams struct {
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Before The next_cursor of the previous page.
+	Before *string `form:"before,omitempty" json:"before,omitempty"`
 }
 
 // PostAuthBackchannelLogoutFormdataBody defines parameters for PostAuthBackchannelLogout.
@@ -3854,6 +4988,230 @@ type GetChartParams struct {
 type GetChartSamplesParams struct {
 	// Days Days of history, 365 by default, 1825 at most.
 	Days *int `form:"days,omitempty" json:"days,omitempty"`
+}
+
+// GetChecksContextualParams defines parameters for GetChecksContextual.
+type GetChecksContextualParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetChecksDefaultsParams defines parameters for GetChecksDefaults.
+type GetChecksDefaultsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetChecksLiveParams defines parameters for GetChecksLive.
+type GetChecksLiveParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetChecksSettingsParams defines parameters for GetChecksSettings.
+type GetChecksSettingsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
 // GetClustersParams defines parameters for GetClusters.
@@ -5538,6 +6896,62 @@ type GetDiskParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetFieldConstraintListParams defines parameters for GetFieldConstraintList.
+type GetFieldConstraintListParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
 // DeleteFiltersJSONBody defines parameters for DeleteFilters.
 type DeleteFiltersJSONBody struct {
 	// Id Filter record id, or filter label
@@ -6212,7 +7626,7 @@ type PutFormJSONBody struct {
 	// Data The information the form expects, as an object, a list of objects or their JSON string form.
 	Data interface{} `json:"data,omitempty"`
 
-	// PrevWfid The previous step id in an existing workflow.
+	// PrevWfid The id of the step of an existing workflow this submission decides on (forms_store.id).
 	PrevWfid interface{} `json:"prev_wfid,omitempty"`
 }
 
@@ -7649,6 +9063,12 @@ type GetNodesHardwareParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetNodesHardwareComponentParams defines parameters for GetNodesHardwareComponent.
+type GetNodesHardwareComponentParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetNodesHbasParams defines parameters for GetNodesHbas.
 type GetNodesHbasParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -8405,8 +9825,16 @@ type PostNodeSnoozeJSONBody struct {
 type GetNodeStatsParams struct {
 	Group GetNodeStatsParamsGroup `form:"group" json:"group"`
 
-	// Days Days of history, 1 by default, 1095 at most.
+	// Days Days of history, 1 by default, 1095 at most: before end when given,
+	// else before now. Ignored when begin is given.
 	Days *int `form:"days,omitempty" json:"days,omitempty"`
+
+	// Begin Start of the period. With end, the period may not exceed 1095 days;
+	// without, it runs to now.
+	Begin *time.Time `form:"begin,omitempty" json:"begin,omitempty"`
+
+	// End End of the period, now by default. Must be after begin.
+	End *time.Time `form:"end,omitempty" json:"end,omitempty"`
 }
 
 // GetNodeStatsParamsGroup defines parameters for GetNodeStats.
@@ -8474,6 +9902,62 @@ type GetNodeTagsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetNodeTargetsParams defines parameters for GetNodeTargets.
+type GetNodeTargetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
 // DeleteObsolescenceSettingsJSONBody defines parameters for DeleteObsolescenceSettings.
@@ -8726,6 +10210,12 @@ type GetPackagesDiffParams struct {
 	Encap *bool `form:"encap,omitempty" json:"encap,omitempty"`
 }
 
+// GetPackageParams defines parameters for GetPackage.
+type GetPackageParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetReportsParams defines parameters for GetReports.
 type GetReportsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -8859,6 +10349,208 @@ type GetResourceParams struct {
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
 
+// GetSafeFilesParams defines parameters for GetSafeFiles.
+type GetSafeFilesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// PostSafeFileJSONBody defines parameters for PostSafeFile.
+type PostSafeFileJSONBody struct {
+	Name *string `json:"name,omitempty"`
+}
+
+// PostSafeUploadMultipartBody defines parameters for PostSafeUpload.
+type PostSafeUploadMultipartBody struct {
+	// File The content of the file.
+	File openapi_types.File `json:"file"`
+
+	// Name A name to tell the file by, the name of the uploaded file by default.
+	Name *string `json:"name,omitempty"`
+}
+
+// GetSafeFileParams defines parameters for GetSafeFile.
+type GetSafeFileParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// PostSafeFileNameJSONBody defines parameters for PostSafeFileName.
+type PostSafeFileNameJSONBody struct {
+	Name string `json:"name"`
+}
+
+// GetSafeFileDownloadParams defines parameters for GetSafeFileDownload.
+type GetSafeFileDownloadParams struct {
+	// Md5 The md5 of the copy the client has.
+	Md5 *string `form:"md5,omitempty" json:"md5,omitempty"`
+}
+
+// GetSafeFileHistoryParams defines parameters for GetSafeFileHistory.
+type GetSafeFileHistoryParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// PostSafeFileUploadMultipartBody defines parameters for PostSafeFileUpload.
+type PostSafeFileUploadMultipartBody struct {
+	// File The content of the file.
+	File openapi_types.File `json:"file"`
+
+	// Name A name to tell the file by, the name of the uploaded file by default.
+	Name *string `json:"name,omitempty"`
+}
+
 // GetSanSwitchesParams defines parameters for GetSanSwitches.
 type GetSanSwitchesParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -8913,6 +10605,12 @@ type GetSanSwitchesParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetSanSwitchPortParams defines parameters for GetSanSwitchPort.
+type GetSanSwitchPortParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
 
 // GetSearchParams defines parameters for GetSearch.
@@ -9963,6 +11661,20 @@ type GetServicesActionsParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// PostServicesActionsJSONBody defines parameters for PostServicesActions.
+type PostServicesActionsJSONBody struct {
+	Ack PostServicesActionsJSONBodyAck `json:"ack"`
+
+	// AckedComment Why the failure needs nothing more.
+	AckedComment *string `json:"acked_comment,omitempty"`
+
+	// Id The action, svcactions.id
+	Id int64 `json:"id"`
+}
+
+// PostServicesActionsJSONBodyAck defines parameters for PostServicesActions.
+type PostServicesActionsJSONBodyAck int
+
 // GetServicesActionParams defines parameters for GetServicesAction.
 type GetServicesActionParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -10397,6 +12109,41 @@ type GetTagNodesParams struct {
 
 	// Offset Skip the first entries of the data cursor.
 	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
 }
 
 // PostTagNodeJSONBody defines parameters for PostTagNode.
@@ -10436,6 +12183,25 @@ type GetTagServicesParams struct {
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
 	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
@@ -10740,6 +12506,18 @@ type DeleteAppsResponsiblesJSONRequestBody DeleteAppsResponsiblesJSONBody
 // PostAppsResponsiblesJSONRequestBody defines body for PostAppsResponsibles for application/json ContentType.
 type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
 
+// PatchAssistantConversationJSONRequestBody defines body for PatchAssistantConversation for application/json ContentType.
+type PatchAssistantConversationJSONRequestBody = AssistantTitleRequest
+
+// PostAssistantTurnJSONRequestBody defines body for PostAssistantTurn for application/json ContentType.
+type PostAssistantTurnJSONRequestBody = AssistantTurnRequest
+
+// PostAssistantConfirmationJSONRequestBody defines body for PostAssistantConfirmation for application/json ContentType.
+type PostAssistantConfirmationJSONRequestBody = AssistantConfirmationRequest
+
+// PutAssistantFeedbackJSONRequestBody defines body for PutAssistantFeedback for application/json ContentType.
+type PutAssistantFeedbackJSONRequestBody = AssistantFeedbackRequest
+
 // PostAuthBackchannelLogoutFormdataRequestBody defines body for PostAuthBackchannelLogout for application/x-www-form-urlencoded ContentType.
 type PostAuthBackchannelLogoutFormdataRequestBody PostAuthBackchannelLogoutFormdataBody
 
@@ -10748,6 +12526,24 @@ type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
 
 // PostChartsJSONRequestBody defines body for PostCharts for application/json ContentType.
 type PostChartsJSONRequestBody PostChartsJSONBody
+
+// PostChecksContextualJSONRequestBody defines body for PostChecksContextual for application/json ContentType.
+type PostChecksContextualJSONRequestBody = CheckContextualRequest
+
+// PostCheckContextualJSONRequestBody defines body for PostCheckContextual for application/json ContentType.
+type PostCheckContextualJSONRequestBody = CheckContextualRequest
+
+// PostChecksDefaultsJSONRequestBody defines body for PostChecksDefaults for application/json ContentType.
+type PostChecksDefaultsJSONRequestBody = CheckDefaultRequest
+
+// PostCheckDefaultJSONRequestBody defines body for PostCheckDefault for application/json ContentType.
+type PostCheckDefaultJSONRequestBody = CheckDefaultRequest
+
+// DeleteChecksSettingsJSONRequestBody defines body for DeleteChecksSettings for application/json ContentType.
+type DeleteChecksSettingsJSONRequestBody = CheckKey
+
+// PostChecksSettingsJSONRequestBody defines body for PostChecksSettings for application/json ContentType.
+type PostChecksSettingsJSONRequestBody = CheckSettingsRequest
 
 // PostComplianceHistoryJSONRequestBody defines body for PostComplianceHistory for application/json ContentType.
 type PostComplianceHistoryJSONRequestBody PostComplianceHistoryJSONBody
@@ -10853,6 +12649,9 @@ type DeleteDisksJSONRequestBody DeleteDisksJSONBody
 
 // PostDisksJSONRequestBody defines body for PostDisks for application/json ContentType.
 type PostDisksJSONRequestBody PostDisksJSONBody
+
+// PostFieldConstraintJSONRequestBody defines body for PostFieldConstraint for application/json ContentType.
+type PostFieldConstraintJSONRequestBody = FieldConstraintInput
 
 // DeleteFiltersJSONRequestBody defines body for DeleteFilters for application/json ContentType.
 type DeleteFiltersJSONRequestBody DeleteFiltersJSONBody
@@ -10980,6 +12779,18 @@ type PostOidcMappingJSONRequestBody = OidcMappingInput
 // PostReportsJSONRequestBody defines body for PostReports for application/json ContentType.
 type PostReportsJSONRequestBody PostReportsJSONBody
 
+// PostSafeFileJSONRequestBody defines body for PostSafeFile for application/json ContentType.
+type PostSafeFileJSONRequestBody PostSafeFileJSONBody
+
+// PostSafeUploadMultipartRequestBody defines body for PostSafeUpload for multipart/form-data ContentType.
+type PostSafeUploadMultipartRequestBody PostSafeUploadMultipartBody
+
+// PostSafeFileNameJSONRequestBody defines body for PostSafeFileName for application/json ContentType.
+type PostSafeFileNameJSONRequestBody PostSafeFileNameJSONBody
+
+// PostSafeFileUploadMultipartRequestBody defines body for PostSafeFileUpload for multipart/form-data ContentType.
+type PostSafeFileUploadMultipartRequestBody PostSafeFileUploadMultipartBody
+
 // DeleteServicesJSONRequestBody defines body for DeleteServices for application/json ContentType.
 type DeleteServicesJSONRequestBody DeleteServicesJSONBody
 
@@ -10991,6 +12802,12 @@ type PostServiceJSONRequestBody PostServiceJSONBody
 
 // PutServiceStatusLogAckJSONRequestBody defines body for PutServiceStatusLogAck for application/json ContentType.
 type PutServiceStatusLogAckJSONRequestBody PutServiceStatusLogAckJSONBody
+
+// PostServicesActionsJSONRequestBody defines body for PostServicesActions for application/json ContentType.
+type PostServicesActionsJSONRequestBody PostServicesActionsJSONBody
+
+// PostServicesActionJSONRequestBody defines body for PostServicesAction for application/json ContentType.
+type PostServicesActionJSONRequestBody = ServiceActionAckRequest
 
 // DeleteServicesInstancesJSONRequestBody defines body for DeleteServicesInstances for application/json ContentType.
 type DeleteServicesInstancesJSONRequestBody DeleteServicesInstancesJSONBody
@@ -11223,6 +13040,130 @@ func (t *ChartListResponse_Data) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsCheckContextualListResponseData0 returns the union data inside the CheckContextualListResponse_Data as a CheckContextualListResponseData0
+func (t CheckContextualListResponse_Data) AsCheckContextualListResponseData0() (CheckContextualListResponseData0, error) {
+	var body CheckContextualListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckContextualListResponseData0 overwrites any union data inside the CheckContextualListResponse_Data as the provided CheckContextualListResponseData0
+func (t *CheckContextualListResponse_Data) FromCheckContextualListResponseData0(v CheckContextualListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckContextualListResponseData0 performs a merge with any union data inside the CheckContextualListResponse_Data, using the provided CheckContextualListResponseData0
+func (t *CheckContextualListResponse_Data) MergeCheckContextualListResponseData0(v CheckContextualListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCheckContextualListResponseData1 returns the union data inside the CheckContextualListResponse_Data as a CheckContextualListResponseData1
+func (t CheckContextualListResponse_Data) AsCheckContextualListResponseData1() (CheckContextualListResponseData1, error) {
+	var body CheckContextualListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckContextualListResponseData1 overwrites any union data inside the CheckContextualListResponse_Data as the provided CheckContextualListResponseData1
+func (t *CheckContextualListResponse_Data) FromCheckContextualListResponseData1(v CheckContextualListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckContextualListResponseData1 performs a merge with any union data inside the CheckContextualListResponse_Data, using the provided CheckContextualListResponseData1
+func (t *CheckContextualListResponse_Data) MergeCheckContextualListResponseData1(v CheckContextualListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CheckContextualListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CheckContextualListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsCheckDefaultListResponseData0 returns the union data inside the CheckDefaultListResponse_Data as a CheckDefaultListResponseData0
+func (t CheckDefaultListResponse_Data) AsCheckDefaultListResponseData0() (CheckDefaultListResponseData0, error) {
+	var body CheckDefaultListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckDefaultListResponseData0 overwrites any union data inside the CheckDefaultListResponse_Data as the provided CheckDefaultListResponseData0
+func (t *CheckDefaultListResponse_Data) FromCheckDefaultListResponseData0(v CheckDefaultListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckDefaultListResponseData0 performs a merge with any union data inside the CheckDefaultListResponse_Data, using the provided CheckDefaultListResponseData0
+func (t *CheckDefaultListResponse_Data) MergeCheckDefaultListResponseData0(v CheckDefaultListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCheckDefaultListResponseData1 returns the union data inside the CheckDefaultListResponse_Data as a CheckDefaultListResponseData1
+func (t CheckDefaultListResponse_Data) AsCheckDefaultListResponseData1() (CheckDefaultListResponseData1, error) {
+	var body CheckDefaultListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckDefaultListResponseData1 overwrites any union data inside the CheckDefaultListResponse_Data as the provided CheckDefaultListResponseData1
+func (t *CheckDefaultListResponse_Data) FromCheckDefaultListResponseData1(v CheckDefaultListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckDefaultListResponseData1 performs a merge with any union data inside the CheckDefaultListResponse_Data, using the provided CheckDefaultListResponseData1
+func (t *CheckDefaultListResponse_Data) MergeCheckDefaultListResponseData1(v CheckDefaultListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CheckDefaultListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CheckDefaultListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsCheckListResponseData0 returns the union data inside the CheckListResponse_Data as a CheckListResponseData0
 func (t CheckListResponse_Data) AsCheckListResponseData0() (CheckListResponseData0, error) {
 	var body CheckListResponseData0
@@ -11281,6 +13222,68 @@ func (t CheckListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *CheckListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsCheckSettingListResponseData0 returns the union data inside the CheckSettingListResponse_Data as a CheckSettingListResponseData0
+func (t CheckSettingListResponse_Data) AsCheckSettingListResponseData0() (CheckSettingListResponseData0, error) {
+	var body CheckSettingListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckSettingListResponseData0 overwrites any union data inside the CheckSettingListResponse_Data as the provided CheckSettingListResponseData0
+func (t *CheckSettingListResponse_Data) FromCheckSettingListResponseData0(v CheckSettingListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckSettingListResponseData0 performs a merge with any union data inside the CheckSettingListResponse_Data, using the provided CheckSettingListResponseData0
+func (t *CheckSettingListResponse_Data) MergeCheckSettingListResponseData0(v CheckSettingListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCheckSettingListResponseData1 returns the union data inside the CheckSettingListResponse_Data as a CheckSettingListResponseData1
+func (t CheckSettingListResponse_Data) AsCheckSettingListResponseData1() (CheckSettingListResponseData1, error) {
+	var body CheckSettingListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCheckSettingListResponseData1 overwrites any union data inside the CheckSettingListResponse_Data as the provided CheckSettingListResponseData1
+func (t *CheckSettingListResponse_Data) FromCheckSettingListResponseData1(v CheckSettingListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCheckSettingListResponseData1 performs a merge with any union data inside the CheckSettingListResponse_Data, using the provided CheckSettingListResponseData1
+func (t *CheckSettingListResponse_Data) MergeCheckSettingListResponseData1(v CheckSettingListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CheckSettingListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CheckSettingListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -11529,6 +13532,68 @@ func (t DiskListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *DiskListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsFieldConstraintRowListResponseData0 returns the union data inside the FieldConstraintRowListResponse_Data as a FieldConstraintRowListResponseData0
+func (t FieldConstraintRowListResponse_Data) AsFieldConstraintRowListResponseData0() (FieldConstraintRowListResponseData0, error) {
+	var body FieldConstraintRowListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFieldConstraintRowListResponseData0 overwrites any union data inside the FieldConstraintRowListResponse_Data as the provided FieldConstraintRowListResponseData0
+func (t *FieldConstraintRowListResponse_Data) FromFieldConstraintRowListResponseData0(v FieldConstraintRowListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFieldConstraintRowListResponseData0 performs a merge with any union data inside the FieldConstraintRowListResponse_Data, using the provided FieldConstraintRowListResponseData0
+func (t *FieldConstraintRowListResponse_Data) MergeFieldConstraintRowListResponseData0(v FieldConstraintRowListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFieldConstraintRowListResponseData1 returns the union data inside the FieldConstraintRowListResponse_Data as a FieldConstraintRowListResponseData1
+func (t FieldConstraintRowListResponse_Data) AsFieldConstraintRowListResponseData1() (FieldConstraintRowListResponseData1, error) {
+	var body FieldConstraintRowListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFieldConstraintRowListResponseData1 overwrites any union data inside the FieldConstraintRowListResponse_Data as the provided FieldConstraintRowListResponseData1
+func (t *FieldConstraintRowListResponse_Data) FromFieldConstraintRowListResponseData1(v FieldConstraintRowListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFieldConstraintRowListResponseData1 performs a merge with any union data inside the FieldConstraintRowListResponse_Data, using the provided FieldConstraintRowListResponseData1
+func (t *FieldConstraintRowListResponse_Data) MergeFieldConstraintRowListResponseData1(v FieldConstraintRowListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t FieldConstraintRowListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *FieldConstraintRowListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -13021,6 +15086,68 @@ func (t *RulesetsVariableListResponse_Data) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsSafeFileListResponseData0 returns the union data inside the SafeFileListResponse_Data as a SafeFileListResponseData0
+func (t SafeFileListResponse_Data) AsSafeFileListResponseData0() (SafeFileListResponseData0, error) {
+	var body SafeFileListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSafeFileListResponseData0 overwrites any union data inside the SafeFileListResponse_Data as the provided SafeFileListResponseData0
+func (t *SafeFileListResponse_Data) FromSafeFileListResponseData0(v SafeFileListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSafeFileListResponseData0 performs a merge with any union data inside the SafeFileListResponse_Data, using the provided SafeFileListResponseData0
+func (t *SafeFileListResponse_Data) MergeSafeFileListResponseData0(v SafeFileListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSafeFileListResponseData1 returns the union data inside the SafeFileListResponse_Data as a SafeFileListResponseData1
+func (t SafeFileListResponse_Data) AsSafeFileListResponseData1() (SafeFileListResponseData1, error) {
+	var body SafeFileListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSafeFileListResponseData1 overwrites any union data inside the SafeFileListResponse_Data as the provided SafeFileListResponseData1
+func (t *SafeFileListResponse_Data) FromSafeFileListResponseData1(v SafeFileListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSafeFileListResponseData1 performs a merge with any union data inside the SafeFileListResponse_Data, using the provided SafeFileListResponseData1
+func (t *SafeFileListResponse_Data) MergeSafeFileListResponseData1(v SafeFileListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SafeFileListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *SafeFileListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsServiceActionListResponseData0 returns the union data inside the ServiceActionListResponse_Data as a ServiceActionListResponseData0
 func (t ServiceActionListResponse_Data) AsServiceActionListResponseData0() (ServiceActionListResponseData0, error) {
 	var body ServiceActionListResponseData0
@@ -13141,6 +15268,68 @@ func (t ServiceListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ServiceListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsStoredFormListResponseData0 returns the union data inside the StoredFormListResponse_Data as a StoredFormListResponseData0
+func (t StoredFormListResponse_Data) AsStoredFormListResponseData0() (StoredFormListResponseData0, error) {
+	var body StoredFormListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStoredFormListResponseData0 overwrites any union data inside the StoredFormListResponse_Data as the provided StoredFormListResponseData0
+func (t *StoredFormListResponse_Data) FromStoredFormListResponseData0(v StoredFormListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStoredFormListResponseData0 performs a merge with any union data inside the StoredFormListResponse_Data, using the provided StoredFormListResponseData0
+func (t *StoredFormListResponse_Data) MergeStoredFormListResponseData0(v StoredFormListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsStoredFormListResponseData1 returns the union data inside the StoredFormListResponse_Data as a StoredFormListResponseData1
+func (t StoredFormListResponse_Data) AsStoredFormListResponseData1() (StoredFormListResponseData1, error) {
+	var body StoredFormListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStoredFormListResponseData1 overwrites any union data inside the StoredFormListResponse_Data as the provided StoredFormListResponseData1
+func (t *StoredFormListResponse_Data) FromStoredFormListResponseData1(v StoredFormListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStoredFormListResponseData1 performs a merge with any union data inside the StoredFormListResponse_Data, using the provided StoredFormListResponseData1
+func (t *StoredFormListResponse_Data) MergeStoredFormListResponseData1(v StoredFormListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t StoredFormListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *StoredFormListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

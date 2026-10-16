@@ -1,6 +1,7 @@
 package xauth
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -9,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -35,6 +37,10 @@ type fakeProvider struct {
 	codes map[string]pendingCode
 	// idClaims are added to the ID tokens the token endpoint issues.
 	idClaims map[string]any
+	// refreshTokens are the refresh tokens still valid; refreshes counts the
+	// refresh grants served. Each refresh rotates the refresh token.
+	refreshTokens map[string]bool
+	refreshes     int
 }
 
 type pendingCode struct {
@@ -48,7 +54,7 @@ func newFakeProvider(t *testing.T) *fakeProvider {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := &fakeProvider{t: t, key: key, kid: "k1", client: "oc3", codes: map[string]pendingCode{}, idClaims: map[string]any{}}
+	p := &fakeProvider{t: t, key: key, kid: "k1", client: "oc3", codes: map[string]pendingCode{}, idClaims: map[string]any{}, refreshTokens: map[string]bool{}}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
@@ -67,6 +73,25 @@ func newFakeProvider(t *testing.T) *fakeProvider {
 	})
 	mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
 		_ = r.ParseForm()
+		if r.Form.Get("grant_type") == "refresh_token" {
+			p.mu.Lock()
+			defer p.mu.Unlock()
+			old := r.Form.Get("refresh_token")
+			if !p.refreshTokens[old] {
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid_grant"})
+				return
+			}
+			delete(p.refreshTokens, old)
+			p.refreshes++
+			next := fmt.Sprintf("refresh-%d", p.refreshes)
+			p.refreshTokens[next] = true
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"access_token": fmt.Sprintf("access-%d", p.refreshes), "token_type": "Bearer", "expires_in": 300, "refresh_token": next,
+			})
+			return
+		}
 		p.mu.Lock()
 		pending, ok := p.codes[r.Form.Get("code")]
 		delete(p.codes, r.Form.Get("code"))
@@ -86,9 +111,12 @@ func newFakeProvider(t *testing.T) *fakeProvider {
 		for k, v := range p.idClaims {
 			claims[k] = v
 		}
+		p.mu.Lock()
+		p.refreshTokens["refresh-0"] = true
+		p.mu.Unlock()
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"access_token": "opaque", "token_type": "Bearer", "expires_in": 300,
+			"access_token": "opaque", "token_type": "Bearer", "expires_in": 300, "refresh_token": "refresh-0",
 			"id_token": p.sign(claims, "RS256"),
 		})
 	})
@@ -532,5 +560,145 @@ func TestEvaluateClaimRules(t *testing.T) {
 	// hand loses them at the next sign-in, were it allowed.
 	if len(s.ManagedIDs) != 3 {
 		t.Fatalf("stranger managed %v", s.ManagedIDs)
+	}
+}
+
+func TestSessionTokens(t *testing.T) {
+	p := newFakeProvider(t)
+	key := bytes.Repeat([]byte{7}, 32)
+	o, mr := newTestOIDC(t, p, func(c *OIDCConfig) { c.TokenKey = key })
+	ctx := context.Background()
+
+	signIn := func(o *OIDC) (string, *Session) {
+		t.Helper()
+		loginID, authURL, err := o.BeginLogin(ctx, "/")
+		if err != nil {
+			t.Fatal(err)
+		}
+		code, state := p.authorize(t, authURL)
+		claims, _, idToken, err := o.FinishLogin(ctx, loginID, state, code)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := Session{UserID: 7, Email: claims.Email, Issuer: claims.Issuer, Subject: claims.Subject, IDToken: idToken}
+		s.WithToken(claims.Token())
+		id, err := o.CreateSession(ctx, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		stored, _ := o.readSession(ctx, hashKey("session", id))
+		return id, stored
+	}
+	id, stored := signIn(o)
+	// Only the ciphertext reaches the store.
+	raw, _ := mr.Get(hashKey("session", id))
+	if strings.Contains(raw, "opaque") || strings.Contains(raw, "refresh-0") || stored.Tokens == "" {
+		t.Fatalf("tokens stored in clear, or not stored: %s", raw)
+	}
+	if at, err := o.AccessToken(ctx, id); err != nil || at != "opaque" {
+		t.Fatalf("access token: %q %v", at, err)
+	}
+
+	// Near its expiry, the access token is refreshed, once for concurrent callers,
+	// and the rotated refresh token is kept.
+	expire := func(id string) {
+		t.Helper()
+		key := hashKey("session", id)
+		s, _ := o.readSession(ctx, key)
+		tok, err := o.openTokens(s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tok.Expiry = time.Now().Add(10 * time.Second)
+		if s.Tokens, err = o.sealTokens(s, *tok); err != nil {
+			t.Fatal(err)
+		}
+		b, _ := json.Marshal(s)
+		_ = mr.Set(key, string(b))
+	}
+	expire(id)
+	var wg sync.WaitGroup
+	got := make([]string, 5)
+	for i := range got {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			got[i], _ = o.AccessToken(ctx, id)
+		}(i)
+	}
+	wg.Wait()
+	for _, at := range got {
+		if at != "access-1" {
+			t.Fatalf("concurrent refresh: %v", got)
+		}
+	}
+	if p.refreshes != 1 {
+		t.Fatalf("%d refreshes, want 1", p.refreshes)
+	}
+	s, _ := o.readSession(ctx, hashKey("session", id))
+	if tok, _ := o.openTokens(s); tok == nil || tok.RefreshToken != "refresh-1" {
+		t.Fatalf("rotated refresh token not kept: %+v", tok)
+	}
+
+	// The tokens of a session copied into another user's session do not open.
+	other := *s
+	other.Subject = "user-2"
+	if _, err := o.openTokens(&other); !errors.Is(err, ErrNoToken) {
+		t.Fatalf("tokens opened under another identity: %v", err)
+	}
+
+	// A refresh the provider refuses drops the tokens.
+	p.mu.Lock()
+	p.refreshTokens = map[string]bool{}
+	p.mu.Unlock()
+	expire(id)
+	if _, err := o.AccessToken(ctx, id); !errors.Is(err, ErrNoToken) {
+		t.Fatalf("refused refresh: %v", err)
+	}
+	if s, _ := o.readSession(ctx, hashKey("session", id)); s == nil || s.Tokens != "" {
+		t.Fatalf("tokens kept after a refused refresh, or session lost: %+v", s)
+	}
+
+	// Without a key, nothing is kept.
+	plain, _ := newTestOIDC(t, p, nil)
+	id2, stored2 := signIn(plain)
+	if stored2.Tokens != "" {
+		t.Fatal("tokens kept without a key")
+	}
+	if _, err := plain.AccessToken(ctx, id2); !errors.Is(err, ErrNoToken) {
+		t.Fatalf("no key: %v", err)
+	}
+}
+
+// TestSignInExtensions checks what a sign-in tells of itself: its identity at the
+// provider and its ends, never a token.
+func TestSignInExtensions(t *testing.T) {
+	now := time.Date(2026, 10, 13, 12, 0, 0, 0, time.UTC)
+	sess := &Session{
+		UserID: 1, Email: "user@example.com", Issuer: "https://idp.example.com", Subject: "sub-1",
+		IDToken: "id-token", Tokens: "sealed-tokens",
+		LastSeen: now, Expires: now.Add(90 * time.Minute),
+	}
+	ext := sessionExtensions(sess, time.Hour)
+	if ext[XIssuer] != sess.Issuer || ext[XSubject] != sess.Subject {
+		t.Fatalf("identity: %v", ext)
+	}
+	if ext[XExpires] != "2026-10-13T13:30:00Z" || ext[XIdleExpires] != "2026-10-13T13:00:00Z" {
+		t.Fatalf("ends: %v", ext)
+	}
+	for k, v := range ext {
+		if strings.Contains(v, "token") {
+			t.Fatalf("%s carries a token: %q", k, v)
+		}
+	}
+	// The idle end is within the absolute end.
+	sess.LastSeen = now.Add(80 * time.Minute)
+	if got := sessionExtensions(sess, time.Hour)[XIdleExpires]; got != "2026-10-13T13:30:00Z" {
+		t.Fatalf("idle end beyond the absolute end: %s", got)
+	}
+
+	ext = bearerExtensions(&verifiedToken{issuer: "https://idp.example.com", subject: "sub-2", expires: now.Add(5 * time.Minute)})
+	if ext[XSubject] != "sub-2" || ext[XExpires] != "2026-10-13T12:05:00Z" || ext[XIdleExpires] != "" {
+		t.Fatalf("bearer: %v", ext)
 	}
 }

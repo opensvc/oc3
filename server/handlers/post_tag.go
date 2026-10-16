@@ -3,6 +3,8 @@ package serverhandlers
 import (
 	"context"
 	"net/http"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/labstack/echo/v4"
 
@@ -12,7 +14,13 @@ import (
 	"github.com/opensvc/oc3/util/logkey"
 )
 
-// PostTag handles POST /tags/{tag_id} update a tag's properties.
+// tagFieldMaxLen is the size of the tag_name and tag_exclude columns.
+const tagFieldMaxLen = 128
+
+// PostTag handles POST /tags/{tag_id}: it updates the name, the exclusion
+// pattern or the data of a tag. A name is trimmed, and refused when empty, too
+// long or carried by another tag; an exclusion pattern, when too long or not a
+// regular expression the database accepts.
 func (a *Api) PostTag(c echo.Context, tagIdParam string) error {
 	log := echolog.GetLogHandler(c, "PostTag")
 	odb := a.ODB
@@ -34,6 +42,40 @@ func (a *Api) PostTag(c echo.Context, tagIdParam string) error {
 	tag, err := a.resolveTagByKey(c, log, ctx, tagIdParam)
 	if err != nil {
 		return err
+	}
+
+	if body.TagName != nil {
+		name := strings.TrimSpace(*body.TagName)
+		switch {
+		case name == "":
+			return JSONProblemf(c, http.StatusBadRequest, "the tag name may not be empty")
+		case utf8.RuneCountInString(name) > tagFieldMaxLen:
+			return JSONProblemf(c, http.StatusBadRequest, "the tag name may not exceed %d characters", tagFieldMaxLen)
+		}
+		// tag_name is unique: refused here with its reason rather than by the
+		// database as an internal error.
+		other, err := odb.TagByName(ctx, name)
+		if err != nil {
+			log.Error("cannot check tag existence", "tag_name", name, logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot check tag existence")
+		}
+		if other != nil && other.ID != tag.ID {
+			return JSONProblemf(c, http.StatusConflict, "tag '%s' already exists", name)
+		}
+		body.TagName = &name
+	}
+	if body.TagExclude != nil && *body.TagExclude != "" {
+		if utf8.RuneCountInString(*body.TagExclude) > tagFieldMaxLen {
+			return JSONProblemf(c, http.StatusBadRequest, "the exclusion pattern may not exceed %d characters", tagFieldMaxLen)
+		}
+		refusal, err := odb.CheckTagExclude(ctx, *body.TagExclude)
+		if err != nil {
+			log.Error("cannot check the exclusion pattern", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot check the exclusion pattern")
+		}
+		if refusal != nil {
+			return JSONProblemf(c, http.StatusBadRequest, "invalid exclusion pattern: %s", refusal)
+		}
 	}
 
 	fields := cdb.UpdateTagFields{

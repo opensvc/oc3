@@ -131,3 +131,43 @@ func TestInternalForms(t *testing.T) {
 		t.Error("internal form -11 must not exist")
 	}
 }
+
+// The forms were read with PyYAML: Yes, True and On are booleans, in any case.
+func TestDefBool(t *testing.T) {
+	for v, want := range map[any]bool{
+		true: true, false: false, "Yes": true, "yes": true, "YES": true, "True": true,
+		"true": true, "On": true, "No": false, "False": false, "": false, "1": false,
+	} {
+		if got := defBool(map[string]any{"Mandatory": v}, "Mandatory"); got != want {
+			t.Errorf("defBool(%#v) = %v, want %v", v, got, want)
+		}
+	}
+	if defBool(map[string]any{}, "Mandatory") {
+		t.Error("a missing key is false")
+	}
+}
+
+// A candidate row from oc3, flat keys of joined tables, reads as the historical
+// API gave it: one table as plain columns, several nested by table.
+func TestLegacyRowShape(t *testing.T) {
+	one := legacyRowShape(map[string]any{"stor_array.id": 5, "stor_array.array_name": "a"})
+	if v, err := formGetVal(one, "id"); err != nil || v != 5 {
+		t.Errorf("single table: got %v %v", v, err)
+	}
+	if v, err := formGetVal(one, "array_name"); err != nil || v != "a" {
+		t.Errorf("single table: got %v %v", v, err)
+	}
+	several := legacyRowShape(map[string]any{"diskinfo.disk_id": "d1", "stor_array.array_name": "a", "x": 1})
+	if v, err := formGetVal(several, "diskinfo.disk_id"); err != nil || v != "d1" {
+		t.Errorf("several tables: got %v %v", v, err)
+	}
+	if v, err := formGetVal(several, "x"); err != nil || v != 1 {
+		t.Errorf("plain column: got %v %v", v, err)
+	}
+	if v, err := formGetVal(map[string]any{"a.b": 2}, "a.b"); err != nil || v != 2 {
+		t.Errorf("flat key: got %v %v", v, err)
+	}
+	if got := legacyRowShape("text"); got != "text" {
+		t.Errorf("a non row: got %v", got)
+	}
+}

@@ -63,6 +63,13 @@ func (a *Api) PostServices(c echo.Context) error {
 		return JSONProblemf(c, http.StatusBadRequest, "cluster_id is required to create a service")
 	}
 
+	if msg, err := checkConstraints(c, ctx, odb, server.FieldConstraintObjectKindService, "", serviceBodyFieldsFromPostServices(body).toFields()); err != nil {
+		log.Error("cannot check the field constraints", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot check the field constraints")
+	} else if msg != "" {
+		return JSONProblem(c, http.StatusBadRequest, msg)
+	}
+
 	_, svcID, err := odb.ObjectIDFindOrCreate(ctx, *body.Svcname, *body.ClusterId)
 	if err != nil {
 		log.Error("cannot find or create service id", logkey.Error, err)

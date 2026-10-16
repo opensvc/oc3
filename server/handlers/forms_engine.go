@@ -47,6 +47,12 @@ func formValueText(v any) string {
 // formGetVal returns the value of a dotted key "a.b.c" in nested objects, as
 // form_get_val() does.
 func formGetVal(d any, key string) (any, error) {
+	// A flat key, as oc3 names the columns of a joined table, "stor_array.id".
+	if m, ok := d.(map[string]any); ok {
+		if v, ok := m[key]; ok {
+			return v, nil
+		}
+	}
 	parts := strings.Split(key, ".")
 	cur := d
 	for _, part := range parts {
@@ -268,13 +274,19 @@ func defString(m map[string]any, key string) string {
 	return s
 }
 
-// defBool reads a boolean property of a form definition element.
+// defBool reads a boolean property of a form definition element, as the
+// historical collector read the forms with PyYAML (YAML 1.1): yes, true and on,
+// in any case. yaml.v3 follows YAML 1.2 and leaves "Yes" or "On" as strings,
+// which would silently drop `Mandatory: Yes`.
 func defBool(m map[string]any, key string) bool {
 	switch t := m[key].(type) {
 	case bool:
 		return t
 	case string:
-		return t == "yes" || t == "true" || t == "True"
+		switch strings.ToLower(t) {
+		case "yes", "true", "on":
+			return true
+		}
 	}
 	return false
 }
@@ -292,6 +304,48 @@ func defMaps(m map[string]any, key string) []map[string]any {
 		if sub, ok := item.(map[string]any); ok {
 			out = append(out, sub)
 		}
+	}
+	return out
+}
+
+// legacyRowShape gives a candidate row the shape the historical API returned,
+// which the forms are written against: oc3 names the columns of a joined table
+// with flat keys, "stor_array.id", where the historical API returned pydal's
+// as_list(), plain columns when they all came from one table, `{id}`, and rows
+// nested by table otherwise, `{stor_array: {id}, diskinfo: {...}}`. Anything but
+// a row with such keys is returned as is.
+func legacyRowShape(row any) any {
+	m, ok := row.(map[string]any)
+	if !ok {
+		return row
+	}
+	tables := map[string]map[string]any{}
+	plain := map[string]any{}
+	for k, v := range m {
+		table, column, found := strings.Cut(k, ".")
+		if !found || table == "" {
+			plain[k] = v
+			continue
+		}
+		if tables[table] == nil {
+			tables[table] = map[string]any{}
+		}
+		tables[table][column] = v
+	}
+	if len(tables) == 0 {
+		return row
+	}
+	if len(tables) == 1 && len(plain) == 0 {
+		for _, only := range tables {
+			return only
+		}
+	}
+	out := make(map[string]any, len(plain)+len(tables))
+	for k, v := range plain {
+		out[k] = v
+	}
+	for t, cols := range tables {
+		out[t] = cols
 	}
 	return out
 }
