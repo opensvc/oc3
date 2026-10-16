@@ -181,6 +181,12 @@ func (oDb *DB) UpdateServiceFields(ctx context.Context, svcID string, fields map
 		if !allowed[col] {
 			continue
 		}
+		// A datetime column rejects the empty string, which would fail the whole
+		// UPDATE: an empty snooze date clears it.
+		if s, ok := val.(string); ok && s == "" && col == "svc_snooze_till" {
+			setClauses = append(setClauses, col+" = NULL")
+			continue
+		}
 		setClauses = append(setClauses, col+" = ?")
 		args = append(args, val)
 	}
