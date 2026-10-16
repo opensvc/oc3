@@ -695,6 +695,9 @@ paths:
         regard to case (409); app_domain is 64 characters at most; app_team_ops is
         empty or the name of an organizational group. Requires the AppManager
         privilege and the responsibility of the app, which a Manager has.
+        app_domain constrained in strict or regex mode (see /field_constraints)
+        may only take an allowed value, an empty one or the value it holds: 400
+        otherwise.
       parameters:
         - in: path
           name: app_id
@@ -7534,7 +7537,10 @@ paths:
   /nodes:
     post:
       operationId: PostNodes
-      description: Create or update a node (by nodename or node_id)
+      description: |
+        Create or update a node (by nodename or node_id). The attributes a user
+        sets are checked against the strict and regex constraints, as by
+        POST /nodes/{node_id}.
       requestBody:
         required: true
         content:
@@ -7844,7 +7850,12 @@ paths:
   /nodes/{node_id}:
     post:
       operationId: PostNode
-      description: Update a node properties
+      description: |
+        Update a node properties. A user may only set an attribute constrained in
+        strict mode (see /field_constraints) to one of its allowed values, one
+        constrained in regex mode to a value matching its pattern, or either to an
+        empty value or the value it holds: 400 otherwise. The node itself is not
+        checked.
       parameters:
         - in: path
           name: node_id
@@ -10009,6 +10020,169 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /field_constraints:
+    get:
+      operationId: GetFieldConstraintList
+      description: |
+        The constrained attributes of every kind of object as a list, with the
+        column filters, sort, pagination and value statistics of the other lists:
+        one row per constraint, the attributes without one being free text. For
+        the dropdowns, GET /field_constraints/{object_kind} returns the values of
+        one kind typed. Any signed-in user may read them.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - nodes
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FieldConstraintRowListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /field_constraints/{object_kind}:
+    get:
+      operationId: GetFieldConstraints
+      description: |
+        The attributes of the kind of object whose values are constrained, one
+        entry each: suggest (the list is offered, another value is accepted),
+        strict (the api refuses any other value set by a user, except clearing the
+        attribute or keeping the value it holds) or regex (the value set by a user
+        must match the whole pattern, with the same exceptions). An attribute
+        absent from data is
+        free text, the default. fields lists the attributes that may be
+        constrained. The writes of the nodes themselves are not checked: they
+        report what the node has. Any signed-in user may read them, to fill the
+        dropdowns.
+      parameters:
+        - in: path
+          name: object_kind
+          required: true
+          schema:
+            $ref: '#/components/schemas/FieldConstraintObjectKind'
+      tags:
+        - nodes
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FieldConstraintListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /field_constraints/{object_kind}/{field}:
+    post:
+      operationId: PostFieldConstraint
+      description: |
+        Set the mode and the values allowed for an attribute, creating its
+        constraint or replacing it as a whole. Modes suggest and strict take
+        values: trimmed, empty ones and duplicates dropped, order kept. Mode regex
+        takes a pattern, in RE2 syntax, which the whole value must match (as if
+        written ^(?:pattern)$): 400 when it does not compile. The values the
+        objects already hold are not changed, even when they do not comply.
+        Manager only.
+      parameters:
+        - in: path
+          name: object_kind
+          required: true
+          schema:
+            $ref: '#/components/schemas/FieldConstraintObjectKind'
+        - in: path
+          name: field
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FieldConstraintInput'
+      tags:
+        - nodes
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FieldConstraintListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteFieldConstraint
+      description: |
+        Remove the constraint of an attribute, which becomes free text again, the
+        default. The values the objects hold are not changed. 404 when the
+        attribute cannot be constrained or has no constraint. Manager only.
+      parameters:
+        - in: path
+          name: object_kind
+          required: true
+          schema:
+            $ref: '#/components/schemas/FieldConstraintObjectKind'
+        - in: path
+          name: field
+          required: true
+          schema:
+            type: string
+      tags:
+        - nodes
+      responses:
+        200:
+          $ref: '#/components/responses/200'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /oidc_mappings:
     get:
       operationId: GetOidcMappings
@@ -10456,7 +10630,10 @@ paths:
 
     post:
       operationId: PostService
-      description: Update a service properties
+      description: |
+        Update a service properties. An attribute constrained in strict or regex
+        mode (see /field_constraints) may only take an allowed value, an empty one
+        or the value it holds: 400 otherwise.
       parameters:
         - in: path
           name: svc_id
@@ -20359,6 +20536,134 @@ components:
           description: The teams the rule grants, as many as needed
           items:
             type: integer
+
+    FieldConstraintObjectKind:
+      type: string
+      description: |
+        The kind of object whose attributes are constrained, and so the detail
+        panel and the table they belong to: node (nodes), service (services), app
+        (apps).
+      enum: [node, service, app]
+
+    FieldConstraintMode:
+      type: string
+      description: |
+        suggest: the values are offered, another one is accepted; strict: a user
+        may only set one of the values, clear the attribute or keep the value it
+        holds; regex: a user may only set a value matching the whole pattern, clear
+        the attribute or keep the value it holds. An attribute without a
+        constraint is free text.
+      enum: [suggest, strict, regex]
+      x-enum-varnames: [FieldConstraintModeSuggest, FieldConstraintModeStrict, FieldConstraintModeRegex]
+
+    FieldConstraint:
+      type: object
+      required: [object_kind, field, mode, values, pattern, updated, updated_by]
+      properties:
+        object_kind:
+          $ref: '#/components/schemas/FieldConstraintObjectKind'
+        field:
+          type: string
+        mode:
+          $ref: '#/components/schemas/FieldConstraintMode'
+        values:
+          type: array
+          description: The allowed values, in display order; empty in mode regex
+          items:
+            type: string
+        pattern:
+          type: string
+          description: In mode regex, the RE2 pattern the whole value must match; empty otherwise
+        updated:
+          type: string
+          description: Date of the last change
+        updated_by:
+          type: string
+          description: Email of the author of the last change
+
+    FieldConstraintListResponse:
+      type: object
+      required: [data, fields]
+      properties:
+        data:
+          type: array
+          description: The constrained attributes; the others are free text
+          items:
+            $ref: '#/components/schemas/FieldConstraint'
+        fields:
+          type: array
+          description: The attributes of the kind of object that may be constrained, in display order
+          items:
+            type: string
+
+    FieldConstraintRow:
+      type: object
+      description: |
+        A constraint, as a row of the list. Every property is optional: the props
+        query parameter selects which columns the server returns.
+      properties:
+        object_kind:
+          type: string
+        field:
+          type: string
+        mode:
+          type: string
+          description: suggest, strict or regex
+        values:
+          type: string
+          description: The allowed values, a JSON array of strings in display order; [] in mode regex
+        value_count:
+          type: integer
+          description: The number of allowed values; 0 in mode regex
+        pattern:
+          type: string
+          description: In mode regex, the pattern; empty otherwise
+        allowed:
+          type: string
+          description: |
+            What is allowed, as text for filtering and sorting: the pattern in mode
+            regex, the values separated by ", " otherwise.
+        updated:
+          type: string
+        updated_by:
+          type: string
+
+    FieldConstraintRowListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/FieldConstraintRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    FieldConstraintInput:
+      type: object
+      required: [mode]
+      properties:
+        mode:
+          $ref: '#/components/schemas/FieldConstraintMode'
+        values:
+          type: array
+          description: |
+            Modes suggest and strict: at least one value, at most 2000, each up to
+            255 characters. Ignored in mode regex.
+          items:
+            type: string
+        pattern:
+          type: string
+          description: |
+            Mode regex: the RE2 pattern the whole value must match, up to 1024
+            characters. Ignored in the other modes.
 
     FiltersetRow:
       type: object

@@ -117,6 +117,14 @@ func (a *Api) PostApp(c echo.Context, appId string) error {
 	if problem := checkAppUpdate(ctx, odb, app, &body); problem != nil {
 		return JSONProblem(c, problem.status, problem.text)
 	}
+	if body.AppDomain != nil {
+		if msg, err := checkConstraints(c, ctx, odb, server.FieldConstraintObjectKindApp, strconv.FormatInt(app.ID, 10), map[string]any{"app_domain": *body.AppDomain}); err != nil {
+			log.Error("cannot check the field constraints", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot check the field constraints")
+		} else if msg != "" {
+			return JSONProblem(c, http.StatusBadRequest, msg)
+		}
+	}
 
 	fields := cdb.UpdateAppFields{
 		App:         body.App,

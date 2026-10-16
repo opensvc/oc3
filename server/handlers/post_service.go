@@ -60,6 +60,13 @@ func postServiceUpdate(c echo.Context, log *slog.Logger, odb *cdb.DB, ctx contex
 		}
 	}
 
+	if msg, err := checkConstraints(c, ctx, odb, server.FieldConstraintObjectKindService, svcID, fields); err != nil {
+		log.Error("cannot check the field constraints", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot check the field constraints")
+	} else if msg != "" {
+		return JSONProblem(c, http.StatusBadRequest, msg)
+	}
+
 	if app, ok := fields["svc_app"].(string); ok {
 		fields["svc_app"] = resolveApp(ctx, log, odb, c, app)
 	}

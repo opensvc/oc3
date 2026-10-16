@@ -63,6 +63,13 @@ func (a *Api) PostNodes(c echo.Context) error {
 		return JSONProblemf(c, http.StatusBadRequest, "nodename is required to create a node")
 	}
 
+	if msg, err := checkNodeConstraints(c, ctx, odb, "", nodeBodyFieldsFromPostNodes(body).toFields()); err != nil {
+		log.Error("cannot check the field constraints", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot check the field constraints")
+	} else if msg != "" {
+		return JSONProblem(c, http.StatusBadRequest, msg)
+	}
+
 	teamResponsible := ""
 	if body.TeamResponsible != nil {
 		teamResponsible = *body.TeamResponsible
@@ -151,6 +158,12 @@ func postNodeUpdate(c echo.Context, log interface{ Error(string, ...any) }, odb 
 		if !responsible {
 			return JSONProblemf(c, http.StatusForbidden, "user is not responsible for node %s", nodeID)
 		}
+	}
+	if msg, err := checkNodeConstraints(c, ctx, odb, nodeID, fields); err != nil {
+		log.Error("cannot check the field constraints", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot check the field constraints")
+	} else if msg != "" {
+		return JSONProblem(c, http.StatusBadRequest, msg)
 	}
 	// Validate app: user must be responsible for the requested app; fall back to default otherwise.
 	// Node auth bypasses this check.

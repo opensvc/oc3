@@ -13,6 +13,7 @@ var validMenuEntries = map[string]struct{}{
 	"view-clusters":                {},
 	"adm-groups":                   {},
 	"adm-claim-mappings":           {},
+	"adm-field-constraints":        {},
 	"adm-chk-ctx":                  {},
 	"view-app":                     {},
 	"view-services":                {},

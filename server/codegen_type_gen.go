@@ -241,6 +241,48 @@ func (e ComplianceVersionSource) Valid() bool {
 	}
 }
 
+// Defines values for FieldConstraintMode.
+const (
+	FieldConstraintModeRegex   FieldConstraintMode = "regex"
+	FieldConstraintModeStrict  FieldConstraintMode = "strict"
+	FieldConstraintModeSuggest FieldConstraintMode = "suggest"
+)
+
+// Valid indicates whether the value is a known member of the FieldConstraintMode enum.
+func (e FieldConstraintMode) Valid() bool {
+	switch e {
+	case FieldConstraintModeRegex:
+		return true
+	case FieldConstraintModeStrict:
+		return true
+	case FieldConstraintModeSuggest:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FieldConstraintObjectKind.
+const (
+	FieldConstraintObjectKindApp     FieldConstraintObjectKind = "app"
+	FieldConstraintObjectKindNode    FieldConstraintObjectKind = "node"
+	FieldConstraintObjectKindService FieldConstraintObjectKind = "service"
+)
+
+// Valid indicates whether the value is a known member of the FieldConstraintObjectKind enum.
+func (e FieldConstraintObjectKind) Valid() bool {
+	switch e {
+	case FieldConstraintObjectKindApp:
+		return true
+	case FieldConstraintObjectKindNode:
+		return true
+	case FieldConstraintObjectKindService:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FiltersetNewEntryFLogOp.
 const (
 	FiltersetNewEntryFLogOpAND    FiltersetNewEntryFLogOp = "AND"
@@ -627,19 +669,19 @@ func (e PutComplianceRulesetVariableJSONBodyAction) Valid() bool {
 
 // Defines values for GetComplianceStatusSummaryParamsBy.
 const (
-	GetComplianceStatusSummaryParamsByModule  GetComplianceStatusSummaryParamsBy = "module"
-	GetComplianceStatusSummaryParamsByNode    GetComplianceStatusSummaryParamsBy = "node"
-	GetComplianceStatusSummaryParamsByService GetComplianceStatusSummaryParamsBy = "service"
+	Module  GetComplianceStatusSummaryParamsBy = "module"
+	Node    GetComplianceStatusSummaryParamsBy = "node"
+	Service GetComplianceStatusSummaryParamsBy = "service"
 )
 
 // Valid indicates whether the value is a known member of the GetComplianceStatusSummaryParamsBy enum.
 func (e GetComplianceStatusSummaryParamsBy) Valid() bool {
 	switch e {
-	case GetComplianceStatusSummaryParamsByModule:
+	case Module:
 		return true
-	case GetComplianceStatusSummaryParamsByNode:
+	case Node:
 		return true
-	case GetComplianceStatusSummaryParamsByService:
+	case Service:
 		return true
 	default:
 		return false
@@ -1864,6 +1906,115 @@ type DiskRow struct {
 	SvcId       *string `json:"svc_id,omitempty"`
 	Svcname     *string `json:"svcname,omitempty"`
 	Updated     *string `json:"updated,omitempty"`
+}
+
+// FieldConstraint defines model for FieldConstraint.
+type FieldConstraint struct {
+	Field string `json:"field"`
+
+	// Mode suggest: the values are offered, another one is accepted; strict: a user
+	// may only set one of the values, clear the attribute or keep the value it
+	// holds; regex: a user may only set a value matching the whole pattern, clear
+	// the attribute or keep the value it holds. An attribute without a
+	// constraint is free text.
+	Mode FieldConstraintMode `json:"mode"`
+
+	// ObjectKind The kind of object whose attributes are constrained, and so the detail
+	// panel and the table they belong to: node (nodes), service (services), app
+	// (apps).
+	ObjectKind FieldConstraintObjectKind `json:"object_kind"`
+
+	// Pattern In mode regex, the RE2 pattern the whole value must match; empty otherwise
+	Pattern string `json:"pattern"`
+
+	// Updated Date of the last change
+	Updated string `json:"updated"`
+
+	// UpdatedBy Email of the author of the last change
+	UpdatedBy string `json:"updated_by"`
+
+	// Values The allowed values, in display order; empty in mode regex
+	Values []string `json:"values"`
+}
+
+// FieldConstraintInput defines model for FieldConstraintInput.
+type FieldConstraintInput struct {
+	// Mode suggest: the values are offered, another one is accepted; strict: a user
+	// may only set one of the values, clear the attribute or keep the value it
+	// holds; regex: a user may only set a value matching the whole pattern, clear
+	// the attribute or keep the value it holds. An attribute without a
+	// constraint is free text.
+	Mode FieldConstraintMode `json:"mode"`
+
+	// Pattern Mode regex: the RE2 pattern the whole value must match, up to 1024
+	// characters. Ignored in the other modes.
+	Pattern *string `json:"pattern,omitempty"`
+
+	// Values Modes suggest and strict: at least one value, at most 2000, each up to
+	// 255 characters. Ignored in mode regex.
+	Values *[]string `json:"values,omitempty"`
+}
+
+// FieldConstraintListResponse defines model for FieldConstraintListResponse.
+type FieldConstraintListResponse struct {
+	// Data The constrained attributes; the others are free text
+	Data []FieldConstraint `json:"data"`
+
+	// Fields The attributes of the kind of object that may be constrained, in display order
+	Fields []string `json:"fields"`
+}
+
+// FieldConstraintMode suggest: the values are offered, another one is accepted; strict: a user
+// may only set one of the values, clear the attribute or keep the value it
+// holds; regex: a user may only set a value matching the whole pattern, clear
+// the attribute or keep the value it holds. An attribute without a
+// constraint is free text.
+type FieldConstraintMode string
+
+// FieldConstraintObjectKind The kind of object whose attributes are constrained, and so the detail
+// panel and the table they belong to: node (nodes), service (services), app
+// (apps).
+type FieldConstraintObjectKind string
+
+// FieldConstraintRow A constraint, as a row of the list. Every property is optional: the props
+// query parameter selects which columns the server returns.
+type FieldConstraintRow struct {
+	// Allowed What is allowed, as text for filtering and sorting: the pattern in mode
+	// regex, the values separated by ", " otherwise.
+	Allowed *string `json:"allowed,omitempty"`
+	Field   *string `json:"field,omitempty"`
+
+	// Mode suggest, strict or regex
+	Mode       *string `json:"mode,omitempty"`
+	ObjectKind *string `json:"object_kind,omitempty"`
+
+	// Pattern In mode regex, the pattern; empty otherwise
+	Pattern   *string `json:"pattern,omitempty"`
+	Updated   *string `json:"updated,omitempty"`
+	UpdatedBy *string `json:"updated_by,omitempty"`
+
+	// ValueCount The number of allowed values; 0 in mode regex
+	ValueCount *int `json:"value_count,omitempty"`
+
+	// Values The allowed values, a JSON array of strings in display order; [] in mode regex
+	Values *string `json:"values,omitempty"`
+}
+
+// FieldConstraintRowListResponse defines model for FieldConstraintRowListResponse.
+type FieldConstraintRowListResponse struct {
+	Data FieldConstraintRowListResponse_Data `json:"data"`
+	Meta *ListMeta                           `json:"meta,omitempty"`
+}
+
+// FieldConstraintRowListResponseData0 defines model for .
+type FieldConstraintRowListResponseData0 = []FieldConstraintRow
+
+// FieldConstraintRowListResponseData1 defines model for .
+type FieldConstraintRowListResponseData1 map[string]map[string]int
+
+// FieldConstraintRowListResponse_Data defines model for FieldConstraintRowListResponse.Data.
+type FieldConstraintRowListResponse_Data struct {
+	union json.RawMessage
 }
 
 // FilterListResponse defines model for FilterListResponse.
@@ -3920,6 +4071,9 @@ type InQueryProps = string
 
 // InQueryStats defines model for inQueryStats.
 type InQueryStats = string
+
+// N200 defines model for 200.
+type N200 = Problem
 
 // N400 defines model for 400.
 type N400 = Problem
@@ -6737,6 +6891,62 @@ type GetDiskParams struct {
 
 	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
 	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetFieldConstraintListParams defines parameters for GetFieldConstraintList.
+type GetFieldConstraintListParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
@@ -12368,6 +12578,9 @@ type DeleteDisksJSONRequestBody DeleteDisksJSONBody
 // PostDisksJSONRequestBody defines body for PostDisks for application/json ContentType.
 type PostDisksJSONRequestBody PostDisksJSONBody
 
+// PostFieldConstraintJSONRequestBody defines body for PostFieldConstraint for application/json ContentType.
+type PostFieldConstraintJSONRequestBody = FieldConstraintInput
+
 // DeleteFiltersJSONRequestBody defines body for DeleteFilters for application/json ContentType.
 type DeleteFiltersJSONRequestBody DeleteFiltersJSONBody
 
@@ -13247,6 +13460,68 @@ func (t DiskListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *DiskListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsFieldConstraintRowListResponseData0 returns the union data inside the FieldConstraintRowListResponse_Data as a FieldConstraintRowListResponseData0
+func (t FieldConstraintRowListResponse_Data) AsFieldConstraintRowListResponseData0() (FieldConstraintRowListResponseData0, error) {
+	var body FieldConstraintRowListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFieldConstraintRowListResponseData0 overwrites any union data inside the FieldConstraintRowListResponse_Data as the provided FieldConstraintRowListResponseData0
+func (t *FieldConstraintRowListResponse_Data) FromFieldConstraintRowListResponseData0(v FieldConstraintRowListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFieldConstraintRowListResponseData0 performs a merge with any union data inside the FieldConstraintRowListResponse_Data, using the provided FieldConstraintRowListResponseData0
+func (t *FieldConstraintRowListResponse_Data) MergeFieldConstraintRowListResponseData0(v FieldConstraintRowListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsFieldConstraintRowListResponseData1 returns the union data inside the FieldConstraintRowListResponse_Data as a FieldConstraintRowListResponseData1
+func (t FieldConstraintRowListResponse_Data) AsFieldConstraintRowListResponseData1() (FieldConstraintRowListResponseData1, error) {
+	var body FieldConstraintRowListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFieldConstraintRowListResponseData1 overwrites any union data inside the FieldConstraintRowListResponse_Data as the provided FieldConstraintRowListResponseData1
+func (t *FieldConstraintRowListResponse_Data) FromFieldConstraintRowListResponseData1(v FieldConstraintRowListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFieldConstraintRowListResponseData1 performs a merge with any union data inside the FieldConstraintRowListResponse_Data, using the provided FieldConstraintRowListResponseData1
+func (t *FieldConstraintRowListResponse_Data) MergeFieldConstraintRowListResponseData1(v FieldConstraintRowListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t FieldConstraintRowListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *FieldConstraintRowListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

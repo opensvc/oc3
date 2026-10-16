@@ -1547,6 +1547,25 @@ var propsMapping = map[string]propMapping{
 			"f_label":   colStr(schema.GenFiltersFLabel),
 		},
 	},
+	// The constraints of the attributes of a kind of object, from the derived table
+	// of cdb.GetFieldConstraintList.
+	"field_constraint": {
+		Available: []string{
+			"object_kind", "field", "mode", "values", "value_count", "pattern", "allowed",
+			"updated", "updated_by",
+		},
+		Props: map[string]propDef{
+			"object_kind": colStr(cdb.FieldConstraintTableCol("object_kind")),
+			"field":       colStr(cdb.FieldConstraintTableCol("field")),
+			"mode":        colStr(cdb.FieldConstraintTableCol("mode")),
+			"values":      colStr(cdb.FieldConstraintTableCol("values_json")),
+			"value_count": colInt(cdb.FieldConstraintTableCol("value_count")),
+			"pattern":     colStr(cdb.FieldConstraintTableCol("pattern")),
+			"allowed":     colStr(cdb.FieldConstraintTableCol("allowed")),
+			"updated":     colStr(cdb.FieldConstraintTableCol("updated")),
+			"updated_by":  colStr(cdb.FieldConstraintTableCol("updated_by")),
+		},
+	},
 	"oidc_mapping": {
 		Available: []string{
 			"id", "claim", "value", "allow_access", "group_ids", "group_roles",
