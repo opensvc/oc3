@@ -10595,6 +10595,12 @@ type GetSanSwitchesParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// GetSanSwitchPortParams defines parameters for GetSanSwitchPort.
+type GetSanSwitchPortParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetSearchParams defines parameters for GetSearch.
 type GetSearchParams struct {
 	// Q The text to search for.

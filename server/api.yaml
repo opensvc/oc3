@@ -7314,6 +7314,41 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /san-switches/{port_id}:
+    get:
+      operationId: GetSanSwitchPort
+      description: |
+        Display the properties of a port of a SAN switch, as a row of
+        GET /san-switches. Any authenticated user sees every port.
+      parameters:
+        - in: path
+          name: port_id
+          required: true
+          description: Id of the port (switches.id)
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwitchPortListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /search:
     get:
       operationId: GetSearch
