@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -363,7 +364,7 @@ func (w *Worker) work(e cdb.ActionQueueEntry) error {
 }
 
 func notifyNode(nodename string, port int) error {
-	addr := fmt.Sprintf("%s:%d", nodename, port)
+	addr := net.JoinHostPort(nodename, strconv.Itoa(port))
 	conn, err := net.DialTimeout("tcp", addr, time.Second)
 	if err != nil {
 		return err
