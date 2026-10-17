@@ -171,10 +171,35 @@ func (o *OIDC) AccessToken(ctx context.Context, sessionID string) (string, error
 			}
 			continue
 		}
-		access, err := o.refresh(ctx, key, s, t)
+		access, err := o.refreshLocked(ctx, key)
 		_ = o.redis.Del(context.WithoutCancel(ctx), lock).Err()
 		return access, err
 	}
+}
+
+// refreshLocked refreshes the access token of a session, the refresh lock
+// held. The session is read again: a request that read it before another one
+// refreshed and released the lock would otherwise refresh with the rotated
+// refresh token, and drop the session tokens.
+func (o *OIDC) refreshLocked(ctx context.Context, key string) (string, error) {
+	s, err := o.readSession(ctx, key)
+	if err != nil {
+		return "", err
+	}
+	if s == nil {
+		return "", ErrNoToken
+	}
+	t, err := o.openTokens(s)
+	if err != nil {
+		return "", err
+	}
+	if time.Until(t.Expiry) > refreshMargin {
+		return t.AccessToken, nil
+	}
+	if t.RefreshToken == "" {
+		return "", ErrNoToken
+	}
+	return o.refresh(ctx, key, s, t)
 }
 
 // readSession reads a session record without extending it.
