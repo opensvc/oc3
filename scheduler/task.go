@@ -84,7 +84,8 @@ var (
 			Subsystem: "scheduler",
 			Name:      "task_exec_duration_seconds",
 			Help:      "Task execution duration in seconds.",
-			Buckets:   prometheus.DefBuckets,
+			// tasks run from sub-second to about an hour
+			Buckets: []float64{.1, .5, 1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600},
 		},
 		[]string{"desc", "status"},
 	)

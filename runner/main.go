@@ -101,6 +101,13 @@ var (
 			Name:      "action_in_progress_total",
 			Help:      "Total number of actions in progress by type",
 		}, []string{"action_type"})
+	actionRunning = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "oc3",
+			Subsystem: "runner",
+			Name:      "actions_running",
+			Help:      "Number of actions running by type",
+		}, []string{"action_type"})
 	actionProcessed = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: "oc3",
@@ -376,6 +383,8 @@ func (w *Worker) workPull(e cdb.ActionQueueEntry) {
 	notifTimeout := getOptionDuration("runner.notification_timeout", DefaultNotificationTimeout)
 
 	actionInProgress.WithLabelValues(cdb.ActionQTypePull).Inc()
+	actionRunning.WithLabelValues(cdb.ActionQTypePull).Inc()
+	defer actionRunning.WithLabelValues(cdb.ActionQTypePull).Dec()
 
 	ctx, cancel := context.WithTimeout(w.ctx, notifTimeout)
 	defer cancel()
@@ -409,6 +418,8 @@ func (w *Worker) workPull(e cdb.ActionQueueEntry) {
 
 func (w *Worker) workPush(e cdb.ActionQueueEntry) {
 	actionInProgress.WithLabelValues(cdb.ActionQTypePush).Inc()
+	actionRunning.WithLabelValues(cdb.ActionQTypePush).Inc()
+	defer actionRunning.WithLabelValues(cdb.ActionQTypePush).Dec()
 	w.cmdC <- cmdSetRunning{
 		id: e.ID,
 	}
