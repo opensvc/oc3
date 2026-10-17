@@ -1,6 +1,8 @@
 module github.com/opensvc/oc3
 
-go 1.25.0
+go 1.27.0
+
+toolchain go1.27.2
 
 require (
 	github.com/alicebob/miniredis/v2 v2.39.0
