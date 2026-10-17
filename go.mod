@@ -6,7 +6,7 @@ require (
 	github.com/alicebob/miniredis/v2 v2.39.0
 	github.com/allenai/go-swaggerui v0.1.0
 	github.com/coreos/go-oidc/v3 v3.21.0
-	github.com/getkin/kin-openapi v0.144.0
+	github.com/getkin/kin-openapi v0.149.0
 	github.com/go-graphite/go-whisper v0.0.0-20230526115116-e3110f57c01c
 	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/go-redis/redis/v8 v8.11.5
@@ -48,7 +48,7 @@ require (
 	github.com/prometheus/common v0.66.1 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 // indirect
 	github.com/speakeasy-api/jsonpath v0.6.3 // indirect
 	github.com/speakeasy-api/openapi v1.19.2 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
