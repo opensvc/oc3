@@ -8,6 +8,8 @@ import (
 	_ "time/tzdata"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/cdb"
@@ -35,5 +37,10 @@ func newDatabase() (*sql.DB, error) {
 	db.SetConnMaxLifetime(time.Minute * 3)
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(10)
+
+	// expose the connection pool usage as go_sql_*{db_name="opensvc"}
+	if err := prometheus.Register(collectors.NewDBStatsCollector(db, cfg.DBName)); err != nil {
+		slog.Warn(fmt.Sprintf("db stats metrics: %s", err))
+	}
 	return db, nil
 }

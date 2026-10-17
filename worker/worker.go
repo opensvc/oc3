@@ -86,6 +86,8 @@ func (w *Worker) Run() error {
 	slog.Info(fmt.Sprintf("starting %d runners for queues: %s", w.Runners, strings.Join(w.Queues, ", ")))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	registerQueueMetrics(w.Redis, w.Queues)
+	feedJobRunners.Set(float64(w.Runners))
 	jobC := make(chan []string, w.Runners)
 	runSlots := make(chan bool, w.Runners)
 	go func(c <-chan []string) {
@@ -93,8 +95,10 @@ func (w *Worker) Run() error {
 			select {
 			case j := <-c:
 				runSlots <- true
+				feedJobRunning.Inc()
 				go func(j []string) {
 					defer func() { <-runSlots }()
+					defer feedJobRunning.Dec()
 					if err := w.runJob(j); err != nil {
 						slog.Error("job failed", logkey.Error, err)
 					}
