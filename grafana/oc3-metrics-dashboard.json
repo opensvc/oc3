@@ -76,7 +76,32 @@
           },
           "unit": "reqps"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "oc3_feeder"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "feeder"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "oc3_server"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "server"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "background",
@@ -89,7 +114,8 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value"
+        "textMode": "value_and_name",
+        "orientation": "horizontal"
       },
       "targets": [
         {
@@ -98,8 +124,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(oc3_feeder_requests_total{url!=\"/metrics\", instance=~\"$instance\"}[$__rate_interval]))",
-          "legendFormat": "__auto",
+          "expr": "sum by (job) (rate(oc3_feeder_requests_total{url!=\"/metrics\", job=~\"oc3_feeder|oc3_server\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{job}}",
           "range": true,
           "instant": false,
           "refId": "A"
@@ -145,7 +171,32 @@
           "unit": "percentunit",
           "decimals": 2
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "oc3_feeder"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "feeder"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "oc3_server"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "server"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "background",
@@ -158,7 +209,8 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value"
+        "textMode": "value_and_name",
+        "orientation": "horizontal"
       },
       "targets": [
         {
@@ -167,8 +219,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(oc3_feeder_requests_total{code=~\"5..\", url!=\"/metrics\", instance=~\"$instance\"}[$__rate_interval])) / sum(rate(oc3_feeder_requests_total{url!=\"/metrics\", instance=~\"$instance\"}[$__rate_interval])) or vector(0)",
-          "legendFormat": "__auto",
+          "expr": "(sum by (job) (rate(oc3_feeder_requests_total{code=~\"5..\", url!=\"/metrics\", job=~\"oc3_feeder|oc3_server\", instance=~\"$instance\"}[$__rate_interval])) or sum by (job) (rate(oc3_feeder_requests_total{url!=\"/metrics\", job=~\"oc3_feeder|oc3_server\", instance=~\"$instance\"}[$__rate_interval])) * 0) / sum by (job) (rate(oc3_feeder_requests_total{url!=\"/metrics\", job=~\"oc3_feeder|oc3_server\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{job}}",
           "range": true,
           "instant": false,
           "refId": "A"
@@ -281,7 +333,32 @@
           },
           "unit": "s"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "oc3_feeder"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "feeder"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "oc3_server"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "server"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "background",
@@ -294,7 +371,8 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value"
+        "textMode": "value_and_name",
+        "orientation": "horizontal"
       },
       "targets": [
         {
@@ -303,8 +381,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(oc3_feeder_request_duration_seconds_bucket{url!=\"/metrics\", instance=~\"$instance\"}[$__rate_interval])))",
-          "legendFormat": "__auto",
+          "expr": "histogram_quantile(0.95, sum by (le, job) (rate(oc3_feeder_request_duration_seconds_bucket{url!=\"/metrics\", job=~\"oc3_feeder|oc3_server\", instance=~\"$instance\"}[$__rate_interval])))",
+          "legendFormat": "{{job}}",
           "range": true,
           "instant": false,
           "refId": "A"
@@ -415,7 +493,32 @@
           "unit": "short",
           "decimals": 0
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "oc3_feeder"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "feeder"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "oc3_server"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "server"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "background",
@@ -428,7 +531,8 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value"
+        "textMode": "value_and_name",
+        "orientation": "horizontal"
       },
       "targets": [
         {
@@ -437,8 +541,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(oc3_db_sql_operations_total{status=~\"deadlock|error|failure\", instance=~\"$instance\"}[$__range])) or vector(0)",
-          "legendFormat": "__auto",
+          "expr": "sum by (job) (increase(oc3_db_sql_operations_total{status=~\"deadlock|error|failure\", job=~\"$job\", instance=~\"$instance\"}[$__range])) or sum by (job) (increase(oc3_db_sql_operations_total{job=~\"$job\", instance=~\"$instance\"}[$__range])) * 0",
+          "legendFormat": "{{job}}",
           "range": true,
           "instant": false,
           "refId": "A"
@@ -514,7 +618,7 @@
     },
     {
       "type": "row",
-      "title": "api",
+      "title": "feeder api",
       "id": 9,
       "collapsed": false,
       "panels": [],
@@ -601,7 +705,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (method, url) (rate(oc3_feeder_requests_total{url=~\"$oc3_api_url_path\", url!=\"/metrics\", code=~\"$oc3_api_status_code\", instance=~\"$instance\"}[$__rate_interval]))",
+          "expr": "sum by (method, url) (rate(oc3_feeder_requests_total{url=~\"$feeder_url\", url!=\"/metrics\", code=~\"$feeder_code\", job=\"oc3_feeder\", instance=~\"$instance\"}[$__rate_interval]))",
           "legendFormat": "{{method}} {{url}}",
           "range": true,
           "instant": false,
@@ -685,7 +789,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (code) (rate(oc3_feeder_requests_total{url=~\"$oc3_api_url_path\", url!=\"/metrics\", code=~\"$oc3_api_status_code\", instance=~\"$instance\"}[$__rate_interval]))",
+          "expr": "sum by (code) (rate(oc3_feeder_requests_total{url=~\"$feeder_url\", url!=\"/metrics\", code=~\"$feeder_code\", job=\"oc3_feeder\", instance=~\"$instance\"}[$__rate_interval]))",
           "legendFormat": "{{code}}",
           "range": true,
           "instant": false,
@@ -769,7 +873,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by (le) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$oc3_api_url_path\", url!=\"/metrics\", code=~\"$oc3_api_status_code\", instance=~\"$instance\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$feeder_url\", url!=\"/metrics\", code=~\"$feeder_code\", job=\"oc3_feeder\", instance=~\"$instance\"}[$__rate_interval])))",
           "legendFormat": "p50",
           "range": true,
           "instant": false,
@@ -781,7 +885,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$oc3_api_url_path\", url!=\"/metrics\", code=~\"$oc3_api_status_code\", instance=~\"$instance\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$feeder_url\", url!=\"/metrics\", code=~\"$feeder_code\", job=\"oc3_feeder\", instance=~\"$instance\"}[$__rate_interval])))",
           "legendFormat": "p95",
           "range": true,
           "instant": false,
@@ -793,7 +897,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$oc3_api_url_path\", url!=\"/metrics\", code=~\"$oc3_api_status_code\", instance=~\"$instance\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$feeder_url\", url!=\"/metrics\", code=~\"$feeder_code\", job=\"oc3_feeder\", instance=~\"$instance\"}[$__rate_interval])))",
           "legendFormat": "p99",
           "range": true,
           "instant": false,
@@ -856,7 +960,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "topk(15, histogram_quantile(0.95, sum by (le, method, url) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$oc3_api_url_path\", url!=\"/metrics\", code=~\"$oc3_api_status_code\", instance=~\"$instance\"}[$__range]))))",
+          "expr": "topk(15, histogram_quantile(0.95, sum by (le, method, url) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$feeder_url\", url!=\"/metrics\", code=~\"$feeder_code\", job=\"oc3_feeder\", instance=~\"$instance\"}[$__range]))))",
           "legendFormat": "{{method}} {{url}}",
           "range": false,
           "instant": true,
@@ -919,7 +1023,422 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "topk(15, sum by (method, url, code) (increase(oc3_feeder_requests_total{url=~\"$oc3_api_url_path\", code=~\"[45]..\", instance=~\"$instance\"}[$__range]))) > 0",
+          "expr": "topk(15, sum by (method, url, code) (increase(oc3_feeder_requests_total{url=~\"$feeder_url\", code=~\"[45]..\", job=\"oc3_feeder\", instance=~\"$instance\"}[$__range]))) > 0",
+          "legendFormat": "{{code}} {{method}} {{url}}",
+          "range": false,
+          "instant": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "server api",
+      "id": 53,
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "requests/s by route",
+      "id": 54,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 5,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": true,
+            "pointSize": 3,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "gradientMode": "opacity",
+            "axisPlacement": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ],
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc",
+          "hideZeros": true
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (method, url) (rate(oc3_feeder_requests_total{url=~\"$server_url\", url!=\"/metrics\", code=~\"$server_code\", job=\"oc3_server\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{method}} {{url}}",
+          "range": true,
+          "instant": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "requests/s by status code",
+      "id": 55,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": true,
+            "pointSize": 3,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "gradientMode": "opacity",
+            "axisPlacement": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ],
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc",
+          "hideZeros": true
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (code) (rate(oc3_feeder_requests_total{url=~\"$server_url\", url!=\"/metrics\", code=~\"$server_code\", job=\"oc3_server\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{code}}",
+          "range": true,
+          "instant": false,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "latency percentiles",
+      "id": 56,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 5,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": true,
+            "pointSize": 3,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "gradientMode": "opacity",
+            "axisPlacement": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ],
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc",
+          "hideZeros": true
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$server_url\", url!=\"/metrics\", code=~\"$server_code\", job=\"oc3_server\", instance=~\"$instance\"}[$__rate_interval])))",
+          "legendFormat": "p50",
+          "range": true,
+          "instant": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$server_url\", url!=\"/metrics\", code=~\"$server_code\", job=\"oc3_server\", instance=~\"$instance\"}[$__rate_interval])))",
+          "legendFormat": "p95",
+          "range": true,
+          "instant": false,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$server_url\", url!=\"/metrics\", code=~\"$server_code\", job=\"oc3_server\", instance=~\"$instance\"}[$__rate_interval])))",
+          "legendFormat": "p99",
+          "range": true,
+          "instant": false,
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "type": "bargauge",
+      "title": "slowest routes (p95 over range)",
+      "id": 57,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 31
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "unit": "s",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "sizing": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "topk(15, histogram_quantile(0.95, sum by (le, method, url) (rate(oc3_feeder_request_duration_seconds_bucket{url=~\"$server_url\", url!=\"/metrics\", code=~\"$server_code\", job=\"oc3_server\", instance=~\"$instance\"}[$__range]))))",
+          "legendFormat": "{{method}} {{url}}",
+          "range": false,
+          "instant": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "bargauge",
+      "title": "routes with most 4xx/5xx (range)",
+      "id": 58,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 31
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "unit": "short",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "sizing": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "topk(15, sum by (method, url, code) (increase(oc3_feeder_requests_total{url=~\"$server_url\", code=~\"[45]..\", job=\"oc3_server\", instance=~\"$instance\"}[$__range]))) > 0",
           "legendFormat": "{{code}} {{method}} {{url}}",
           "range": false,
           "instant": true,
@@ -937,7 +1456,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 39
       }
     },
     {
@@ -952,7 +1471,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 23
+        "y": 40
       },
       "fieldConfig": {
         "defaults": {
@@ -1036,7 +1555,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 23
+        "y": 40
       },
       "fieldConfig": {
         "defaults": {
@@ -1122,7 +1641,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 23
+        "y": 40
       },
       "fieldConfig": {
         "defaults": {
@@ -1206,7 +1725,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 31
+        "y": 48
       },
       "fieldConfig": {
         "defaults": {
@@ -1291,7 +1810,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 31
+        "y": 48
       },
       "fieldConfig": {
         "defaults": {
@@ -1388,7 +1907,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 31
+        "y": 48
       },
       "fieldConfig": {
         "defaults": {
@@ -1472,7 +1991,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 39
+        "y": 56
       },
       "fieldConfig": {
         "defaults": {
@@ -1556,7 +2075,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 39
+        "y": 56
       },
       "fieldConfig": {
         "defaults": {
@@ -1641,7 +2160,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 39
+        "y": 56
       },
       "fieldConfig": {
         "defaults": {
@@ -1702,7 +2221,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 47
+        "y": 64
       }
     },
     {
@@ -1717,7 +2236,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 48
+        "y": 65
       },
       "fieldConfig": {
         "defaults": {
@@ -1781,8 +2300,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (operation, status) (rate(oc3_db_sql_operations_total{instance=~\"$instance\"}[$__rate_interval]))",
-          "legendFormat": "{{operation}} {{status}}",
+          "expr": "sum by (job, operation, status) (rate(oc3_db_sql_operations_total{job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{job}} {{operation}} {{status}}",
           "range": true,
           "instant": false,
           "refId": "A"
@@ -1801,7 +2320,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 48
+        "y": 65
       },
       "fieldConfig": {
         "defaults": {
@@ -1865,8 +2384,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (operation, status) (rate(oc3_db_sql_operations_total{status!=\"success\", instance=~\"$instance\"}[$__rate_interval]))",
-          "legendFormat": "{{operation}} {{status}}",
+          "expr": "sum by (job, operation, status) (rate(oc3_db_sql_operations_total{status!=\"success\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{job}} {{operation}} {{status}}",
           "range": true,
           "instant": false,
           "refId": "A"
@@ -1885,7 +2404,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 48
+        "y": 65
       },
       "fieldConfig": {
         "defaults": {
@@ -1949,8 +2468,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (datatype, operation) (rate(oc3_db_data_operations_total{datatype=~\"$datatype\", operation=~\"$datatype_operation\", instance=~\"$instance\"}[$__rate_interval]))",
-          "legendFormat": "{{datatype}} {{operation}}",
+          "expr": "sum by (job, datatype, operation) (rate(oc3_db_data_operations_total{datatype=~\"$datatype\", operation=~\"$datatype_operation\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{job}} {{datatype}} {{operation}}",
           "range": true,
           "instant": false,
           "refId": "A"
@@ -1970,7 +2489,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 56
+        "y": 73
       },
       "fieldConfig": {
         "defaults": {
@@ -2035,8 +2554,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (job) (go_sql_in_use_connections{db_name=\"opensvc\", instance=~\"$instance\"})",
-          "legendFormat": "in use {{job}}",
+          "expr": "sum by (job) (go_sql_in_use_connections{db_name=\"opensvc\", job=~\"$job\", instance=~\"$instance\"})",
+          "legendFormat": "{{job}} in use",
           "range": true,
           "instant": false,
           "refId": "A"
@@ -2047,8 +2566,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (job) (go_sql_idle_connections{db_name=\"opensvc\", instance=~\"$instance\"})",
-          "legendFormat": "idle {{job}}",
+          "expr": "sum by (job) (go_sql_idle_connections{db_name=\"opensvc\", job=~\"$job\", instance=~\"$instance\"})",
+          "legendFormat": "{{job}} idle",
           "range": true,
           "instant": false,
           "refId": "B"
@@ -2059,8 +2578,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max(go_sql_max_open_connections{db_name=\"opensvc\", instance=~\"$instance\"})",
-          "legendFormat": "max per process",
+          "expr": "max by (job) (go_sql_max_open_connections{db_name=\"opensvc\", job=~\"$job\", instance=~\"$instance\"})",
+          "legendFormat": "{{job}} max",
           "range": true,
           "instant": false,
           "refId": "C"
@@ -2079,7 +2598,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 56
+        "y": 73
       },
       "fieldConfig": {
         "defaults": {
@@ -2143,8 +2662,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (job) (rate(go_sql_wait_duration_seconds_total{db_name=\"opensvc\", instance=~\"$instance\"}[$__rate_interval]))",
-          "legendFormat": "wait s/s {{job}}",
+          "expr": "sum by (job) (rate(go_sql_wait_duration_seconds_total{db_name=\"opensvc\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{job}} wait s/s",
           "range": true,
           "instant": false,
           "refId": "A"
@@ -2155,8 +2674,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (job) (rate(go_sql_wait_count_total{db_name=\"opensvc\", instance=~\"$instance\"}[$__rate_interval]))",
-          "legendFormat": "waits/s {{job}}",
+          "expr": "sum by (job) (rate(go_sql_wait_count_total{db_name=\"opensvc\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{job}} waits/s",
           "range": true,
           "instant": false,
           "refId": "B"
@@ -2176,7 +2695,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 56
+        "y": 73
       },
       "fieldConfig": {
         "defaults": {
@@ -2240,8 +2759,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (datatype, operation) (rate(oc3_db_status_log_operations_total{datatype=~\"$log_datatype\", operation=~\"$log_operation\", instance=~\"$instance\"}[$__rate_interval]))",
-          "legendFormat": "{{datatype}} {{operation}}",
+          "expr": "sum by (job, datatype, operation) (rate(oc3_db_status_log_operations_total{datatype=~\"$log_datatype\", operation=~\"$log_operation\", job=~\"$job\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{job}} {{datatype}} {{operation}}",
           "range": true,
           "instant": false,
           "refId": "A"
@@ -2259,7 +2778,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 64
+        "y": 81
       }
     },
     {
@@ -2274,7 +2793,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 65
+        "y": 82
       },
       "fieldConfig": {
         "defaults": {
@@ -2357,7 +2876,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 65
+        "y": 82
       },
       "fieldConfig": {
         "defaults": {
@@ -2421,7 +2940,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 65
+        "y": 82
       },
       "fieldConfig": {
         "defaults": {
@@ -2484,7 +3003,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 73
+        "y": 90
       },
       "fieldConfig": {
         "defaults": {
@@ -2545,7 +3064,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 81
+        "y": 98
       }
     },
     {
@@ -2560,7 +3079,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 82
+        "y": 99
       },
       "fieldConfig": {
         "defaults": {
@@ -2656,7 +3175,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 82
+        "y": 99
       },
       "fieldConfig": {
         "defaults": {
@@ -2740,7 +3259,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 82
+        "y": 99
       },
       "fieldConfig": {
         "defaults": {
@@ -2836,7 +3355,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 90
+        "y": 107
       },
       "fieldConfig": {
         "defaults": {
@@ -2919,7 +3438,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 98
+        "y": 115
       }
     },
     {
@@ -2934,7 +3453,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 99
+        "y": 116
       },
       "fieldConfig": {
         "defaults": {
@@ -3019,7 +3538,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 99
+        "y": 116
       },
       "fieldConfig": {
         "defaults": {
@@ -3115,7 +3634,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 99
+        "y": 116
       },
       "fieldConfig": {
         "defaults": {
@@ -3217,7 +3736,7 @@
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 108
+            "y": 125
           },
           "fieldConfig": {
             "defaults": {
@@ -3301,7 +3820,7 @@
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 108
+            "y": 125
           },
           "fieldConfig": {
             "defaults": {
@@ -3385,7 +3904,7 @@
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 108
+            "y": 125
           },
           "fieldConfig": {
             "defaults": {
@@ -3470,7 +3989,7 @@
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 116
+            "y": 133
           },
           "fieldConfig": {
             "defaults": {
@@ -3554,7 +4073,7 @@
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 116
+            "y": 133
           },
           "fieldConfig": {
             "defaults": {
@@ -3638,7 +4157,7 @@
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 116
+            "y": 133
           },
           "fieldConfig": {
             "defaults": {
@@ -3715,7 +4234,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 107
+        "y": 124
       }
     }
   ],
@@ -3723,8 +4242,7 @@
   "refresh": "1m",
   "schemaVersion": 42,
   "tags": [
-    "oc3",
-    "om3"
+    "oc3"
   ],
   "templating": {
     "list": [
@@ -3796,15 +4314,15 @@
       },
       {
         "type": "query",
-        "name": "oc3_api_url_path",
+        "name": "feeder_url",
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(oc3_feeder_requests_total{instance=~\"$instance\"}, url)",
+        "definition": "label_values(oc3_feeder_requests_total{job=\"oc3_feeder\", instance=~\"$instance\"}, url)",
         "query": {
           "qryType": 1,
-          "query": "label_values(oc3_feeder_requests_total{instance=~\"$instance\"}, url)",
+          "query": "label_values(oc3_feeder_requests_total{job=\"oc3_feeder\", instance=~\"$instance\"}, url)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "includeAll": true,
@@ -3820,19 +4338,19 @@
           ]
         },
         "options": [],
-        "label": "api route"
+        "label": "feeder route"
       },
       {
         "type": "query",
-        "name": "oc3_api_status_code",
+        "name": "feeder_code",
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(oc3_feeder_requests_total{instance=~\"$instance\"}, code)",
+        "definition": "label_values(oc3_feeder_requests_total{job=\"oc3_feeder\", instance=~\"$instance\"}, code)",
         "query": {
           "qryType": 1,
-          "query": "label_values(oc3_feeder_requests_total{instance=~\"$instance\"}, code)",
+          "query": "label_values(oc3_feeder_requests_total{job=\"oc3_feeder\", instance=~\"$instance\"}, code)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "includeAll": true,
@@ -3848,7 +4366,63 @@
           ]
         },
         "options": [],
-        "label": "api code"
+        "label": "feeder code"
+      },
+      {
+        "type": "query",
+        "name": "server_url",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(oc3_feeder_requests_total{job=\"oc3_server\", instance=~\"$instance\"}, url)",
+        "query": {
+          "qryType": 1,
+          "query": "label_values(oc3_feeder_requests_total{job=\"oc3_server\", instance=~\"$instance\"}, url)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "includeAll": true,
+        "multi": true,
+        "allowCustomValue": true,
+        "refresh": 2,
+        "sort": 1,
+        "regex": "",
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "label": "server route"
+      },
+      {
+        "type": "query",
+        "name": "server_code",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(oc3_feeder_requests_total{job=\"oc3_server\", instance=~\"$instance\"}, code)",
+        "query": {
+          "qryType": 1,
+          "query": "label_values(oc3_feeder_requests_total{job=\"oc3_server\", instance=~\"$instance\"}, code)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "includeAll": true,
+        "multi": true,
+        "allowCustomValue": true,
+        "refresh": 2,
+        "sort": 1,
+        "regex": "",
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "label": "server code"
       },
       {
         "type": "query",
@@ -4054,7 +4628,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "om3 oc3",
-  "uid": "oc3",
+  "title": "oc3-metrics",
+  "uid": "oc3-metrics",
   "weekStart": ""
 }
