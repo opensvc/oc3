@@ -39,9 +39,20 @@
       "keepTime": true,
       "tags": [],
       "targetBlank": false,
-      "title": "logs",
+      "title": "oc3 logs",
       "type": "link",
       "url": "d/oc3-logs"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "om3 logs",
+      "type": "link",
+      "url": "d/om3-logs"
     }
   ],
   "panels": [
@@ -4254,7 +4265,8 @@
   "refresh": "1m",
   "schemaVersion": 42,
   "tags": [
-    "oc3"
+    "oc3",
+    "metrics"
   ],
   "templating": {
     "list": [
