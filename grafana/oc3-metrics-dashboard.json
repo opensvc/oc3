@@ -31,7 +31,19 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "logs",
+      "type": "link",
+      "url": "d/oc3-logs"
+    }
+  ],
   "panels": [
     {
       "type": "row",
