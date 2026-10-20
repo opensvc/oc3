@@ -129,8 +129,7 @@ func start(i Sectioner) (bool, <-chan error) {
 		if p := viper.GetString(section + ".pprof.ux.socket"); p != "" {
 			slog.Info(fmt.Sprintf("add handler for profiling ux.socket: %s", p))
 			if err := pprofUx(p); err != nil {
-				errC <- err
-				return true, errC
+				slog.Warn(fmt.Sprintf("ignore profiling ux.socket: %s %s", p, err))
 			}
 		}
 	}
