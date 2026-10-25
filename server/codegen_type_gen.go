@@ -4909,8 +4909,14 @@ type GetAuthLoginParams struct {
 
 // PostAuthNodeJSONBody defines parameters for PostAuthNode.
 type PostAuthNodeJSONBody struct {
+	// App The app of the node. Ignored for a joining node, which
+	// takes the app of the enroller.
 	App      *string `json:"app,omitempty"`
 	Nodename string  `json:"nodename"`
+
+	// Uuid The previous uuid of the joining node, required to
+	// register a joining node.
+	Uuid *string `json:"uuid,omitempty"`
 }
 
 // GetChartsParams defines parameters for GetCharts.

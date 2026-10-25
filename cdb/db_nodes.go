@@ -829,3 +829,20 @@ func (oDb *DB) DeleteNodeCascade(ctx context.Context, nodeID string) error {
 	}
 	return nil
 }
+
+// DetachNodenameFromCluster clears the cluster_id of the nodes named
+// nodename in the cluster clusterID, but the node keepNodeID, so the
+// nodename designates one node of the cluster. Only cluster_id changes: the
+// detached nodes keep their app, their auth_node and their history.
+func (oDb *DB) DetachNodenameFromCluster(ctx context.Context, nodename, clusterID, keepNodeID string) error {
+	defer logDuration("DetachNodenameFromCluster", time.Now())
+	const query = `UPDATE nodes SET cluster_id = '', updated = NOW() WHERE nodename = ? AND cluster_id = ? AND node_id <> ?`
+	result, err := oDb.DB.ExecContext(ctx, query, nodename, clusterID, keepNodeID)
+	if err != nil {
+		return fmt.Errorf("DetachNodenameFromCluster: %w", err)
+	}
+	if n, err := result.RowsAffected(); err == nil && n > 0 {
+		oDb.SetChange("nodes")
+	}
+	return nil
+}

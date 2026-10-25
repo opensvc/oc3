@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -32,6 +33,14 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 	var app string
 	var userID int64
 	var teamResponsible string
+
+	// A node registering another one is an enroller registering a node
+	// joining its cluster.
+	if IsAuthByNode(c) {
+		if enroller, _ := c.Get(XNodename).(string); !strings.EqualFold(body.Nodename, enroller) {
+			return a.postAuthNodeEnroll(c, log, body)
+		}
+	}
 
 	if body.App != nil {
 		app = *body.App

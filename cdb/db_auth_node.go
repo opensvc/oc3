@@ -65,3 +65,43 @@ func (oDb *DB) InsertAuthNode(ctx context.Context, nodename, nodeUUID, nodeID st
 	oDb.SetChange("auth_node")
 	return nil
 }
+
+// NodeIDsByNodenameAndAuthUUID returns the node_id of the nodes named
+// nodename authenticated by nodeUUID. The uuid is a password, not unique
+// among the auth_node rows, so it designates a node only with its nodename.
+func (oDb *DB) NodeIDsByNodenameAndAuthUUID(ctx context.Context, nodename, nodeUUID string) ([]string, error) {
+	defer logDuration("NodeIDsByNodenameAndAuthUUID", time.Now())
+	const query = `SELECT a.node_id FROM auth_node a JOIN nodes n ON n.node_id = a.node_id
+		WHERE a.nodename = ? AND a.uuid = ?`
+	rows, err := oDb.DB.QueryContext(ctx, query, nodename, nodeUUID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeIDsByNodenameAndAuthUUID: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var nodeIDs []string
+	for rows.Next() {
+		var nodeID sql.NullString
+		if err := rows.Scan(&nodeID); err != nil {
+			return nil, fmt.Errorf("NodeIDsByNodenameAndAuthUUID scan: %w", err)
+		}
+		nodeIDs = append(nodeIDs, nodeID.String)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("NodeIDsByNodenameAndAuthUUID rows: %w", err)
+	}
+	return nodeIDs, nil
+}
+
+// SetAuthNodeUUID sets the uuid and the nodename of the auth_node of
+// node_id, inserting it when the node has none. It relies on the unique key
+// on auth_node.node_id.
+func (oDb *DB) SetAuthNodeUUID(ctx context.Context, nodeID, nodename, nodeUUID string) error {
+	defer logDuration("SetAuthNodeUUID", time.Now())
+	const query = `INSERT INTO auth_node (nodename, uuid, node_id) VALUES (?, ?, ?)
+		ON DUPLICATE KEY UPDATE nodename = VALUES(nodename), uuid = VALUES(uuid), updated = NOW()`
+	if _, err := oDb.DB.ExecContext(ctx, query, nodename, nodeUUID, nodeID); err != nil {
+		return fmt.Errorf("SetAuthNodeUUID: %w", err)
+	}
+	oDb.SetChange("auth_node")
+	return nil
+}
