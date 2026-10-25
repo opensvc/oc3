@@ -110,22 +110,39 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 	}
 
 	var (
-		nodeID   string
-		nodename = body.Nodename
+		nodeID    string
+		nodename  = body.Nodename
+		clusterID string
 	)
+	if body.ClusterId != nil {
+		clusterID = *body.ClusterId
+	}
 
 	node, err := odb.NodeByNodenameAndApp(ctx, nodename, app)
 	if err != nil {
 		log.Error("failed to find node", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "node lookup failed")
 	}
+	// The cluster id, when given, is set on the node, so the speaker reports
+	// for it are accepted before the worker reconciles its cluster id from
+	// its first daemon status. Absent or empty, it leaves the node cluster id
+	// untouched.
 	if node != nil {
 		// Node already exists in node table
 		nodeID = node.NodeID
+		if clusterID != "" && clusterID != node.ClusterID {
+			if err := odb.UpdateNodeFields(ctx, nodeID, map[string]any{"cluster_id": clusterID}); err != nil {
+				log.Error("failed to update node cluster id", logkey.Error, err)
+				return JSONProblemf(c, http.StatusInternalServerError, "cannot update node")
+			}
+			if err := odb.Session.NotifyChanges(ctx); err != nil {
+				log.Debug("register node can't notify changes", logkey.Error, err)
+			}
+		}
 	} else {
 		// Node does not exist: create it with a new node_id
 		nodeID = uuid.New().String()
-		if err := odb.InsertNode(ctx, nodename, teamResponsible, app, nodeID); err != nil {
+		if err := odb.InsertNode(ctx, nodename, teamResponsible, app, nodeID, clusterID); err != nil {
 			log.Error("failed to insert node", logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot create node")
 		}

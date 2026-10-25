@@ -4911,8 +4911,14 @@ type GetAuthLoginParams struct {
 type PostAuthNodeJSONBody struct {
 	// App The app of the node. Ignored for a joining node, which
 	// takes the app of the enroller.
-	App      *string `json:"app,omitempty"`
-	Nodename string  `json:"nodename"`
+	App *string `json:"app,omitempty"`
+
+	// ClusterId The cluster id of the node, set on the node so it is
+	// known before its first daemon status. Absent or empty, the
+	// node cluster id is left untouched. Ignored for a joining
+	// node, which takes the cluster id of the enroller.
+	ClusterId *string `json:"cluster_id,omitempty"`
+	Nodename  string  `json:"nodename"`
 
 	// Uuid The previous uuid of the joining node, required to
 	// register a joining node.

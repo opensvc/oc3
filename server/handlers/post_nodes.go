@@ -101,7 +101,7 @@ func (a *Api) PostNodes(c echo.Context) error {
 	}
 
 	nodeID := uuid.New().String()
-	if err := odb.InsertNode(ctx, *body.Nodename, teamResponsible, app, nodeID); err != nil {
+	if err := odb.InsertNode(ctx, *body.Nodename, teamResponsible, app, nodeID, ""); err != nil {
 		log.Error("cannot insert node", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot create node")
 	}
