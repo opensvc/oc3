@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.3
+  version: 1.0.4
 
 paths:
   /actions:
@@ -1502,6 +1502,13 @@ paths:
     post:
       description: |
         Register a node authentication
+
+        A node authenticated by its own credentials, the enroller, may
+        register another node joining its cluster, when server.allow_node_enroll
+        is set. The joining node must be already registered: it is found by its
+        nodename and its previous uuid, else it registers itself. It moves to
+        the app, the team responsible and the cluster of the enroller, and gets
+        a new uuid, which the enroller hands to it.
       operationId: PostAuthNode
       requestBody:
         required: false
@@ -1516,6 +1523,21 @@ paths:
                   type: string
                 app:
                   type: string
+                  description: |
+                    The app of the node. Ignored for a joining node, which
+                    takes the app of the enroller.
+                uuid:
+                  type: string
+                  description: |
+                    The previous uuid of the joining node, required to
+                    register a joining node.
+                cluster_id:
+                  type: string
+                  description: |
+                    The cluster id of the node, set on the node so it is
+                    known before its first daemon status. Absent or empty, the
+                    node cluster id is left untouched. Ignored for a joining
+                    node, which takes the cluster id of the enroller.
       responses:
         200:
           description: Accepted

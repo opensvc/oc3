@@ -61,6 +61,8 @@ func setDefaultServerConfig() {
 	viper.SetDefault(s+".ui.enable", false)
 	viper.SetDefault(s+".sync.timeout", "2s")
 	viper.SetDefault(s+".allow_anon_register", false)
+	// A node may register a node joining its cluster, already registered.
+	viper.SetDefault(s+".allow_node_enroll", true)
 	// One git repository per form, holding its yaml history, as the historical
 	// collector keeps them under private/forms.
 	viper.SetDefault(s+".directories.forms", "/oc3/uploads/forms")

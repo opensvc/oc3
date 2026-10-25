@@ -699,11 +699,11 @@ func (oDb *DB) NodeResponsible(ctx context.Context, nodeID string, groups []stri
 // NodeByNodenameAndApp returns the node matching the given nodename and app
 func (oDb *DB) NodeByNodenameAndApp(ctx context.Context, nodename, app string) (*DBNode, error) {
 	defer logDuration("NodeByNodenameAndApp", time.Now())
-	const query = `SELECT node_id, nodename, app FROM nodes WHERE nodename = ? AND app = ? LIMIT 1`
+	const query = `SELECT node_id, nodename, app, cluster_id FROM nodes WHERE nodename = ? AND app = ? LIMIT 1`
 	var (
-		nodeID, n, a sql.NullString
+		nodeID, n, a, clusterID sql.NullString
 	)
-	err := oDb.DB.QueryRowContext(ctx, query, nodename, app).Scan(&nodeID, &n, &a)
+	err := oDb.DB.QueryRowContext(ctx, query, nodename, app).Scan(&nodeID, &n, &a, &clusterID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -711,18 +711,20 @@ func (oDb *DB) NodeByNodenameAndApp(ctx context.Context, nodename, app string) (
 		return nil, fmt.Errorf("NodeByNodenameAndApp: %w", err)
 	default:
 		return &DBNode{
-			NodeID:   nodeID.String,
-			Nodename: n.String,
-			App:      a.String,
+			NodeID:    nodeID.String,
+			Nodename:  n.String,
+			App:       a.String,
+			ClusterID: clusterID.String,
 		}, nil
 	}
 }
 
-// InsertNode inserts a new node row with the given nodename, team_responsible, app, and node_id.
-func (oDb *DB) InsertNode(ctx context.Context, nodename, teamResponsible, app, nodeID string) error {
+// InsertNode inserts a new node row with the given nodename, team_responsible, app, node_id
+// and cluster_id.
+func (oDb *DB) InsertNode(ctx context.Context, nodename, teamResponsible, app, nodeID, clusterID string) error {
 	defer logDuration("InsertNode", time.Now())
-	const query = `INSERT INTO nodes (nodename, team_responsible, app, node_id) VALUES (?, ?, ?, ?)`
-	if _, err := oDb.ExecContext(ctx, query, nodename, teamResponsible, app, nodeID); err != nil {
+	const query = `INSERT INTO nodes (nodename, team_responsible, app, node_id, cluster_id) VALUES (?, ?, ?, ?, ?)`
+	if _, err := oDb.ExecContext(ctx, query, nodename, teamResponsible, app, nodeID, clusterID); err != nil {
 		return fmt.Errorf("InsertNode: %w", err)
 	}
 	oDb.SetChange("nodes")
@@ -826,6 +828,23 @@ func (oDb *DB) DeleteNodeCascade(ctx context.Context, nodeID string) error {
 			return fmt.Errorf("DeleteNodeCascade %s: %w", t, err)
 		}
 		oDb.SetChange(t)
+	}
+	return nil
+}
+
+// DetachNodenameFromCluster clears the cluster_id of the nodes named
+// nodename in the cluster clusterID, but the node keepNodeID, so the
+// nodename designates one node of the cluster. Only cluster_id changes: the
+// detached nodes keep their app, their auth_node and their history.
+func (oDb *DB) DetachNodenameFromCluster(ctx context.Context, nodename, clusterID, keepNodeID string) error {
+	defer logDuration("DetachNodenameFromCluster", time.Now())
+	const query = `UPDATE nodes SET cluster_id = '', updated = NOW() WHERE nodename = ? AND cluster_id = ? AND node_id <> ?`
+	result, err := oDb.DB.ExecContext(ctx, query, nodename, clusterID, keepNodeID)
+	if err != nil {
+		return fmt.Errorf("DetachNodenameFromCluster: %w", err)
+	}
+	if n, err := result.RowsAffected(); err == nil && n > 0 {
+		oDb.SetChange("nodes")
 	}
 	return nil
 }
