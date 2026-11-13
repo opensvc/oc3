@@ -12536,6 +12536,229 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /oidc_provider:
+    get:
+      operationId: GetOidcProvider
+      description: |
+        Whether the collector is the OpenID Connect provider of the om3 clusters,
+        and its issuer. An om3 cluster signs its users in with the collector when
+        its listener.openid_issuer is this issuer and its listener.openid_client_id
+        its cluster id.
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcProviderInfo'
+        401:
+          $ref: '#/components/responses/401'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /oidc_provider/requests/{request_id}:
+    get:
+      operationId: GetOidcProviderRequest
+      description: |
+        A sign-in request of an om3 cluster, waiting for the user to approve it:
+        the cluster asking, where the browser goes back, and the om3 grants the
+        user would get on the cluster.
+      parameters:
+        - $ref: '#/components/parameters/inPathOidcProviderRequestID'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcProviderRequest'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /oidc_provider/requests/{request_id}/approve:
+    post:
+      operationId: PostOidcProviderRequestApprove
+      description: |
+        Approve a sign-in request of an om3 cluster as the user signed in: the
+        answer is where to send the browser, the cluster's redirection URI with
+        the authorization code. Refused while impersonating, to a locked account,
+        and to a user with no om3 grant on the cluster (the request stays, to be
+        denied).
+      parameters:
+        - $ref: '#/components/parameters/inPathOidcProviderRequestID'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcProviderRedirect'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /oidc_provider/requests/{request_id}/deny:
+    post:
+      operationId: PostOidcProviderRequestDeny
+      description: |
+        Deny a sign-in request of an om3 cluster: the answer is where to send the
+        browser, the cluster's redirection URI with the access_denied error.
+      parameters:
+        - $ref: '#/components/parameters/inPathOidcProviderRequestID'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcProviderRedirect'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /oidc_provider/grants:
+    get:
+      operationId: GetOidcProviderGrants
+      description: |
+        The rules giving om3 grants to the teams, on a cluster or on every
+        cluster: the tokens a user gets for a cluster carry the grants of the
+        rules naming one of their teams. Manager only.
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcProviderGrantList'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostOidcProviderGrants
+      description: |
+        Create a rule: one per team and cluster (or every cluster). The grants are
+        om3 grants separated by spaces: root, prioritizer, squatter,
+        blacklistadmin, scraper, and admin, operator, guest, alone or on a
+        namespace or a namespace pattern (admin:prod, guest:*). Manager only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcProviderGrantInput'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcProviderGrant'
+        400:
+          $ref: '#/components/responses/400'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /oidc_provider/grants/{grant_id}:
+    post:
+      operationId: PostOidcProviderGrant
+      description: Change a rule, under the same checks as its creation. Manager only.
+      parameters:
+        - $ref: '#/components/parameters/inPathOidcProviderGrantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcProviderGrantInput'
+      tags:
+        - auth
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OidcProviderGrant'
+        400:
+          $ref: '#/components/responses/400'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteOidcProviderGrant
+      description: Delete a rule. Manager only.
+      parameters:
+        - $ref: '#/components/parameters/inPathOidcProviderGrantID'
+      tags:
+        - auth
+      responses:
+        204:
+          description: Deleted
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /openapi.json:
     get:
       operationId: GetSwagger
@@ -29061,6 +29284,96 @@ components:
           items:
             type: integer
 
+    OidcProviderInfo:
+      type: object
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+        issuer:
+          type: string
+          description: The issuer the om3 clusters name in listener.openid_issuer
+
+    OidcProviderRequest:
+      type: object
+      required: [request_id, client_id, cluster_name, redirect_uri, scope, prompt, user, grants]
+      properties:
+        request_id:
+          type: string
+        client_id:
+          type: string
+          description: The cluster id
+        cluster_name:
+          type: string
+        redirect_uri:
+          type: string
+        scope:
+          type: string
+        prompt:
+          type: string
+          description: The prompt values of the request (none, login, consent), space separated
+        user:
+          type: string
+          description: The email of the user signed in
+        grants:
+          type: array
+          description: The om3 grants the user would get on the cluster
+          items:
+            type: string
+
+    OidcProviderRedirect:
+      type: object
+      required: [redirect_to]
+      properties:
+        redirect_to:
+          type: string
+
+    OidcProviderGrant:
+      type: object
+      required: [id, group_id, group_role, cluster_id, cluster_name, grants, author, updated]
+      properties:
+        id:
+          type: integer
+        group_id:
+          type: integer
+        group_role:
+          type: string
+        cluster_id:
+          type: string
+          description: The cluster, empty for every cluster
+        cluster_name:
+          type: string
+        grants:
+          type: string
+          description: om3 grants, space separated
+        author:
+          type: string
+        updated:
+          type: string
+          format: date-time
+
+    OidcProviderGrantList:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OidcProviderGrant'
+
+    OidcProviderGrantInput:
+      type: object
+      required: [group_id, grants]
+      properties:
+        group_id:
+          type: integer
+        cluster_id:
+          type: string
+          description: The cluster, empty or absent for every cluster
+        grants:
+          type: string
+          description: om3 grants, separated by spaces or commas
+
     FieldConstraintObjectKind:
       type: string
       description: |
@@ -31898,6 +32211,18 @@ components:
           $ref: '#/components/schemas/ListMeta'
 
   parameters:
+    inPathOidcProviderRequestID:
+      in: path
+      name: request_id
+      required: true
+      schema:
+        type: string
+    inPathOidcProviderGrantID:
+      in: path
+      name: grant_id
+      required: true
+      schema:
+        type: integer
     inQueryAIBackend:
       in: query
       name: backend

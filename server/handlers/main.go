@@ -8,6 +8,7 @@ import (
 	"github.com/go-redis/redis/v8"
 
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/oidcprovider"
 	"github.com/opensvc/oc3/safe"
 	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/xauth"
@@ -38,6 +39,10 @@ type (
 		// OIDC is the OpenID Connect sign-in and its sessions; nil when it is not
 		// enabled.
 		OIDC *xauth.OIDC
+
+		// OIDCProvider is the collector as the OpenID Connect provider of the om3
+		// clusters; nil when it is not enabled.
+		OIDCProvider *oidcprovider.Provider
 
 		// BasicUsers tells whether users may still sign in with their collector
 		// password (HTTP Basic), as server.auth.basic_users says: the sign-in

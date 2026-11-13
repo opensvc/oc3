@@ -5487,6 +5487,69 @@ type OidcMappingRow struct {
 	Value *string `json:"value,omitempty"`
 }
 
+// OidcProviderGrant defines model for OidcProviderGrant.
+type OidcProviderGrant struct {
+	Author string `json:"author"`
+
+	// ClusterId The cluster, empty for every cluster
+	ClusterId   string `json:"cluster_id"`
+	ClusterName string `json:"cluster_name"`
+
+	// Grants om3 grants, space separated
+	Grants    string    `json:"grants"`
+	GroupId   int       `json:"group_id"`
+	GroupRole string    `json:"group_role"`
+	Id        int       `json:"id"`
+	Updated   time.Time `json:"updated"`
+}
+
+// OidcProviderGrantInput defines model for OidcProviderGrantInput.
+type OidcProviderGrantInput struct {
+	// ClusterId The cluster, empty or absent for every cluster
+	ClusterId *string `json:"cluster_id,omitempty"`
+
+	// Grants om3 grants, separated by spaces or commas
+	Grants  string `json:"grants"`
+	GroupId int    `json:"group_id"`
+}
+
+// OidcProviderGrantList defines model for OidcProviderGrantList.
+type OidcProviderGrantList struct {
+	Data []OidcProviderGrant `json:"data"`
+}
+
+// OidcProviderInfo defines model for OidcProviderInfo.
+type OidcProviderInfo struct {
+	Enabled bool `json:"enabled"`
+
+	// Issuer The issuer the om3 clusters name in listener.openid_issuer
+	Issuer *string `json:"issuer,omitempty"`
+}
+
+// OidcProviderRedirect defines model for OidcProviderRedirect.
+type OidcProviderRedirect struct {
+	RedirectTo string `json:"redirect_to"`
+}
+
+// OidcProviderRequest defines model for OidcProviderRequest.
+type OidcProviderRequest struct {
+	// ClientId The cluster id
+	ClientId    string `json:"client_id"`
+	ClusterName string `json:"cluster_name"`
+
+	// Grants The om3 grants the user would get on the cluster
+	Grants []string `json:"grants"`
+
+	// Prompt The prompt values of the request (none, login, consent), space separated
+	Prompt      string `json:"prompt"`
+	RedirectUri string `json:"redirect_uri"`
+	RequestId   string `json:"request_id"`
+	Scope       string `json:"scope"`
+
+	// User The email of the user signed in
+	User string `json:"user"`
+}
+
 // Orchestration defines model for Orchestration.
 type Orchestration struct {
 	Created     string              `json:"created"`
@@ -7166,6 +7229,12 @@ type InPathNotificationChannelId = int64
 
 // InPathNotificationSubscriptionId defines model for inPathNotificationSubscriptionId.
 type InPathNotificationSubscriptionId = int64
+
+// InPathOidcProviderGrantID defines model for inPathOidcProviderGrantID.
+type InPathOidcProviderGrantID = int
+
+// InPathOidcProviderRequestID defines model for inPathOidcProviderRequestID.
+type InPathOidcProviderRequestID = string
 
 // InPathOrchestrationId defines model for inPathOrchestrationId.
 type InPathOrchestrationId = int
@@ -17679,6 +17748,12 @@ type PostOidcMappingsJSONRequestBody = OidcMappingInput
 
 // PostOidcMappingJSONRequestBody defines body for PostOidcMapping for application/json ContentType.
 type PostOidcMappingJSONRequestBody = OidcMappingInput
+
+// PostOidcProviderGrantsJSONRequestBody defines body for PostOidcProviderGrants for application/json ContentType.
+type PostOidcProviderGrantsJSONRequestBody = OidcProviderGrantInput
+
+// PostOidcProviderGrantJSONRequestBody defines body for PostOidcProviderGrant for application/json ContentType.
+type PostOidcProviderGrantJSONRequestBody = OidcProviderGrantInput
 
 // PostOrchestrationRunContinueJSONRequestBody defines body for PostOrchestrationRunContinue for application/json ContentType.
 type PostOrchestrationRunContinueJSONRequestBody = OrchestrationRunContinueInput

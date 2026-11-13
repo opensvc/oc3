@@ -115,6 +115,7 @@ func setDefaultServerConfig() {
 
 	setDefaultAuthConfig()
 	setDefaultOIDCConfig(s)
+	setDefaultOIDCProviderConfig(s)
 }
 
 func setDefaultSchedulerConfig() {
