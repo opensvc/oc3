@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/oidcprovider"
 	"github.com/opensvc/oc3/safe"
 	api "github.com/opensvc/oc3/server"
 	handlers "github.com/opensvc/oc3/server/handlers"
@@ -26,7 +27,10 @@ type (
 		redis   *redis.Client
 		// oidc is the OpenID Connect sign-in; nil when server.oidc.enable is false.
 		oidc *xauth.OIDC
-		safe *safe.Service
+		// oidcProvider is the collector as the OpenID Connect provider of the
+		// om3 clusters; nil when server.oidc_provider.enable is false.
+		oidcProvider *oidcprovider.Provider
+		safe         *safe.Service
 		// assistant is the AI agent the assistant routes are relayed to.
 		assistant *handlers.AssistantConfig
 	}
@@ -58,6 +62,9 @@ func newServer() (*server, error) {
 	if t.oidc, err = newOIDC(context.Background(), t.section, t.redis, db); err != nil {
 		return nil, err
 	}
+	if t.oidcProvider, err = newOIDCProvider(t.section, t.redis); err != nil {
+		return nil, err
+	}
 	// Turning the passwords off leaves the identity provider as the only way in:
 	// without it, no user could sign in.
 	if !viper.GetBool(t.section+".auth.basic_users") && t.oidc == nil {
@@ -71,16 +78,17 @@ func (t *server) Section() string { return t.section }
 func (t *server) apiRegister(e *echo.Echo) {
 	odb := cdb.New(t.db)
 	handler := &handlers.Api{
-		DB:          t.db,
-		ODB:         odb,
-		Redis:       t.redis,
-		UI:          viper.GetBool(t.section + ".ui.enable"),
-		SyncTimeout: viper.GetDuration(t.section + ".sync.timeout"),
-		SubSystem:   t.section,
-		OIDC:        t.oidc,
-		BasicUsers:  viper.GetBool(t.section + ".auth.basic_users"),
-		Safe:        t.safe,
-		Assistant:   t.assistant,
+		DB:           t.db,
+		ODB:          odb,
+		Redis:        t.redis,
+		UI:           viper.GetBool(t.section + ".ui.enable"),
+		SyncTimeout:  viper.GetDuration(t.section + ".sync.timeout"),
+		SubSystem:    t.section,
+		OIDC:         t.oidc,
+		OIDCProvider: t.oidcProvider,
+		BasicUsers:   viper.GetBool(t.section + ".auth.basic_users"),
+		Safe:         t.safe,
+		Assistant:    t.assistant,
 	}
 	// With a messenger, the changes made through the api are announced like those
 	// of the workers, and the websocket clients get their tokens from the api.
@@ -95,6 +103,9 @@ func (t *server) apiRegister(e *echo.Echo) {
 	// The /agent routes are the nodes' own: no user may call them.
 	e.Use(handlers.AgentMiddleware(pathApi + "/agent"))
 	api.RegisterHandlersWithBaseURL(e, handler, pathApi)
+	if t.oidcProvider != nil {
+		handler.RegisterOIDCProvider(e, pathOIDCProvider)
+	}
 	// The orchestration runs are advanced by the api server, for as long as it
 	// runs: a named lock lets one server do it when there are several.
 	go handler.RunOrchestrationEngine(context.Background())
@@ -127,6 +138,12 @@ func (t *server) authenticateMiddleware(publicPath, publicPrefix []string) echo.
 	publicPath = append(publicPath,
 		pathApi+"/auth/info", pathApi+"/auth/logout", pathApi+"/auth/backchannel-logout")
 	publicPrefix = append(publicPrefix, pathApi+"/auth/login", pathApi+"/auth/callback")
+	// The endpoints of the collector as the OpenID Connect provider of the om3
+	// clusters: the protocol's, each checking what it needs.
+	if t.oidcProvider != nil {
+		publicPath = append(publicPath, pathOIDCProvider)
+		publicPrefix = append(publicPrefix, pathOIDCProvider+"/")
+	}
 	// The archive of the compliance modules for the v2 agents, which fetch it
 	// without credentials, when the configuration allows it; the handler checks
 	// the same setting. With and without a query string: the strategy compares

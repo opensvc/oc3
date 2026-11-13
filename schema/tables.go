@@ -1552,7 +1552,7 @@ var (
 // Columns of services
 var (
 	ServicesSvcHostid               = &Col{T: TServices, Name: "svc_hostid", Nullable: true}
-	ServicesSvcname                 = &Col{T: TServices, Name: "svcname", Nullable: true}
+	ServicesSvcname                 = &Col{T: TServices, Name: "svcname"}
 	ServicesSvcNodes                = &Col{T: TServices, Name: "svc_nodes", Nullable: true}
 	ServicesSvcDrpnode              = &Col{T: TServices, Name: "svc_drpnode", Nullable: true}
 	ServicesSvcDrptype              = &Col{T: TServices, Name: "svc_drptype", Nullable: true}
