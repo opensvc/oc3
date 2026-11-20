@@ -142,6 +142,22 @@ func TestGetTopology(t *testing.T) {
 	if got, want := topoIDs(topo), []string{"node:n1", "node:n2", "svc:s1"}; !slices.Equal(got, want) {
 		t.Errorf("non manager vertices %v\nwant %v", got, want)
 	}
+	// Nor do the expansions reach further: n2 hosts s2 of app db, run on n3
+	// too, shown to a Manager only.
+	topo, err = odb.GetTopology(ctx, TopologyRequest{NodeIDs: []string{"n2"}, Layers: []string{"nodes", "services"}, Groups: []string{"WebTeam"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := topoIDs(topo), []string{"node:n1", "node:n2", "svc:s1"}; !slices.Equal(got, want) {
+		t.Errorf("non manager expansion %v\nwant %v", got, want)
+	}
+	topo, err = odb.GetTopology(ctx, TopologyRequest{NodeIDs: []string{"n2"}, Layers: []string{"nodes", "services"}, IsManager: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := topoIDs(topo), []string{"node:n1", "node:n2", "node:n3", "svc:s1", "svc:s2"}; !slices.Equal(got, want) {
+		t.Errorf("manager expansion %v\nwant %v", got, want)
+	}
 	topo, err = odb.GetTopology(ctx, TopologyRequest{AppIDs: []int64{2}, Layers: []string{"nodes"}, Groups: []string{"WebTeam"}})
 	if err != nil || len(topo.Vertices) != 0 {
 		t.Errorf("app of another team: %v, %v", topo, err)

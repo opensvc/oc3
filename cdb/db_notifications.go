@@ -236,7 +236,7 @@ func (oDb *DB) NotifyClaim(ctx context.Context, recipient string, items []Notify
 		" ON DUPLICATE KEY UPDATE state = 'pending', attempts = attempts + 1, next_try = NULL," +
 		" alert_severity = VALUES(alert_severity), alert_type = VALUES(alert_type)," +
 		" alert_object = VALUES(alert_object), alert_message = VALUES(alert_message)"
-	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
 		return fmt.Errorf("notifyClaim: %w", err)
 	}
 	return nil
@@ -294,7 +294,7 @@ func (oDb *DB) NotifyForget(ctx context.Context, recipient string, alertIDs []in
 	for _, id := range alertIDs {
 		args = append(args, id)
 	}
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM notification_deliveries WHERE recipient = ? AND alert_id IN ("+Placeholders(len(alertIDs))+")", args...); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM notification_deliveries WHERE recipient = ? AND alert_id IN ("+Placeholders(len(alertIDs))+")", args...); err != nil {
 		return fmt.Errorf("notifyForget: %w", err)
 	}
 	return nil
@@ -333,7 +333,7 @@ func (oDb *DB) NotifyDone(ctx context.Context, recipient string, alertIDs []int6
 	for _, id := range alertIDs {
 		args = append(args, id)
 	}
-	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
 		return fmt.Errorf("notifyDone: %w", err)
 	}
 	return nil
@@ -357,7 +357,7 @@ func (oDb *DB) NotifyPurge(ctx context.Context) (int64, error) {
 			" AND CAST(SUBSTRING(recipient, 14) AS UNSIGNED) NOT IN (SELECT id FROM notification_subscriptions)",
 		"DELETE s FROM alerts_sent s LEFT JOIN dashboard d ON d.id = s.alert_id WHERE d.id IS NULL",
 	} {
-		result, err := oDb.DB.ExecContext(ctx, query)
+		result, err := oDb.ExecContext(ctx, query)
 		if err != nil {
 			return n, fmt.Errorf("notifyPurge: %w", err)
 		}
@@ -376,7 +376,7 @@ func (oDb *DB) ExpireSnoozes(ctx context.Context) (int64, error) {
 		"UPDATE nodes SET snooze_till = NULL WHERE snooze_till < NOW()",
 		"UPDATE services SET svc_snooze_till = NULL WHERE svc_snooze_till < NOW()",
 	} {
-		result, err := oDb.DB.ExecContext(ctx, query)
+		result, err := oDb.ExecContext(ctx, query)
 		if err != nil {
 			return n, fmt.Errorf("expireSnoozes: %w", err)
 		}
@@ -424,7 +424,7 @@ func (oDb *DB) SetUserNotifySettings(ctx context.Context, userID int64, s UserNo
 	if s.Enabled {
 		enabled = "T"
 	}
-	if _, err := oDb.DB.ExecContext(ctx,
+	if _, err := oDb.ExecContext(ctx,
 		"UPDATE auth_user SET email_notifications = ?, email_log_level = ?, email_notifications_delay = ? WHERE id = ?",
 		enabled, s.LogLevel, s.DelayMin, userID); err != nil {
 		return fmt.Errorf("setUserNotifySettings: %w", err)

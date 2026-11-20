@@ -126,16 +126,19 @@ func (t *Scheduler) GetStateMap(ctx context.Context) (map[string]State, error) {
 	if result == nil {
 		return states, nil
 	}
+	defer func() { _ = result.Close() }()
 	for result.Next() {
-		var state State
 		var name string
-		err := result.Scan(&name, &state.LastRunAt, &state.IsDisabled)
-		if err != nil {
+		var lastRunAt sql.NullTime
+		var isDisabled sql.NullBool
+		// A task the scheduler declared and never ran, as a subtask, has no
+		// last run.
+		if err := result.Scan(&name, &lastRunAt, &isDisabled); err != nil {
 			return states, fmt.Errorf("scan: %w", err)
 		}
-		states[name] = state
+		states[name] = State{LastRunAt: lastRunAt.Time, IsDisabled: isDisabled.Bool}
 	}
-	return states, nil
+	return states, result.Err()
 }
 
 func (t *Scheduler) Run() error {
@@ -144,6 +147,10 @@ func (t *Scheduler) Run() error {
 	t.sigC = make(chan os.Signal, 1)
 
 	signal.Notify(t.sigC, os.Interrupt, syscall.SIGTERM)
+
+	if err := Tasks.Declare(context.Background(), t.DB); err != nil {
+		t.Warnf("declare the tasks: %s", err)
+	}
 
 	t.monitor()
 

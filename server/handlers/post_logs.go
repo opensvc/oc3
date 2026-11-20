@@ -126,6 +126,9 @@ func (a *Api) PostLogs(c echo.Context) error {
 	idStr := strconv.FormatInt(logID, 10)
 	return a.handleItem(c, "PostLogs", "log_event", "id", idStr, listEndpointParams{},
 		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
-			return odb.GetLog(ctx, idStr, p)
+			// The event the caller just wrote, a node or a user: given back
+			// whoever it names.
+			p.IsManager = true
+			return odb.GetLog(ctx, idStr, p, "")
 		})
 }

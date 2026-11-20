@@ -114,7 +114,7 @@ func (oDb *DB) SetServiceStatusAck(ctx context.Context, svcID, begin, end, comme
 		VALUES (?, ?, ?, ?, ?, ?, NOW())
 		ON DUPLICATE KEY UPDATE mon_comment = VALUES(mon_comment), mon_account = VALUES(mon_account),
 			mon_acked_by = VALUES(mon_acked_by), mon_acked_on = NOW()`
-	if _, err := oDb.DB.ExecContext(ctx, query, svcID, begin, end, comment, account, by); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, svcID, begin, end, comment, account, by); err != nil {
 		return fmt.Errorf("setServiceStatusAck: %w", err)
 	}
 	oDb.SetChange("svcmon_log_ack")
@@ -124,7 +124,7 @@ func (oDb *DB) SetServiceStatusAck(ctx context.Context, svcID, begin, end, comme
 // DeleteServiceStatusAck removes the justification of a period of a service;
 // found is false when the period was not justified.
 func (oDb *DB) DeleteServiceStatusAck(ctx context.Context, svcID, begin, end string) (bool, error) {
-	result, err := oDb.DB.ExecContext(ctx,
+	result, err := oDb.ExecContext(ctx,
 		"DELETE FROM svcmon_log_ack WHERE svc_id = ? AND mon_begin = ? AND mon_end = ?", svcID, begin, end)
 	if err != nil {
 		return false, fmt.Errorf("deleteServiceStatusAck: %w", err)
@@ -216,7 +216,7 @@ func (oDb *DB) SetServicesAvailability(ctx context.Context, rates map[string]Ser
 		return nil
 	}
 	query, args := servicesAvailabilityUpdate(rates)
-	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
 		return fmt.Errorf("setServicesAvailability: %w", err)
 	}
 	return nil

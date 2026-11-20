@@ -17,6 +17,8 @@ func (a *Api) GetNodeComplianceStatus(c echo.Context, nodeId string, params serv
 	if err != nil {
 		return err
 	}
+	// Filtered by the publication of the apps, as the alerts and compliance
+	// lists: no check of the responsibility for the node here.
 	return a.handleList(c, "GetNodeComplianceStatus", "comp_status", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,

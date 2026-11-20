@@ -687,7 +687,7 @@ func (oDb *DB) InsertApp(ctx context.Context, app, description, appDomain, appTe
 	const query = `INSERT INTO apps (app, description, app_domain, app_team_ops) VALUES (?, ?, ?, ?)`
 	// description is NOT NULL, defaulting to the empty string: an app created
 	// without one keeps it empty rather than failing.
-	result, err := oDb.DB.ExecContext(ctx, query, app,
+	result, err := oDb.ExecContext(ctx, query, app,
 		description,
 		sql.NullString{String: appDomain, Valid: appDomain != ""},
 		sql.NullString{String: appTeamOps, Valid: appTeamOps != ""},
@@ -736,7 +736,7 @@ func (oDb *DB) UpdateApp(ctx context.Context, appID int64, fields UpdateAppField
 	setClauses = append(setClauses, "updated = NOW()")
 	query := "UPDATE apps SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
 	args = append(args, appID)
-	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
 		return fmt.Errorf("updateApp: %w", err)
 	}
 	oDb.SetChange("apps")
@@ -745,7 +745,7 @@ func (oDb *DB) UpdateApp(ctx context.Context, appID int64, fields UpdateAppField
 
 func (oDb *DB) UpdateNodesApp(ctx context.Context, oldApp, newApp string) error {
 	const query = `UPDATE nodes SET app = ? WHERE app = ?`
-	if _, err := oDb.DB.ExecContext(ctx, query, newApp, oldApp); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, newApp, oldApp); err != nil {
 		return fmt.Errorf("updateNodesApp: %w", err)
 	}
 	return nil
@@ -753,7 +753,7 @@ func (oDb *DB) UpdateNodesApp(ctx context.Context, oldApp, newApp string) error 
 
 func (oDb *DB) UpdateServicesApp(ctx context.Context, oldApp, newApp string) error {
 	const query = `UPDATE services SET svc_app = ? WHERE svc_app = ?`
-	if _, err := oDb.DB.ExecContext(ctx, query, newApp, oldApp); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, newApp, oldApp); err != nil {
 		return fmt.Errorf("updateServicesApp: %w", err)
 	}
 	return nil
@@ -761,7 +761,7 @@ func (oDb *DB) UpdateServicesApp(ctx context.Context, oldApp, newApp string) err
 
 func (oDb *DB) InsertAppResponsible(ctx context.Context, appID, groupID int64) error {
 	const query = `INSERT INTO apps_responsibles (app_id, group_id) VALUES (?, ?)`
-	if _, err := oDb.DB.ExecContext(ctx, query, appID, groupID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, appID, groupID); err != nil {
 		return fmt.Errorf("insertAppResponsible: %w", err)
 	}
 	oDb.SetChange("apps_responsibles")
@@ -770,7 +770,7 @@ func (oDb *DB) InsertAppResponsible(ctx context.Context, appID, groupID int64) e
 
 func (oDb *DB) InsertAppPublication(ctx context.Context, appID, groupID int64) error {
 	const query = `INSERT INTO apps_publications (app_id, group_id) VALUES (?, ?)`
-	if _, err := oDb.DB.ExecContext(ctx, query, appID, groupID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, appID, groupID); err != nil {
 		return fmt.Errorf("insertAppPublication: %w", err)
 	}
 	oDb.SetChange("apps_publications")
@@ -780,7 +780,7 @@ func (oDb *DB) InsertAppPublication(ctx context.Context, appID, groupID int64) e
 // DeleteAppResponsible removes the (app_id, group_id) row from apps_responsibles.
 func (oDb *DB) DeleteAppResponsible(ctx context.Context, appID, groupID int64) (int64, error) {
 	const query = `DELETE FROM apps_responsibles WHERE app_id = ? AND group_id = ?`
-	res, err := oDb.DB.ExecContext(ctx, query, appID, groupID)
+	res, err := oDb.ExecContext(ctx, query, appID, groupID)
 	if err != nil {
 		return 0, fmt.Errorf("deleteAppResponsible: %w", err)
 	}
@@ -797,7 +797,7 @@ func (oDb *DB) DeleteAppResponsible(ctx context.Context, appID, groupID int64) (
 // DeleteAppPublication removes the (app_id, group_id) row from apps_publications
 func (oDb *DB) DeleteAppPublication(ctx context.Context, appID, groupID int64) (int64, error) {
 	const query = `DELETE FROM apps_publications WHERE app_id = ? AND group_id = ?`
-	res, err := oDb.DB.ExecContext(ctx, query, appID, groupID)
+	res, err := oDb.ExecContext(ctx, query, appID, groupID)
 	if err != nil {
 		return 0, fmt.Errorf("deleteAppPublication: %w", err)
 	}
@@ -829,7 +829,7 @@ func (oDb *DB) AppUsageCounts(ctx context.Context, app string) (nodesCount, serv
 
 func (oDb *DB) DeleteApp(ctx context.Context, appID int64) error {
 	const query = `DELETE FROM apps WHERE id = ?`
-	if _, err := oDb.DB.ExecContext(ctx, query, appID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, appID); err != nil {
 		return fmt.Errorf("deleteApp: %w", err)
 	}
 	oDb.SetChange("apps")
@@ -838,7 +838,7 @@ func (oDb *DB) DeleteApp(ctx context.Context, appID int64) error {
 
 func (oDb *DB) DeleteAppResponsibles(ctx context.Context, appID int64) error {
 	const query = `DELETE FROM apps_responsibles WHERE app_id = ?`
-	if _, err := oDb.DB.ExecContext(ctx, query, appID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, appID); err != nil {
 		return fmt.Errorf("deleteAppResponsibles: %w", err)
 	}
 	oDb.SetChange("apps_responsibles")
@@ -847,7 +847,7 @@ func (oDb *DB) DeleteAppResponsibles(ctx context.Context, appID int64) error {
 
 func (oDb *DB) DeleteAppPublications(ctx context.Context, appID int64) error {
 	const query = `DELETE FROM apps_publications WHERE app_id = ?`
-	if _, err := oDb.DB.ExecContext(ctx, query, appID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, appID); err != nil {
 		return fmt.Errorf("deleteAppPublications: %w", err)
 	}
 	oDb.SetChange("apps_publications")

@@ -266,7 +266,10 @@ func topoSortedKeys(set map[string]bool) []string {
 
 // topoObjects resolves the nodes and services of the topology: the starting
 // ones the caller may see, then the services of those nodes, then the nodes of
-// those services, as the historical collector.
+// those services, as the historical collector, the expansions kept to the
+// nodes and services the caller may see too: a node of the caller hosting an
+// instance of a service of another app does not show that service, nor its
+// other nodes.
 func (oDb *DB) topoObjects(ctx context.Context, r TopologyRequest) (nodeIDs, svcIDs []string, err error) {
 	nodes := map[string]bool{}
 	svcs := map[string]bool{}
@@ -312,8 +315,9 @@ func (oDb *DB) topoObjects(ctx context.Context, r TopologyRequest) (nodeIDs, svc
 		return nil, nil, ErrTopologyTooLarge
 	}
 	if len(nodes) > 0 {
-		l, err := oDb.topoStrings(ctx, "SELECT DISTINCT svc_id FROM svcmon WHERE node_id IN ("+
-			Placeholders(len(nodes))+")", stringArgs(topoSortedKeys(nodes))...)
+		l, err := oDb.topoStrings(ctx, "SELECT DISTINCT svcmon.svc_id FROM svcmon JOIN services ON services.svc_id = svcmon.svc_id"+
+			" WHERE svcmon.node_id IN ("+Placeholders(len(nodes))+") AND "+svcScope,
+			append(stringArgs(topoSortedKeys(nodes)), svcScopeArgs...)...)
 		if err != nil {
 			return nil, nil, fmt.Errorf("topology services of the nodes: %w", err)
 		}
@@ -323,8 +327,9 @@ func (oDb *DB) topoObjects(ctx context.Context, r TopologyRequest) (nodeIDs, svc
 		return nil, nil, ErrTopologyTooLarge
 	}
 	if len(svcs) > 0 {
-		l, err := oDb.topoStrings(ctx, "SELECT DISTINCT node_id FROM svcmon WHERE svc_id IN ("+
-			Placeholders(len(svcs))+")", stringArgs(topoSortedKeys(svcs))...)
+		l, err := oDb.topoStrings(ctx, "SELECT DISTINCT svcmon.node_id FROM svcmon JOIN nodes ON nodes.node_id = svcmon.node_id"+
+			" WHERE svcmon.svc_id IN ("+Placeholders(len(svcs))+") AND "+nodeScope,
+			append(stringArgs(topoSortedKeys(svcs)), nodeScopeArgs...)...)
 		if err != nil {
 			return nil, nil, fmt.Errorf("topology nodes of the services: %w", err)
 		}

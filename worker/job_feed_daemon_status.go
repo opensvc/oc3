@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/util/logkey"
@@ -54,12 +56,16 @@ type (
 		JobRedis
 		JobDB
 
-		nodeID      string
-		clusterID   string
-		clusterName string
-		nodeApp     string
-		nodeEnv     string
-		callerNode  *cdb.DBNode
+		nodeID    string
+		clusterID string
+
+		// clusterClaim is what the collector made of the cluster id the
+		// node reports: the report is written only for a confirmed member.
+		clusterClaim cdb.ClusterClaim
+		clusterName  string
+		nodeApp      string
+		nodeEnv      string
+		callerNode   *cdb.DBNode
 
 		changes      map[string]struct{}
 		takenChanges []string
@@ -133,12 +139,18 @@ func newDaemonStatus(nodeID string) *jobFeedDaemonStatus {
 }
 
 func (d *jobFeedDaemonStatus) Operations() []operation {
-	return []operation{
+	ops := []operation{
 		{name: "dropPending", do: d.dropPending},
 		{name: "dbNow", do: d.dbNow, blocking: true},
 		{name: "getChanges", do: d.getChanges},
 		{name: "getData", do: d.getData, blocking: true},
 		{name: "dbCheckClusterIDForNodeID", do: d.dbCheckClusterIDForNodeID, blocking: true},
+	}
+	// The report of a node whose cluster no member confirmed would be
+	// written for the nodes and the objects of that cluster: ignored.
+	confirmed := func() bool { return d.clusterClaim.Confirmed() }
+	for _, op := range []operation{
+		{name: "dbConfirmClusterClaims", do: d.dbConfirmClusterClaims, blocking: true},
 		{name: "dbCheckClusters", do: d.dbCheckClusters, blocking: true},
 		{name: "dbFetchNodes", do: d.dbFetchNodes, blocking: true},
 		{name: "dataToNodeFrozen", do: d.dataToNodeFrozen, blocking: true},
@@ -154,7 +166,11 @@ func (d *jobFeedDaemonStatus) Operations() []operation {
 		{name: "dbPurgeServices", do: d.dbPurgeServices, blocking: true},
 		{name: "cacheObjectsWithoutConfig", do: d.cacheObjectsWithoutConfig},
 		{name: "pushFromTableChanges", do: d.pushFromTableChanges},
+	} {
+		op.condition = confirmed
+		ops = append(ops, op)
 	}
+	return ops
 }
 
 // pushFromTableChanges announces the changes as concerning the nodes of the
@@ -230,13 +246,66 @@ func (d *jobFeedDaemonStatus) getData(ctx context.Context) error {
 	return nil
 }
 
+// dbCheckClusterIDForNodeID records the cluster id the node reports, see
+// cdb.ClaimClusterMembership: a node joining a cluster known already becomes
+// a member once a member lists it, the report is ignored meanwhile.
 func (d *jobFeedDaemonStatus) dbCheckClusterIDForNodeID(ctx context.Context) error {
-	if ok, err := d.oDb.NodeUpdateClusterIDForNodeID(ctx, d.nodeID, d.clusterID); err != nil {
-		return fmt.Errorf("dbCheckClusterIDForNodeID for %s (%s): %w", d.callerNode.Nodename, d.nodeID, err)
-	} else if ok {
-		slog.Debug("dbCheckClusterIDForNodeID change cluster id value")
+	claim, err := d.oDb.ClaimClusterMembership(ctx, d.nodeID, d.clusterID)
+	if err != nil {
+		return fmt.Errorf("dbCheckClusterIDForNodeID for %s: %w", d.nodeID, err)
+	}
+	d.clusterClaim = claim
+	switch claim {
+	case cdb.ClusterClaimPending:
+		d.Logger().Info("report ignored: the node claims a cluster no member confirmed yet", logkey.ClusterID, d.clusterID)
+		// The changes reported are written once the node is confirmed.
+		d.onFailure(ctx)
+	case cdb.ClusterClaimOrphan:
+		d.Logger().Warn("the node takes over a cluster without node", logkey.ClusterID, d.clusterID)
+		d.clusterLog(ctx, "warning", "node %(node)s takes over the cluster %(cluster_id)s, known without node", d.nodeID,
+			map[string]any{"node": d.nodeID, "cluster_id": d.clusterID})
+	case cdb.ClusterClaimNone:
+		// unknown node: dbFetchNodes fails
+		d.clusterClaim = cdb.ClusterClaimMember
 	}
 	return nil
+}
+
+// dbConfirmClusterClaims confirms the nodes claiming the cluster of the node,
+// a confirmed member, whose names its report lists.
+func (d *jobFeedDaemonStatus) dbConfirmClusterClaims(ctx context.Context) error {
+	nodes, err := d.data.nodeNames()
+	if err != nil || len(nodes) == 0 {
+		// dbFetchNodes fails
+		return nil
+	}
+	confirmed, err := d.oDb.ConfirmClusterClaims(ctx, d.clusterID, nodes)
+	if err != nil {
+		return fmt.Errorf("dbConfirmClusterClaims: %w", err)
+	}
+	member := d.nodeID
+	if len(confirmed) > 0 {
+		if n, err := d.oDb.NodeByNodeID(ctx, d.nodeID); err == nil && n != nil {
+			member = n.Nodename
+		}
+	}
+	for _, c := range confirmed {
+		d.Logger().Info("cluster membership confirmed", logkey.ClusterID, d.clusterID, logkey.Nodename, c.Nodename)
+		d.clusterLog(ctx, "info", "node %(node)s joined the cluster %(cluster_id)s, confirmed by node %(member)s", c.NodeID,
+			map[string]any{"node": c.Nodename, "cluster_id": d.clusterID, "member": member})
+	}
+	return nil
+}
+
+// clusterLog writes a node.register entry of the audit log.
+func (d *jobFeedDaemonStatus) clusterLog(ctx context.Context, level, format, nodeID string, dict map[string]any) {
+	entry := cdb.LogEntry{Action: "node.register", Level: level, Fmt: format, Dict: dict, User: "collector"}
+	if id, err := uuid.Parse(nodeID); err == nil {
+		entry.NodeID = &id
+	}
+	if err := d.oDb.Log(ctx, entry); err != nil {
+		d.Logger().Error("cannot write the audit log", logkey.Error, err)
+	}
 }
 
 func (d *jobFeedDaemonStatus) dbCheckClusters(ctx context.Context) error {
@@ -565,6 +634,10 @@ func (d *jobFeedDaemonStatus) dbCreateServices(ctx context.Context) error {
 		slog.Debug(fmt.Sprintf("created service %s with app %s new id: %s", objectName, app, obj.SvcID))
 		d.byObjectName[objectName] = obj
 		d.byObjectName[obj.SvcID] = obj
+		// Known by its id too, as the services found: dbUpdateServices gives
+		// it the status of this daemon status, rather than leaving it undef
+		// until the next one, which comes only with a change.
+		d.byObjectID[obj.SvcID] = obj
 	}
 	return nil
 }

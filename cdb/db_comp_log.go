@@ -15,24 +15,11 @@ func (oDb *DB) GetNodeComplianceLogs(ctx context.Context, nodeID string, p ListP
 		" FROM comp_log WHERE comp_log.node_id = ?"
 	args := []any{nodeID}
 
-	if !p.IsManager {
-		clean := cleanGroups(p.Groups)
-		if len(clean) == 0 {
-			query += " AND 1=0"
-		} else {
-			placeholders := Placeholders(len(clean))
-			query += ` AND comp_log.node_id IN (
-				SELECT n.node_id FROM nodes n
-				JOIN apps a ON n.app = a.app
-				JOIN apps_responsibles ar ON ar.app_id = a.id
-				JOIN auth_group ag ON ag.id = ar.group_id
-				WHERE ag.role IN (` + placeholders + `)
-			)`
-			for _, g := range clean {
-				args = append(args, g)
-			}
-		}
-	}
+	// The runs of a node of an app published to the caller, as GET
+	// /compliance/logs.
+	cond, condArgs := compPublishedNodesCond("comp_log.node_id", p.Groups, p.IsManager)
+	query += " AND " + cond
+	args = append(args, condArgs...)
 
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
@@ -57,24 +44,11 @@ func (oDb *DB) GetServiceComplianceLogs(ctx context.Context, svcID string, p Lis
 		" FROM comp_log WHERE comp_log.svc_id = ?"
 	args := []any{svcID}
 
-	if !p.IsManager {
-		clean := cleanGroups(p.Groups)
-		if len(clean) == 0 {
-			query += " AND 1=0"
-		} else {
-			placeholders := Placeholders(len(clean))
-			query += ` AND comp_log.svc_id IN (
-				SELECT s.svc_id FROM services s
-				JOIN apps a ON s.svc_app = a.app
-				JOIN apps_responsibles ar ON ar.app_id = a.id
-				JOIN auth_group ag ON ag.id = ar.group_id
-				WHERE ag.role IN (` + placeholders + `)
-			)`
-			for _, g := range clean {
-				args = append(args, g)
-			}
-		}
-	}
+	// The runs on a node of an app published to the caller, as GET
+	// /compliance/logs.
+	cond, condArgs := compPublishedNodesCond("comp_log.node_id", p.Groups, p.IsManager)
+	query += " AND " + cond
+	args = append(args, condArgs...)
 
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb

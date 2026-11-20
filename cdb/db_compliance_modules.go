@@ -96,7 +96,7 @@ func (oDb *DB) CreateCompModulesetModule(ctx context.Context, modsetID int64, fi
 		vals = append(vals, "?")
 		args = append(args, fields[k])
 	}
-	res, err := oDb.DB.ExecContext(ctx, "INSERT INTO comp_moduleset_modules ("+strings.Join(cols, ", ")+") VALUES ("+strings.Join(vals, ", ")+")", args...)
+	res, err := oDb.ExecContext(ctx, "INSERT INTO comp_moduleset_modules ("+strings.Join(cols, ", ")+") VALUES ("+strings.Join(vals, ", ")+")", args...)
 	if err != nil {
 		return 0, fmt.Errorf("createCompModulesetModule: %w", err)
 	}
@@ -114,7 +114,7 @@ func (oDb *DB) UpdateCompModulesetModule(ctx context.Context, id int64, fields m
 		args = append(args, fields[k])
 	}
 	args = append(args, id)
-	if _, err := oDb.DB.ExecContext(ctx, "UPDATE comp_moduleset_modules SET "+strings.Join(sets, ", ")+" WHERE id = ?", args...); err != nil {
+	if _, err := oDb.ExecContext(ctx, "UPDATE comp_moduleset_modules SET "+strings.Join(sets, ", ")+" WHERE id = ?", args...); err != nil {
 		return fmt.Errorf("updateCompModulesetModule: %w", err)
 	}
 	oDb.SetChange("comp_moduleset_modules")
@@ -123,7 +123,7 @@ func (oDb *DB) UpdateCompModulesetModule(ctx context.Context, id int64, fields m
 
 // DeleteCompModulesetModule deletes a module.
 func (oDb *DB) DeleteCompModulesetModule(ctx context.Context, id int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM comp_moduleset_modules WHERE id = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM comp_moduleset_modules WHERE id = ?", id); err != nil {
 		return fmt.Errorf("deleteCompModulesetModule: %w", err)
 	}
 	oDb.SetChange("comp_moduleset_modules")

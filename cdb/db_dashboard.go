@@ -127,7 +127,7 @@ func (oDb *DB) GetAlertOwner(ctx context.Context, id int64) (svcID, nodeID strin
 
 func (oDb *DB) DeleteAlert(ctx context.Context, id int64) (int64, error) {
 	const query = "DELETE FROM dashboard WHERE id = ?"
-	res, err := oDb.DB.ExecContext(ctx, query, id)
+	res, err := oDb.ExecContext(ctx, query, id)
 	if err != nil {
 		return 0, fmt.Errorf("deleteAlert: %w", err)
 	}
@@ -247,7 +247,7 @@ func (oDb *DB) UpdateAlertFields(ctx context.Context, id int64, fields map[strin
 	}
 	query := "UPDATE dashboard SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
 	args = append(args, id)
-	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
 		return fmt.Errorf("updateAlertFields: %w", err)
 	}
 	oDb.SetChange("dashboard")
@@ -276,7 +276,7 @@ func (oDb *DB) UpsertUpdateAlert(ctx context.Context, id int64, dashFmt, dashDic
 	const query = `UPDATE dashboard
 		SET dash_updated = NOW(), dash_fmt = ?, dash_dict = ?, dash_env = ?, dash_severity = ?
 		WHERE id = ?`
-	if _, err := oDb.DB.ExecContext(ctx, query, dashFmt, dashDict, dashEnv, dashSeverity, id); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, dashFmt, dashDict, dashEnv, dashSeverity, id); err != nil {
 		return fmt.Errorf("upsertUpdateAlert: %w", err)
 	}
 	oDb.SetChange("dashboard")
@@ -296,7 +296,7 @@ func (oDb *DB) InsertAlert(ctx context.Context, fields map[string]any) (int64, e
 		args = append(args, val)
 	}
 	query := "INSERT INTO dashboard (" + strings.Join(cols, ", ") + ") VALUES (" + strings.Join(placeholders, ", ") + ")"
-	res, err := oDb.DB.ExecContext(ctx, query, args...)
+	res, err := oDb.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("insertAlert: %w", err)
 	}
@@ -318,38 +318,11 @@ func (oDb *DB) GetNodeAlerts(ctx context.Context, nodeID string, p ListParams) (
 	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard WHERE dashboard.node_id = ?"
 	args := []any{nodeID}
 
-	if !p.IsManager {
-		clean := cleanGroups(p.Groups)
-
-		if len(clean) == 0 {
-			query += ` AND (
-				dashboard.node_id IN (SELECT n.node_id FROM nodes n WHERE n.team_responsible = 'Everybody')
-			)`
-		} else {
-			placeholders := Placeholders(len(clean))
-			query += ` AND (
-				dashboard.svc_id IN (
-					SELECT s.svc_id FROM services s
-					JOIN apps a ON s.svc_app = a.app
-					JOIN apps_responsibles ar ON ar.app_id = a.id
-					JOIN auth_group ag ON ag.id = ar.group_id
-					WHERE ag.role IN (` + placeholders + `)
-				)
-				OR
-				dashboard.node_id IN (
-					SELECT n.node_id FROM nodes n
-					WHERE n.team_responsible = 'Everybody'
-					   OR n.team_responsible IN (` + placeholders + `)
-				)
-			)`
-			for _, g := range clean {
-				args = append(args, g)
-			}
-			for _, g := range clean {
-				args = append(args, g)
-			}
-		}
-	}
+	// The alerts of a node or a service of an app published to the caller, as
+	// GET /alerts.
+	cond, condArgs := dashboardVisibleCond("dashboard", p.Groups, p.IsManager)
+	query += " AND " + cond
+	args = append(args, condArgs...)
 
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
@@ -376,24 +349,11 @@ func (oDb *DB) GetServiceAlerts(ctx context.Context, svcID string, p ListParams)
 	query := "SELECT " + strings.Join(p.SelectExprs, ", ") + " FROM dashboard WHERE dashboard.svc_id = ?"
 	args := []any{svcID}
 
-	if !p.IsManager {
-		clean := cleanGroups(p.Groups)
-		if len(clean) == 0 {
-			query += " AND 1=0"
-		} else {
-			placeholders := Placeholders(len(clean))
-			query += ` AND dashboard.svc_id IN (
-				SELECT s.svc_id FROM services s
-				JOIN apps a ON s.svc_app = a.app
-				JOIN apps_responsibles ar ON ar.app_id = a.id
-				JOIN auth_group ag ON ag.id = ar.group_id
-				WHERE ag.role IN (` + placeholders + `)
-			)`
-			for _, g := range clean {
-				args = append(args, g)
-			}
-		}
-	}
+	// The alerts of a node or a service of an app published to the caller, as
+	// GET /alerts.
+	cond, condArgs := dashboardVisibleCond("dashboard", p.Groups, p.IsManager)
+	query += " AND " + cond
+	args = append(args, condArgs...)
 
 	if gb := p.GroupByClause(""); gb != "" {
 		query += " " + gb
@@ -910,6 +870,10 @@ func (oDb *DB) DashboardUpdateNodeMaintenanceExpired(ctx context.Context) error 
 	return nil
 }
 
+// DashboardUpdateNodeCloseToMaintenanceEnd raises an alert on the nodes whose
+// maintenance ends within 30 days, as update_dash_node_near_maintenance_end of
+// the historical collector; an ended maintenance is the "node maintenance
+// expired" alert.
 func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) error {
 	// One instant for the alerts written and the purge of the others: an
 	// alert written in this run is not purged.
@@ -935,8 +899,8 @@ func (oDb *DB) DashboardUpdateNodeCloseToMaintenanceEnd(ctx context.Context) err
 		WHERE
 		  maintenance_end IS NOT NULL AND
 		  maintenance_end != "0000-00-00 00:00:00" AND
-		  maintenance_end > DATE_SUB(?, INTERVAL 30 DAY) AND
-		  maintenance_end > ?`,
+		  maintenance_end > ? AND
+		  maintenance_end < DATE_ADD(?, INTERVAL 30 DAY)`,
 		args:    []any{now, now, now, now},
 		columns: positionalAlertColumns,
 		update:  []string{"dash_updated = s.dash_updated"},
@@ -1287,6 +1251,57 @@ func (oDb *DB) DashboardUpdatePkgDiffForNode(ctx context.Context, nodeID string)
 	return nil
 }
 
+// compAttachDiffNodes returns the nodenames of the instances of svcID, in
+// the node_id order, and the environment of its first instance, as the
+// compliance attachment difference alerts of the old collector read them.
+func (oDb *DB) compAttachDiffNodes(ctx context.Context, svcID string) ([]string, string, error) {
+	rows, err := oDb.DB.QueryContext(ctx, `
+		SELECT n.nodename, m.mon_svctype
+		FROM svcmon m
+		JOIN nodes n ON n.node_id = m.node_id
+		WHERE m.svc_id = ?
+		ORDER BY m.node_id
+	`, svcID)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to query svcmon: %v", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var nodes []string
+	var env string
+	for rows.Next() {
+		var nodename, monSvctype sql.NullString
+		if err := rows.Scan(&nodename, &monSvctype); err != nil {
+			return nil, "", fmt.Errorf("failed to scan svcmon row: %v", err)
+		}
+		if len(nodes) == 0 {
+			env = monSvctype.String
+		}
+		nodes = append(nodes, nodename.String)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, "", fmt.Errorf("failed to read svcmon rows: %v", err)
+	}
+	return nodes, env, nil
+}
+
+// compAttachDiffNodesString joins the nodenames, the last ones replaced by
+// their count until the string is shorter than 50 characters, as the old
+// collector did.
+func compAttachDiffNodesString(nodes []string) string {
+	skip := 0
+	trail := ""
+	for len(nodes) > 0 {
+		s := strings.Join(nodes, ",") + trail
+		if len(s) < 50 {
+			return s
+		}
+		skip++
+		nodes = nodes[:len(nodes)-1]
+		trail = fmt.Sprintf(", ... (+%d)", skip)
+	}
+	return trail
+}
+
 func (oDb *DB) DashboardUpdateCompModDiff(ctx context.Context) error {
 	svcIDs, err := oDb.ObjectIDsUpdatedLast(ctx, 2)
 	if err != nil {
@@ -1321,28 +1336,10 @@ func (oDb *DB) DashboardUpdateCompModDiffForSvc(ctx context.Context, svcID strin
 		}
 	}()
 
-	// Récupérer les nœuds associés au svc_id
-	rows, err := oDb.DB.QueryContext(ctx, `
-		SELECT node_id, mon_svctype
-		FROM svcmon
-		WHERE svc_id = ?
-		ORDER BY node_id
-	`, svcID)
+	nodes, monSvctype, err := oDb.compAttachDiffNodes(ctx, svcID)
 	if err != nil {
-		return fmt.Errorf("failed to query svcmon: %v", err)
+		return err
 	}
-	defer rows.Close()
-
-	var nodes []string
-	var monSvctype sql.NullString
-	for rows.Next() {
-		var nodeID string
-		if err := rows.Scan(&nodeID, &monSvctype); err != nil {
-			return fmt.Errorf("failed to scan svcmon row: %v", err)
-		}
-		nodes = append(nodes, nodeID)
-	}
-
 	n := len(nodes)
 	if n < 2 {
 		return nil
@@ -1350,21 +1347,10 @@ func (oDb *DB) DashboardUpdateCompModDiffForSvc(ctx context.Context, svcID strin
 
 	// Déterminer la sévérité
 	sev := 0
-	if monSvctype.String == "PRD" {
+	if monSvctype == "PRD" {
 		sev = 1
 	}
-
-	// Tronquer la liste des nodes si trop longue
-	skip := 0
-	trail := ""
-	nodesStr := strings.Join(nodes, ",")
-	for len(nodesStr)+len(trail) > 50 {
-		skip++
-		nodes = nodes[:len(nodes)-1]
-		nodesStr = strings.Join(nodes, ",")
-		trail = fmt.Sprintf(", ... (+%d)", skip)
-	}
-	nodesStr += trail
+	nodesStr := compAttachDiffNodesString(nodes)
 
 	// Compter les différences de moduleset
 	var ndiff int64
@@ -1423,7 +1409,7 @@ func (oDb *DB) DashboardUpdateCompModDiffForSvc(ctx context.Context, svcID strin
 			? AS dash_created,
 			? AS dash_updated,
 			? AS dash_env`,
-		args:    []any{svcID, sev, dashDictJSON, dashDictMD5, now, now, monSvctype.String},
+		args:    []any{svcID, sev, dashDictJSON, dashDictMD5, now, now, monSvctype},
 		columns: []string{"dash_type", "svc_id", "node_id", "dash_severity", "dash_fmt", "dash_dict", "dash_dict_md5", "dash_created", "dash_updated", "dash_env"},
 		update:  []string{"dash_updated = s.dash_updated"},
 	})
@@ -1490,28 +1476,10 @@ func (oDb *DB) DashboardUpdateCompRsetDiffForSvc(ctx context.Context, svcID stri
 		}
 	}()
 
-	// Récupérer les nœuds associés au svc_id
-	rows, err := oDb.DB.QueryContext(ctx, `
-		SELECT node_id, mon_svctype
-		FROM svcmon
-		WHERE svc_id = ?
-		ORDER BY node_id
-	`, svcID)
+	nodes, monSvctype, err := oDb.compAttachDiffNodes(ctx, svcID)
 	if err != nil {
-		return fmt.Errorf("failed to query svcmon: %v", err)
+		return err
 	}
-	defer rows.Close()
-
-	var nodes []string
-	var monSvctype sql.NullString
-	for rows.Next() {
-		var nodeID string
-		if err := rows.Scan(&nodeID, &monSvctype); err != nil {
-			return fmt.Errorf("failed to scan svcmon row: %v", err)
-		}
-		nodes = append(nodes, nodeID)
-	}
-
 	n := len(nodes)
 	if n < 2 {
 		return nil
@@ -1519,21 +1487,10 @@ func (oDb *DB) DashboardUpdateCompRsetDiffForSvc(ctx context.Context, svcID stri
 
 	// Déterminer la sévérité
 	sev := 0
-	if monSvctype.String == "PRD" {
+	if monSvctype == "PRD" {
 		sev = 1
 	}
-
-	// Tronquer la liste des nodes si trop longue
-	skip := 0
-	trail := ""
-	nodesStr := strings.Join(nodes, ",")
-	for len(nodesStr)+len(trail) > 50 {
-		skip++
-		nodes = nodes[:len(nodes)-1]
-		nodesStr = strings.Join(nodes, ",")
-		trail = fmt.Sprintf(", ... (+%d)", skip)
-	}
-	nodesStr += trail
+	nodesStr := compAttachDiffNodesString(nodes)
 
 	// Compter les différences de ruleset
 	var ndiff int64
@@ -1547,7 +1504,7 @@ func (oDb *DB) DashboardUpdateCompRsetDiffForSvc(ctx context.Context, svcID stri
 			FROM
 				comp_rulesets_nodes rn,
 				svcmon m,
-				comp_ruleset rs
+				comp_rulesets rs
 			WHERE
 				m.svc_id = ? AND
 				m.node_id = rn.node_id AND
@@ -1594,7 +1551,7 @@ func (oDb *DB) DashboardUpdateCompRsetDiffForSvc(ctx context.Context, svcID stri
 			? AS dash_created,
 			? AS dash_updated,
 			? AS dash_env`,
-		args:    []any{svcID, sev, dashDictJSON, dashDictMD5, now, now, monSvctype.String},
+		args:    []any{svcID, sev, dashDictJSON, dashDictMD5, now, now, monSvctype},
 		columns: []string{"dash_type", "svc_id", "node_id", "dash_severity", "dash_fmt", "dash_dict", "dash_dict_md5", "dash_created", "dash_updated", "dash_env"},
 		update:  []string{"dash_updated = s.dash_updated"},
 	})

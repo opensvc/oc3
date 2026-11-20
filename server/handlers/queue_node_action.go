@@ -71,7 +71,7 @@ var sshCmd = []string{
 // feed node reads the bare action from its queue, a push node is reached over ssh.
 func nodeActionCommand(action, actionType, connectTo string) string {
 	var cmd []string
-	if actionType != "pull" && actionType != "feed" {
+	if usesSSH(actionType) {
 		cmd = append(cmd, sshCmd...)
 		cmd = append(cmd, "opensvc@"+connectTo, "--", "sudo", "nodemgr")
 	}
@@ -115,6 +115,12 @@ func actionProblem(c echo.Context, err error) error {
 		return JSONProblem(c, refusal.status, refusal.msg)
 	}
 	return JSONProblem(c, http.StatusInternalServerError, err.Error())
+}
+
+// usesSSH tells whether the actions of a node of this action type are run by
+// the collector over ssh: neither pulled nor fed, they are pushed.
+func usesSSH(actionType string) bool {
+	return actionType != "pull" && actionType != "feed"
 }
 
 // actionTypeOf returns how the node reads its queue; an unset action_type means
@@ -182,6 +188,9 @@ func (a *Api) queueNodeAction(act actionActor, log *slog.Logger, ctx context.Con
 	}
 
 	actionType := actionTypeOf(target)
+	if usesSSH(actionType) && !validSSHHost(connectTo) {
+		return nil, refuseAction(http.StatusConflict, "node %s has an invalid address %q: set its connect_to", nodeID, connectTo)
+	}
 	command := nodeActionCommand(action, actionType, connectTo)
 
 	// A dry run stops here, every check passed.

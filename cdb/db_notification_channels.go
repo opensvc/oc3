@@ -138,7 +138,7 @@ func (oDb *DB) InsertNotifyChannel(ctx context.Context, c NotifyChannel) (int64,
 	if err != nil {
 		return 0, err
 	}
-	result, err := oDb.DB.ExecContext(ctx,
+	result, err := oDb.ExecContext(ctx,
 		"INSERT INTO notification_channels (name, type, description, settings_json, enabled, updated_by, created, updated)"+
 			" VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
 		c.Name, c.Type, c.Description, settings, c.Enabled, c.UpdatedBy)
@@ -161,7 +161,7 @@ func (oDb *DB) UpdateNotifyChannel(ctx context.Context, c NotifyChannel) (bool, 
 		secrets, wrapped = c.Secrets.Content, c.Secrets.WrappedKey
 		keyID = sql.NullString{String: c.Secrets.KeyID, Valid: true}
 	}
-	result, err := oDb.DB.ExecContext(ctx,
+	result, err := oDb.ExecContext(ctx,
 		"UPDATE notification_channels SET name = ?, type = ?, description = ?, settings_json = ?, enabled = ?,"+
 			" secrets = ?, secrets_key_id = ?, secrets_wrapped_key = ?, updated_by = ?, updated = NOW() WHERE id = ?",
 		c.Name, c.Type, c.Description, settings, c.Enabled, secrets, keyID, wrapped, c.UpdatedBy, c.ID)
@@ -175,10 +175,10 @@ func (oDb *DB) UpdateNotifyChannel(ctx context.Context, c NotifyChannel) (bool, 
 
 // DeleteNotifyChannel deletes a channel and its subscriptions.
 func (oDb *DB) DeleteNotifyChannel(ctx context.Context, id int64) (bool, error) {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM notification_subscriptions WHERE channel_id = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM notification_subscriptions WHERE channel_id = ?", id); err != nil {
 		return false, fmt.Errorf("deleteNotifyChannel: %w", err)
 	}
-	result, err := oDb.DB.ExecContext(ctx, "DELETE FROM notification_channels WHERE id = ?", id)
+	result, err := oDb.ExecContext(ctx, "DELETE FROM notification_channels WHERE id = ?", id)
 	if err != nil {
 		return false, fmt.Errorf("deleteNotifyChannel: %w", err)
 	}
@@ -296,7 +296,7 @@ func (oDb *DB) InsertNotifySubscription(ctx context.Context, s NotifySubscriptio
 	}
 	args := append([]any{s.ChannelID, s.GroupID, s.Scope, s.MinSeverity, s.DelayMin, s.Enabled}, filters...)
 	args = append(args, s.UpdatedBy)
-	result, err := oDb.DB.ExecContext(ctx,
+	result, err := oDb.ExecContext(ctx,
 		"INSERT INTO notification_subscriptions (channel_id, group_id, scope, min_severity, delay_min, enabled,"+
 			" types_include, types_exclude, envs, filterset_id, periods_json, notify_resolved, updated_by, created, updated)"+
 			" VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())", args...)
@@ -315,7 +315,7 @@ func (oDb *DB) UpdateNotifySubscription(ctx context.Context, s NotifySubscriptio
 	}
 	args := append([]any{s.ChannelID, s.GroupID, s.Scope, s.MinSeverity, s.DelayMin, s.Enabled}, filters...)
 	args = append(args, s.UpdatedBy, s.ID)
-	result, err := oDb.DB.ExecContext(ctx,
+	result, err := oDb.ExecContext(ctx,
 		"UPDATE notification_subscriptions SET channel_id = ?, group_id = ?, scope = ?, min_severity = ?, delay_min = ?,"+
 			" enabled = ?, types_include = ?, types_exclude = ?, envs = ?, filterset_id = ?, periods_json = ?, notify_resolved = ?,"+
 			" updated_by = ?, updated = NOW() WHERE id = ?", args...)
@@ -329,7 +329,7 @@ func (oDb *DB) UpdateNotifySubscription(ctx context.Context, s NotifySubscriptio
 
 // DeleteNotifySubscription deletes a subscription.
 func (oDb *DB) DeleteNotifySubscription(ctx context.Context, id int64) (bool, error) {
-	result, err := oDb.DB.ExecContext(ctx, "DELETE FROM notification_subscriptions WHERE id = ?", id)
+	result, err := oDb.ExecContext(ctx, "DELETE FROM notification_subscriptions WHERE id = ?", id)
 	if err != nil {
 		return false, fmt.Errorf("deleteNotifySubscription: %w", err)
 	}

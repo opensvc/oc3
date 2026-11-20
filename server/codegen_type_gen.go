@@ -245,6 +245,51 @@ func (e ChecksBatchInputAction) Valid() bool {
 	}
 }
 
+// Defines values for ClusterEnrollmentResultState.
+const (
+	ClusterEnrollmentResultStateDone   ClusterEnrollmentResultState = "done"
+	ClusterEnrollmentResultStateFailed ClusterEnrollmentResultState = "failed"
+)
+
+// Valid indicates whether the value is a known member of the ClusterEnrollmentResultState enum.
+func (e ClusterEnrollmentResultState) Valid() bool {
+	switch e {
+	case ClusterEnrollmentResultStateDone:
+		return true
+	case ClusterEnrollmentResultStateFailed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ClusterEnrollmentState.
+const (
+	ClusterEnrollmentStateClaimed ClusterEnrollmentState = "claimed"
+	ClusterEnrollmentStateDone    ClusterEnrollmentState = "done"
+	ClusterEnrollmentStateExpired ClusterEnrollmentState = "expired"
+	ClusterEnrollmentStateFailed  ClusterEnrollmentState = "failed"
+	ClusterEnrollmentStatePending ClusterEnrollmentState = "pending"
+)
+
+// Valid indicates whether the value is a known member of the ClusterEnrollmentState enum.
+func (e ClusterEnrollmentState) Valid() bool {
+	switch e {
+	case ClusterEnrollmentStateClaimed:
+		return true
+	case ClusterEnrollmentStateDone:
+		return true
+	case ClusterEnrollmentStateExpired:
+		return true
+	case ClusterEnrollmentStateFailed:
+		return true
+	case ClusterEnrollmentStatePending:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ComplianceAttachmentOutcomeObject.
 const (
 	ComplianceAttachmentOutcomeObjectModuleset ComplianceAttachmentOutcomeObject = "moduleset"
@@ -788,6 +833,24 @@ func (e NetworkSegmentRowSegType) Valid() bool {
 	}
 }
 
+// Defines values for NodeBootstrapClusterRole.
+const (
+	Join NodeBootstrapClusterRole = "join"
+	Seed NodeBootstrapClusterRole = "seed"
+)
+
+// Valid indicates whether the value is a known member of the NodeBootstrapClusterRole enum.
+func (e NodeBootstrapClusterRole) Valid() bool {
+	switch e {
+	case Join:
+		return true
+	case Seed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for NotificationChannelType.
 const (
 	NotificationChannelEmail      NotificationChannelType = "email"
@@ -1166,6 +1229,54 @@ func (e ServiceActionAckRequestAck) Valid() bool {
 	}
 }
 
+// Defines values for ServiceStartupEdgeKind.
+const (
+	Requires ServiceStartupEdgeKind = "requires"
+	Sequence ServiceStartupEdgeKind = "sequence"
+)
+
+// Valid indicates whether the value is a known member of the ServiceStartupEdgeKind enum.
+func (e ServiceStartupEdgeKind) Valid() bool {
+	switch e {
+	case Requires:
+		return true
+	case Sequence:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ServiceStartupVertexKind.
+const (
+	ServiceStartupVertexKindEncap    ServiceStartupVertexKind = "encap"
+	ServiceStartupVertexKindNode     ServiceStartupVertexKind = "node"
+	ServiceStartupVertexKindResource ServiceStartupVertexKind = "resource"
+	ServiceStartupVertexKindService  ServiceStartupVertexKind = "service"
+	ServiceStartupVertexKindSubset   ServiceStartupVertexKind = "subset"
+	ServiceStartupVertexKindTrigger  ServiceStartupVertexKind = "trigger"
+)
+
+// Valid indicates whether the value is a known member of the ServiceStartupVertexKind enum.
+func (e ServiceStartupVertexKind) Valid() bool {
+	switch e {
+	case ServiceStartupVertexKindEncap:
+		return true
+	case ServiceStartupVertexKindNode:
+		return true
+	case ServiceStartupVertexKindResource:
+		return true
+	case ServiceStartupVertexKindService:
+		return true
+	case ServiceStartupVertexKindSubset:
+		return true
+	case ServiceStartupVertexKindTrigger:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SysreportEntryKind.
 const (
 	SysreportEntryKindCommand SysreportEntryKind = "command"
@@ -1498,19 +1609,19 @@ func (e PutComplianceRulesetVariableJSONBodyAction) Valid() bool {
 
 // Defines values for GetComplianceStatusSummaryParamsBy.
 const (
-	GetComplianceStatusSummaryParamsByModule  GetComplianceStatusSummaryParamsBy = "module"
-	GetComplianceStatusSummaryParamsByNode    GetComplianceStatusSummaryParamsBy = "node"
-	GetComplianceStatusSummaryParamsByService GetComplianceStatusSummaryParamsBy = "service"
+	Module  GetComplianceStatusSummaryParamsBy = "module"
+	Node    GetComplianceStatusSummaryParamsBy = "node"
+	Service GetComplianceStatusSummaryParamsBy = "service"
 )
 
 // Valid indicates whether the value is a known member of the GetComplianceStatusSummaryParamsBy enum.
 func (e GetComplianceStatusSummaryParamsBy) Valid() bool {
 	switch e {
-	case GetComplianceStatusSummaryParamsByModule:
+	case Module:
 		return true
-	case GetComplianceStatusSummaryParamsByNode:
+	case Node:
 		return true
-	case GetComplianceStatusSummaryParamsByService:
+	case Service:
 		return true
 	default:
 		return false
@@ -2858,6 +2969,142 @@ type ChecksBatchInput struct {
 
 // ChecksBatchInputAction defines model for ChecksBatchInput.Action.
 type ChecksBatchInputAction string
+
+// ClusterDeclaration defines model for ClusterDeclaration.
+type ClusterDeclaration struct {
+	App          string             `json:"app"`
+	ClusterId    string             `json:"cluster_id"`
+	ClusterName  string             `json:"cluster_name"`
+	Created      time.Time          `json:"created"`
+	CreatedBy    string             `json:"created_by"`
+	Heartbeats   []ClusterHeartbeat `json:"heartbeats"`
+	SeedNodeId   *string            `json:"seed_node_id,omitempty"`
+	SeedNodename *string            `json:"seed_nodename,omitempty"`
+	Updated      time.Time          `json:"updated"`
+}
+
+// ClusterDeclarationInput defines model for ClusterDeclarationInput.
+type ClusterDeclarationInput struct {
+	// App The app of the nodes of the cluster.
+	App *string `json:"app,omitempty"`
+
+	// ClusterId The id of a cluster reporting already. Omitted, a new id.
+	ClusterId   *string             `json:"cluster_id,omitempty"`
+	ClusterName string              `json:"cluster_name"`
+	Heartbeats  *[]ClusterHeartbeat `json:"heartbeats,omitempty"`
+}
+
+// ClusterDeclarationList defines model for ClusterDeclarationList.
+type ClusterDeclarationList struct {
+	Data []ClusterDeclarationSummary `json:"data"`
+}
+
+// ClusterDeclarationNode defines model for ClusterDeclarationNode.
+type ClusterDeclarationNode struct {
+	App string `json:"app"`
+
+	// ClusterId The cluster the node row names now.
+	ClusterId string `json:"cluster_id"`
+
+	// LastComm The last report of the node, null when it never reported.
+	LastComm     *time.Time `json:"last_comm,omitempty"`
+	NodeId       string     `json:"node_id"`
+	Nodename     string     `json:"nodename"`
+	Seed         bool       `json:"seed"`
+	TokenCreated *time.Time `json:"token_created,omitempty"`
+	TokenExpires *time.Time `json:"token_expires,omitempty"`
+	TokenUsed    *time.Time `json:"token_used,omitempty"`
+}
+
+// ClusterDeclarationNodeInput defines model for ClusterDeclarationNodeInput.
+type ClusterDeclarationNodeInput struct {
+	App      *string `json:"app,omitempty"`
+	Nodename string  `json:"nodename"`
+}
+
+// ClusterDeclarationNodeList defines model for ClusterDeclarationNodeList.
+type ClusterDeclarationNodeList struct {
+	Data []ClusterDeclarationNode `json:"data"`
+}
+
+// ClusterDeclarationSummary defines model for ClusterDeclarationSummary.
+type ClusterDeclarationSummary struct {
+	App         string             `json:"app"`
+	ClusterId   string             `json:"cluster_id"`
+	ClusterName string             `json:"cluster_name"`
+	Created     time.Time          `json:"created"`
+	CreatedBy   string             `json:"created_by"`
+	Heartbeats  []ClusterHeartbeat `json:"heartbeats"`
+
+	// NodeCount The nodes the collector has with the cluster_id.
+	NodeCount          int `json:"node_count"`
+	PendingEnrollments int `json:"pending_enrollments"`
+
+	// ReportingCount Those that reported to the collector.
+	ReportingCount int       `json:"reporting_count"`
+	SeedNodeId     *string   `json:"seed_node_id,omitempty"`
+	SeedNodename   *string   `json:"seed_nodename,omitempty"`
+	Updated        time.Time `json:"updated"`
+}
+
+// ClusterDeclarationUpdate defines model for ClusterDeclarationUpdate.
+type ClusterDeclarationUpdate struct {
+	App        *string             `json:"app,omitempty"`
+	Heartbeats *[]ClusterHeartbeat `json:"heartbeats,omitempty"`
+}
+
+// ClusterEnrollment defines model for ClusterEnrollment.
+type ClusterEnrollment struct {
+	ClaimedBy *string                `json:"claimed_by,omitempty"`
+	ClusterId string                 `json:"cluster_id"`
+	Created   time.Time              `json:"created"`
+	Expires   time.Time              `json:"expires"`
+	Id        int64                  `json:"id"`
+	Message   string                 `json:"message"`
+	NodeAddr  string                 `json:"node_addr"`
+	NodeId    string                 `json:"node_id"`
+	Nodename  string                 `json:"nodename"`
+	State     ClusterEnrollmentState `json:"state"`
+	Updated   time.Time              `json:"updated"`
+}
+
+// ClusterEnrollmentClaim defines model for ClusterEnrollmentClaim.
+type ClusterEnrollmentClaim struct {
+	Enrollment ClusterEnrollment `json:"enrollment"`
+	JoinToken  string            `json:"join_token"`
+}
+
+// ClusterEnrollmentList defines model for ClusterEnrollmentList.
+type ClusterEnrollmentList struct {
+	Data []ClusterEnrollment `json:"data"`
+}
+
+// ClusterEnrollmentRequest defines model for ClusterEnrollmentRequest.
+type ClusterEnrollmentRequest struct {
+	JoinToken string `json:"join_token"`
+
+	// NodeAddr Where the members reach the api of the node. Its nodename by default.
+	NodeAddr *string `json:"node_addr,omitempty"`
+}
+
+// ClusterEnrollmentResult defines model for ClusterEnrollmentResult.
+type ClusterEnrollmentResult struct {
+	Message *string                      `json:"message,omitempty"`
+	State   ClusterEnrollmentResultState `json:"state"`
+}
+
+// ClusterEnrollmentResultState defines model for ClusterEnrollmentResult.State.
+type ClusterEnrollmentResultState string
+
+// ClusterEnrollmentState defines model for ClusterEnrollmentState.
+type ClusterEnrollmentState string
+
+// ClusterHeartbeat A hb#<n> section of the om3 cluster configuration, n its rank from 1:
+// its keywords and their values. type is required.
+type ClusterHeartbeat struct {
+	Type                 string            `json:"type"`
+	AdditionalProperties map[string]string `json:"-"`
+}
 
 // ClusterListResponse defines model for ClusterListResponse.
 type ClusterListResponse struct {
@@ -5134,6 +5381,49 @@ type NetworkSegmentRow struct {
 // NetworkSegmentRowSegType defines model for NetworkSegmentRow.SegType.
 type NetworkSegmentRowSegType string
 
+// NodeBootstrap defines model for NodeBootstrap.
+type NodeBootstrap struct {
+	App      string               `json:"app"`
+	Cluster  NodeBootstrapCluster `json:"cluster"`
+	NodeId   string               `json:"node_id"`
+	Nodename string               `json:"nodename"`
+
+	// Uuid The credential of the node on the collector (node.uuid).
+	Uuid string `json:"uuid"`
+}
+
+// NodeBootstrapCluster defines model for NodeBootstrapCluster.
+type NodeBootstrapCluster struct {
+	Heartbeats []ClusterHeartbeat       `json:"heartbeats"`
+	Id         string                   `json:"id"`
+	Name       string                   `json:"name"`
+	Role       NodeBootstrapClusterRole `json:"role"`
+
+	// SeedNodename The node that created the cluster, when role is join.
+	SeedNodename *string `json:"seed_nodename,omitempty"`
+}
+
+// NodeBootstrapClusterRole defines model for NodeBootstrapCluster.Role.
+type NodeBootstrapClusterRole string
+
+// NodeBootstrapRequest defines model for NodeBootstrapRequest.
+type NodeBootstrapRequest struct {
+	Nodename string `json:"nodename"`
+	Token    string `json:"token"`
+}
+
+// NodeBootstrapToken defines model for NodeBootstrapToken.
+type NodeBootstrapToken struct {
+	Expires time.Time `json:"expires"`
+	Token   string    `json:"token"`
+}
+
+// NodeBootstrapTokenRequest defines model for NodeBootstrapTokenRequest.
+type NodeBootstrapTokenRequest struct {
+	// TtlMinutes The lifetime of the token, 60 by default, 1440 at most.
+	TtlMinutes *int `json:"ttl_minutes,omitempty"`
+}
+
 // NodeHardwareListResponse defines model for NodeHardwareListResponse.
 type NodeHardwareListResponse struct {
 	Data NodeHardwareListResponse_Data `json:"data"`
@@ -6579,6 +6869,98 @@ type SavesSummaryResponse struct {
 	TotalSize int64 `json:"total_size"`
 }
 
+// SchedulerRunListResponse defines model for SchedulerRunListResponse.
+type SchedulerRunListResponse struct {
+	Data SchedulerRunListResponse_Data `json:"data"`
+	Meta *ListMeta                     `json:"meta,omitempty"`
+}
+
+// SchedulerRunListResponseData0 defines model for .
+type SchedulerRunListResponseData0 = []SchedulerRunRow
+
+// SchedulerRunListResponseData1 defines model for .
+type SchedulerRunListResponseData1 map[string]map[string]int
+
+// SchedulerRunListResponse_Data defines model for SchedulerRunListResponse.Data.
+type SchedulerRunListResponse_Data struct {
+	union json.RawMessage
+}
+
+// SchedulerRunRow A run of a scheduler task or subtask. Every property is optional: the
+// `props` query parameter selects which columns the server returns.
+type SchedulerRunRow struct {
+	BeginAt    *string `json:"begin_at,omitempty"`
+	DurationMs *int    `json:"duration_ms,omitempty"`
+	Error      *string `json:"error,omitempty"`
+	Id         *int    `json:"id,omitempty"`
+
+	// Status ok or failed.
+	Status   *string `json:"status,omitempty"`
+	TaskName *string `json:"task_name,omitempty"`
+}
+
+// SchedulerTaskInput defines model for SchedulerTaskInput.
+type SchedulerTaskInput struct {
+	IsDisabled bool `json:"is_disabled"`
+}
+
+// SchedulerTaskListResponse defines model for SchedulerTaskListResponse.
+type SchedulerTaskListResponse struct {
+	Data SchedulerTaskListResponse_Data `json:"data"`
+	Meta *ListMeta                      `json:"meta,omitempty"`
+}
+
+// SchedulerTaskListResponseData0 defines model for .
+type SchedulerTaskListResponseData0 = []SchedulerTaskRow
+
+// SchedulerTaskListResponseData1 defines model for .
+type SchedulerTaskListResponseData1 map[string]map[string]int
+
+// SchedulerTaskListResponse_Data defines model for SchedulerTaskListResponse.Data.
+type SchedulerTaskListResponse_Data struct {
+	union json.RawMessage
+}
+
+// SchedulerTaskRow A task or a subtask of the scheduler. Every property is optional: the
+// `props` query parameter selects which columns the server returns. The
+// dates are those of the database, as text, empty when unset.
+type SchedulerTaskRow struct {
+	AvgDurationMs24h *int `json:"avg_duration_ms_24h,omitempty"`
+
+	// Declared Whether the scheduler declared it at its last start; false for a task the code does not hold any more.
+	Declared       *bool   `json:"declared,omitempty"`
+	Failures24h    *int    `json:"failures_24h,omitempty"`
+	Id             *int    `json:"id,omitempty"`
+	IsDisabled     *bool   `json:"is_disabled,omitempty"`
+	LastBeginAt    *string `json:"last_begin_at,omitempty"`
+	LastDurationMs *int    `json:"last_duration_ms,omitempty"`
+	LastError      *string `json:"last_error,omitempty"`
+
+	// LastRunAt When the scheduler last started the task, which the next run follows by its period. Empty for a subtask.
+	LastRunAt *string `json:"last_run_at,omitempty"`
+
+	// LastStatus ok or failed; empty before the first recorded run.
+	LastStatus       *string `json:"last_status,omitempty"`
+	MaxDurationMs24h *int    `json:"max_duration_ms_24h,omitempty"`
+
+	// NextRunAt When the scheduler runs an enabled task next. Empty for a subtask or a disabled task.
+	NextRunAt *string `json:"next_run_at,omitempty"`
+
+	// Parent The task running this subtask, empty for a task.
+	Parent *string `json:"parent,omitempty"`
+
+	// PeriodS Seconds between two runs, the period of its task for a subtask; 0 when not scheduled.
+	PeriodS  *int    `json:"period_s,omitempty"`
+	Runs24h  *int    `json:"runs_24h,omitempty"`
+	TaskDesc *string `json:"task_desc,omitempty"`
+
+	// TaskName The name of the task, "<task>: <subtask>" for a subtask.
+	TaskName *string `json:"task_name,omitempty"`
+
+	// TimeoutS Seconds a run may last.
+	TimeoutS *int `json:"timeout_s,omitempty"`
+}
+
 // SearchGroup The objects of one kind matching a search.
 type SearchGroup struct {
 	// Error Set when the kind could not be searched.
@@ -6773,6 +7155,84 @@ type ServiceRow struct {
 	Svcname          *string  `json:"svcname,omitempty"`
 	Updated          *string  `json:"updated,omitempty"`
 }
+
+// ServiceStartup The startup graph of a service on a node.
+type ServiceStartup struct {
+	Edges []ServiceStartupEdge `json:"edges"`
+
+	// NodeId The node drawn, absent for a service with no instance.
+	NodeId   *string `json:"node_id,omitempty"`
+	Nodename *string `json:"nodename,omitempty"`
+
+	// Nodes The nodes of the service, by name.
+	Nodes    []ServiceStartupNode   `json:"nodes"`
+	SvcId    string                 `json:"svc_id"`
+	Svcname  string                 `json:"svcname"`
+	Vertices []ServiceStartupVertex `json:"vertices"`
+}
+
+// ServiceStartupEdge defines model for ServiceStartupEdge.
+type ServiceStartupEdge struct {
+	From string `json:"from"`
+
+	// Kind sequence, from a step to a step that follows it; requires, from a
+	// resource to one whose start waits for it (start_requires), or from
+	// a container to the encap node it holds.
+	Kind ServiceStartupEdgeKind `json:"kind"`
+
+	// Label The states a requirement waits for.
+	Label *string `json:"label,omitempty"`
+	To    string  `json:"to"`
+}
+
+// ServiceStartupEdgeKind sequence, from a step to a step that follows it; requires, from a
+// resource to one whose start waits for it (start_requires), or from
+// a container to the encap node it holds.
+type ServiceStartupEdgeKind string
+
+// ServiceStartupNode defines model for ServiceStartupNode.
+type ServiceStartupNode struct {
+	NodeId   string `json:"node_id"`
+	Nodename string `json:"nodename"`
+}
+
+// ServiceStartupVertex defines model for ServiceStartupVertex.
+type ServiceStartupVertex struct {
+	// Desc Description of a resource the agent reports; command of a trigger.
+	Desc     *string `json:"desc,omitempty"`
+	Disabled *bool   `json:"disabled,omitempty"`
+	Encap    *bool   `json:"encap,omitempty"`
+
+	// Family Driver group of a resource, ip, volume, disk, fs, share, container, app.
+	Family  *string                  `json:"family,omitempty"`
+	Id      string                   `json:"id"`
+	Kind    ServiceStartupVertexKind `json:"kind"`
+	Label   string                   `json:"label"`
+	Monitor *bool                    `json:"monitor,omitempty"`
+
+	// Node The encap node a resource runs in.
+	Node     *string `json:"node,omitempty"`
+	Optional *bool   `json:"optional,omitempty"`
+
+	// Parallel A subset whose resources start in parallel.
+	Parallel *bool `json:"parallel,omitempty"`
+
+	// Rid The resource; that of a trigger; the container of an encap node.
+	Rid     *string `json:"rid,omitempty"`
+	Standby *bool   `json:"standby,omitempty"`
+
+	// Status State of a resource the agent last reported, absent when never reported.
+	Status *string `json:"status,omitempty"`
+
+	// Trigger Hook of a trigger, blocking_pre_start, pre_start, blocking_post_start, post_start.
+	Trigger *string `json:"trigger,omitempty"`
+
+	// Type Driver of a resource, docker, netns, flag...
+	Type *string `json:"type,omitempty"`
+}
+
+// ServiceStartupVertexKind defines model for ServiceStartupVertex.Kind.
+type ServiceStartupVertexKind string
 
 // ServiceStatusPeriod defines model for ServiceStatusPeriod.
 type ServiceStatusPeriod struct {
@@ -7475,8 +7935,14 @@ type Version struct {
 // InPathAIName defines model for inPathAIName.
 type InPathAIName = string
 
+// InPathClusterId defines model for inPathClusterId.
+type InPathClusterId = string
+
 // InPathComplianceAgentName defines model for inPathComplianceAgentName.
 type InPathComplianceAgentName = string
+
+// InPathEnrollmentId defines model for inPathEnrollmentId.
+type InPathEnrollmentId = int64
 
 // InPathMsetId defines model for inPathMsetId.
 type InPathMsetId = string
@@ -7504,6 +7970,9 @@ type InPathOrchestrationRunId = int
 
 // InPathRsetId defines model for inPathRsetId.
 type InPathRsetId = string
+
+// InPathSchedulerTaskName defines model for inPathSchedulerTaskName.
+type InPathSchedulerTaskName = string
 
 // InQueryAIBackend an AI backend of the agent, om3 for a cluster, oc3 for the collector
 type InQueryAIBackend = AIBackend
@@ -8774,10 +9243,13 @@ type PostAuthNodeJSONBody struct {
 	// takes the app of the enroller.
 	App *string `json:"app,omitempty"`
 
-	// ClusterId The cluster id of the node, set on the node so it is
-	// known before its first daemon status. Absent or empty, the
-	// node cluster id is left untouched. Ignored for a joining
-	// node, which takes the cluster id of the enroller.
+	// ClusterId The cluster id of the node, claimed for the node so it is
+	// known before its first daemon status: the node becomes a
+	// member of a cluster the collector does not know at once, of
+	// a cluster known already once a member lists it in its
+	// daemon status. Absent or empty, the node cluster id is left
+	// untouched. Ignored for a joining node, which takes the
+	// cluster id of the enroller.
 	ClusterId *string `json:"cluster_id,omitempty"`
 	Nodename  string  `json:"nodename"`
 
@@ -13612,80 +14084,84 @@ type GetNodesParams struct {
 
 // PostNodesJSONBody defines parameters for PostNodes.
 type PostNodesJSONBody struct {
-	ActionType          *PostNodesJSONBodyActionType `json:"action_type,omitempty"`
-	App                 *string                      `json:"app,omitempty"`
-	AssetEnv            *string                      `json:"asset_env,omitempty"`
-	Assetname           *string                      `json:"assetname,omitempty"`
-	BiosVersion         *string                      `json:"bios_version,omitempty"`
-	ClusterId           *string                      `json:"cluster_id,omitempty"`
-	Collector           *string                      `json:"collector,omitempty"`
-	ConnectTo           *string                      `json:"connect_to,omitempty"`
-	CpuCores            *int                         `json:"cpu_cores,omitempty"`
-	CpuDies             *int                         `json:"cpu_dies,omitempty"`
-	CpuFreq             *string                      `json:"cpu_freq,omitempty"`
-	CpuModel            *string                      `json:"cpu_model,omitempty"`
-	CpuThreads          *int                         `json:"cpu_threads,omitempty"`
-	CpuVendor           *string                      `json:"cpu_vendor,omitempty"`
-	Enclosure           *string                      `json:"enclosure,omitempty"`
-	Enclosureslot       *string                      `json:"enclosureslot,omitempty"`
-	Fqdn                *string                      `json:"fqdn,omitempty"`
-	Hv                  *string                      `json:"hv,omitempty"`
-	Hvpool              *string                      `json:"hvpool,omitempty"`
-	Hvvdc               *string                      `json:"hvvdc,omitempty"`
-	HwObsAlertDate      *string                      `json:"hw_obs_alert_date,omitempty"`
-	HwObsWarnDate       *string                      `json:"hw_obs_warn_date,omitempty"`
-	LastBoot            *string                      `json:"last_boot,omitempty"`
-	LastComm            *string                      `json:"last_comm,omitempty"`
-	ListenerPort        *int                         `json:"listener_port,omitempty"`
-	LocAddr             *string                      `json:"loc_addr,omitempty"`
-	LocBuilding         *string                      `json:"loc_building,omitempty"`
-	LocCity             *string                      `json:"loc_city,omitempty"`
-	LocCountry          *string                      `json:"loc_country,omitempty"`
-	LocFloor            *string                      `json:"loc_floor,omitempty"`
-	LocRack             *string                      `json:"loc_rack,omitempty"`
-	LocRoom             *string                      `json:"loc_room,omitempty"`
-	LocZip              *string                      `json:"loc_zip,omitempty"`
-	MaintenanceEnd      *string                      `json:"maintenance_end,omitempty"`
-	Manufacturer        *string                      `json:"manufacturer,omitempty"`
-	MemBanks            *int                         `json:"mem_banks,omitempty"`
-	MemBytes            *int                         `json:"mem_bytes,omitempty"`
-	MemSlots            *int                         `json:"mem_slots,omitempty"`
-	Model               *string                      `json:"model,omitempty"`
-	NodeEnv             *string                      `json:"node_env,omitempty"`
-	NodeFrozen          *bool                        `json:"node_frozen,omitempty"`
-	NodeFrozenAt        *string                      `json:"node_frozen_at,omitempty"`
-	NodeId              *string                      `json:"node_id,omitempty"`
-	Nodename            *string                      `json:"nodename,omitempty"`
-	Notifications       *bool                        `json:"notifications,omitempty"`
-	OsArch              *string                      `json:"os_arch,omitempty"`
-	OsConcat            *string                      `json:"os_concat,omitempty"`
-	OsKernel            *string                      `json:"os_kernel,omitempty"`
-	OsName              *string                      `json:"os_name,omitempty"`
-	OsObsAlertDate      *string                      `json:"os_obs_alert_date,omitempty"`
-	OsObsWarnDate       *string                      `json:"os_obs_warn_date,omitempty"`
-	OsRelease           *string                      `json:"os_release,omitempty"`
-	OsVendor            *string                      `json:"os_vendor,omitempty"`
-	PowerBreaker1       *string                      `json:"power_breaker1,omitempty"`
-	PowerBreaker2       *string                      `json:"power_breaker2,omitempty"`
-	PowerCabinet1       *string                      `json:"power_cabinet1,omitempty"`
-	PowerCabinet2       *string                      `json:"power_cabinet2,omitempty"`
-	PowerProtect        *string                      `json:"power_protect,omitempty"`
-	PowerProtectBreaker *string                      `json:"power_protect_breaker,omitempty"`
-	PowerSupplyNb       *int                         `json:"power_supply_nb,omitempty"`
-	Role                *string                      `json:"role,omitempty"`
-	SecZone             *string                      `json:"sec_zone,omitempty"`
-	Serial              *string                      `json:"serial,omitempty"`
-	SnoozeTill          *string                      `json:"snooze_till,omitempty"`
-	SpVersion           *string                      `json:"sp_version,omitempty"`
-	Status              *string                      `json:"status,omitempty"`
-	TeamInteg           *string                      `json:"team_integ,omitempty"`
-	TeamResponsible     *string                      `json:"team_responsible,omitempty"`
-	TeamSupport         *string                      `json:"team_support,omitempty"`
-	Type                *string                      `json:"type,omitempty"`
-	Tz                  *string                      `json:"tz,omitempty"`
-	Updated             *string                      `json:"updated,omitempty"`
-	Version             *string                      `json:"version,omitempty"`
-	WarrantyEnd         *string                      `json:"warranty_end,omitempty"`
+	ActionType  *PostNodesJSONBodyActionType `json:"action_type,omitempty"`
+	App         *string                      `json:"app,omitempty"`
+	AssetEnv    *string                      `json:"asset_env,omitempty"`
+	Assetname   *string                      `json:"assetname,omitempty"`
+	BiosVersion *string                      `json:"bios_version,omitempty"`
+
+	// ClusterId Set by a Manager only, refused to a node: a node is a
+	// member of the cluster its daemon status reports, once a
+	// member confirms it.
+	ClusterId           *string `json:"cluster_id,omitempty"`
+	Collector           *string `json:"collector,omitempty"`
+	ConnectTo           *string `json:"connect_to,omitempty"`
+	CpuCores            *int    `json:"cpu_cores,omitempty"`
+	CpuDies             *int    `json:"cpu_dies,omitempty"`
+	CpuFreq             *string `json:"cpu_freq,omitempty"`
+	CpuModel            *string `json:"cpu_model,omitempty"`
+	CpuThreads          *int    `json:"cpu_threads,omitempty"`
+	CpuVendor           *string `json:"cpu_vendor,omitempty"`
+	Enclosure           *string `json:"enclosure,omitempty"`
+	Enclosureslot       *string `json:"enclosureslot,omitempty"`
+	Fqdn                *string `json:"fqdn,omitempty"`
+	Hv                  *string `json:"hv,omitempty"`
+	Hvpool              *string `json:"hvpool,omitempty"`
+	Hvvdc               *string `json:"hvvdc,omitempty"`
+	HwObsAlertDate      *string `json:"hw_obs_alert_date,omitempty"`
+	HwObsWarnDate       *string `json:"hw_obs_warn_date,omitempty"`
+	LastBoot            *string `json:"last_boot,omitempty"`
+	LastComm            *string `json:"last_comm,omitempty"`
+	ListenerPort        *int    `json:"listener_port,omitempty"`
+	LocAddr             *string `json:"loc_addr,omitempty"`
+	LocBuilding         *string `json:"loc_building,omitempty"`
+	LocCity             *string `json:"loc_city,omitempty"`
+	LocCountry          *string `json:"loc_country,omitempty"`
+	LocFloor            *string `json:"loc_floor,omitempty"`
+	LocRack             *string `json:"loc_rack,omitempty"`
+	LocRoom             *string `json:"loc_room,omitempty"`
+	LocZip              *string `json:"loc_zip,omitempty"`
+	MaintenanceEnd      *string `json:"maintenance_end,omitempty"`
+	Manufacturer        *string `json:"manufacturer,omitempty"`
+	MemBanks            *int    `json:"mem_banks,omitempty"`
+	MemBytes            *int    `json:"mem_bytes,omitempty"`
+	MemSlots            *int    `json:"mem_slots,omitempty"`
+	Model               *string `json:"model,omitempty"`
+	NodeEnv             *string `json:"node_env,omitempty"`
+	NodeFrozen          *bool   `json:"node_frozen,omitempty"`
+	NodeFrozenAt        *string `json:"node_frozen_at,omitempty"`
+	NodeId              *string `json:"node_id,omitempty"`
+	Nodename            *string `json:"nodename,omitempty"`
+	Notifications       *bool   `json:"notifications,omitempty"`
+	OsArch              *string `json:"os_arch,omitempty"`
+	OsConcat            *string `json:"os_concat,omitempty"`
+	OsKernel            *string `json:"os_kernel,omitempty"`
+	OsName              *string `json:"os_name,omitempty"`
+	OsObsAlertDate      *string `json:"os_obs_alert_date,omitempty"`
+	OsObsWarnDate       *string `json:"os_obs_warn_date,omitempty"`
+	OsRelease           *string `json:"os_release,omitempty"`
+	OsVendor            *string `json:"os_vendor,omitempty"`
+	PowerBreaker1       *string `json:"power_breaker1,omitempty"`
+	PowerBreaker2       *string `json:"power_breaker2,omitempty"`
+	PowerCabinet1       *string `json:"power_cabinet1,omitempty"`
+	PowerCabinet2       *string `json:"power_cabinet2,omitempty"`
+	PowerProtect        *string `json:"power_protect,omitempty"`
+	PowerProtectBreaker *string `json:"power_protect_breaker,omitempty"`
+	PowerSupplyNb       *int    `json:"power_supply_nb,omitempty"`
+	Role                *string `json:"role,omitempty"`
+	SecZone             *string `json:"sec_zone,omitempty"`
+	Serial              *string `json:"serial,omitempty"`
+	SnoozeTill          *string `json:"snooze_till,omitempty"`
+	SpVersion           *string `json:"sp_version,omitempty"`
+	Status              *string `json:"status,omitempty"`
+	TeamInteg           *string `json:"team_integ,omitempty"`
+	TeamResponsible     *string `json:"team_responsible,omitempty"`
+	TeamSupport         *string `json:"team_support,omitempty"`
+	Type                *string `json:"type,omitempty"`
+	Tz                  *string `json:"tz,omitempty"`
+	Updated             *string `json:"updated,omitempty"`
+	Version             *string `json:"version,omitempty"`
+	WarrantyEnd         *string `json:"warranty_end,omitempty"`
 }
 
 // PostNodesJSONBodyActionType defines parameters for PostNodes.
@@ -13829,79 +14305,83 @@ type GetNodeParams struct {
 
 // PostNodeJSONBody defines parameters for PostNode.
 type PostNodeJSONBody struct {
-	ActionType          *PostNodeJSONBodyActionType `json:"action_type,omitempty"`
-	App                 *string                     `json:"app,omitempty"`
-	AssetEnv            *string                     `json:"asset_env,omitempty"`
-	Assetname           *string                     `json:"assetname,omitempty"`
-	BiosVersion         *string                     `json:"bios_version,omitempty"`
-	ClusterId           *string                     `json:"cluster_id,omitempty"`
-	Collector           *string                     `json:"collector,omitempty"`
-	ConnectTo           *string                     `json:"connect_to,omitempty"`
-	CpuCores            *int                        `json:"cpu_cores,omitempty"`
-	CpuDies             *int                        `json:"cpu_dies,omitempty"`
-	CpuFreq             *string                     `json:"cpu_freq,omitempty"`
-	CpuModel            *string                     `json:"cpu_model,omitempty"`
-	CpuThreads          *int                        `json:"cpu_threads,omitempty"`
-	CpuVendor           *string                     `json:"cpu_vendor,omitempty"`
-	Enclosure           *string                     `json:"enclosure,omitempty"`
-	Enclosureslot       *string                     `json:"enclosureslot,omitempty"`
-	Fqdn                *string                     `json:"fqdn,omitempty"`
-	Hv                  *string                     `json:"hv,omitempty"`
-	Hvpool              *string                     `json:"hvpool,omitempty"`
-	Hvvdc               *string                     `json:"hvvdc,omitempty"`
-	HwObsAlertDate      *string                     `json:"hw_obs_alert_date,omitempty"`
-	HwObsWarnDate       *string                     `json:"hw_obs_warn_date,omitempty"`
-	LastBoot            *string                     `json:"last_boot,omitempty"`
-	LastComm            *string                     `json:"last_comm,omitempty"`
-	ListenerPort        *int                        `json:"listener_port,omitempty"`
-	LocAddr             *string                     `json:"loc_addr,omitempty"`
-	LocBuilding         *string                     `json:"loc_building,omitempty"`
-	LocCity             *string                     `json:"loc_city,omitempty"`
-	LocCountry          *string                     `json:"loc_country,omitempty"`
-	LocFloor            *string                     `json:"loc_floor,omitempty"`
-	LocRack             *string                     `json:"loc_rack,omitempty"`
-	LocRoom             *string                     `json:"loc_room,omitempty"`
-	LocZip              *string                     `json:"loc_zip,omitempty"`
-	MaintenanceEnd      *string                     `json:"maintenance_end,omitempty"`
-	Manufacturer        *string                     `json:"manufacturer,omitempty"`
-	MemBanks            *int                        `json:"mem_banks,omitempty"`
-	MemBytes            *int                        `json:"mem_bytes,omitempty"`
-	MemSlots            *int                        `json:"mem_slots,omitempty"`
-	Model               *string                     `json:"model,omitempty"`
-	NodeEnv             *string                     `json:"node_env,omitempty"`
-	NodeFrozen          *bool                       `json:"node_frozen,omitempty"`
-	NodeFrozenAt        *string                     `json:"node_frozen_at,omitempty"`
-	Nodename            *string                     `json:"nodename,omitempty"`
-	Notifications       *bool                       `json:"notifications,omitempty"`
-	OsArch              *string                     `json:"os_arch,omitempty"`
-	OsConcat            *string                     `json:"os_concat,omitempty"`
-	OsKernel            *string                     `json:"os_kernel,omitempty"`
-	OsName              *string                     `json:"os_name,omitempty"`
-	OsObsAlertDate      *string                     `json:"os_obs_alert_date,omitempty"`
-	OsObsWarnDate       *string                     `json:"os_obs_warn_date,omitempty"`
-	OsRelease           *string                     `json:"os_release,omitempty"`
-	OsVendor            *string                     `json:"os_vendor,omitempty"`
-	PowerBreaker1       *string                     `json:"power_breaker1,omitempty"`
-	PowerBreaker2       *string                     `json:"power_breaker2,omitempty"`
-	PowerCabinet1       *string                     `json:"power_cabinet1,omitempty"`
-	PowerCabinet2       *string                     `json:"power_cabinet2,omitempty"`
-	PowerProtect        *string                     `json:"power_protect,omitempty"`
-	PowerProtectBreaker *string                     `json:"power_protect_breaker,omitempty"`
-	PowerSupplyNb       *int                        `json:"power_supply_nb,omitempty"`
-	Role                *string                     `json:"role,omitempty"`
-	SecZone             *string                     `json:"sec_zone,omitempty"`
-	Serial              *string                     `json:"serial,omitempty"`
-	SnoozeTill          *string                     `json:"snooze_till,omitempty"`
-	SpVersion           *string                     `json:"sp_version,omitempty"`
-	Status              *string                     `json:"status,omitempty"`
-	TeamInteg           *string                     `json:"team_integ,omitempty"`
-	TeamResponsible     *string                     `json:"team_responsible,omitempty"`
-	TeamSupport         *string                     `json:"team_support,omitempty"`
-	Type                *string                     `json:"type,omitempty"`
-	Tz                  *string                     `json:"tz,omitempty"`
-	Updated             *string                     `json:"updated,omitempty"`
-	Version             *string                     `json:"version,omitempty"`
-	WarrantyEnd         *string                     `json:"warranty_end,omitempty"`
+	ActionType  *PostNodeJSONBodyActionType `json:"action_type,omitempty"`
+	App         *string                     `json:"app,omitempty"`
+	AssetEnv    *string                     `json:"asset_env,omitempty"`
+	Assetname   *string                     `json:"assetname,omitempty"`
+	BiosVersion *string                     `json:"bios_version,omitempty"`
+
+	// ClusterId Set by a Manager only, refused to a node: a node is a
+	// member of the cluster its daemon status reports, once a
+	// member confirms it.
+	ClusterId           *string `json:"cluster_id,omitempty"`
+	Collector           *string `json:"collector,omitempty"`
+	ConnectTo           *string `json:"connect_to,omitempty"`
+	CpuCores            *int    `json:"cpu_cores,omitempty"`
+	CpuDies             *int    `json:"cpu_dies,omitempty"`
+	CpuFreq             *string `json:"cpu_freq,omitempty"`
+	CpuModel            *string `json:"cpu_model,omitempty"`
+	CpuThreads          *int    `json:"cpu_threads,omitempty"`
+	CpuVendor           *string `json:"cpu_vendor,omitempty"`
+	Enclosure           *string `json:"enclosure,omitempty"`
+	Enclosureslot       *string `json:"enclosureslot,omitempty"`
+	Fqdn                *string `json:"fqdn,omitempty"`
+	Hv                  *string `json:"hv,omitempty"`
+	Hvpool              *string `json:"hvpool,omitempty"`
+	Hvvdc               *string `json:"hvvdc,omitempty"`
+	HwObsAlertDate      *string `json:"hw_obs_alert_date,omitempty"`
+	HwObsWarnDate       *string `json:"hw_obs_warn_date,omitempty"`
+	LastBoot            *string `json:"last_boot,omitempty"`
+	LastComm            *string `json:"last_comm,omitempty"`
+	ListenerPort        *int    `json:"listener_port,omitempty"`
+	LocAddr             *string `json:"loc_addr,omitempty"`
+	LocBuilding         *string `json:"loc_building,omitempty"`
+	LocCity             *string `json:"loc_city,omitempty"`
+	LocCountry          *string `json:"loc_country,omitempty"`
+	LocFloor            *string `json:"loc_floor,omitempty"`
+	LocRack             *string `json:"loc_rack,omitempty"`
+	LocRoom             *string `json:"loc_room,omitempty"`
+	LocZip              *string `json:"loc_zip,omitempty"`
+	MaintenanceEnd      *string `json:"maintenance_end,omitempty"`
+	Manufacturer        *string `json:"manufacturer,omitempty"`
+	MemBanks            *int    `json:"mem_banks,omitempty"`
+	MemBytes            *int    `json:"mem_bytes,omitempty"`
+	MemSlots            *int    `json:"mem_slots,omitempty"`
+	Model               *string `json:"model,omitempty"`
+	NodeEnv             *string `json:"node_env,omitempty"`
+	NodeFrozen          *bool   `json:"node_frozen,omitempty"`
+	NodeFrozenAt        *string `json:"node_frozen_at,omitempty"`
+	Nodename            *string `json:"nodename,omitempty"`
+	Notifications       *bool   `json:"notifications,omitempty"`
+	OsArch              *string `json:"os_arch,omitempty"`
+	OsConcat            *string `json:"os_concat,omitempty"`
+	OsKernel            *string `json:"os_kernel,omitempty"`
+	OsName              *string `json:"os_name,omitempty"`
+	OsObsAlertDate      *string `json:"os_obs_alert_date,omitempty"`
+	OsObsWarnDate       *string `json:"os_obs_warn_date,omitempty"`
+	OsRelease           *string `json:"os_release,omitempty"`
+	OsVendor            *string `json:"os_vendor,omitempty"`
+	PowerBreaker1       *string `json:"power_breaker1,omitempty"`
+	PowerBreaker2       *string `json:"power_breaker2,omitempty"`
+	PowerCabinet1       *string `json:"power_cabinet1,omitempty"`
+	PowerCabinet2       *string `json:"power_cabinet2,omitempty"`
+	PowerProtect        *string `json:"power_protect,omitempty"`
+	PowerProtectBreaker *string `json:"power_protect_breaker,omitempty"`
+	PowerSupplyNb       *int    `json:"power_supply_nb,omitempty"`
+	Role                *string `json:"role,omitempty"`
+	SecZone             *string `json:"sec_zone,omitempty"`
+	Serial              *string `json:"serial,omitempty"`
+	SnoozeTill          *string `json:"snooze_till,omitempty"`
+	SpVersion           *string `json:"sp_version,omitempty"`
+	Status              *string `json:"status,omitempty"`
+	TeamInteg           *string `json:"team_integ,omitempty"`
+	TeamResponsible     *string `json:"team_responsible,omitempty"`
+	TeamSupport         *string `json:"team_support,omitempty"`
+	Type                *string `json:"type,omitempty"`
+	Tz                  *string `json:"tz,omitempty"`
+	Updated             *string `json:"updated,omitempty"`
+	Version             *string `json:"version,omitempty"`
+	WarrantyEnd         *string `json:"warranty_end,omitempty"`
 }
 
 // PostNodeJSONBodyActionType defines parameters for PostNode.
@@ -15804,6 +16284,124 @@ type GetSaveParams struct {
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
 
+// GetSchedulerRunsParams defines parameters for GetSchedulerRuns.
+type GetSchedulerRunsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetSchedulerTasksParams defines parameters for GetSchedulerTasks.
+type GetSchedulerTasksParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetSchedulerTaskParams defines parameters for GetSchedulerTask.
+type GetSchedulerTaskParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetSearchParams defines parameters for GetSearch.
 type GetSearchParams struct {
 	// Q The text to search for.
@@ -16736,6 +17334,15 @@ type GetServiceResourceLogsParams struct {
 
 	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetServiceStartupParams defines parameters for GetServiceStartup.
+type GetServiceStartupParams struct {
+	// NodeId The node to draw the startup on, the first of the service by name if absent
+	NodeId *string `form:"node_id,omitempty" json:"node_id,omitempty"`
+
+	// ShowDisabled Draw the disabled resources too, which the agent skips
+	ShowDisabled *bool `form:"show_disabled,omitempty" json:"show_disabled,omitempty"`
 }
 
 // GetServiceStatusLogParams defines parameters for GetServiceStatusLog.
@@ -18140,6 +18747,9 @@ type PostAuthBackchannelLogoutFormdataRequestBody PostAuthBackchannelLogoutFormd
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
 
+// PostAuthNodeBootstrapJSONRequestBody defines body for PostAuthNodeBootstrap for application/json ContentType.
+type PostAuthNodeBootstrapJSONRequestBody = NodeBootstrapRequest
+
 // DeleteChartsJSONRequestBody defines body for DeleteCharts for application/json ContentType.
 type DeleteChartsJSONRequestBody DeleteChartsJSONBody
 
@@ -18181,6 +18791,21 @@ type DeleteChecksSettingsJSONRequestBody = CheckKey
 
 // PostChecksSettingsJSONRequestBody defines body for PostChecksSettings for application/json ContentType.
 type PostChecksSettingsJSONRequestBody = CheckSettingsRequest
+
+// PostClustersJSONRequestBody defines body for PostClusters for application/json ContentType.
+type PostClustersJSONRequestBody = ClusterDeclarationInput
+
+// PutClusterDeclarationJSONRequestBody defines body for PutClusterDeclaration for application/json ContentType.
+type PutClusterDeclarationJSONRequestBody = ClusterDeclarationUpdate
+
+// PostClusterDeclarationNodeJSONRequestBody defines body for PostClusterDeclarationNode for application/json ContentType.
+type PostClusterDeclarationNodeJSONRequestBody = ClusterDeclarationNodeInput
+
+// PostClusterEnrollmentJSONRequestBody defines body for PostClusterEnrollment for application/json ContentType.
+type PostClusterEnrollmentJSONRequestBody = ClusterEnrollmentRequest
+
+// PostClusterEnrollmentResultJSONRequestBody defines body for PostClusterEnrollmentResult for application/json ContentType.
+type PostClusterEnrollmentResultJSONRequestBody = ClusterEnrollmentResult
 
 // PostComplianceAttachmentsJSONRequestBody defines body for PostComplianceAttachments for application/json ContentType.
 type PostComplianceAttachmentsJSONRequestBody = ComplianceAttachmentsInput
@@ -18458,6 +19083,9 @@ type PostNodesDeleteJSONRequestBody = IdsInput
 // PostNodeJSONRequestBody defines body for PostNode for application/json ContentType.
 type PostNodeJSONRequestBody PostNodeJSONBody
 
+// PostNodeBootstrapTokenJSONRequestBody defines body for PostNodeBootstrapToken for application/json ContentType.
+type PostNodeBootstrapTokenJSONRequestBody = NodeBootstrapTokenRequest
+
 // PostNodeSnoozeJSONRequestBody defines body for PostNodeSnooze for application/json ContentType.
 type PostNodeSnoozeJSONRequestBody PostNodeSnoozeJSONBody
 
@@ -18547,6 +19175,9 @@ type PostSafeFileNameJSONRequestBody PostSafeFileNameJSONBody
 
 // PostSafeFileUploadMultipartRequestBody defines body for PostSafeFileUpload for multipart/form-data ContentType.
 type PostSafeFileUploadMultipartRequestBody PostSafeFileUploadMultipartBody
+
+// PutSchedulerTaskJSONRequestBody defines body for PutSchedulerTask for application/json ContentType.
+type PutSchedulerTaskJSONRequestBody = SchedulerTaskInput
 
 // DeleteServicesJSONRequestBody defines body for DeleteServices for application/json ContentType.
 type DeleteServicesJSONRequestBody DeleteServicesJSONBody
@@ -18864,6 +19495,72 @@ func (a AssistantRunInput) MarshalJSON() ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error marshaling 'tools': %w", err)
 		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for ClusterHeartbeat. Returns the specified
+// element and whether it was found
+func (a ClusterHeartbeat) Get(fieldName string) (value string, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for ClusterHeartbeat
+func (a *ClusterHeartbeat) Set(fieldName string, value string) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]string)
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for ClusterHeartbeat to handle AdditionalProperties
+func (a *ClusterHeartbeat) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]string)
+		for fieldName, fieldBuf := range object {
+			var fieldVal string
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for ClusterHeartbeat to handle AdditionalProperties
+func (a ClusterHeartbeat) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
 	}
 
 	for fieldName, field := range a.AdditionalProperties {
@@ -22033,6 +22730,130 @@ func (t SaveListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *SaveListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsSchedulerRunListResponseData0 returns the union data inside the SchedulerRunListResponse_Data as a SchedulerRunListResponseData0
+func (t SchedulerRunListResponse_Data) AsSchedulerRunListResponseData0() (SchedulerRunListResponseData0, error) {
+	var body SchedulerRunListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSchedulerRunListResponseData0 overwrites any union data inside the SchedulerRunListResponse_Data as the provided SchedulerRunListResponseData0
+func (t *SchedulerRunListResponse_Data) FromSchedulerRunListResponseData0(v SchedulerRunListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSchedulerRunListResponseData0 performs a merge with any union data inside the SchedulerRunListResponse_Data, using the provided SchedulerRunListResponseData0
+func (t *SchedulerRunListResponse_Data) MergeSchedulerRunListResponseData0(v SchedulerRunListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSchedulerRunListResponseData1 returns the union data inside the SchedulerRunListResponse_Data as a SchedulerRunListResponseData1
+func (t SchedulerRunListResponse_Data) AsSchedulerRunListResponseData1() (SchedulerRunListResponseData1, error) {
+	var body SchedulerRunListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSchedulerRunListResponseData1 overwrites any union data inside the SchedulerRunListResponse_Data as the provided SchedulerRunListResponseData1
+func (t *SchedulerRunListResponse_Data) FromSchedulerRunListResponseData1(v SchedulerRunListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSchedulerRunListResponseData1 performs a merge with any union data inside the SchedulerRunListResponse_Data, using the provided SchedulerRunListResponseData1
+func (t *SchedulerRunListResponse_Data) MergeSchedulerRunListResponseData1(v SchedulerRunListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SchedulerRunListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *SchedulerRunListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsSchedulerTaskListResponseData0 returns the union data inside the SchedulerTaskListResponse_Data as a SchedulerTaskListResponseData0
+func (t SchedulerTaskListResponse_Data) AsSchedulerTaskListResponseData0() (SchedulerTaskListResponseData0, error) {
+	var body SchedulerTaskListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSchedulerTaskListResponseData0 overwrites any union data inside the SchedulerTaskListResponse_Data as the provided SchedulerTaskListResponseData0
+func (t *SchedulerTaskListResponse_Data) FromSchedulerTaskListResponseData0(v SchedulerTaskListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSchedulerTaskListResponseData0 performs a merge with any union data inside the SchedulerTaskListResponse_Data, using the provided SchedulerTaskListResponseData0
+func (t *SchedulerTaskListResponse_Data) MergeSchedulerTaskListResponseData0(v SchedulerTaskListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsSchedulerTaskListResponseData1 returns the union data inside the SchedulerTaskListResponse_Data as a SchedulerTaskListResponseData1
+func (t SchedulerTaskListResponse_Data) AsSchedulerTaskListResponseData1() (SchedulerTaskListResponseData1, error) {
+	var body SchedulerTaskListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromSchedulerTaskListResponseData1 overwrites any union data inside the SchedulerTaskListResponse_Data as the provided SchedulerTaskListResponseData1
+func (t *SchedulerTaskListResponse_Data) FromSchedulerTaskListResponseData1(v SchedulerTaskListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeSchedulerTaskListResponseData1 performs a merge with any union data inside the SchedulerTaskListResponse_Data, using the provided SchedulerTaskListResponseData1
+func (t *SchedulerTaskListResponse_Data) MergeSchedulerTaskListResponseData1(v SchedulerTaskListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SchedulerTaskListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *SchedulerTaskListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

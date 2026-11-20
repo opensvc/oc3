@@ -136,7 +136,9 @@ func (t *server) authenticateMiddleware(publicPath, publicPrefix []string) echo.
 	// other /auth endpoints keep their own strategies; login and callback by
 	// prefix, as their query string is part of the request URI.
 	publicPath = append(publicPath,
-		pathApi+"/auth/info", pathApi+"/auth/logout", pathApi+"/auth/backchannel-logout")
+		pathApi+"/auth/info", pathApi+"/auth/logout", pathApi+"/auth/backchannel-logout",
+		// The bootstrap of a node: the token in the body is the credential.
+		pathApi+"/auth/node/bootstrap")
 	publicPrefix = append(publicPrefix, pathApi+"/auth/login", pathApi+"/auth/callback")
 	// The endpoints of the collector as the OpenID Connect provider of the om3
 	// clusters: the protocol's, each checking what it needs.

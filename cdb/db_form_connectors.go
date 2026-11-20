@@ -229,7 +229,7 @@ func (oDb *DB) InsertFormConnector(ctx context.Context, c FormConnector) (int64,
 	if err != nil {
 		return 0, err
 	}
-	result, err := oDb.DB.ExecContext(ctx, `INSERT INTO form_connectors
+	result, err := oDb.ExecContext(ctx, `INSERT INTO form_connectors
 		(name, description, base_url, methods, paths_json, networks_json, headers_json, timeout_s, max_bytes,
 		 auth_type, auth_json, tls_json, secrets, secrets_key_id, secrets_wrapped_key, updated_by, created, updated)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`, values...)
@@ -254,7 +254,7 @@ func (oDb *DB) UpdateFormConnector(ctx context.Context, c FormConnector) (bool, 
 	if err != nil {
 		return false, err
 	}
-	result, err := oDb.DB.ExecContext(ctx, `UPDATE form_connectors SET
+	result, err := oDb.ExecContext(ctx, `UPDATE form_connectors SET
 		name = ?, description = ?, base_url = ?, methods = ?, paths_json = ?, networks_json = ?, headers_json = ?,
 		timeout_s = ?, max_bytes = ?, auth_type = ?, auth_json = ?, tls_json = ?,
 		secrets = ?, secrets_key_id = ?, secrets_wrapped_key = ?, updated_by = ?, updated = NOW()
@@ -279,11 +279,11 @@ func (oDb *DB) UpdateFormConnector(ctx context.Context, c FormConnector) (bool, 
 }
 
 func (oDb *DB) setFormConnectorGroups(ctx context.Context, id int64, groups []int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM form_connector_groups WHERE connector_id = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM form_connector_groups WHERE connector_id = ?", id); err != nil {
 		return err
 	}
 	for _, gid := range groups {
-		if _, err := oDb.DB.ExecContext(ctx, "INSERT INTO form_connector_groups (connector_id, group_id) VALUES (?, ?)", id, gid); err != nil {
+		if _, err := oDb.ExecContext(ctx, "INSERT INTO form_connector_groups (connector_id, group_id) VALUES (?, ?)", id, gid); err != nil {
 			return err
 		}
 	}
@@ -293,7 +293,7 @@ func (oDb *DB) setFormConnectorGroups(ctx context.Context, id int64, groups []in
 // DeleteFormConnector deletes the connector and its groups, false when there is
 // none.
 func (oDb *DB) DeleteFormConnector(ctx context.Context, id int64) (bool, error) {
-	result, err := oDb.DB.ExecContext(ctx, "DELETE FROM form_connectors WHERE id = ?", id)
+	result, err := oDb.ExecContext(ctx, "DELETE FROM form_connectors WHERE id = ?", id)
 	if err != nil {
 		return false, err
 	}
@@ -301,7 +301,7 @@ func (oDb *DB) DeleteFormConnector(ctx context.Context, id int64) (bool, error) 
 	if err != nil || n == 0 {
 		return false, err
 	}
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM form_connector_groups WHERE connector_id = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM form_connector_groups WHERE connector_id = ?", id); err != nil {
 		return false, err
 	}
 	oDb.SetChange("form_connectors")

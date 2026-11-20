@@ -20,21 +20,10 @@ func (oDb *DB) GetNodeChecks(ctx context.Context, nodeID string, p ListParams) (
 		" WHERE checks_live.node_id = ?"
 	args := []any{nodeID}
 
-	if !p.IsManager {
-		clean := cleanGroups(p.Groups)
-		if len(clean) == 0 {
-			query += " AND checks_live.node_id IN (SELECT n.node_id FROM nodes n WHERE n.team_responsible = 'Everybody')"
-		} else {
-			placeholders := Placeholders(len(clean))
-			query += " AND checks_live.node_id IN (" +
-				"SELECT n.node_id FROM nodes n " +
-				"WHERE n.team_responsible = 'Everybody' " +
-				"OR n.team_responsible IN (" + placeholders + ")" +
-				")"
-			for _, g := range clean {
-				args = append(args, g)
-			}
-		}
+	// The checks of a node its app makes visible, as GET /checks/live.
+	if cond, condArgs := checksVisibility(p, "checks_live"); cond != "" {
+		query += " AND " + cond
+		args = append(args, condArgs...)
 	}
 
 	if gb := p.GroupByClause(""); gb != "" {

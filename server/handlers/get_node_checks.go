@@ -17,6 +17,9 @@ func (a *Api) GetNodeChecks(c echo.Context, nodeId string, params server.GetNode
 	if err != nil {
 		return err
 	}
+	if err := a.requireNodeVisible(c, log, node); err != nil {
+		return err
+	}
 	return a.handleList(c, "GetNodeChecks", "check", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,

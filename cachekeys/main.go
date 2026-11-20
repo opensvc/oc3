@@ -1,6 +1,11 @@
 package cachekeys
 
 const (
+	// EnrollmentTokenPrefix is the prefix of the join token a node hands to
+	// be enrolled into its cluster: EnrollmentTokenPrefix + <enrollment id>.
+	// Kept until the enrollment expires, taken by the member claiming it.
+	EnrollmentTokenPrefix = "oc3:enrollment_token:"
+
 	QueuePrefix = "oc3:q:feed_"
 
 	FeedDaemonPingQ        = "oc3:q:feed_daemon_ping"

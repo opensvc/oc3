@@ -66,6 +66,28 @@ func (a *Api) resolveNode(c echo.Context, log *slog.Logger, nodeId string) (*cdb
 	return node, nil
 }
 
+// requireNodeVisible refuses a node the caller may not see, as the nodes list
+// shows them: a user sees the nodes of an app their groups are responsible
+// for, all of them as a Manager; a node sees itself. Answered 404, as an
+// unknown node, not to tell it exists.
+func (a *Api) requireNodeVisible(c echo.Context, log *slog.Logger, node *cdb.DBNode) error {
+	if IsAuthByNode(c) {
+		if callerNodeID, _ := c.Get(XNodeID).(string); callerNodeID == node.NodeID {
+			return nil
+		}
+		return denyRequest(c, http.StatusNotFound, "node %s not found", node.Nodename)
+	}
+	visible, err := a.ODB.NodeResponsible(c.Request().Context(), node.NodeID, UserGroupsFromContext(c), IsManager(c))
+	if err != nil {
+		log.Error("cannot check the node visibility", logkey.NodeID, node.NodeID, logkey.Error, err)
+		return denyRequest(c, http.StatusInternalServerError, "cannot check the node visibility")
+	}
+	if !visible {
+		return denyRequest(c, http.StatusNotFound, "node %s not found", node.Nodename)
+	}
+	return nil
+}
+
 // resolveServiceRow resolves a service by svc_id or name
 func (a *Api) resolveServiceRow(c echo.Context, log *slog.Logger, ctx context.Context, svcId string) (*cdb.DBService, error) {
 	if svcId == "" {

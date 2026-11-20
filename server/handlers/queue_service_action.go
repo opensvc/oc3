@@ -105,7 +105,7 @@ func agentOM3(version string) bool {
 // make sense cluster-wide.
 func serviceActionCommand(action, svcname, actionType, connectTo, agentVersion, rid string, local bool) string {
 	var cmd []string
-	if actionType != "pull" && actionType != "feed" {
+	if usesSSH(actionType) {
 		cmd = append(cmd, sshCmd...)
 		cmd = append(cmd, "opensvc@"+connectTo, "--", "sudo", "svcmgr", "--service", svcname)
 	}
@@ -156,6 +156,9 @@ func (a *Api) enqueueServiceCommand(
 	}
 
 	actionType := actionTypeOf(target)
+	if usesSSH(actionType) && !validSSHHost(connectTo) {
+		return nil, refuseAction(http.StatusConflict, "node %s has an invalid address %q: set its connect_to", target.Nodename, connectTo)
+	}
 	command := serviceActionCommand(action, svc.Svcname, actionType, connectTo, agentVersion, rid, local)
 
 	// A dry run stops here, every check passed.

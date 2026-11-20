@@ -56,7 +56,7 @@ func (oDb *DB) compLoop(ctx context.Context, name, query string, child, parent i
 
 // AttachCompRulesetChild makes child a child of parent.
 func (oDb *DB) AttachCompRulesetChild(ctx context.Context, parent, child int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "INSERT INTO comp_rulesets_rulesets (parent_rset_id, child_rset_id) VALUES (?, ?)", parent, child); err != nil {
+	if _, err := oDb.ExecContext(ctx, "INSERT INTO comp_rulesets_rulesets (parent_rset_id, child_rset_id) VALUES (?, ?)", parent, child); err != nil {
 		return fmt.Errorf("attachCompRulesetChild: %w", err)
 	}
 	oDb.SetChange("comp_rulesets_rulesets")
@@ -65,7 +65,7 @@ func (oDb *DB) AttachCompRulesetChild(ctx context.Context, parent, child int64) 
 
 // DetachCompRulesetChild removes child from the children of parent.
 func (oDb *DB) DetachCompRulesetChild(ctx context.Context, parent, child int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM comp_rulesets_rulesets WHERE parent_rset_id = ? AND child_rset_id = ?", parent, child); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM comp_rulesets_rulesets WHERE parent_rset_id = ? AND child_rset_id = ?", parent, child); err != nil {
 		return fmt.Errorf("detachCompRulesetChild: %w", err)
 	}
 	oDb.SetChange("comp_rulesets_rulesets")
@@ -91,10 +91,10 @@ func (oDb *DB) CompRulesetFilterset(ctx context.Context, rulesetID int64) (int64
 // SetCompRulesetFilterset gives a ruleset its filterset, replacing the previous
 // one: a ruleset has at most one, as update_or_insert() keeps it.
 func (oDb *DB) SetCompRulesetFilterset(ctx context.Context, rulesetID, fsetID int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM comp_rulesets_filtersets WHERE ruleset_id = ?", rulesetID); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM comp_rulesets_filtersets WHERE ruleset_id = ?", rulesetID); err != nil {
 		return fmt.Errorf("setCompRulesetFilterset: %w", err)
 	}
-	if _, err := oDb.DB.ExecContext(ctx, "INSERT INTO comp_rulesets_filtersets (ruleset_id, fset_id) VALUES (?, ?)", rulesetID, fsetID); err != nil {
+	if _, err := oDb.ExecContext(ctx, "INSERT INTO comp_rulesets_filtersets (ruleset_id, fset_id) VALUES (?, ?)", rulesetID, fsetID); err != nil {
 		return fmt.Errorf("setCompRulesetFilterset: %w", err)
 	}
 	oDb.SetChange("comp_rulesets_filtersets")
@@ -103,7 +103,7 @@ func (oDb *DB) SetCompRulesetFilterset(ctx context.Context, rulesetID, fsetID in
 
 // DeleteCompRulesetFilterset removes the filterset of a ruleset.
 func (oDb *DB) DeleteCompRulesetFilterset(ctx context.Context, rulesetID int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM comp_rulesets_filtersets WHERE ruleset_id = ?", rulesetID); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM comp_rulesets_filtersets WHERE ruleset_id = ?", rulesetID); err != nil {
 		return fmt.Errorf("deleteCompRulesetFilterset: %w", err)
 	}
 	oDb.SetChange("comp_rulesets_filtersets")

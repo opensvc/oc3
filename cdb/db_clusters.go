@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 )
 
 // clustersTable is the clusters as listed: one row of the clusters table each, with
@@ -164,4 +165,117 @@ func (oDb *DB) ClusterLiveNode(ctx context.Context, clusterID string) (*NodeActi
 		return nil, fmt.Errorf("clusterLiveNode: %w", err)
 	}
 	return &t, nil
+}
+
+// ClusterServicesResponsibility names the services of the collector naming the
+// cluster the caller is not responsible for: their app is not one their groups
+// are responsible for. A manager is responsible for them all.
+func (oDb *DB) ClusterServicesResponsibility(ctx context.Context, clusterID string, groups []string, isManager bool) ([]string, error) {
+	if isManager {
+		return nil, nil
+	}
+	rows, err := oDb.DB.QueryContext(ctx,
+		"SELECT COALESCE(svcname, ''), COALESCE(svc_app, '') FROM services WHERE cluster_id = ? ORDER BY svcname", clusterID)
+	if err != nil {
+		return nil, fmt.Errorf("clusterServicesResponsibility: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	type member struct{ svcname, app string }
+	var members []member
+	for rows.Next() {
+		var m member
+		if err := rows.Scan(&m.svcname, &m.app); err != nil {
+			return nil, fmt.Errorf("clusterServicesResponsibility: %w", err)
+		}
+		members = append(members, m)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("clusterServicesResponsibility: %w", err)
+	}
+	if len(members) == 0 {
+		return nil, nil
+	}
+	apps, err := oDb.AppsForGroups(ctx, groups)
+	if err != nil {
+		return nil, fmt.Errorf("clusterServicesResponsibility: %w", err)
+	}
+	var out []string
+	for _, m := range members {
+		if !slices.ContainsFunc(apps, func(a string) bool { return strings.EqualFold(a, m.app) }) {
+			out = append(out, m.svcname)
+		}
+	}
+	return out, nil
+}
+
+// clusterCascadeTables hold rows of a cluster by its cluster_id, deleted with
+// it once its nodes and services are: what a cluster is in the collector
+// besides them. orchestration_run_targets stays: the history of the runs.
+var clusterCascadeTables = []string{
+	"service_ids",
+	"hbmon",
+	"hbmon_log",
+	"hbmon_log_last",
+	"cluster_declarations",
+	"node_bootstrap_tokens",
+	"cluster_enrollments",
+	"node_cluster_claims",
+	"oidc_provider_grants",
+	"clusters",
+}
+
+// clusterMemberIDs returns the ids of a column of a table for the rows naming
+// the cluster.
+func (oDb *DB) clusterMemberIDs(ctx context.Context, query, clusterID string) ([]string, error) {
+	rows, err := oDb.DB.QueryContext(ctx, query, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		if id != "" {
+			ids = append(ids, id)
+		}
+	}
+	return ids, rows.Err()
+}
+
+// DeleteClusterCascade deletes a cluster from the collector: its nodes and its
+// services with what refers to them (DeleteNodesCascade,
+// DeleteServicesCascade), its heartbeats, its declaration with its bootstrap
+// tokens and enrollments, the om3 grants given on it, then its row. It
+// returns the ids of the nodes deleted, whose files are left to the caller
+// once the deletion committed (see util/nodefiles), and the count of the
+// services deleted. To be run in a transaction.
+func (oDb *DB) DeleteClusterCascade(ctx context.Context, clusterID string) (nodeIDs []string, services int, err error) {
+	defer logDuration("DeleteClusterCascade", time.Now())
+	if clusterID == "" {
+		return nil, 0, fmt.Errorf("DeleteClusterCascade: empty cluster_id")
+	}
+	nodeIDs, err = oDb.clusterMemberIDs(ctx, "SELECT node_id FROM nodes WHERE cluster_id = ?", clusterID)
+	if err != nil {
+		return nil, 0, fmt.Errorf("DeleteClusterCascade nodes: %w", err)
+	}
+	svcIDs, err := oDb.clusterMemberIDs(ctx, "SELECT svc_id FROM services WHERE cluster_id = ?", clusterID)
+	if err != nil {
+		return nil, 0, fmt.Errorf("DeleteClusterCascade services: %w", err)
+	}
+	if err := oDb.DeleteNodesCascade(ctx, nodeIDs); err != nil {
+		return nil, 0, fmt.Errorf("DeleteClusterCascade: %w", err)
+	}
+	if err := oDb.DeleteServicesCascade(ctx, svcIDs); err != nil {
+		return nil, 0, fmt.Errorf("DeleteClusterCascade: %w", err)
+	}
+	for _, t := range clusterCascadeTables {
+		if _, err := oDb.ExecContext(ctx, "DELETE FROM "+t+" WHERE cluster_id = ?", clusterID); err != nil {
+			return nil, 0, fmt.Errorf("DeleteClusterCascade %s: %w", t, err)
+		}
+		oDb.SetChange(t)
+	}
+	return nodeIDs, len(svcIDs), nil
 }

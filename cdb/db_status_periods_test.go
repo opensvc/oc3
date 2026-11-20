@@ -47,7 +47,7 @@ func TestServicesAvailabilityUpdate(t *testing.T) {
 // services are stored by a single statement, and none when there is no rate.
 func TestSetServicesAvailabilityOneStatement(t *testing.T) {
 	rec := &execRecorder{}
-	odb := &DB{DB: rec}
+	odb := &DB{DB: rec, HasTx: true, Metrics: testMetrics()}
 	rate := 100.0
 	rates := make(map[string]ServiceAvailability)
 	for _, id := range []string{"a", "b", "c", "d", "e"} {
@@ -73,7 +73,7 @@ func TestSetServicesAvailabilityOneStatement(t *testing.T) {
 // TestSetServicesAvailabilityError checks the error of the statement is returned.
 func TestSetServicesAvailabilityError(t *testing.T) {
 	rec := &execRecorder{err: context.DeadlineExceeded}
-	odb := &DB{DB: rec}
+	odb := &DB{DB: rec, HasTx: true, Metrics: testMetrics()}
 	err := odb.SetServicesAvailability(context.Background(), map[string]ServiceAvailability{"a": {}})
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Errorf("got %v, want a context.DeadlineExceeded", err)

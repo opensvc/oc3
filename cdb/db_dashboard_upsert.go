@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 )
 
 // alertsUpsert describes alerts to write in the dashboard, each kept in place
@@ -30,6 +31,9 @@ func (oDb *DB) upsertAlerts(ctx context.Context, u alertsUpsert) (int64, error) 
 	if !slices.Contains(u.columns, "dash_type") {
 		return 0, fmt.Errorf("upsertAlerts: the source gives no dash_type")
 	}
+	if slices.Contains(u.columns, "dash_env") {
+		u.source = alertEnvSource(u.source, u.columns)
+	}
 	column := func(name string) string {
 		if slices.Contains(u.columns, name) {
 			return "s." + name
@@ -49,6 +53,29 @@ func (oDb *DB) upsertAlerts(ctx context.Context, u alertsUpsert) (int64, error) 
 		update: u.update,
 	})
 	return changed + inserted, err
+}
+
+// alertEnvs are the values of the dashboard.dash_env enum. The environment of
+// an alert comes from its node or its service, which its agent sets freely:
+// another value, UAT for example, failed the insert of every alert of the
+// statement in strict mode.
+var alertEnvs = []string{"PRD", "PPRD", "REC", "INT", "DEV", "TST", "TMP", "DRP", "FOR", "PRA", "PRJ", ""}
+
+// alertEnvSource wraps the source of alerts so that its dash_env is one of
+// alertEnvs, empty otherwise, as an alert of an object without environment.
+func alertEnvSource(source string, columns []string) string {
+	quoted := make([]string, len(alertEnvs))
+	for i, env := range alertEnvs {
+		quoted[i] = "'" + env + "'"
+	}
+	exprs := make([]string, len(columns))
+	for i, c := range columns {
+		exprs[i] = "e." + c
+		if c == "dash_env" {
+			exprs[i] = "IF(e.dash_env IN (" + strings.Join(quoted, ", ") + "), e.dash_env, '') AS dash_env"
+		}
+	}
+	return "SELECT " + strings.Join(exprs, ", ") + " FROM (" + source + ") e"
 }
 
 // positionalAlertColumns are the columns of the dashboard in the order of the

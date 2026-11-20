@@ -79,6 +79,7 @@ func fleetFlags(fs *flag.FlagSet) *fleetSpec {
 	fs.IntVar(&spec.Arrays, "arrays", 0, "pure arrays holding the disks of the services, 0 for local disks")
 	fs.StringVar(&spec.App, "app", "SIM", "app of the nodes")
 	fs.StringVar(&spec.Team, "team", "SimOps", "team responsible of the nodes and ops team of the app")
+	fs.StringVar(&spec.Catalog, "catalog", "", "build the fleet of a catalog instead of the counts: realistic, the fleet of a mid-sized company for the documentation")
 	return spec
 }
 
@@ -113,9 +114,9 @@ func cmdPlan(args []string) error {
 	}
 	nodes := float64(f.nodeCount())
 	clusters := float64(len(f.clusters))
-	services := float64(spec.Services)
-	instances := 0.0
+	services, instances := 0.0, 0.0
 	for _, c := range f.clusters {
+		services += float64(len(c.services))
 		instances += float64(len(c.services) * len(c.nodes))
 	}
 	// A speaker posts a status when one of its services changed in the
@@ -132,7 +133,7 @@ func cmdPlan(args []string) error {
 		stats, daily = 0, 0
 	}
 	fmt.Printf("fleet %q seed %d: %d clusters, %d nodes, %d services, %.0f instances, %d resources\n",
-		spec.Prefix, spec.Seed, len(f.clusters), f.nodeCount(), spec.Services, instances, f.resourceCount())
+		spec.Prefix, spec.Seed, len(f.clusters), f.nodeCount(), int(services), instances, f.resourceCount())
 	st := newClusterState(*spec, f.clusters[0], run.Version, time.Now())
 	b, _ := json.Marshal(st.daemonStatusBody(time.Now(), time.Now(), st.allChanges()))
 	fmt.Printf("daemon status of the first cluster: %.0f KB\n\n", float64(len(b))/1024)
@@ -172,9 +173,16 @@ func cmdSetup(args []string) error {
 	}
 	w := os.Stdout
 	fmt.Fprintf(w, "-- agent-sim fleet %q seed %d: %d nodes\n", spec.Prefix, spec.Seed, f.nodeCount())
-	for _, app := range append([]string{spec.App}, spec.Apps...) {
-		fmt.Fprintf(w, "INSERT IGNORE INTO apps (app, app_domain, app_team_ops, description) VALUES (%s, 'sim', %s, 'agent-sim load test');\n",
-			sqlQuote(app), sqlQuote(spec.Team))
+	if spec.Catalog != "" {
+		for _, at := range catalogApps() {
+			fmt.Fprintf(w, "INSERT IGNORE INTO apps (app, app_domain, app_team_ops, description) VALUES (%s, %s, %s, %s);\n",
+				sqlQuote(at[0]), sqlQuote(strings.ToLower(at[0])), sqlQuote(at[1]), sqlQuote(appDescriptions[at[0]]))
+		}
+	} else {
+		for _, app := range append([]string{spec.App}, spec.Apps...) {
+			fmt.Fprintf(w, "INSERT IGNORE INTO apps (app, app_domain, app_team_ops, description) VALUES (%s, 'sim', %s, 'agent-sim load test');\n",
+				sqlQuote(app), sqlQuote(spec.Team))
+		}
 	}
 	var nodes, auth []string
 	flush := func() {
@@ -193,8 +201,12 @@ func cmdSetup(args []string) error {
 			app = c.app
 		}
 		for _, n := range c.nodes {
-			nodes = append(nodes, fmt.Sprintf("(%s, %s, %s, %s, 'PRD', %s, 'Linux', NOW())",
-				sqlQuote(n.id), sqlQuote(n.name), sqlQuote(c.id), sqlQuote(app), sqlQuote(spec.Team)))
+			env, team := "PRD", spec.Team
+			if n.profile != nil {
+				env, team = n.profile.env, "UnixOps"
+			}
+			nodes = append(nodes, fmt.Sprintf("(%s, %s, %s, %s, %s, %s, 'Linux', NOW())",
+				sqlQuote(n.id), sqlQuote(n.name), sqlQuote(c.id), sqlQuote(app), sqlQuote(env), sqlQuote(team)))
 			auth = append(auth, fmt.Sprintf("(%s, %s, %s)", sqlQuote(n.name), sqlQuote(n.uuid), sqlQuote(n.id)))
 			if len(nodes) == 500 {
 				flush()
@@ -228,15 +240,32 @@ var (
 func cmdTeardown(args []string) error {
 	fs := flag.NewFlagSet("teardown", flag.ExitOnError)
 	prefix := fs.String("prefix", "sim", "prefix of the fleet to remove")
+	catalog := fs.String("catalog", "", "catalog of the fleet to remove (realistic): its nodes are removed by name")
+	seed := fs.Uint64("seed", 1, "seed of the fleet of a catalog")
 	_ = fs.Parse(args)
 	if *prefix == "" || strings.ContainsAny(*prefix, "%_'\\") {
 		return fmt.Errorf("refusing prefix %q", *prefix)
 	}
-	like := sqlQuote(*prefix + "-c%")
+	// The nodes of the fleet: those bearing the prefix, or the nodes of the
+	// catalog by their name and id, which name no prefix.
+	nodesCond := "nodename LIKE " + sqlQuote(*prefix+"-c%")
+	if *catalog != "" {
+		f, err := newFleet(fleetSpec{Prefix: *prefix, Seed: *seed, Catalog: *catalog})
+		if err != nil {
+			return err
+		}
+		var ids []string
+		for _, c := range f.clusters {
+			for _, n := range c.nodes {
+				ids = append(ids, sqlQuote(n.id))
+			}
+		}
+		nodesCond = "node_id IN (" + strings.Join(ids, ", ") + ")"
+	}
 	w := os.Stdout
 	fmt.Fprintf(w, "-- agent-sim teardown of the fleet %q\n", *prefix)
-	fmt.Fprintf(w, "CREATE TEMPORARY TABLE sim_nodes (node_id char(36) CHARACTER SET ascii PRIMARY KEY) AS SELECT node_id FROM nodes WHERE nodename LIKE %s;\n", like)
-	fmt.Fprintf(w, "CREATE TEMPORARY TABLE sim_clusters (cluster_id char(36) CHARACTER SET ascii PRIMARY KEY) AS SELECT DISTINCT cluster_id FROM nodes WHERE nodename LIKE %s AND cluster_id != '';\n", like)
+	fmt.Fprintf(w, "CREATE TEMPORARY TABLE sim_nodes (node_id char(36) CHARACTER SET ascii PRIMARY KEY) AS SELECT node_id FROM nodes WHERE %s;\n", nodesCond)
+	fmt.Fprintf(w, "CREATE TEMPORARY TABLE sim_clusters (cluster_id char(36) CHARACTER SET ascii PRIMARY KEY) AS SELECT DISTINCT cluster_id FROM nodes WHERE %s AND cluster_id != '';\n", nodesCond)
 	fmt.Fprintf(w, "CREATE TEMPORARY TABLE sim_svcs (svc_id char(36) CHARACTER SET ascii PRIMARY KEY) AS SELECT svc_id FROM services WHERE cluster_id IN (SELECT cluster_id FROM sim_clusters);\n")
 	for _, t := range tablesBySvcID {
 		fmt.Fprintf(w, "DELETE FROM %s WHERE svc_id IN (SELECT svc_id FROM sim_svcs);\n", t)
@@ -294,7 +323,7 @@ func cmdRun(args []string) error {
 		_ = os.WriteFile(filepath.Join(dir, "run.json"), b, 0o644)
 	}
 	fmt.Printf("run %s: %d clusters, %d nodes, %d services, %d resources, for %s, results in %s\n",
-		*name, len(f.clusters), f.nodeCount(), spec.Services, f.resourceCount(), run.Duration, dir)
+		*name, len(f.clusters), f.nodeCount(), f.serviceCount(), f.resourceCount(), run.Duration, dir)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

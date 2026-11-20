@@ -153,6 +153,75 @@ func (oDb *DB) BeginTxWithControl(ctx context.Context, log *slog.Logger, opts *s
 	return txDB, markSuccess, endTx, nil
 }
 
+// txMaxAttempts is the number of times RunInTx runs a transaction failed by
+// deadlocks before giving up.
+const txMaxAttempts = 9
+
+// RunInTx runs fn in a transaction: committed when fn returns nil, rolled
+// back when it returns an error. The transaction a deadlock failed, in fn or
+// at commit, is run again from its begin, with a backoff: the deadlock
+// rolled the whole of it back, so no statement of it can be retried alone,
+// which is why ExecContext does not retry in a transaction.
+//
+// fn receives a *DB bound to the transaction, distinct from the receiver, as
+// BeginTxWithControl returns: its statements have to be issued on it. fn may
+// run several times, so it must not keep anything from a failed run: no side
+// effect out of the database, and its results reset on each run.
+//
+// The error of fn is returned as is, for the caller to match it.
+func (oDb *DB) RunInTx(ctx context.Context, opts *sql.TxOptions, fn func(tx *DB) error) error {
+	return retryOnDeadlock(ctx, txMaxAttempts, oDb.Metrics, func() error {
+		tx, err := oDb.dbPool.BeginTx(ctx, opts)
+		if err != nil {
+			oDb.Metrics.BeginTxErr.Inc()
+			return fmt.Errorf("begin transaction: %w", err)
+		}
+		oDb.Metrics.BeginTxOk.Inc()
+		if err := fn(oDb.withTx(tx)); err != nil {
+			if err1 := tx.Rollback(); err1 != nil {
+				oDb.Metrics.RollbackErr.Inc()
+			} else {
+				oDb.Metrics.RollbackOk.Inc()
+			}
+			return err
+		}
+		if err := tx.Commit(); err != nil {
+			oDb.Metrics.CommitErr.Inc()
+			return fmt.Errorf("commit: %w", err)
+		}
+		oDb.Metrics.CommitOk.Inc()
+		return nil
+	})
+}
+
+// retryOnDeadlock calls run until it succeeds, fails on another error than a
+// deadlock, or has run attempts times. It waits a backoff between two runs,
+// and stops waiting when ctx is done.
+func retryOnDeadlock(ctx context.Context, attempts int, m *Metrics, run func() error) error {
+	begin := time.Now()
+	var err error
+	for i := 0; i < attempts; i++ {
+		if err = run(); err == nil {
+			return nil
+		}
+		if !isDeadlock(err) {
+			return err
+		}
+		m.ExecTxDeadlock.Inc()
+		if i == attempts-1 {
+			break
+		}
+		m.ExecTxRetry.Inc()
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("transaction retry interrupted: %w", errors.Join(ctx.Err(), err))
+		case <-time.After(Backoff(100*time.Millisecond, i, time.Second)):
+		}
+	}
+	m.ExecTxFailed.Inc()
+	return fmt.Errorf("transaction failed after %d attempts (duration %s): %w", attempts, time.Since(begin), err)
+}
+
 func (oDb *DB) CreateSession(ev eventPublisher) {
 	oDb.Session = &Session{
 		db:     oDb.DB,

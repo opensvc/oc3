@@ -147,7 +147,7 @@ func (oDb *DB) quotaWhere(ctx context.Context, cond string, args ...any) (*Quota
 // InsertQuota gives an application code a quota in a disk group, and returns
 // its id.
 func (oDb *DB) InsertQuota(ctx context.Context, dgID, appID, quota int64) (int64, error) {
-	res, err := oDb.DB.ExecContext(ctx, "INSERT INTO stor_array_dg_quota (dg_id, app_id, quota) VALUES (?, ?, ?)", dgID, appID, quota)
+	res, err := oDb.ExecContext(ctx, "INSERT INTO stor_array_dg_quota (dg_id, app_id, quota) VALUES (?, ?, ?)", dgID, appID, quota)
 	if err != nil {
 		return 0, fmt.Errorf("insertQuota: %w", err)
 	}
@@ -157,7 +157,7 @@ func (oDb *DB) InsertQuota(ctx context.Context, dgID, appID, quota int64) (int64
 
 // UpdateQuota sets the size of a quota and the application code it is for.
 func (oDb *DB) UpdateQuota(ctx context.Context, id, appID, quota int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "UPDATE stor_array_dg_quota SET app_id = ?, quota = ? WHERE id = ?", appID, quota, id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "UPDATE stor_array_dg_quota SET app_id = ?, quota = ? WHERE id = ?", appID, quota, id); err != nil {
 		return fmt.Errorf("updateQuota: %w", err)
 	}
 	oDb.SetChange("stor_array_dg_quota")
@@ -166,7 +166,7 @@ func (oDb *DB) UpdateQuota(ctx context.Context, id, appID, quota int64) error {
 
 // DeleteQuota removes a quota.
 func (oDb *DB) DeleteQuota(ctx context.Context, id int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM stor_array_dg_quota WHERE id = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM stor_array_dg_quota WHERE id = ?", id); err != nil {
 		return fmt.Errorf("deleteQuota: %w", err)
 	}
 	oDb.SetChange("stor_array_dg_quota")
@@ -179,7 +179,7 @@ func (oDb *DB) DeleteQuota(ctx context.Context, id int64) error {
 func (oDb *DB) RefreshDiskGroupReserved(ctx context.Context, dgID int64) error {
 	const query = "UPDATE stor_array_dg SET dg_reserved = " +
 		"(SELECT COALESCE(SUM(quota), 0) FROM stor_array_dg_quota WHERE dg_id = ?) WHERE id = ?"
-	if _, err := oDb.DB.ExecContext(ctx, query, dgID, dgID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, dgID, dgID); err != nil {
 		return fmt.Errorf("refreshDiskGroupReserved: %w", err)
 	}
 	oDb.SetChange("stor_array_dg")

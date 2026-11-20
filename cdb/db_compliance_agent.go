@@ -580,7 +580,7 @@ func (oDb *DB) compAgentAddRunRuleset(ctx context.Context, rsets map[string]Comp
 	}
 	sum := md5.Sum(b)
 	rsetMD5 := hex.EncodeToString(sum[:])
-	if _, err := oDb.DB.ExecContext(ctx, `INSERT INTO comp_run_ruleset (rset_md5, rset, date) VALUES (?, ?, NOW())
+	if _, err := oDb.ExecContext(ctx, `INSERT INTO comp_run_ruleset (rset_md5, rset, date) VALUES (?, ?, NOW())
 		ON DUPLICATE KEY UPDATE date = NOW()`, rsetMD5, b); err != nil {
 		return err
 	}
@@ -706,7 +706,7 @@ func compAgentCleanLog(s string) string {
 func (oDb *DB) CompAgentInsertLogs(ctx context.Context, nodeID, svcID string, logs []CompAgentLog) error {
 	for _, l := range logs {
 		text := compAgentCleanLog(l.Log)
-		if _, err := oDb.DB.ExecContext(ctx, `INSERT INTO comp_log
+		if _, err := oDb.ExecContext(ctx, `INSERT INTO comp_log
 			    (run_module, run_status, run_log, run_date, run_action, rset_md5, node_id, svc_id)
 			VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)`, l.Module, l.Status, text, l.Action, l.RsetMD5, nodeID, svcID); err != nil {
 			return fmt.Errorf("insert comp_log: %w", err)
@@ -714,7 +714,7 @@ func (oDb *DB) CompAgentInsertLogs(ctx context.Context, nodeID, svcID string, lo
 		if l.Action != "check" {
 			continue
 		}
-		if _, err := oDb.DB.ExecContext(ctx, `INSERT INTO comp_status
+		if _, err := oDb.ExecContext(ctx, `INSERT INTO comp_status
 			    (run_module, run_status, run_log, run_date, run_action, rset_md5, node_id, svc_id)
 			VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)
 			ON DUPLICATE KEY UPDATE run_status = VALUES(run_status), run_log = VALUES(run_log),
@@ -722,7 +722,7 @@ func (oDb *DB) CompAgentInsertLogs(ctx context.Context, nodeID, svcID string, lo
 			l.Module, l.Status, text, l.Action, l.RsetMD5, nodeID, svcID); err != nil {
 			return fmt.Errorf("insert comp_status: %w", err)
 		}
-		if _, err := oDb.DB.ExecContext(ctx, `INSERT INTO comp_log_daily (run_module, run_status, run_date, node_id, svc_id)
+		if _, err := oDb.ExecContext(ctx, `INSERT INTO comp_log_daily (run_module, run_status, run_date, node_id, svc_id)
 			VALUES (?, ?, CURDATE(), ?, ?)
 			ON DUPLICATE KEY UPDATE run_status = VALUES(run_status)`, l.Module, l.Status, nodeID, svcID); err != nil {
 			return fmt.Errorf("insert comp_log_daily: %w", err)

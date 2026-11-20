@@ -136,6 +136,9 @@ func (a *Api) GetNodeStats(c echo.Context, nodeId string, params server.GetNodeS
 	if err != nil {
 		return err
 	}
+	if err := a.requireNodeVisible(c, log, node); err != nil {
+		return err
+	}
 	group, ok := nodeStatsGroups[string(params.Group)]
 	if !ok {
 		return JSONProblemf(c, http.StatusBadRequest, "unknown group %q", params.Group)

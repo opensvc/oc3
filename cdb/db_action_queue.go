@@ -31,7 +31,7 @@ func (oDb *DB) GetActionByID(ctx context.Context, id int64) (ActionQueueRow, boo
 
 func (oDb *DB) DeleteAction(ctx context.Context, id int64) (int64, error) {
 	const query = "DELETE FROM action_queue WHERE id = ?"
-	res, err := oDb.DB.ExecContext(ctx, query, id)
+	res, err := oDb.ExecContext(ctx, query, id)
 	if err != nil {
 		return 0, fmt.Errorf("deleteAction: %w", err)
 	}
@@ -63,7 +63,7 @@ func (oDb *DB) UpdateActionStatus(ctx context.Context, id int64, status string, 
 	if resetDequeued {
 		query = "UPDATE action_queue SET status = ?, date_dequeued = 0 WHERE id = ?"
 	}
-	if _, err := oDb.DB.ExecContext(ctx, query, status, id); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, status, id); err != nil {
 		return fmt.Errorf("updateActionStatus: %w", err)
 	}
 	oDb.SetChange("action_queue")
@@ -81,11 +81,13 @@ func buildActionsQuery(p ListParams, idCond string, idArgs []any) (string, []any
 		return "", nil, fmt.Errorf("buildActionsQuery: no columns selected")
 	}
 
+	// An action on a node of the caller may be of a service of another app, and
+	// the converse.
+	selectExprs, args := maskJoinedColumns(p.SelectExprs, p.Groups, p.IsManager, nodesMask, servicesMask)
 	sb := &strings.Builder{}
-	fmt.Fprintf(sb, "SELECT %s\nFROM action_queue%s", strings.Join(p.SelectExprs, ", "), actionQueueJoins)
+	fmt.Fprintf(sb, "SELECT %s\nFROM action_queue%s", strings.Join(selectExprs, ", "), actionQueueJoins)
 
 	var conds []string
-	var args []any
 
 	if idCond != "" {
 		conds = append(conds, idCond)
@@ -97,14 +99,16 @@ func buildActionsQuery(p ListParams, idCond string, idArgs []any) (string, []any
 		if len(cleanGroups) == 0 {
 			conds = append(conds, "1=0")
 		} else {
+			// The actions on a node of the caller's apps, or on a service of
+			// their apps, wherever it runs.
+			apps := "SELECT a.app FROM apps a" +
+				" JOIN apps_responsibles ar ON ar.app_id = a.id" +
+				" JOIN auth_group ag ON ag.id = ar.group_id" +
+				" WHERE ag.role IN (" + Placeholders(len(cleanGroups)) + ")"
 			conds = append(conds,
-				"action_queue.node_id IN ("+
-					"SELECT n.node_id FROM nodes n"+
-					" JOIN apps a ON n.app = a.app"+
-					" JOIN apps_responsibles ar ON ar.app_id = a.id"+
-					" JOIN auth_group ag ON ag.id = ar.group_id"+
-					" WHERE ag.role IN ("+Placeholders(len(cleanGroups))+")"+
-					")")
+				"(action_queue.node_id IN (SELECT n.node_id FROM nodes n WHERE n.app IN ("+apps+"))"+
+					" OR action_queue.svc_id IN (SELECT s.svc_id FROM services s WHERE s.svc_app IN ("+apps+")))")
+			args = append(args, stringsToAny(cleanGroups)...)
 			args = append(args, stringsToAny(cleanGroups)...)
 		}
 	}

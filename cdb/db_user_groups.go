@@ -120,7 +120,7 @@ func (oDb *DB) MembershipExists(ctx context.Context, userID, groupID int64) (boo
 
 // DeleteGroupMembership removes a user from a group.
 func (oDb *DB) DeleteGroupMembership(ctx context.Context, userID, groupID int64) error {
-	if _, err := oDb.DB.ExecContext(ctx,
+	if _, err := oDb.ExecContext(ctx,
 		"DELETE FROM auth_membership WHERE user_id = ? AND group_id = ?", userID, groupID); err != nil {
 		return fmt.Errorf("deleteGroupMembership: %w", err)
 	}

@@ -130,7 +130,7 @@ func (oDb *DB) UpdateTag(ctx context.Context, id int, fields UpdateTagFields) (i
 	}
 	query := "UPDATE tags SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
 	args = append(args, id)
-	res, err := oDb.DB.ExecContext(ctx, query, args...)
+	res, err := oDb.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, fmt.Errorf("updateTag: %w", err)
 	}

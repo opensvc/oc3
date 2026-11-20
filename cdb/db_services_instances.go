@@ -20,8 +20,10 @@ func buildServicesInstancesQuery(groups []string, isManager bool, selectExprs []
 		Via(schema.TServices).
 		LeftJoin(schema.TNodes).
 		LeftJoinOn(schema.TBActionErrors,
-			"b_action_errors.svc_id = svcmon.svc_id AND b_action_errors.node_id = svcmon.node_id").
-		RawSelect(selectExprs...)
+			"b_action_errors.svc_id = svcmon.svc_id AND b_action_errors.node_id = svcmon.node_id")
+	// The node of an instance of the caller's service may be of another app.
+	selectExprs, selectArgs := maskJoinedColumns(selectExprs, groups, isManager, nodesMask)
+	q = q.RawSelect(selectExprs...)
 
 	if !isManager {
 		cleanGroups := cleanGroups(groups)
@@ -53,7 +55,7 @@ func buildServicesInstancesQuery(groups []string, isManager bool, selectExprs []
 	if err != nil {
 		return "", nil, fmt.Errorf("buildServicesInstancesQuery: %w", err)
 	}
-	return query, args, nil
+	return query, append(selectArgs, args...), nil
 }
 
 func (oDb *DB) GetServicesInstances(ctx context.Context, p ListParams) ([]map[string]any, error) {

@@ -76,7 +76,7 @@ func (oDb *DB) AttachCompTeam(ctx context.Context, k CompKind, objID int64, gtyp
 	if err != nil {
 		return err
 	}
-	if _, err := oDb.DB.ExecContext(ctx, "INSERT INTO "+table+" ("+k.FK+", group_id) VALUES (?, ?)", objID, groupID); err != nil {
+	if _, err := oDb.ExecContext(ctx, "INSERT INTO "+table+" ("+k.FK+", group_id) VALUES (?, ?)", objID, groupID); err != nil {
 		return fmt.Errorf("attachCompTeam: %w", err)
 	}
 	oDb.SetChange(table)
@@ -90,7 +90,7 @@ func (oDb *DB) DetachCompTeam(ctx context.Context, k CompKind, objID int64, gtyp
 	if err != nil {
 		return err
 	}
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+table+" WHERE "+k.FK+" = ? AND group_id = ?", objID, groupID); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM "+table+" WHERE "+k.FK+" = ? AND group_id = ?", objID, groupID); err != nil {
 		return fmt.Errorf("detachCompTeam: %w", err)
 	}
 	oDb.SetChange(table)

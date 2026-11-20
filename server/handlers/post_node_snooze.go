@@ -70,10 +70,10 @@ func (a *Api) PostNodeSnooze(c echo.Context, nodeId server.InPathNodeId) error {
 			return JSONProblemf(c, http.StatusForbidden, "a node can only snooze itself")
 		}
 	} else {
-		if !IsManager(c) {
+		if !IsNodeManager(c) {
 			return JSONProblemf(c, http.StatusForbidden, "NodeManager privilege required")
 		}
-		responsible, err := odb.NodeResponsible(ctx, node.NodeID, UserGroupsFromContext(c), false)
+		responsible, err := odb.NodeResponsible(ctx, node.NodeID, UserGroupsFromContext(c), IsManager(c))
 		if err != nil {
 			log.Error("cannot check node responsibility", logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot check node responsibility")

@@ -40,6 +40,14 @@ func requireUserManager(c echo.Context) error {
 	return nil
 }
 
+// derefString is the value of an optional string, empty when absent.
+func derefString(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}
+
 func optionalString(value *string) *string {
 	if value == nil {
 		return nil
@@ -91,6 +99,12 @@ func (a *Api) PostUsers(c echo.Context) error {
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot check email")
 	} else if taken {
 		return JSONProblemf(c, http.StatusConflict, "a user with email %s already exists: %d", email, otherID)
+	}
+	if msg, err := checkFullNameFree(ctx, odb, derefString(insert.FirstName), derefString(insert.LastName), 0); err != nil {
+		log.Error("cannot check the full name", logkey.Error, err)
+		return JSONProblemf(c, http.StatusInternalServerError, "cannot check the full name")
+	} else if msg != "" {
+		return JSONProblem(c, http.StatusConflict, msg)
 	}
 	if insert.Username != nil {
 		if otherID, taken, err := odb.UserIDByUsername(ctx, *insert.Username); err != nil {

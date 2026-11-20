@@ -216,8 +216,10 @@ func buildResourcesQuery(groups []string, isManager bool, selectExprs []string, 
 	// services is an inner join: the access check filters on services.svc_app.
 	q := From(schema.TResmon).
 		Via(schema.TServices).
-		LeftJoin(schema.TNodes).
-		RawSelect(selectExprs...)
+		LeftJoin(schema.TNodes)
+	// The node of a resource of the caller's service may be of another app.
+	selectExprs, selectArgs := maskJoinedColumns(selectExprs, groups, isManager, nodesMask)
+	q = q.RawSelect(selectExprs...)
 	if !isManager {
 		clean := cleanGroups(groups)
 		if len(clean) == 0 {
@@ -241,7 +243,7 @@ func buildResourcesQuery(groups []string, isManager bool, selectExprs []string, 
 	if err != nil {
 		return "", nil, fmt.Errorf("buildResourcesQuery: %w", err)
 	}
-	return query, args, nil
+	return query, append(selectArgs, args...), nil
 }
 
 func (oDb *DB) queryResources(ctx context.Context, id string, p ListParams) ([]map[string]any, error) {

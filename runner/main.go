@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -489,7 +490,31 @@ func (w *Worker) validateCommand(cmd string) error {
 		return fmt.Errorf("empty command")
 	}
 
-	return nil
+	return validateSSHDestination(strings.Fields(cmd))
+}
+
+// sshDestinationRe is the destination of the ssh command of an action pushed to
+// a node: opensvc@ and a host name or address, see the server's validSSHHost.
+var sshDestinationRe = regexp.MustCompile(`^opensvc@[A-Za-z0-9_][A-Za-z0-9_.:%-]*$`)
+
+// validateSSHDestination refuses an ssh command whose destination is not a
+// host directly followed by "--": the command is split on spaces, so a node
+// address holding one would add options to ssh, such as -oProxyCommand, which
+// ssh runs through a shell on the collector.
+func validateSSHDestination(args []string) error {
+	if len(args) == 0 || args[0] != "ssh" {
+		return nil
+	}
+	for i, arg := range args {
+		if !strings.HasPrefix(arg, "opensvc@") {
+			continue
+		}
+		if !sshDestinationRe.MatchString(arg) || i+1 >= len(args) || args[i+1] != "--" {
+			return fmt.Errorf("invalid ssh destination in command")
+		}
+		return nil
+	}
+	return fmt.Errorf("no ssh destination in command")
 }
 
 func executeCommand(ctx context.Context, cmd string) (string, string, int) {

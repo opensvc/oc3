@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // UserInsert holds the columns set when creating a user. PasswordHash is already in
@@ -74,4 +75,33 @@ func (oDb *DB) InsertUserWithPrivateGroup(ctx context.Context, u UserInsert) (in
 	oDb.SetChange("auth_group")
 	oDb.SetChange("auth_membership")
 	return userID, nil
+}
+
+// UserFullNameTaken tells what already bears the full name first last, as the
+// requests compare the users with their creator and assignees ("first last",
+// see myTeamNames): "user" for another user than exceptUserID, "group" for a
+// group of that role; "" when none. A name taken this way would let a user
+// read the requests of another user or of a team. An empty name is not
+// checked: it names nobody.
+func (oDb *DB) UserFullNameTaken(ctx context.Context, firstName, lastName string, exceptUserID int64) (string, error) {
+	if strings.TrimSpace(firstName+lastName) == "" {
+		return "", nil
+	}
+	const fullName = "CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))"
+	var n int
+	if err := oDb.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM auth_user WHERE id <> ? AND "+fullName+" = CONCAT(?, ' ', ?)",
+		exceptUserID, firstName, lastName).Scan(&n); err != nil {
+		return "", fmt.Errorf("userFullNameTaken: %w", err)
+	}
+	if n > 0 {
+		return "user", nil
+	}
+	if err := oDb.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM auth_group WHERE role = CONCAT(?, ' ', ?)",
+		firstName, lastName).Scan(&n); err != nil {
+		return "", fmt.Errorf("userFullNameTaken: %w", err)
+	}
+	if n > 0 {
+		return "group", nil
+	}
+	return "", nil
 }

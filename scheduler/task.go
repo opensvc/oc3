@@ -275,7 +275,105 @@ func (t *Task) Exec(ctx context.Context) (err error) {
 	}
 	taskExecCounter.With(prometheus.Labels{"desc": t.name, "status": status}).Inc()
 	taskExecDuration.With(prometheus.Labels{"desc": t.name, "status": status}).Observe(duration.Seconds())
+	if rerr := t.recordRun(ctx, status, duration, err); rerr != nil {
+		t.Warnf("record the run: %s", rerr)
+	}
 	return
+}
+
+// runRetention is how long the runs of the tasks are kept in
+// oc3_scheduler_runs.
+const runRetention = "7 DAY"
+
+// runErrorMaxLen is the length the error of a run is cut to.
+const runErrorMaxLen = 4000
+
+// recordRun records a run of the task, for the scheduler tasks page: on its
+// oc3_scheduler row, the last run, and in oc3_scheduler_runs, where the runs
+// older than runRetention are dropped. A run stopped by the end of ctx is
+// recorded all the same.
+func (t *Task) recordRun(ctx context.Context, status string, duration time.Duration, runErr error) error {
+	if t.db == nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+	defer cancel()
+	var errText sql.NullString
+	if runErr != nil {
+		errText.String, errText.Valid = runErr.Error(), true
+		if len(errText.String) > runErrorMaxLen {
+			errText.String = errText.String[:runErrorMaxLen]
+		}
+	}
+	ms := duration.Milliseconds()
+	// The begin is computed by the database, as the other dates of the table,
+	// from its clock.
+	const beginAt = "NOW(3) - INTERVAL ? * 1000 MICROSECOND"
+	if _, err := t.db.ExecContext(ctx, "INSERT INTO oc3_scheduler_runs (task_name, begin_at, duration_ms, status, error)"+
+		" VALUES (?, "+beginAt+", ?, ?, ?)", t.name, ms, ms, status, errText); err != nil {
+		return err
+	}
+	if _, err := t.db.ExecContext(ctx, "INSERT INTO oc3_scheduler (task_name, last_status, last_begin_at, last_duration_ms, last_error)"+
+		" VALUES (?, ?, "+beginAt+", ?, ?) ON DUPLICATE KEY UPDATE last_status = VALUES(last_status),"+
+		" last_begin_at = VALUES(last_begin_at), last_duration_ms = VALUES(last_duration_ms), last_error = VALUES(last_error)",
+		t.name, status, ms, ms, errText); err != nil {
+		return err
+	}
+	_, err := t.db.ExecContext(ctx, "DELETE FROM oc3_scheduler_runs WHERE task_name = ? AND begin_at < NOW() - INTERVAL "+runRetention, t.name)
+	return err
+}
+
+// declaredTask is a task or a subtask as the scheduler declares it in
+// oc3_scheduler.
+type declaredTask struct {
+	name, parent, desc string
+	period, timeout    time.Duration
+}
+
+// declared returns the tasks of the list and their subtasks, the subtasks
+// named "<task>: <subtask>" as Exec names them.
+func (t TaskList) declared() []declaredTask {
+	var l []declaredTask
+	for _, task := range t {
+		l = append(l, declaredTask{name: task.name, desc: task.desc, period: task.period, timeout: task.timeout})
+		for _, child := range task.children {
+			l = append(l, declaredTask{
+				name:    task.name + ": " + child.name,
+				parent:  task.name,
+				desc:    child.desc,
+				period:  task.period,
+				timeout: child.timeout,
+			})
+		}
+	}
+	return l
+}
+
+// Declare writes the tasks of the list and their subtasks in oc3_scheduler,
+// with their description, period and timeout, and marks the rows of the
+// tasks the list does not hold any more as not declared.
+func (t TaskList) Declare(ctx context.Context, db *sql.DB) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	l := t.declared()
+	names := make([]any, len(l))
+	for i, d := range l {
+		names[i] = d.name
+		if _, err := db.ExecContext(ctx, "INSERT INTO oc3_scheduler (task_name, parent, task_desc, period_s, timeout_s, declared)"+
+			" VALUES (?, ?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE parent = VALUES(parent), task_desc = VALUES(task_desc),"+
+			" period_s = VALUES(period_s), timeout_s = VALUES(timeout_s), declared = 1",
+			d.name, d.parent, d.desc, int64(d.period.Seconds()), int64(d.timeout.Seconds())); err != nil {
+			return fmt.Errorf("declare %s: %w", d.name, err)
+		}
+	}
+	if len(names) == 0 {
+		return nil
+	}
+	if _, err := db.ExecContext(ctx, "UPDATE oc3_scheduler SET declared = 0 WHERE task_name NOT IN ("+
+		strings.TrimSuffix(strings.Repeat("?,", len(names)), ",")+")", names...); err != nil {
+		return fmt.Errorf("undeclare the tasks gone: %w", err)
+	}
+	return nil
 }
 
 func (t *Task) GetState(ctx context.Context) (State, error) {
@@ -286,10 +384,15 @@ func (t *Task) GetState(ctx context.Context) (State, error) {
 
 	query := "SELECT last_run_at,is_disabled FROM oc3_scheduler WHERE task_name = ? ORDER BY id DESC LIMIT 1"
 
-	err := t.db.QueryRowContext(ctx, query, t.name).Scan(&state.LastRunAt, &state.IsDisabled)
+	// A task declared at the start of the scheduler and never run has no last
+	// run.
+	var lastRunAt sql.NullTime
+	var isDisabled sql.NullBool
+	err := t.db.QueryRowContext(ctx, query, t.name).Scan(&lastRunAt, &isDisabled)
 	if err == sql.ErrNoRows {
 		return state, nil
 	}
+	state.LastRunAt, state.IsDisabled = lastRunAt.Time, isDisabled.Bool
 	return state, err
 }
 

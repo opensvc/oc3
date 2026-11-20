@@ -96,7 +96,7 @@ func (oDb *DB) SealedSecretsToRewrap(ctx context.Context, activeKeyID string, li
 // SetSealedSecretKey records the key of the secrets of a row rewrapped, if the
 // row still has the key it was read with: false when it changed meanwhile.
 func (oDb *DB) SetSealedSecretKey(ctx context.Context, r SealedSecretRef, keyID string, wrapped []byte) (bool, error) {
-	result, err := oDb.DB.ExecContext(ctx, "UPDATE "+r.Table.Table+
+	result, err := oDb.ExecContext(ctx, "UPDATE "+r.Table.Table+
 		" SET secrets_key_id = ?, secrets_wrapped_key = ? WHERE id = ? AND secrets_key_id = ?",
 		keyID, wrapped, r.ID, r.KeyID)
 	if err != nil {

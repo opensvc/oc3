@@ -97,7 +97,7 @@ func (oDb *DB) WikiRevisionByID(ctx context.Context, name string, id int64) (*Wi
 // no longer the latest revision: the check and the insert are one statement.
 func (oDb *DB) InsertWikiRevision(ctx context.Context, name string, baseID int64, body, changeNote string, authorID int64) (int64, error) {
 	defer logDuration("InsertWikiRevision", time.Now())
-	res, err := oDb.DB.ExecContext(ctx, `INSERT INTO wiki_pages (name, title, author, saved_on, body, change_note)
+	res, err := oDb.ExecContext(ctx, `INSERT INTO wiki_pages (name, title, author, saved_on, body, change_note)
 		SELECT ?, '', ?, NOW(), ?, ? FROM DUAL
 		WHERE COALESCE((SELECT MAX(id) FROM wiki_pages WHERE name = ?), 0) = ?`,
 		name, authorID, body, changeNote, name, baseID)

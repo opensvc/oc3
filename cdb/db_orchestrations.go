@@ -122,7 +122,7 @@ func (oDb *DB) OrchestrationNameTaken(ctx context.Context, name string, exceptID
 
 // InsertOrchestration creates the orchestration and returns its id.
 func (oDb *DB) InsertOrchestration(ctx context.Context, o Orchestration) (int, error) {
-	result, err := oDb.DB.ExecContext(ctx,
+	result, err := oDb.ExecContext(ctx,
 		"INSERT INTO orchestrations (name, description, steps_json, created, updated, updated_by) VALUES (?, ?, ?, NOW(), NOW(), ?)",
 		o.Name, o.Description, o.StepsJSON, o.UpdatedBy)
 	if err != nil {
@@ -136,7 +136,7 @@ func (oDb *DB) InsertOrchestration(ctx context.Context, o Orchestration) (int, e
 // UpdateOrchestration replaces the name, description and steps of the
 // orchestration, false when there is none.
 func (oDb *DB) UpdateOrchestration(ctx context.Context, o Orchestration) (bool, error) {
-	result, err := oDb.DB.ExecContext(ctx,
+	result, err := oDb.ExecContext(ctx,
 		"UPDATE orchestrations SET name = ?, description = ?, steps_json = ?, updated = NOW(), updated_by = ? WHERE id = ?",
 		o.Name, o.Description, o.StepsJSON, o.UpdatedBy, o.ID)
 	if err != nil {
@@ -154,7 +154,7 @@ func (oDb *DB) UpdateOrchestration(ctx context.Context, o Orchestration) (bool, 
 // DeleteOrchestration deletes the orchestration, false when there is none. Its
 // runs stay, unlinked.
 func (oDb *DB) DeleteOrchestration(ctx context.Context, id int) (bool, error) {
-	result, err := oDb.DB.ExecContext(ctx, "DELETE FROM orchestrations WHERE id = ?", id)
+	result, err := oDb.ExecContext(ctx, "DELETE FROM orchestrations WHERE id = ?", id)
 	if err != nil {
 		return false, err
 	}
@@ -162,7 +162,7 @@ func (oDb *DB) DeleteOrchestration(ctx context.Context, id int) (bool, error) {
 	if err != nil || n == 0 {
 		return false, err
 	}
-	if _, err := oDb.DB.ExecContext(ctx, "UPDATE orchestration_runs SET orchestration_id = NULL WHERE orchestration_id = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "UPDATE orchestration_runs SET orchestration_id = NULL WHERE orchestration_id = ?", id); err != nil {
 		return false, err
 	}
 	oDb.SetChange("orchestrations", "orchestration_runs")
@@ -172,7 +172,7 @@ func (oDb *DB) DeleteOrchestration(ctx context.Context, id int) (bool, error) {
 // InsertOrchestrationRun creates a running run, its steps, the first one
 // running, and their targets, all waiting. To be called in a transaction.
 func (oDb *DB) InsertOrchestrationRun(ctx context.Context, run OrchestrationRun, steps int, targets []OrchestrationRunTarget) (int, error) {
-	result, err := oDb.DB.ExecContext(ctx, `INSERT INTO orchestration_runs
+	result, err := oDb.ExecContext(ctx, `INSERT INTO orchestration_runs
 		(orchestration_id, name, plan_json, status, current_step, started, user_id, started_by, message)
 		VALUES (?, ?, ?, 'running', 0, NOW(), ?, ?, '')`,
 		run.OrchestrationID, run.Name, run.PlanJSON, run.UserID, run.StartedBy)
@@ -189,14 +189,14 @@ func (oDb *DB) InsertOrchestrationRun(ctx context.Context, run OrchestrationRun,
 		if step == 0 {
 			status, started = "running", "NOW()"
 		}
-		if _, err := oDb.DB.ExecContext(ctx,
+		if _, err := oDb.ExecContext(ctx,
 			"INSERT INTO orchestration_run_steps (run_id, step, status, started) VALUES (?, ?, ?, "+started+")",
 			id, step, status); err != nil {
 			return 0, err
 		}
 	}
 	for _, t := range targets {
-		if _, err := oDb.DB.ExecContext(ctx, `INSERT INTO orchestration_run_targets
+		if _, err := oDb.ExecContext(ctx, `INSERT INTO orchestration_run_targets
 			(run_id, step, position, node_id, svc_id, cluster_id, label, status, message)
 			VALUES (?, ?, ?, ?, ?, ?, ?, 'waiting', '')`,
 			id, t.Step, t.Position, t.NodeID, t.SvcID, t.ClusterID, t.Label); err != nil {
@@ -270,7 +270,7 @@ func (oDb *DB) SetOrchestrationRun(ctx context.Context, id int, status string, c
 	if status == "running" {
 		ended = "NULL"
 	}
-	_, err := oDb.DB.ExecContext(ctx,
+	_, err := oDb.ExecContext(ctx,
 		"UPDATE orchestration_runs SET status = ?, current_step = ?, message = ?, ended = "+ended+" WHERE id = ?",
 		status, currentStep, message, id)
 	if err == nil {
@@ -331,7 +331,7 @@ func (oDb *DB) SetOrchestrationRunStep(ctx context.Context, runID, step int, sta
 	default:
 		dates = "ended = NOW()"
 	}
-	_, err := oDb.DB.ExecContext(ctx,
+	_, err := oDb.ExecContext(ctx,
 		"UPDATE orchestration_run_steps SET status = ?, "+dates+" WHERE run_id = ? AND step = ?",
 		status, runID, step)
 	if err == nil {
@@ -343,7 +343,7 @@ func (oDb *DB) SetOrchestrationRunStep(ctx context.Context, runID, step int, sta
 // AckOrchestrationRunStep acknowledges the failed or stopped step of a run: its
 // outcome accepted, by whom and why, for the run to go on.
 func (oDb *DB) AckOrchestrationRunStep(ctx context.Context, runID, step int, by, comment string) error {
-	_, err := oDb.DB.ExecContext(ctx, `UPDATE orchestration_run_steps SET status = 'acknowledged', acked_by = ?,
+	_, err := oDb.ExecContext(ctx, `UPDATE orchestration_run_steps SET status = 'acknowledged', acked_by = ?,
 		acked_at = NOW(), ack_comment = ? WHERE run_id = ? AND step = ? AND status IN ('failed', 'stopped')`, by, comment, runID, step)
 	if err == nil {
 		oDb.SetChange("orchestration_runs")
@@ -358,7 +358,7 @@ func (oDb *DB) SetOrchestrationRunStepsFrom(ctx context.Context, runID, step int
 	if status == "waiting" {
 		dates = ", started = NULL, ended = NULL"
 	}
-	_, err := oDb.DB.ExecContext(ctx,
+	_, err := oDb.ExecContext(ctx,
 		"UPDATE orchestration_run_steps SET status = ?"+dates+" WHERE run_id = ? AND step >= ?",
 		status, runID, step)
 	if err == nil {
@@ -430,7 +430,7 @@ func (oDb *DB) OrchestrationRunTargets(ctx context.Context, runID, step int) ([]
 // SetOrchestrationTargetQueued records the action queued for a target, and its
 // command.
 func (oDb *DB) SetOrchestrationTargetQueued(ctx context.Context, id int, actionID int64, command string) error {
-	_, err := oDb.DB.ExecContext(ctx,
+	_, err := oDb.ExecContext(ctx,
 		"UPDATE orchestration_run_targets SET status = 'queued', action_id = ?, command = ?, queued = NOW(), message = '' WHERE id = ?",
 		actionID, command, id)
 	if err == nil {
@@ -442,7 +442,7 @@ func (oDb *DB) SetOrchestrationTargetQueued(ctx context.Context, id int, actionI
 // SetOrchestrationTargetRunning records that an agent took the action of the
 // target.
 func (oDb *DB) SetOrchestrationTargetRunning(ctx context.Context, id int) error {
-	_, err := oDb.DB.ExecContext(ctx,
+	_, err := oDb.ExecContext(ctx,
 		"UPDATE orchestration_run_targets SET status = 'running', started = COALESCE(started, NOW()) WHERE id = ?", id)
 	if err == nil {
 		oDb.SetChange("orchestration_runs")
@@ -453,7 +453,7 @@ func (oDb *DB) SetOrchestrationTargetRunning(ctx context.Context, id int) error 
 // SetOrchestrationTargetDone records the end of a target, its results when its
 // action finished.
 func (oDb *DB) SetOrchestrationTargetDone(ctx context.Context, id int, status string, ret *int, stdout, stderr *string, message string) error {
-	_, err := oDb.DB.ExecContext(ctx, `UPDATE orchestration_run_targets SET status = ?, ret = ?, stdout = ?, stderr = ?,
+	_, err := oDb.ExecContext(ctx, `UPDATE orchestration_run_targets SET status = ?, ret = ?, stdout = ?, stderr = ?,
 		message = ?, started = COALESCE(started, queued), ended = NOW() WHERE id = ?`,
 		status, ret, stdout, stderr, message, id)
 	if err == nil {
@@ -479,7 +479,7 @@ func (oDb *DB) SetOrchestrationTargetsStatus(ctx context.Context, runID, step, m
 		query += " AND step >= ?"
 		args = append(args, minStep)
 	}
-	_, err := oDb.DB.ExecContext(ctx, query, args...)
+	_, err := oDb.ExecContext(ctx, query, args...)
 	if err == nil {
 		oDb.SetChange("orchestration_runs")
 	}
@@ -489,7 +489,7 @@ func (oDb *DB) SetOrchestrationTargetsStatus(ctx context.Context, runID, step, m
 // ResetOrchestrationTargets makes the targets of a run from step on waiting
 // again, their action and results forgotten, but those of step that succeeded.
 func (oDb *DB) ResetOrchestrationTargets(ctx context.Context, runID, step int) error {
-	_, err := oDb.DB.ExecContext(ctx, `UPDATE orchestration_run_targets SET status = 'waiting', action_id = NULL,
+	_, err := oDb.ExecContext(ctx, `UPDATE orchestration_run_targets SET status = 'waiting', action_id = NULL,
 		command = NULL, ret = NULL, stdout = NULL, stderr = NULL, message = '', queued = NULL, started = NULL, ended = NULL
 		WHERE run_id = ? AND (step > ? OR (step = ? AND status != 'ok'))`, runID, step, step)
 	if err == nil {
@@ -545,7 +545,7 @@ func (oDb *DB) ActionQueueStates(ctx context.Context, ids []int64) (map[int64]Ac
 // CancelWaitingAction cancels a queued action no agent took yet, and tells
 // whether it did.
 func (oDb *DB) CancelWaitingAction(ctx context.Context, id int64) (bool, error) {
-	result, err := oDb.DB.ExecContext(ctx, "UPDATE action_queue SET status = 'C' WHERE id = ? AND status = 'W'", id)
+	result, err := oDb.ExecContext(ctx, "UPDATE action_queue SET status = 'C' WHERE id = ? AND status = 'W'", id)
 	if err != nil {
 		return false, err
 	}

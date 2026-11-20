@@ -242,7 +242,7 @@ func (a *Api) GetComplianceRulesetUsage(c echo.Context, rsetId string) error {
 	if !found {
 		return httpProblem(c, httpErrorf(http.StatusNotFound, "ruleset not found or not visible to your groups"))
 	}
-	usage, err := a.ODB.CompRulesetUsage(ctx, id)
+	usage, err := a.ODB.CompRulesetUsage(ctx, id, UserGroupsFromContext(c), IsManager(c))
 	if err != nil {
 		return httpProblem(c, compDesignerError(c, "GetComplianceRulesetUsage", err))
 	}

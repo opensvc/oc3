@@ -41,7 +41,7 @@ func (oDb *DB) GetNodeIPByID(ctx context.Context, id int64) (NodeIP, bool, error
 
 func (oDb *DB) DeleteNodeIP(ctx context.Context, id int64) (int64, error) {
 	const query = "DELETE FROM node_ip WHERE id = ?"
-	res, err := oDb.DB.ExecContext(ctx, query, id)
+	res, err := oDb.ExecContext(ctx, query, id)
 	if err != nil {
 		return 0, fmt.Errorf("deleteNodeIP: %w", err)
 	}

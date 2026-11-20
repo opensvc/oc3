@@ -230,7 +230,7 @@ func (oDb *DB) CompStatusRunVisible(ctx context.Context, id int64, groups []stri
 
 // DeleteCompStatusRun deletes a check run.
 func (oDb *DB) DeleteCompStatusRun(ctx context.Context, id int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM comp_status WHERE id = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM comp_status WHERE id = ?", id); err != nil {
 		return fmt.Errorf("deleteCompStatusRun: %w", err)
 	}
 	oDb.SetChange("comp_status")

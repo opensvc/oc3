@@ -16,12 +16,13 @@ import (
 	"github.com/opensvc/oc3/util/echolog"
 )
 
-// GetFormsRevisions handles GET /forms_revisions.
+// GetFormsRevisions handles GET /forms_revisions: the revisions the caller may
+// read, see cdb.GetFormsRevisions.
 func (a *Api) GetFormsRevisions(c echo.Context, params server.GetFormsRevisionsParams) error {
 	return a.handleList(c, "GetFormsRevisions", "form_revision", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
-		filter: params.Filter, virtual: formDefinitionProp,
+		filter: params.Filter, virtual: formDefinitionProp, withUserID: true,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetFormsRevisions(ctx, nil, p)
 	})
@@ -32,7 +33,7 @@ func (a *Api) GetFormsRevision(c echo.Context, revisionId string, params server.
 	return a.handleList(c, "GetFormsRevision", "form_revision", listEndpointParams{
 		props: params.Props, limit: params.Limit, offset: params.Offset,
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
-		filter: params.Filter, virtual: formDefinitionProp,
+		filter: params.Filter, virtual: formDefinitionProp, withUserID: true,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 		return a.ODB.GetFormsRevisions(ctx, &revisionId, p)
 	})

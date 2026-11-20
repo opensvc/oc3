@@ -80,6 +80,18 @@ func orchestrationRunListCol(name string) *schema.Col {
 	return &schema.Col{T: tOrchestrationRunsList, Name: name, Nullable: true}
 }
 
+// schedulerTaskCol is a column of the scheduler tasks lists, whose derived
+// table is named after oc3_scheduler (cdb/db_scheduler.go).
+func schedulerTaskCol(name string) *schema.Col {
+	return &schema.Col{T: schema.TOc3Scheduler, Name: name, Nullable: true}
+}
+
+// schedulerRunCol is a column of oc3_scheduler_runs, which the generated
+// schema does not hold.
+func schedulerRunCol(name string) *schema.Col {
+	return &schema.Col{T: &schema.Table{Name: "oc3_scheduler_runs"}, Name: name, Nullable: name == "error"}
+}
+
 func col(c *schema.Col) propDef {
 	return propDef{Col: c}
 }
@@ -1793,6 +1805,42 @@ var propsMapping = map[string]propMapping{
 			"org_roles":       colStr(oidcMappingListCol("org_roles")),
 			"author":          colStr(schema.AuthOidcMappingsAuthor),
 			"updated":         colStr(schema.AuthOidcMappingsUpdated),
+		},
+	},
+	"scheduler_task": {
+		Available: []string{"id", "task_name", "parent", "task_desc", "period_s", "timeout_s", "is_disabled", "declared",
+			"last_run_at", "next_run_at", "last_status", "last_begin_at", "last_duration_ms", "last_error",
+			"runs_24h", "failures_24h", "avg_duration_ms_24h", "max_duration_ms_24h"},
+		Props: map[string]propDef{
+			"id":                  col(schedulerTaskCol("id")),
+			"task_name":           colStr(schedulerTaskCol("task_name")),
+			"parent":              colStr(schedulerTaskCol("parent")),
+			"task_desc":           colStr(schedulerTaskCol("task_desc")),
+			"period_s":            colInt(schedulerTaskCol("period_s")),
+			"timeout_s":           colInt(schedulerTaskCol("timeout_s")),
+			"is_disabled":         {Col: schedulerTaskCol("is_disabled"), Kind: "bool"},
+			"declared":            {Col: schedulerTaskCol("declared"), Kind: "bool"},
+			"last_run_at":         colStr(schedulerTaskCol("last_run_at")),
+			"next_run_at":         colStr(schedulerTaskCol("next_run_at")),
+			"last_status":         colStr(schedulerTaskCol("last_status")),
+			"last_begin_at":       colStr(schedulerTaskCol("last_begin_at")),
+			"last_duration_ms":    colIntNullable(schedulerTaskCol("last_duration_ms")),
+			"last_error":          colStr(schedulerTaskCol("last_error")),
+			"runs_24h":            colInt(schedulerTaskCol("runs_24h")),
+			"failures_24h":        colInt(schedulerTaskCol("failures_24h")),
+			"avg_duration_ms_24h": colIntNullable(schedulerTaskCol("avg_duration_ms_24h")),
+			"max_duration_ms_24h": colIntNullable(schedulerTaskCol("max_duration_ms_24h")),
+		},
+	},
+	"scheduler_run": {
+		Available: []string{"id", "task_name", "begin_at", "duration_ms", "status", "error"},
+		Props: map[string]propDef{
+			"id":          col(schedulerRunCol("id")),
+			"task_name":   colStr(schedulerRunCol("task_name")),
+			"begin_at":    colStr(schedulerRunCol("begin_at")),
+			"duration_ms": colInt(schedulerRunCol("duration_ms")),
+			"status":      colStr(schedulerRunCol("status")),
+			"error":       colStr(schedulerRunCol("error")),
 		},
 	},
 	"sysrep_secure": {

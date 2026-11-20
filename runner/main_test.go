@@ -35,3 +35,26 @@ func TestNotifyNode(t *testing.T) {
 		})
 	}
 }
+
+// TestValidateSSHDestination checks the runner refuses an ssh command whose
+// destination adds arguments to ssh.
+func TestValidateSSHDestination(t *testing.T) {
+	w := &Worker{}
+	ok := "ssh -o StrictHostKeyChecking=no opensvc@node1.example.com -- sudo nodemgr pushasset"
+	if err := w.validateCommand(ok); err != nil {
+		t.Errorf("%s: %v", ok, err)
+	}
+	if err := w.validateCommand("om node pushasset"); err != nil {
+		t.Errorf("pull command refused: %v", err)
+	}
+	for _, cmd := range []string{
+		"ssh -o ConnectTimeout=5 opensvc@x -oProxyCommand=touch${IFS}/tmp/p -- sudo nodemgr pushasset",
+		"ssh opensvc@-oProxyCommand=id -- sudo nodemgr pushasset",
+		"ssh opensvc@x;id -- sudo nodemgr",
+		"ssh -oProxyCommand=id node1 -- sudo nodemgr",
+	} {
+		if err := w.validateCommand(cmd); err == nil {
+			t.Errorf("%s accepted", cmd)
+		}
+	}
+}

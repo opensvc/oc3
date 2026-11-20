@@ -41,7 +41,8 @@ func (a *Api) PostDisks(c echo.Context) error {
 		return JSONProblemf(c, http.StatusInternalServerError, "cannot fetch array proxies")
 	}
 
-	manager := IsManager(c)
+	// A Manager or a StorageManager, as the other storage endpoints.
+	manager := IsAuthByUser(c) && (IsManager(c) || HasGroup(c, "StorageManager"))
 	callerNodeID, _ := c.Get(XNodeID).(string)
 	proxyOK := false
 	if IsAuthByNode(c) && callerNodeID != "" {

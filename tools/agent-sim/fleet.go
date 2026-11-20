@@ -26,6 +26,9 @@ type (
 		Apps []string
 		App  string
 		Team string
+		// Catalog, when set, builds the fleet of a catalog rather than from
+		// the counts: "realistic" (see catalog.go).
+		Catalog string
 	}
 
 	fleet struct {
@@ -48,6 +51,9 @@ type (
 		id      string
 		uuid    string
 		cluster *cluster
+		// profile is what a node of a catalog says of itself: its hardware,
+		// its system, its location; nil for a generic node.
+		profile *nodeProfile
 	}
 
 	service struct {
@@ -101,6 +107,13 @@ func (s fleetSpec) uuid(keys ...any) string {
 var namespaces = []string{"prd", "pre", "uat", "dev", "ops"}
 
 func newFleet(spec fleetSpec) (*fleet, error) {
+	switch spec.Catalog {
+	case "":
+	case "realistic":
+		return newCatalogFleet(spec)
+	default:
+		return nil, fmt.Errorf("unknown catalog %q: realistic or none", spec.Catalog)
+	}
 	if spec.Nodes < 1 || spec.NodesPerCluster < 1 {
 		return nil, fmt.Errorf("need at least one node and one node a cluster")
 	}
@@ -197,6 +210,13 @@ func newResource(r *rand.Rand, s *service, i int) resource {
 func (f *fleet) nodeCount() (n int) {
 	for _, c := range f.clusters {
 		n += len(c.nodes)
+	}
+	return
+}
+
+func (f *fleet) serviceCount() (n int) {
+	for _, c := range f.clusters {
+		n += len(c.services)
 	}
 	return
 }

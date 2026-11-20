@@ -410,35 +410,6 @@ func (oDb *DB) NodeUpdateLastComm(ctx context.Context, nodeIds ...string) error 
 	return nil
 }
 
-// NodeUpdateClusterIDForNodeID update cluster_id value on nodes with node_id. the returned bool indicate table has been updated
-func (oDb *DB) NodeUpdateClusterIDForNodeID(ctx context.Context, nodeID, clusterID string) (bool, error) {
-	const (
-		querySearch = `SELECT cluster_id FROM nodes WHERE node_id = ? and cluster_id = ? LIMIT 1`
-		queryUpdate = `UPDATE nodes SET cluster_id = ? WHERE node_id = ?`
-	)
-	var (
-		s string
-	)
-	row := oDb.DB.QueryRowContext(ctx, querySearch, nodeID, clusterID)
-	err := row.Scan(&s)
-	switch err {
-	case nil:
-		// found node with nodeID and clusterID
-		return false, nil
-	case sql.ErrNoRows:
-		if count, err := oDb.execCountContext(ctx, queryUpdate, clusterID, nodeID); err != nil {
-			return false, fmt.Errorf("NodeUpdateClusterIDForNodeID update: %w", err)
-		} else if count > 0 {
-			oDb.SetChange("nodes")
-			return true, nil
-		} else {
-			return false, nil
-		}
-	default:
-		return false, fmt.Errorf("NodeUpdateClusterIDForNodeID check cluster_id: %w", err)
-	}
-}
-
 func (oDb *DB) PurgeNodeHBAsOutdated(ctx context.Context, maxAge time.Duration) error {
 	request := fmt.Sprintf("DELETE FROM `node_hba` WHERE `updated` < DATE_SUB(NOW(), INTERVAL ? SECOND)")
 	if count, err := oDb.execCountContext(ctx, request, maxAgeSeconds(maxAge)); err != nil {
@@ -794,6 +765,13 @@ func (oDb *DB) UpdateNodeFields(ctx context.Context, nodeID string, fields map[s
 		return fmt.Errorf("UpdateNodeFields: %w", err)
 	}
 	oDb.SetChange("nodes")
+	if _, ok := fields["cluster_id"]; ok {
+		// set by an operator, a bootstrap or an enrollment: the claim
+		// waiting for a member is moot.
+		if err := oDb.deleteClusterClaim(ctx, nodeID); err != nil {
+			return fmt.Errorf("UpdateNodeFields: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -815,6 +793,9 @@ var nodeCascadeTables = []string{
 	"resmon_log_last",
 	"svcmon_log",
 	"svcmon_log_last",
+	"node_bootstrap_tokens",
+	"cluster_enrollments",
+	"node_cluster_claims",
 }
 
 // DeleteNodeCascade deletes a node and all its related data in other tables
@@ -855,7 +836,7 @@ func (oDb *DB) DeleteNodesCascade(ctx context.Context, nodeIDs []string) error {
 func (oDb *DB) DetachNodenameFromCluster(ctx context.Context, nodename, clusterID, keepNodeID string) error {
 	defer logDuration("DetachNodenameFromCluster", time.Now())
 	const query = `UPDATE nodes SET cluster_id = '', updated = NOW() WHERE nodename = ? AND cluster_id = ? AND node_id <> ?`
-	result, err := oDb.DB.ExecContext(ctx, query, nodename, clusterID, keepNodeID)
+	result, err := oDb.ExecContext(ctx, query, nodename, clusterID, keepNodeID)
 	if err != nil {
 		return fmt.Errorf("DetachNodenameFromCluster: %w", err)
 	}

@@ -12,10 +12,17 @@ import (
 	"github.com/opensvc/oc3/util/logkey"
 )
 
-// GetLogs handles GET /logs
+// GetLogs handles GET /logs: the events a user may read, all of them for a
+// Manager, their own and those of the nodes and services of their apps for the
+// others (see cdb.GetLogs).
 func (a *Api) GetLogs(c echo.Context, params server.GetLogsParams) error {
 	log := echolog.GetLogHandler(c, "GetLogs")
 	ctx := c.Request().Context()
+	// The log tells what the users did: nothing a node reads.
+	if err := requireUserAuth(c); err != nil {
+		return err
+	}
+	userEmail, _ := c.Get(XUserEmail).(string)
 
 	var fset cdb.LogsFiltersetFilter
 	if params.FsetId != nil && *params.FsetId != "" {
@@ -45,6 +52,6 @@ func (a *Api) GetLogs(c echo.Context, params server.GetLogsParams) error {
 		meta: params.Meta, stats: params.Stats, orderby: params.Orderby, groupby: params.Groupby,
 		filter: params.Filter,
 	}, func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
-		return a.ODB.GetLogs(ctx, p, fset)
+		return a.ODB.GetLogs(ctx, p, fset, userEmail)
 	})
 }

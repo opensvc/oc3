@@ -2,8 +2,10 @@ package serverhandlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/mail"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -106,6 +108,14 @@ func (a *Api) PostUser(c echo.Context, userId string) error {
 			return JSONProblemf(c, http.StatusBadRequest, "%s must be at most %d characters long", name.field, maxUserNameLength)
 		}
 	}
+	if slices.Contains(changed, "first_name") || slices.Contains(changed, "last_name") {
+		if msg, err := checkFullNameFree(ctx, odb, next.FirstName, next.LastName, targetID); err != nil {
+			log.Error("cannot check the full name", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "cannot check the full name")
+		} else if msg != "" {
+			return JSONProblem(c, http.StatusConflict, msg)
+		}
+	}
 	if body.Email != nil {
 		email := strings.TrimSpace(*body.Email)
 		if addr, err := mail.ParseAddress(email); err != nil || addr.Address != email {
@@ -161,6 +171,20 @@ func (a *Api) PostUser(c echo.Context, userId string) error {
 		func(ctx context.Context, p cdb.ListParams) ([]map[string]any, error) {
 			return odb.GetUser(ctx, id, p)
 		})
+}
+
+// checkFullNameFree returns why the full name first last is refused, or "":
+// borne by another user than userID or by a group, see cdb.UserFullNameTaken.
+func checkFullNameFree(ctx context.Context, odb *cdb.DB, first, last string, userID int64) (string, error) {
+	what, err := odb.UserFullNameTaken(ctx, first, last, userID)
+	if err != nil || what == "" {
+		return "", err
+	}
+	name := strings.TrimSpace(first + " " + last)
+	if what == "group" {
+		return fmt.Sprintf("the name %q is the one of a group: choose another", name), nil
+	}
+	return fmt.Sprintf("another user already has the name %q: choose another", name), nil
 }
 
 // identityManagedByProvider tells whether the caller signed in through the

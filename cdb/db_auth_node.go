@@ -48,7 +48,7 @@ func (oDb *DB) AuthNodesByNodeID(ctx context.Context, nodeID string) ([]DBAuthNo
 func (oDb *DB) UpdateAuthNodeNodename(ctx context.Context, nodeID, nodename string) error {
 	defer logDuration("UpdateAuthNodeNodename", time.Now())
 	const query = `UPDATE auth_node SET nodename = ?, updated = NOW() WHERE node_id = ?`
-	if _, err := oDb.DB.ExecContext(ctx, query, nodename, nodeID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, nodename, nodeID); err != nil {
 		return fmt.Errorf("UpdateAuthNodeNodename: %w", err)
 	}
 	oDb.SetChange("auth_node")
@@ -99,7 +99,7 @@ func (oDb *DB) SetAuthNodeUUID(ctx context.Context, nodeID, nodename, nodeUUID s
 	defer logDuration("SetAuthNodeUUID", time.Now())
 	const query = `INSERT INTO auth_node (nodename, uuid, node_id) VALUES (?, ?, ?)
 		ON DUPLICATE KEY UPDATE nodename = VALUES(nodename), uuid = VALUES(uuid), updated = NOW()`
-	if _, err := oDb.DB.ExecContext(ctx, query, nodename, nodeUUID, nodeID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, nodename, nodeUUID, nodeID); err != nil {
 		return fmt.Errorf("SetAuthNodeUUID: %w", err)
 	}
 	oDb.SetChange("auth_node")

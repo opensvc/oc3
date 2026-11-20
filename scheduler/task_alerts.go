@@ -19,6 +19,7 @@ var TaskAlert1M = Task{
 	children: TaskList{
 		TaskAlertFrozen,
 		TaskAlertInstancesNotUpdated,
+		TaskAlertNodeClusterClaims,
 		TaskAlertSlowTask,
 	},
 	period:  time.Minute,
@@ -59,6 +60,14 @@ var TaskAlert1D = Task{
 	},
 	period:  24 * time.Hour,
 	timeout: 15 * time.Minute,
+}
+
+// TaskAlertNodeClusterClaims raises an alert on the nodes claiming a cluster
+// no member confirmed for 5 minutes.
+var TaskAlertNodeClusterClaims = Task{
+	name:    "alert_node_cluster_claims",
+	fn:      taskAlertNodeClusterClaims,
+	timeout: 10 * time.Second,
 }
 
 var TaskAlertNodeWithoutMaintenanceEnd = Task{
@@ -553,6 +562,22 @@ func taskAlertInstancesNotUpdated(ctx context.Context, task *Task) error {
 		return err
 	}
 	if err := odb.DashboardUpdateInstancesNotUpdated(ctx, age); err != nil {
+		return err
+	}
+	if err := odb.Session.NotifyChanges(ctx); err != nil {
+		return err
+	}
+	return odb.Commit()
+}
+
+func taskAlertNodeClusterClaims(ctx context.Context, task *Task) error {
+	odb, err := task.DBX(ctx)
+	if err != nil {
+		return err
+	}
+	defer odb.Rollback()
+
+	if err := odb.DashboardUpdateNodeClusterClaims(ctx, 5*time.Minute); err != nil {
 		return err
 	}
 	if err := odb.Session.NotifyChanges(ctx); err != nil {

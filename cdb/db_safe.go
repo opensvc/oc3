@@ -282,7 +282,7 @@ func (oDb *DB) UpdateSafeFileContent(ctx context.Context, id int64, c SafeFileCo
 // stored name unchanged: what the conversion of a plaintext file and a rewrap
 // write. The row must still hold the stored name encrypted.
 func (oDb *DB) SetSafeFileEncryption(ctx context.Context, id int64, uuid string, version int, keyID string, wrappedKey []byte, sha256 string) (bool, error) {
-	res, err := oDb.DB.ExecContext(ctx, "UPDATE safe SET enc_version = ?, enc_uuid = ?, enc_key_id = ?, enc_wrapped_key = ?,"+
+	res, err := oDb.ExecContext(ctx, "UPDATE safe SET enc_version = ?, enc_uuid = ?, enc_key_id = ?, enc_wrapped_key = ?,"+
 		" sha256 = COALESCE(NULLIF(?, ''), sha256) WHERE id = ? AND uuid = ?", version, uuid, keyID, wrappedKey, sha256, id, uuid)
 	if err != nil {
 		return false, fmt.Errorf("setSafeFileEncryption: %w", err)
@@ -323,7 +323,7 @@ func (oDb *DB) safeFilesWhere(ctx context.Context, where string, args ...any) ([
 
 // SetSafeFileName renames a file, its content unchanged.
 func (oDb *DB) SetSafeFileName(ctx context.Context, id int64, name string) error {
-	if _, err := oDb.DB.ExecContext(ctx, "UPDATE safe SET name = ? WHERE id = ?", name, id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "UPDATE safe SET name = ? WHERE id = ?", name, id); err != nil {
 		return fmt.Errorf("setSafeFileName: %w", err)
 	}
 	return nil
@@ -395,7 +395,7 @@ func (oDb *DB) SafeFileGroups(ctx context.Context, fileID int64, responsible boo
 
 // AddSafeFileGroup links a group to a file; false when it already was.
 func (oDb *DB) AddSafeFileGroup(ctx context.Context, fileID, groupID int64, responsible bool) (bool, error) {
-	res, err := oDb.DB.ExecContext(ctx, "INSERT IGNORE INTO "+safeGroupTable(responsible)+" (file_id, group_id) VALUES (?, ?)", fileID, groupID)
+	res, err := oDb.ExecContext(ctx, "INSERT IGNORE INTO "+safeGroupTable(responsible)+" (file_id, group_id) VALUES (?, ?)", fileID, groupID)
 	if err != nil {
 		return false, fmt.Errorf("addSafeFileGroup: %w", err)
 	}
@@ -405,7 +405,7 @@ func (oDb *DB) AddSafeFileGroup(ctx context.Context, fileID, groupID int64, resp
 
 // RemoveSafeFileGroup unlinks a group from a file; false when it was not linked.
 func (oDb *DB) RemoveSafeFileGroup(ctx context.Context, fileID, groupID int64, responsible bool) (bool, error) {
-	res, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+safeGroupTable(responsible)+" WHERE file_id = ? AND group_id = ?", fileID, groupID)
+	res, err := oDb.ExecContext(ctx, "DELETE FROM "+safeGroupTable(responsible)+" WHERE file_id = ? AND group_id = ?", fileID, groupID)
 	if err != nil {
 		return false, fmt.Errorf("removeSafeFileGroup: %w", err)
 	}

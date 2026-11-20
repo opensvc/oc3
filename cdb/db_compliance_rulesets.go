@@ -128,7 +128,7 @@ func (oDb *DB) DefaultGroupOrManager(ctx context.Context, userID *int64) (int64,
 // CreateCompRuleset inserts a ruleset, published to and under the responsibility
 // of groupID, as create_ruleset() and add_default_teams().
 func (oDb *DB) CreateCompRuleset(ctx context.Context, name, rtype, public string, groupID int64) (int64, error) {
-	res, err := oDb.DB.ExecContext(ctx, "INSERT INTO comp_rulesets (ruleset_name, ruleset_type, ruleset_public) VALUES (?, ?, ?)",
+	res, err := oDb.ExecContext(ctx, "INSERT INTO comp_rulesets (ruleset_name, ruleset_type, ruleset_public) VALUES (?, ?, ?)",
 		name, rtype, public)
 	if err != nil {
 		return 0, fmt.Errorf("createCompRuleset: %w", err)
@@ -146,7 +146,7 @@ func (oDb *DB) CreateCompRuleset(ctx context.Context, name, rtype, public string
 
 func (oDb *DB) addRulesetTeams(ctx context.Context, rulesetID, groupID int64) error {
 	for _, table := range []string{"comp_ruleset_team_responsible", "comp_ruleset_team_publication"} {
-		if _, err := oDb.DB.ExecContext(ctx, "INSERT INTO "+table+" (ruleset_id, group_id) VALUES (?, ?)", rulesetID, groupID); err != nil {
+		if _, err := oDb.ExecContext(ctx, "INSERT INTO "+table+" (ruleset_id, group_id) VALUES (?, ?)", rulesetID, groupID); err != nil {
 			return fmt.Errorf("addRulesetTeams: %w", err)
 		}
 		oDb.SetChange(table)
@@ -167,7 +167,7 @@ func (oDb *DB) UpdateCompRuleset(ctx context.Context, id int64, fields map[strin
 		args = append(args, fields[k])
 	}
 	args = append(args, id)
-	if _, err := oDb.DB.ExecContext(ctx, "UPDATE comp_rulesets SET "+strings.Join(sets, ", ")+" WHERE id = ?", args...); err != nil {
+	if _, err := oDb.ExecContext(ctx, "UPDATE comp_rulesets SET "+strings.Join(sets, ", ")+" WHERE id = ?", args...); err != nil {
 		return fmt.Errorf("updateCompRuleset: %w", err)
 	}
 	oDb.SetChange("comp_rulesets")
@@ -193,7 +193,7 @@ func (oDb *DB) DeleteCompRuleset(ctx context.Context, id int64) error {
 		if strings.Count(q.cond, "?") == 2 {
 			args = append(args, id)
 		}
-		if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+q.table+" WHERE "+q.cond, args...); err != nil {
+		if _, err := oDb.ExecContext(ctx, "DELETE FROM "+q.table+" WHERE "+q.cond, args...); err != nil {
 			return fmt.Errorf("deleteCompRuleset: %s: %w", q.table, err)
 		}
 		oDb.SetChange(q.table)
@@ -222,7 +222,7 @@ func (oDb *DB) CloneCompRuleset(ctx context.Context, id int64, author string, gr
 	} else if found {
 		return 0, "", fmt.Errorf("%w: a ruleset named %s already exists", ErrCompConflict, cloneName)
 	}
-	res, err := oDb.DB.ExecContext(ctx, "INSERT INTO comp_rulesets (ruleset_name, ruleset_type, ruleset_public) VALUES (?, ?, ?)",
+	res, err := oDb.ExecContext(ctx, "INSERT INTO comp_rulesets (ruleset_name, ruleset_type, ruleset_public) VALUES (?, ?, ?)",
 		cloneName, rtype, public)
 	if err != nil {
 		return 0, "", fmt.Errorf("cloneCompRuleset: %w", err)
@@ -248,7 +248,7 @@ func (oDb *DB) CloneCompRuleset(ctx context.Context, id int64, author string, gr
 			" SELECT ?, fset_id FROM comp_rulesets_filtersets WHERE ruleset_id = ? LIMIT 1", []any{newID, id}})
 	}
 	for _, st := range stmts {
-		if _, err := oDb.DB.ExecContext(ctx, st.query, st.args...); err != nil {
+		if _, err := oDb.ExecContext(ctx, st.query, st.args...); err != nil {
 			return 0, "", fmt.Errorf("cloneCompRuleset: %w", err)
 		}
 	}
@@ -333,7 +333,7 @@ func (oDb *DB) CompRulesetsChains(ctx context.Context) error {
 		walk([]int64{id})
 	}
 
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM comp_rulesets_chains"); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM comp_rulesets_chains"); err != nil {
 		return fmt.Errorf("compRulesetsChains: %w", err)
 	}
 	for start := 0; start < len(chains); start += 500 {
@@ -344,7 +344,7 @@ func (oDb *DB) CompRulesetsChains(ctx context.Context) error {
 			values = append(values, "(?, ?, ?, ?)")
 			args = append(args, c.head, c.tail, c.length, c.text)
 		}
-		if _, err := oDb.DB.ExecContext(ctx, "INSERT INTO comp_rulesets_chains (head_rset_id, tail_rset_id, chain_len, chain) VALUES "+
+		if _, err := oDb.ExecContext(ctx, "INSERT INTO comp_rulesets_chains (head_rset_id, tail_rset_id, chain_len, chain) VALUES "+
 			strings.Join(values, ", ")+" ON DUPLICATE KEY UPDATE chain_len = VALUES(chain_len), chain = VALUES(chain)", args...); err != nil {
 			return fmt.Errorf("compRulesetsChains: %w", err)
 		}
@@ -354,16 +354,32 @@ func (oDb *DB) CompRulesetsChains(ctx context.Context) error {
 }
 
 // CompRulesetUsage lists what uses a ruleset: the modulesets and the parent
-// rulesets holding it, the nodes and the services it is attached to.
-func (oDb *DB) CompRulesetUsage(ctx context.Context, id int64) (map[string][]map[string]any, error) {
+// rulesets holding it, the nodes and the services it is attached to, those the
+// caller may see: the modulesets and rulesets published to their groups, the
+// nodes and services of an app their groups are responsible for; all of them
+// for a manager.
+func (oDb *DB) CompRulesetUsage(ctx context.Context, id int64, groups []string, isManager bool) (map[string][]map[string]any, error) {
+	modsetScope, modsetArgs := compObjectVisibleCond(CompModulesetKind, groups, isManager)
+	rsetScope, rsetArgs := compRulesetVisibleCond(groups, isManager)
+	nodeScope, nodeArgs := appScope("nodes.app", groups, isManager)
+	svcScope, svcArgs := appScope("services.svc_app", groups, isManager)
 	out := map[string][]map[string]any{}
-	for _, q := range []struct{ key, idKey, nameKey, query string }{
-		{"modulesets", "id", "modset_name", "SELECT m.id, m.modset_name FROM comp_moduleset_ruleset mr JOIN comp_moduleset m ON m.id = mr.modset_id WHERE mr.ruleset_id = ? ORDER BY m.modset_name"},
-		{"rulesets", "id", "ruleset_name", "SELECT r.id, COALESCE(r.ruleset_name, '') FROM comp_rulesets_rulesets rr JOIN comp_rulesets r ON r.id = rr.parent_rset_id WHERE rr.child_rset_id = ? ORDER BY r.ruleset_name"},
-		{"nodes", "node_id", "nodename", "SELECT rn.node_id, COALESCE(n.nodename, '') FROM comp_rulesets_nodes rn JOIN nodes n ON n.node_id = rn.node_id WHERE rn.ruleset_id = ? ORDER BY n.nodename"},
-		{"services", "svc_id", "svcname", "SELECT rs.svc_id, COALESCE(s.svcname, '') FROM comp_rulesets_services rs JOIN services s ON s.svc_id = rs.svc_id WHERE rs.ruleset_id = ? ORDER BY s.svcname"},
+	for _, q := range []struct {
+		key, idKey, nameKey, query string
+		args                       []any
+	}{
+		{"modulesets", "id", "modset_name", "SELECT comp_moduleset.id, comp_moduleset.modset_name FROM comp_moduleset_ruleset mr" +
+			" JOIN comp_moduleset ON comp_moduleset.id = mr.modset_id WHERE mr.ruleset_id = ? AND " + modsetScope +
+			" ORDER BY comp_moduleset.modset_name", modsetArgs},
+		{"rulesets", "id", "ruleset_name", "SELECT comp_rulesets.id, COALESCE(comp_rulesets.ruleset_name, '') FROM comp_rulesets_rulesets rr" +
+			" JOIN comp_rulesets ON comp_rulesets.id = rr.parent_rset_id WHERE rr.child_rset_id = ? AND " + rsetScope +
+			" ORDER BY comp_rulesets.ruleset_name", rsetArgs},
+		{"nodes", "node_id", "nodename", "SELECT rn.node_id, COALESCE(nodes.nodename, '') FROM comp_rulesets_nodes rn" +
+			" JOIN nodes ON nodes.node_id = rn.node_id WHERE rn.ruleset_id = ? AND " + nodeScope + " ORDER BY nodes.nodename", nodeArgs},
+		{"services", "svc_id", "svcname", "SELECT rs.svc_id, COALESCE(services.svcname, '') FROM comp_rulesets_services rs" +
+			" JOIN services ON services.svc_id = rs.svc_id WHERE rs.ruleset_id = ? AND " + svcScope + " ORDER BY services.svcname", svcArgs},
 	} {
-		entries, err := oDb.namedPairs(ctx, q.query, id, q.idKey, q.nameKey)
+		entries, err := oDb.namedPairs(ctx, q.query, append([]any{id}, q.args...), q.idKey, q.nameKey)
 		if err != nil {
 			return nil, fmt.Errorf("compRulesetUsage: %s: %w", q.key, err)
 		}
@@ -374,8 +390,8 @@ func (oDb *DB) CompRulesetUsage(ctx context.Context, id int64) (map[string][]map
 
 // namedPairs runs a query returning (id, name) rows, as a list of objects with
 // the given keys; an integer id stays a number.
-func (oDb *DB) namedPairs(ctx context.Context, query string, arg any, idKey, nameKey string) ([]map[string]any, error) {
-	rows, err := oDb.DB.QueryContext(ctx, query, arg)
+func (oDb *DB) namedPairs(ctx context.Context, query string, args []any, idKey, nameKey string) ([]map[string]any, error) {
+	rows, err := oDb.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

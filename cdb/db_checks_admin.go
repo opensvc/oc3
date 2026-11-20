@@ -110,7 +110,7 @@ func (oDb *DB) CheckLiveByKey(ctx context.Context, k CheckKey) (*CheckLive, erro
 // at its next check run if the check still exists. A check reported before oc3
 // with NULL for no service or no instance goes too: it is the same check.
 func (oDb *DB) DeleteCheckLive(ctx context.Context, c *CheckLive) error {
-	if _, err := oDb.DB.ExecContext(ctx, `DELETE FROM checks_live
+	if _, err := oDb.ExecContext(ctx, `DELETE FROM checks_live
 		WHERE id = ? OR (node_id = ? AND IFNULL(svc_id, "") = ? AND chk_type = ? AND IFNULL(chk_instance, "") = ?)`,
 		c.ID, c.NodeID, c.SvcID, c.Type, c.Instance); err != nil {
 		return fmt.Errorf("deleteCheckLive: %w", err)
@@ -147,7 +147,7 @@ func (oDb *DB) GetChecksSettings(ctx context.Context, p ListParams) ([]map[strin
 
 // SetCheckSettings sets the thresholds of a check, by whom and when.
 func (oDb *DB) SetCheckSettings(ctx context.Context, k CheckKey, low, high int64, by string) error {
-	_, err := oDb.DB.ExecContext(ctx, `INSERT INTO checks_settings
+	_, err := oDb.ExecContext(ctx, `INSERT INTO checks_settings
 		(node_id, svc_id, chk_type, chk_instance, chk_low, chk_high, chk_changed, chk_changed_by)
 		VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
 		ON DUPLICATE KEY UPDATE chk_low = VALUES(chk_low), chk_high = VALUES(chk_high),
@@ -216,7 +216,7 @@ func isDuplicate(err error) bool {
 
 // InsertCheckDefault adds default thresholds; it returns their id.
 func (oDb *DB) InsertCheckDefault(ctx context.Context, d CheckDefault) (int64, error) {
-	result, err := oDb.DB.ExecContext(ctx, `INSERT INTO checks_defaults
+	result, err := oDb.ExecContext(ctx, `INSERT INTO checks_defaults
 		(chk_type, chk_inst, chk_low, chk_high, chk_prio) VALUES (?, ?, ?, ?, ?)`,
 		d.Type, d.Inst, d.Low, d.High, d.Prio)
 	if isDuplicate(err) {
@@ -231,7 +231,7 @@ func (oDb *DB) InsertCheckDefault(ctx context.Context, d CheckDefault) (int64, e
 
 // UpdateCheckDefault writes default thresholds back.
 func (oDb *DB) UpdateCheckDefault(ctx context.Context, d CheckDefault) error {
-	_, err := oDb.DB.ExecContext(ctx, `UPDATE checks_defaults
+	_, err := oDb.ExecContext(ctx, `UPDATE checks_defaults
 		SET chk_type = ?, chk_inst = ?, chk_low = ?, chk_high = ?, chk_prio = ? WHERE id = ?`,
 		d.Type, d.Inst, d.Low, d.High, d.Prio, d.ID)
 	if isDuplicate(err) {
@@ -246,7 +246,7 @@ func (oDb *DB) UpdateCheckDefault(ctx context.Context, d CheckDefault) error {
 
 // DeleteCheckDefault removes default thresholds.
 func (oDb *DB) DeleteCheckDefault(ctx context.Context, id int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM checks_defaults WHERE id = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM checks_defaults WHERE id = ?", id); err != nil {
 		return fmt.Errorf("deleteCheckDefault: %w", err)
 	}
 	oDb.SetChange("checks_defaults")
@@ -294,7 +294,7 @@ func (oDb *DB) CheckContextualByID(ctx context.Context, id int64) (*CheckContext
 
 // InsertCheckContextual adds contextual thresholds; it returns their id.
 func (oDb *DB) InsertCheckContextual(ctx context.Context, c CheckContextual) (int64, error) {
-	result, err := oDb.DB.ExecContext(ctx, `INSERT INTO gen_filterset_check_threshold
+	result, err := oDb.ExecContext(ctx, `INSERT INTO gen_filterset_check_threshold
 		(fset_id, chk_type, chk_instance, chk_low, chk_high) VALUES (?, ?, ?, ?, ?)`,
 		c.FsetID, c.Type, c.Instance, c.Low, c.High)
 	if isDuplicate(err) {
@@ -309,7 +309,7 @@ func (oDb *DB) InsertCheckContextual(ctx context.Context, c CheckContextual) (in
 
 // UpdateCheckContextual writes contextual thresholds back.
 func (oDb *DB) UpdateCheckContextual(ctx context.Context, c CheckContextual) error {
-	_, err := oDb.DB.ExecContext(ctx, `UPDATE gen_filterset_check_threshold
+	_, err := oDb.ExecContext(ctx, `UPDATE gen_filterset_check_threshold
 		SET fset_id = ?, chk_type = ?, chk_instance = ?, chk_low = ?, chk_high = ? WHERE id = ?`,
 		c.FsetID, c.Type, c.Instance, c.Low, c.High, c.ID)
 	if isDuplicate(err) {
@@ -324,7 +324,7 @@ func (oDb *DB) UpdateCheckContextual(ctx context.Context, c CheckContextual) err
 
 // DeleteCheckContextual removes contextual thresholds.
 func (oDb *DB) DeleteCheckContextual(ctx context.Context, id int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM gen_filterset_check_threshold WHERE id = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM gen_filterset_check_threshold WHERE id = ?", id); err != nil {
 		return fmt.Errorf("deleteCheckContextual: %w", err)
 	}
 	oDb.SetChange("gen_filterset_check_threshold")

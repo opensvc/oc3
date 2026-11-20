@@ -35,8 +35,9 @@ func (oDb *DB) listQuery(ctx context.Context, name, from string, conds []string,
 	return scanRowsToMaps(rows, p.Props, p.TypeHints)
 }
 
-// GetFormsRevisions lists the form revisions, one when idOrMD5 is set: a
-// numeric value is an id, anything else a md5, as the historical handler does.
+// GetFormsRevisions lists the form revisions the caller may read (see
+// formsRevisionsVisibility), one when idOrMD5 is set: a numeric value is an id,
+// anything else a md5, as the historical handler does.
 func (oDb *DB) GetFormsRevisions(ctx context.Context, idOrMD5 *string, p ListParams) ([]map[string]any, error) {
 	conds := []string{"forms_revisions.id > 0"}
 	var args []any
@@ -48,7 +49,43 @@ func (oDb *DB) GetFormsRevisions(ctx context.Context, idOrMD5 *string, p ListPar
 		}
 		args = append(args, *idOrMD5)
 	}
+	if cond, condArgs := formsRevisionsVisibility(p); cond != "" {
+		conds = append(conds, cond)
+		args = append(args, condArgs...)
+	}
 	return oDb.listQuery(ctx, "getFormsRevisions", "forms_revisions", conds, args, "forms_revisions.id", p)
+}
+
+// formsRevisionsVisibility is the condition of the form revisions a caller may
+// read: all of them for a manager; for the others, the revisions of a form
+// published to one of their groups, as GET /forms, and those a request they
+// may read started from or follows (workflowsVisibility), whatever the
+// publications of its form now.
+func formsRevisionsVisibility(p ListParams) (string, []any) {
+	if p.IsManager {
+		return "", nil
+	}
+	var conds []string
+	var args []any
+	if groups := cleanGroups(p.Groups); len(groups) > 0 {
+		conds = append(conds, "forms_revisions.form_id IN (SELECT t.form_id FROM forms_team_publication t"+
+			" JOIN auth_group ag ON ag.id = t.group_id WHERE ag.role IN ("+Placeholders(len(groups))+"))")
+		for _, g := range groups {
+			args = append(args, g)
+		}
+	}
+	if p.UserID != nil {
+		cond, condArgs := workflowInvolvedCond(*p.UserID)
+		conds = append(conds, "forms_revisions.form_md5 IN (SELECT forms_store.form_md5 FROM forms_store JOIN workflows"+
+			" ON workflows.form_head_id = forms_store.id OR workflows.form_head_id = forms_store.form_head_id WHERE "+cond+")"+
+			" OR forms_revisions.form_md5 IN (SELECT workflows.form_md5 FROM workflows WHERE "+cond+")")
+		args = append(args, condArgs...)
+		args = append(args, condArgs...)
+	}
+	if len(conds) == 0 {
+		return "1=0", nil
+	}
+	return "(" + strings.Join(conds, " OR ") + ")", args
 }
 
 // formsStoreFrom joins the stored forms to the revision they were submitted

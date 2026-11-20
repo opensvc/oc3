@@ -36,7 +36,8 @@ func (a *Api) deleteDiskByID(c echo.Context, handlerName, diskId string) error {
 	}
 	disk := disks[0]
 
-	manager := IsManager(c)
+	// A Manager or a StorageManager, as the other storage endpoints.
+	manager := IsAuthByUser(c) && (IsManager(c) || HasGroup(c, "StorageManager"))
 	callerNodeID, _ := c.Get(XNodeID).(string)
 	proxyOK := false
 	var proxyNodeIDs []string

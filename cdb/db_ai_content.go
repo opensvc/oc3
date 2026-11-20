@@ -198,7 +198,7 @@ func (oDb *DB) AIContents(ctx context.Context, kind AIContentKind, f AIContentFi
 // assistants of backend. An object deleted meanwhile counts nothing. It does
 // not mark the table changed: a read changes nothing the views follow.
 func (oDb *DB) CountAIRead(ctx context.Context, kind AIContentKind, name, backend string) error {
-	_, err := oDb.DB.ExecContext(ctx, "INSERT INTO "+kind.reads+" ("+kind.idColumn+", backend, read_count, last_read)"+
+	_, err := oDb.ExecContext(ctx, "INSERT INTO "+kind.reads+" ("+kind.idColumn+", backend, read_count, last_read)"+
 		" SELECT id, ?, 1, NOW() FROM "+kind.table+" WHERE name = ?"+
 		" ON DUPLICATE KEY UPDATE read_count = read_count + 1, last_read = NOW()", backend, name)
 	if err != nil {
@@ -272,11 +272,11 @@ func (oDb *DB) InsertAIContent(ctx context.Context, kind AIContentKind, c AICont
 		err    error
 	)
 	if kind.skill {
-		result, err = oDb.DB.ExecContext(ctx, "INSERT INTO "+kind.table+
+		result, err = oDb.ExecContext(ctx, "INSERT INTO "+kind.table+
 			" (name, backends, frontmatter, body, size, digest, updated, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 			c.Name, strings.Join(c.Backends, ","), c.Frontmatter, c.Body, c.Size, c.Digest, c.Updated, c.UpdatedBy)
 	} else {
-		result, err = oDb.DB.ExecContext(ctx, "INSERT INTO "+kind.table+
+		result, err = oDb.ExecContext(ctx, "INSERT INTO "+kind.table+
 			" (name, title, description, mime_type, backends, body, size, digest, updated, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 			c.Name, c.Title, c.Description, c.MimeType, strings.Join(c.Backends, ","), c.Body, c.Size, c.Digest, c.Updated, c.UpdatedBy)
 	}
@@ -304,11 +304,11 @@ func (oDb *DB) UpdateAIContent(ctx context.Context, kind AIContentKind, name str
 		return found, err
 	}
 	if kind.skill {
-		_, err = oDb.DB.ExecContext(ctx, "UPDATE "+kind.table+
+		_, err = oDb.ExecContext(ctx, "UPDATE "+kind.table+
 			" SET backends = ?, frontmatter = ?, body = ?, size = ?, digest = ?, updated = ?, updated_by = ? WHERE id = ?",
 			strings.Join(c.Backends, ","), c.Frontmatter, c.Body, c.Size, c.Digest, c.Updated, c.UpdatedBy, id)
 	} else {
-		_, err = oDb.DB.ExecContext(ctx, "UPDATE "+kind.table+
+		_, err = oDb.ExecContext(ctx, "UPDATE "+kind.table+
 			" SET title = ?, description = ?, mime_type = ?, backends = ?, body = ?, size = ?, digest = ?, updated = ?, updated_by = ? WHERE id = ?",
 			c.Title, c.Description, c.MimeType, strings.Join(c.Backends, ","), c.Body, c.Size, c.Digest, c.Updated, c.UpdatedBy, id)
 	}
@@ -331,18 +331,18 @@ func (oDb *DB) DeleteAIContent(ctx context.Context, kind AIContentKind, name str
 	if err != nil || !found {
 		return found, err
 	}
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+kind.table+" WHERE id = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM "+kind.table+" WHERE id = ?", id); err != nil {
 		return true, fmt.Errorf("deleteAIContent %s: %w", kind.table, err)
 	}
 	oDb.SetChange(kind.table)
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+kind.reads+" WHERE "+kind.idColumn+" = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM "+kind.reads+" WHERE "+kind.idColumn+" = ?", id); err != nil {
 		return true, fmt.Errorf("deleteAIContent %s reads: %w", kind.table, err)
 	}
 	return true, oDb.deleteAIPublications(ctx, kind, id)
 }
 
 func (oDb *DB) deleteAIPublications(ctx context.Context, kind AIContentKind, id int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+kind.publications+" WHERE "+kind.idColumn+" = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM "+kind.publications+" WHERE "+kind.idColumn+" = ?", id); err != nil {
 		return fmt.Errorf("deleteAIPublications %s: %w", kind.table, err)
 	}
 	oDb.SetChange(kind.publications)
@@ -361,7 +361,7 @@ func (oDb *DB) insertAIPublications(ctx context.Context, kind AIContentKind, id 
 		values[i] = "(?, ?)"
 		args = append(args, id, g)
 	}
-	if _, err := oDb.DB.ExecContext(ctx, "INSERT INTO "+kind.publications+" ("+kind.idColumn+", group_id) VALUES "+strings.Join(values, ", "), args...); err != nil {
+	if _, err := oDb.ExecContext(ctx, "INSERT INTO "+kind.publications+" ("+kind.idColumn+", group_id) VALUES "+strings.Join(values, ", "), args...); err != nil {
 		return fmt.Errorf("insertAIPublications %s: %w", kind.table, err)
 	}
 	oDb.SetChange(kind.publications)

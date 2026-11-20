@@ -9,8 +9,10 @@ import (
 
 func buildDisksQuery(groups []string, isManager bool, selectExprs []string, filters []ColumnFilter) (string, []any, error) {
 	q := From(schema.TDiskinfo).
-		LeftJoin(schema.TSvcdisks, schema.TNodes, schema.TServices, schema.TApps).
-		RawSelect(selectExprs...)
+		LeftJoin(schema.TSvcdisks, schema.TNodes, schema.TServices, schema.TApps)
+	// The service using a disk on a node of the caller may be of another app.
+	selectExprs, selectArgs := maskJoinedColumns(selectExprs, groups, isManager, servicesMask)
+	q = q.RawSelect(selectExprs...)
 
 	if !isManager {
 		cleanGroups := cleanGroups(groups)
@@ -21,10 +23,12 @@ func buildDisksQuery(groups []string, isManager bool, selectExprs []string, filt
 			for i, g := range cleanGroups {
 				args[i] = g
 			}
+			// The use of the disks by the nodes of the caller's apps, one row
+			// each: a disk shared with nodes of other apps does not show
+			// them, nor their services.
 			q = q.WhereRaw(
-				"diskinfo.disk_id IN ("+
-					"SELECT sd.disk_id FROM svcdisks sd"+
-					" JOIN nodes n ON sd.node_id = n.node_id"+
+				"svcdisks.node_id IN ("+
+					"SELECT n.node_id FROM nodes n"+
 					" JOIN apps a ON n.app = a.app"+
 					" JOIN apps_responsibles ar ON ar.app_id = a.id"+
 					" JOIN auth_group ag ON ag.id = ar.group_id"+
@@ -44,7 +48,7 @@ func buildDisksQuery(groups []string, isManager bool, selectExprs []string, filt
 	if err != nil {
 		return "", nil, fmt.Errorf("buildDisksQuery: %w", err)
 	}
-	return query, args, nil
+	return query, append(selectArgs, args...), nil
 }
 
 func (oDb *DB) GetDisk(ctx context.Context, diskID string, p ListParams) ([]map[string]any, error) {

@@ -185,7 +185,7 @@ func (oDb *DB) UserPrefs(ctx context.Context, idOrEmail string, p ListParams) (s
 func (oDb *DB) SaveUserPrefs(ctx context.Context, userID int64, prefs string) error {
 	const query = "INSERT INTO user_prefs (user_id, prefs) VALUES (?, ?)" +
 		" ON DUPLICATE KEY UPDATE prefs = VALUES(prefs)"
-	if _, err := oDb.DB.ExecContext(ctx, query, userID, prefs); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, userID, prefs); err != nil {
 		return fmt.Errorf("saveUserPrefs: %w", err)
 	}
 	oDb.SetChange("user_prefs")
@@ -339,7 +339,7 @@ func (oDb *DB) UserPasswordHash(ctx context.Context, userID int64) (string, bool
 
 // SetUserPassword stores a new password hash for a user.
 func (oDb *DB) SetUserPassword(ctx context.Context, userID int64, hash string) error {
-	if _, err := oDb.DB.ExecContext(ctx, "UPDATE auth_user SET password = ? WHERE id = ?", hash, userID); err != nil {
+	if _, err := oDb.ExecContext(ctx, "UPDATE auth_user SET password = ? WHERE id = ?", hash, userID); err != nil {
 		return fmt.Errorf("setUserPassword: %w", err)
 	}
 	oDb.SetChange("auth_user")
@@ -370,7 +370,7 @@ func (oDb *DB) GetUserIdentity(ctx context.Context, userID int64) (UserIdentity,
 
 // SetUserIdentity stores the name and email of a user.
 func (oDb *DB) SetUserIdentity(ctx context.Context, userID int64, u UserIdentity) error {
-	if _, err := oDb.DB.ExecContext(ctx,
+	if _, err := oDb.ExecContext(ctx,
 		"UPDATE auth_user SET first_name = ?, last_name = ?, email = ? WHERE id = ?",
 		u.FirstName, u.LastName, u.Email, userID); err != nil {
 		return fmt.Errorf("setUserIdentity: %w", err)

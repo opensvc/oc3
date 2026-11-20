@@ -43,7 +43,7 @@ func (oDb *DB) CompModulesetID(ctx context.Context, idOrName string) (int64, boo
 // under the responsibility of groupID, as create_moduleset() and
 // add_default_teams_to_modset().
 func (oDb *DB) CreateCompModuleset(ctx context.Context, name, author string, groupID int64) (int64, error) {
-	res, err := oDb.DB.ExecContext(ctx, "INSERT INTO comp_moduleset (modset_name, modset_author, modset_updated) VALUES (?, ?, NOW())", name, author)
+	res, err := oDb.ExecContext(ctx, "INSERT INTO comp_moduleset (modset_name, modset_author, modset_updated) VALUES (?, ?, NOW())", name, author)
 	if err != nil {
 		return 0, fmt.Errorf("createCompModuleset: %w", err)
 	}
@@ -60,7 +60,7 @@ func (oDb *DB) CreateCompModuleset(ctx context.Context, name, author string, gro
 
 func (oDb *DB) addModulesetTeams(ctx context.Context, modsetID, groupID int64) error {
 	for _, table := range []string{"comp_moduleset_team_responsible", "comp_moduleset_team_publication"} {
-		if _, err := oDb.DB.ExecContext(ctx, "INSERT INTO "+table+" (modset_id, group_id) VALUES (?, ?)", modsetID, groupID); err != nil {
+		if _, err := oDb.ExecContext(ctx, "INSERT INTO "+table+" (modset_id, group_id) VALUES (?, ?)", modsetID, groupID); err != nil {
 			return fmt.Errorf("addModulesetTeams: %w", err)
 		}
 		oDb.SetChange(table)
@@ -70,7 +70,7 @@ func (oDb *DB) addModulesetTeams(ctx context.Context, modsetID, groupID int64) e
 
 // RenameCompModuleset renames a moduleset and records the update date.
 func (oDb *DB) RenameCompModuleset(ctx context.Context, id int64, name string) error {
-	if _, err := oDb.DB.ExecContext(ctx, "UPDATE comp_moduleset SET modset_name = ?, modset_updated = NOW() WHERE id = ?", name, id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "UPDATE comp_moduleset SET modset_name = ?, modset_updated = NOW() WHERE id = ?", name, id); err != nil {
 		return fmt.Errorf("renameCompModuleset: %w", err)
 	}
 	oDb.SetChange("comp_moduleset")
@@ -95,7 +95,7 @@ func (oDb *DB) DeleteCompModuleset(ctx context.Context, id int64) error {
 		if q.table == "comp_moduleset_moduleset" {
 			args = append(args, id)
 		}
-		if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+q.table+" WHERE "+q.cond, args...); err != nil {
+		if _, err := oDb.ExecContext(ctx, "DELETE FROM "+q.table+" WHERE "+q.cond, args...); err != nil {
 			return fmt.Errorf("deleteCompModuleset: %s: %w", q.table, err)
 		}
 		oDb.SetChange(q.table)
@@ -123,7 +123,7 @@ func (oDb *DB) CloneCompModuleset(ctx context.Context, id int64, author string, 
 	} else if found {
 		return 0, "", fmt.Errorf("%w: a moduleset named %s already exists", ErrCompConflict, cloneName)
 	}
-	res, err := oDb.DB.ExecContext(ctx, "INSERT INTO comp_moduleset (modset_name, modset_author, modset_updated) VALUES (?, ?, NOW())", cloneName, author)
+	res, err := oDb.ExecContext(ctx, "INSERT INTO comp_moduleset (modset_name, modset_author, modset_updated) VALUES (?, ?, NOW())", cloneName, author)
 	if err != nil {
 		return 0, "", fmt.Errorf("cloneCompModuleset: %w", err)
 	}
@@ -140,7 +140,7 @@ func (oDb *DB) CloneCompModuleset(ctx context.Context, id int64, author string, 
 		{"INSERT INTO comp_moduleset_ruleset (modset_id, ruleset_id) SELECT ?, ruleset_id FROM comp_moduleset_ruleset WHERE modset_id = ?", []any{newID, id}},
 		{"INSERT INTO comp_moduleset_moduleset (parent_modset_id, child_modset_id) SELECT ?, child_modset_id FROM comp_moduleset_moduleset WHERE parent_modset_id = ?", []any{newID, id}},
 	} {
-		if _, err := oDb.DB.ExecContext(ctx, st.query, st.args...); err != nil {
+		if _, err := oDb.ExecContext(ctx, st.query, st.args...); err != nil {
 			return 0, "", fmt.Errorf("cloneCompModuleset: %w", err)
 		}
 	}
@@ -153,10 +153,13 @@ func (oDb *DB) CloneCompModuleset(ctx context.Context, id int64, author string, 
 	return newID, cloneName, nil
 }
 
-// CompModulesetUsage lists the modulesets holding a moduleset as a child.
-func (oDb *DB) CompModulesetUsage(ctx context.Context, id int64) (map[string][]map[string]any, error) {
-	parents, err := oDb.namedPairs(ctx, "SELECT m.id, m.modset_name FROM comp_moduleset_moduleset mm"+
-		" JOIN comp_moduleset m ON m.id = mm.parent_modset_id WHERE mm.child_modset_id = ? ORDER BY m.modset_name", id, "id", "modset_name")
+// CompModulesetUsage lists the modulesets holding a moduleset as a child, those
+// published to the caller's groups; all of them for a manager.
+func (oDb *DB) CompModulesetUsage(ctx context.Context, id int64, groups []string, isManager bool) (map[string][]map[string]any, error) {
+	scope, args := compObjectVisibleCond(CompModulesetKind, groups, isManager)
+	parents, err := oDb.namedPairs(ctx, "SELECT comp_moduleset.id, comp_moduleset.modset_name FROM comp_moduleset_moduleset mm"+
+		" JOIN comp_moduleset ON comp_moduleset.id = mm.parent_modset_id WHERE mm.child_modset_id = ? AND "+scope+
+		" ORDER BY comp_moduleset.modset_name", append([]any{id}, args...), "id", "modset_name")
 	if err != nil {
 		return nil, fmt.Errorf("compModulesetUsage: %w", err)
 	}

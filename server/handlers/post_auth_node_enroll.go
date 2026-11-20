@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/spf13/viper"
 
+	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/util/logkey"
 )
@@ -111,9 +112,6 @@ func enrollFindNode(ctx context.Context, store nodeEnrollStore, e nodeEnroll) (s
 // postAuthNodeEnroll handles the POST /auth/node of an enroller registering
 // a joining node of its cluster.
 func (a *Api) postAuthNodeEnroll(c echo.Context, log *slog.Logger, body server.PostAuthNodeJSONBody) error {
-	if !viper.GetBool("server.allow_node_enroll") {
-		return JSONProblemf(c, http.StatusForbidden, "node enrollment is disabled")
-	}
 	if body.Uuid == nil || *body.Uuid == "" {
 		return JSONProblemf(c, http.StatusBadRequest, "uuid is required to register a joining node")
 	}
@@ -123,6 +121,17 @@ func (a *Api) postAuthNodeEnroll(c echo.Context, log *slog.Logger, body server.P
 	app, _ := c.Get(XApp).(string)
 	if clusterID == "" {
 		return JSONProblemf(c, http.StatusConflict, "refused: authenticated node doesn't define cluster id")
+	}
+	if !viper.GetBool("server.allow_node_enroll") {
+		// A node the collector bootstrapped into the cluster of the enroller
+		// is enrolled all the same: the collector provisioned it for that
+		// cluster, a member enrolling it from its enrollment.
+		if ok, err := a.bootstrappedJoiningNode(c, body.Nodename, *body.Uuid, clusterID); err != nil {
+			log.Error("cannot check the bootstrap of the joining node", logkey.Error, err)
+			return JSONProblemf(c, http.StatusInternalServerError, "enroller lookup failed")
+		} else if !ok {
+			return JSONProblemf(c, http.StatusForbidden, "node enrollment is disabled")
+		}
 	}
 	if app == "" {
 		return JSONProblemf(c, http.StatusConflict, "refused: authenticated node doesn't define app")
@@ -143,20 +152,16 @@ func (a *Api) postAuthNodeEnroll(c echo.Context, log *slog.Logger, body server.P
 		clusterID:       clusterID,
 	}
 
-	// Committed here rather than by an endTx, which only logs a failed
-	// commit: the joining node must not get a uuid the collector does not
-	// have.
-	tx, _, _, err := a.ODB.BeginTxWithControl(ctx, log, &sql.TxOptions{})
-	if err != nil {
-		log.Error("cannot start transaction", logkey.Error, err)
-		return JSONProblemf(c, http.StatusInternalServerError, "cannot enroll node")
-	}
-	nodeID, nodeUUID, err := enrollNode(ctx, tx, e, uuid.NewString)
-	if err == nil {
-		err = tx.Commit()
-	} else {
-		_ = tx.Rollback()
-	}
+	// In a transaction run again on a deadlock: the update of the cluster id
+	// of the joining node may meet the worker writing the nodes rows of the
+	// first feeds of its peers. RunInTx returns the error of a failed commit:
+	// the joining node must not get a uuid the collector does not have.
+	var nodeID, nodeUUID string
+	err = a.ODB.RunInTx(ctx, &sql.TxOptions{}, func(tx *cdb.DB) error {
+		var err error
+		nodeID, nodeUUID, err = enrollNode(ctx, tx, e, uuid.NewString)
+		return err
+	})
 	switch {
 	case errors.Is(err, errEnrollNotRegistered):
 		log.Info("enroll refused", "nodename", e.nodename, logkey.Error, err)
@@ -182,4 +187,16 @@ func (a *Api) postAuthNodeEnroll(c echo.Context, log *slog.Logger, body server.P
 		"uuid": nodeUUID,
 		"info": "node is enrolled",
 	})
+}
+
+// bootstrappedJoiningNode returns whether the joining node, found by its
+// nodename and its uuid, was bootstrapped by the collector into clusterID.
+func (a *Api) bootstrappedJoiningNode(c echo.Context, nodename, nodeUUID, clusterID string) (bool, error) {
+	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
+	defer cancel()
+	nodeIDs, err := a.ODB.NodeIDsByNodenameAndAuthUUID(ctx, nodename, nodeUUID)
+	if err != nil || len(nodeIDs) != 1 {
+		return false, err
+	}
+	return a.ODB.NodeBootstrappedInto(ctx, nodeIDs[0], clusterID)
 }

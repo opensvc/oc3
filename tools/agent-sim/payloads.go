@@ -316,7 +316,10 @@ func nodeAssetBody(spec fleetSpec, n *node) map[string]any {
 	mac := fmt.Sprintf("52:54:00:%02x:%02x:%02x", r.IntN(256), r.IntN(256), r.IntN(256))
 	hba, targets := nodeHBAs(spec, n)
 	ip := fmt.Sprintf("10.%d.%d.%d", 10+n.cluster.idx/250%200, n.cluster.idx%250, n.idx+10)
-	return map[string]any{
+	if n.profile != nil {
+		ip = fmt.Sprintf("10.%d.%d.%d", n.profile.site.net, 10+n.cluster.idx, 11+n.idx)
+	}
+	body := map[string]any{
 		"properties": map[string]any{
 			"nodename": prop("nodename", n.name), "fqdn": prop("fqdn", n.name+".sim.example.com"),
 			"version": prop("agent version", "v3.0.0-sim"), "os_name": prop("os name", "Linux"),
@@ -343,6 +346,30 @@ func nodeAssetBody(spec fleetSpec, n *node) map[string]any {
 			mac: []any{map[string]any{"addr": ip, "flag_deprecated": false, "intf": "eth0", "mask": "24", "type": "ipv4"}},
 		},
 	}
+	if n.profile != nil {
+		props := body["properties"].(map[string]any)
+		hw, site := n.profile.hw, n.profile.site
+		for k, v := range map[string]any{
+			"fqdn": n.name + "." + strings.ToLower(site.code) + ".example.com", "version": "v3.0.0",
+			"os_vendor": hw.osVendor, "os_release": hw.osRelease, "os_kernel": hw.osKernel,
+			"mem_bytes": hw.memMB, "mem_slots": 16, "mem_banks": 16, "cpu_freq": 2100,
+			"cpu_threads": hw.threads, "cpu_cores": hw.cores, "cpu_dies": max(1, hw.cores/32), "cpu_model": hw.cpuModel,
+			"serial": fmt.Sprintf("%s%07d", strings.ToUpper(hw.manufacturer[:2]), r.IntN(1e7)), "model": hw.model,
+			"manufacturer": hw.manufacturer, "bios_version": "2.3.4", "node_env": n.profile.env,
+			"loc_country": site.country, "loc_city": site.city, "loc_building": site.building,
+			"loc_room": site.room, "loc_rack": n.profile.rack,
+		} {
+			title := strings.ReplaceAll(k, "_", " ")
+			if old, ok := props[k].(map[string]any); ok {
+				title, _ = old["title"].(string)
+			}
+			props[k] = prop(title, v)
+		}
+		if strings.HasPrefix(hw.manufacturer, "VMware") {
+			props["hv"] = prop("hv", "vcenter-"+strings.ToLower(site.code)+".example.com")
+		}
+	}
+	return body
 }
 
 func nodePackagesBody(spec fleetSpec, n *node) map[string]any {
@@ -350,6 +377,33 @@ func nodePackagesBody(spec fleetSpec, n *node) map[string]any {
 	count := 300 + r.IntN(750)
 	var pkgs []any
 	installed := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	if n.profile != nil {
+		arch, typ, dist := "x86_64", "rpm", ".el9"
+		switch {
+		case n.profile.hw.pkgType == "deb":
+			arch, typ, dist = "amd64", "deb", "-1ubuntu1"
+		case n.profile.hw.osVendor == "SUSE":
+			dist = ".150600"
+		}
+		// The nodes of a cluster run the same versions, but for a package
+		// one of them was not updated with the others, now and then.
+		cr := spec.newRand("packages", n.cluster.name)
+		lagging := -1
+		if r.IntN(6) == 0 {
+			lagging = r.IntN(len(realisticPackages(n)))
+		}
+		for i, name := range realisticPackages(n) {
+			major, minor, patch := 1+i%5, cr.IntN(20), cr.IntN(12)
+			if i == lagging && patch > 0 {
+				patch--
+			}
+			pkgs = append(pkgs, map[string]any{
+				"name": name, "version": fmt.Sprintf("%d.%d.%d%s", major, minor, patch, dist),
+				"arch": arch, "type": typ, "installed_at": installed.Add(time.Duration(i) * 7 * time.Hour).Format(time.RFC3339), "sig": "",
+			})
+		}
+		return map[string]any{"package": pkgs}
+	}
 	for i := 0; i < count; i++ {
 		pkgs = append(pkgs, map[string]any{
 			"name": fmt.Sprintf("pkg-%04d", i), "version": fmt.Sprintf("%d.%d.%d-1ubuntu%d", 1+i%9, i%30, r.IntN(3), r.IntN(3)),
@@ -363,16 +417,48 @@ func nodeChecksBody(spec fleetSpec, n *node, now time.Time) map[string]any {
 	r := spec.newRand("checks", n.name, now.Unix()/86400)
 	var data []any
 	for _, mnt := range []string{"/", "/var", "/srv", "/tmp", "/boot"} {
-		data = append(data, map[string]any{"driver": "df", "instance": mnt, "path": "", "type": "fs_u", "unit": "%", "value": r.IntN(100)})
+		used := r.IntN(100)
+		if n.profile != nil {
+			// The system file systems of a managed server are sized with room.
+			used = 15 + r.IntN(50)
+		}
+		data = append(data, map[string]any{"driver": "df", "instance": mnt, "path": "", "type": "fs_u", "unit": "%", "value": used})
 		data = append(data, map[string]any{"driver": "df", "instance": mnt, "path": "", "type": "fs_i", "unit": "%", "value": r.IntN(30)})
 	}
 	for _, s := range n.cluster.services {
-		data = append(data, map[string]any{"driver": "df", "instance": "/srv/" + s.name + "/fs0", "path": s.path, "type": "fs_u", "unit": "%", "value": r.IntN(100)})
+		mnt := "/srv/" + s.name + "/fs0"
+		if n.profile != nil {
+			// The file systems of the service, as its resources mount them.
+			mnt = ""
+			for _, res := range s.resources {
+				if m, ok := res.info["mnt"].(string); ok {
+					mnt = m
+					break
+				}
+			}
+			if mnt == "" {
+				continue
+			}
+		}
+		// Most file systems are far from full, a few near it.
+		value := r.IntN(100)
+		if n.profile != nil {
+			value = 20 + r.IntN(55)
+			if r.IntN(8) == 0 {
+				value = 91 + r.IntN(8)
+			}
+		}
+		data = append(data, map[string]any{"driver": "df", "instance": mnt, "path": s.path, "type": "fs_u", "unit": "%", "value": value})
 	}
 	for _, eth := range []string{"eth0", "eth1"} {
 		data = append(data, map[string]any{"driver": "ethtool", "instance": eth + ".link", "path": "", "type": "eth", "unit": "", "value": 1})
 	}
-	data = append(data, map[string]any{"driver": "lvm", "instance": "rootvg", "path": "", "type": "vg_u", "unit": "%", "value": r.IntN(100)})
+	vgUsed := r.IntN(100)
+	if n.profile != nil {
+		// A system volume group of a managed server: neither empty nor full.
+		vgUsed = 35 + r.IntN(40)
+	}
+	data = append(data, map[string]any{"driver": "lvm", "instance": "rootvg", "path": "", "type": "vg_u", "unit": "%", "value": vgUsed})
 	return map[string]any{"data": data}
 }
 

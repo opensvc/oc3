@@ -415,7 +415,7 @@ func (oDb *DB) InsertGroup(ctx context.Context, role, description, privilege str
 	if privilege != "T" {
 		privilege = "F"
 	}
-	result, err := oDb.DB.ExecContext(ctx, query, role,
+	result, err := oDb.ExecContext(ctx, query, role,
 		sql.NullString{String: description, Valid: description != ""},
 		privilege,
 	)
@@ -433,7 +433,7 @@ func (oDb *DB) InsertGroup(ctx context.Context, role, description, privilege str
 // InsertGroupMembership adds a user as a member of a group.
 func (oDb *DB) InsertGroupMembership(ctx context.Context, groupID, userID int64) error {
 	const query = `INSERT INTO auth_membership (group_id, user_id) VALUES (?, ?)`
-	if _, err := oDb.DB.ExecContext(ctx, query, groupID, userID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, groupID, userID); err != nil {
 		return fmt.Errorf("InsertGroupMembership: %w", err)
 	}
 	oDb.SetChange("auth_membership")
@@ -466,7 +466,7 @@ func (oDb *DB) UpdateGroup(ctx context.Context, groupID int64, fields UpdateGrou
 	}
 	query := "UPDATE auth_group SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
 	args = append(args, groupID)
-	if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
 		return fmt.Errorf("UpdateGroup: %w", err)
 	}
 	oDb.SetChange("auth_group")
@@ -719,7 +719,7 @@ func (oDb *DB) GroupHiddenMenuEntryExists(ctx context.Context, groupID int64, me
 // hides a menu entry for the group.
 func (oDb *DB) InsertGroupHiddenMenuEntry(ctx context.Context, groupID int64, menuEntry string) error {
 	const query = "INSERT INTO group_hidden_menu_entries (group_id, menu_entry) VALUES (?, ?)"
-	if _, err := oDb.DB.ExecContext(ctx, query, groupID, menuEntry); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, groupID, menuEntry); err != nil {
 		return fmt.Errorf("insertGroupHiddenMenuEntry: %w", err)
 	}
 	oDb.SetChange("group_hidden_menu_entries")
@@ -729,7 +729,7 @@ func (oDb *DB) InsertGroupHiddenMenuEntry(ctx context.Context, groupID int64, me
 // unhides a menu entry for the group and returns the number of deleted rows.
 func (oDb *DB) DeleteGroupHiddenMenuEntry(ctx context.Context, groupID int64, menuEntry string) (int64, error) {
 	const query = "DELETE FROM group_hidden_menu_entries WHERE group_id = ? AND menu_entry = ?"
-	res, err := oDb.DB.ExecContext(ctx, query, groupID, menuEntry)
+	res, err := oDb.ExecContext(ctx, query, groupID, menuEntry)
 	if err != nil {
 		return 0, fmt.Errorf("deleteGroupHiddenMenuEntry: %w", err)
 	}
@@ -749,7 +749,7 @@ func (oDb *DB) DeleteDashboardAppWithoutPublication(ctx context.Context, app str
 		WHERE dash_type = 'application code without publication'
 		  AND dash_dict LIKE ?`
 	pattern := "%:\"" + app + "\"%"
-	if _, err := oDb.DB.ExecContext(ctx, query, pattern); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, pattern); err != nil {
 		return fmt.Errorf("DeleteDashboardAppWithoutPublication: %w", err)
 	}
 	oDb.SetChange("dashboard")
@@ -762,7 +762,7 @@ func (oDb *DB) DeleteDashboardAppWithoutResponsible(ctx context.Context, app str
 		WHERE dash_type = 'application code without responsible'
 		  AND dash_dict LIKE ?`
 	pattern := "%:\"" + app + "\"%"
-	if _, err := oDb.DB.ExecContext(ctx, query, pattern); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, pattern); err != nil {
 		return fmt.Errorf("DeleteDashboardAppWithoutResponsible: %w", err)
 	}
 	oDb.SetChange("dashboard")

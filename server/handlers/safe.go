@@ -42,6 +42,12 @@ func safeAccess(c echo.Context) cdb.SafeAccess {
 func (a *Api) safeFile(c echo.Context, ref string, manage bool) (*cdb.SafeFile, error) {
 	ctx := c.Request().Context()
 	log := echolog.GetLogHandler(c, "safe")
+	// A node reads the files published to its team, and stores new ones, but
+	// manages none: a node taken over would otherwise publish a secret to any
+	// group, add responsibles, replace its content or delete it.
+	if manage && IsAuthByNode(c) {
+		return nil, httpErrorf(http.StatusForbidden, "a node can not manage a safe file")
+	}
 	f, err := a.ODB.SafeFileByRef(ctx, ref)
 	if err != nil {
 		return nil, httpInternal(log, "cannot read the safe file", err)

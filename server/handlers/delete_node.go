@@ -39,13 +39,14 @@ func (a *Api) deleteNodeByID(c echo.Context, handlerName, nodeId string) error {
 
 // checkNodeDeleter answers 401 or 403 unless the caller may delete nodes: a
 // user with NodeManager, as the historical collector, which a Manager holds
-// implicitly.
+// implicitly. Denied, it returns errRequestDenied for the caller to stop: the
+// nil of JSONProblemf would let it go on with the deletion.
 func checkNodeDeleter(c echo.Context) error {
 	if !IsAuthByUser(c) {
-		return JSONProblemf(c, http.StatusUnauthorized, "user authentication required")
+		return denyRequest(c, http.StatusUnauthorized, "user authentication required")
 	}
 	if !IsNodeManager(c) {
-		return JSONProblemf(c, http.StatusForbidden, "NodeManager privilege required")
+		return denyRequest(c, http.StatusForbidden, "NodeManager privilege required")
 	}
 	return nil
 }

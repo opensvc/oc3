@@ -75,7 +75,7 @@ func (oDb *DB) ChecksLiveUpsert(ctx context.Context, nodeID string, rows []Check
 		query := "INSERT INTO checks_live (node_id, svc_id, chk_type, chk_instance, chk_value, chk_updated) VALUES " +
 			strings.Join(placeholders, ", ") +
 			" ON DUPLICATE KEY UPDATE chk_value = VALUES(chk_value), chk_updated = VALUES(chk_updated)"
-		if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+		if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
 			return fmt.Errorf("ChecksLiveUpsert: %w", err)
 		}
 	}
@@ -163,7 +163,7 @@ func (oDb *DB) checksLiveThresholdsFromSettings(ctx context.Context, nodeID stri
 		JOIN checks_settings cs ON cs.node_id = cl.node_id AND cs.chk_type = cl.chk_type AND cs.chk_instance = cl.chk_instance
 		SET cl.chk_low = cs.chk_low, cl.chk_high = cs.chk_high, cl.chk_threshold_provider = "settings"
 		WHERE cl.node_id = ? AND cs.chk_low IS NOT NULL AND cl.chk_type NOT IN (` + checksNotPurged + `)`
-	if _, err := oDb.DB.ExecContext(ctx, query, nodeID); err != nil {
+	if _, err := oDb.ExecContext(ctx, query, nodeID); err != nil {
 		return nil, fmt.Errorf("thresholds from settings: %w", err)
 	}
 	query = `SELECT cl.id, cl.node_id, IFNULL(cl.svc_id, ""), cl.chk_type, IFNULL(cl.chk_instance, ""), IFNULL(cl.chk_value, 0)
@@ -243,7 +243,7 @@ func (oDb *DB) checksLiveThresholdsFromFiltersets(ctx context.Context, rows []Ch
 			continue
 		}
 		query := `UPDATE checks_live SET chk_low = ?, chk_high = ?, chk_threshold_provider = ? WHERE id = ?`
-		if _, err := oDb.DB.ExecContext(ctx, query, match.low, match.high, "fset:"+match.fsetName, r.ID); err != nil {
+		if _, err := oDb.ExecContext(ctx, query, match.low, match.high, "fset:"+match.fsetName, r.ID); err != nil {
 			return nil, fmt.Errorf("thresholds from filtersets: %w", err)
 		}
 	}
@@ -307,7 +307,7 @@ func (oDb *DB) checksLiveThresholdsFromDefaults(ctx context.Context, rows []Chec
 		query := `UPDATE checks_live cl
 			SET cl.chk_low = ` + pick("chk_low") + `, cl.chk_high = ` + pick("chk_high") + `, cl.chk_threshold_provider = "defaults"
 			WHERE cl.id IN (` + strings.Join(placeholders, ", ") + `)`
-		if _, err := oDb.DB.ExecContext(ctx, query, args...); err != nil {
+		if _, err := oDb.ExecContext(ctx, query, args...); err != nil {
 			return fmt.Errorf("thresholds from defaults: %w", err)
 		}
 	}

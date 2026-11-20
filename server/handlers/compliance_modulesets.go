@@ -223,7 +223,7 @@ func (a *Api) GetComplianceModulesetUsage(c echo.Context, modsetId string) error
 	if err != nil {
 		return httpProblem(c, err)
 	}
-	usage, err := a.ODB.CompModulesetUsage(c.Request().Context(), id)
+	usage, err := a.ODB.CompModulesetUsage(c.Request().Context(), id, UserGroupsFromContext(c), IsManager(c))
 	if err != nil {
 		return httpProblem(c, compDesignerError(c, "GetComplianceModulesetUsage", err))
 	}

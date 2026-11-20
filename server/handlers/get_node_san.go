@@ -17,6 +17,9 @@ func (a *Api) GetNodeSan(c echo.Context, nodeId string) error {
 	if err != nil {
 		return err
 	}
+	if err := a.requireNodeVisible(c, log, node); err != nil {
+		return err
+	}
 	ctx := c.Request().Context()
 	endpoints, err := a.ODB.NodeSANEndpoints(ctx, node.NodeID, UserGroupsFromContext(c), IsManager(c))
 	if err != nil {

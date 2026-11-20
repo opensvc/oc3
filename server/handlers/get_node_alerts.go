@@ -31,6 +31,8 @@ func (a *Api) GetNodeAlerts(c echo.Context, nodeId string, params server.GetNode
 	if err != nil {
 		return err
 	}
+	// Filtered by the publication of the apps, as the alerts and compliance
+	// lists: no check of the responsibility for the node here.
 
 	groups := UserGroupsFromContext(c)
 	isManager := IsManager(c)

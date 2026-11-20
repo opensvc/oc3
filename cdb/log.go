@@ -43,14 +43,46 @@ type LogsFiltersetFilter struct {
 	SvcIDs  []string
 }
 
-// GetLog returns a single log row by id.
-func (oDb *DB) GetLog(ctx context.Context, id string, p ListParams) ([]map[string]any, error) {
+// logsVisibility is the condition keeping the log events the caller may read:
+// all of them for a Manager; for another user, their own events and those of
+// the nodes and services of an app their groups are responsible for. The
+// events naming neither, as the changes of the users and groups, are the
+// Managers'.
+func logsVisibility(p ListParams, userEmail string) (string, []any) {
+	if p.IsManager {
+		return "", nil
+	}
+	cond := "log.log_user = ?"
+	args := []any{userEmail}
+	if groups := cleanGroups(p.Groups); len(groups) > 0 {
+		apps := "SELECT a.app FROM apps a JOIN apps_responsibles ar ON ar.app_id = a.id" +
+			" JOIN auth_group ag ON ag.id = ar.group_id WHERE ag.role IN (" + Placeholders(len(groups)) + ")"
+		cond += " OR (log.node_id <> '' AND nodes.app IN (" + apps + "))" +
+			" OR (log.svc_id <> '' AND services.svc_app IN (" + apps + "))"
+		for range 2 {
+			for _, g := range groups {
+				args = append(args, g)
+			}
+		}
+	}
+	return "(" + cond + ")", args
+}
+
+// GetLog returns a single log row by id, if the user of email userEmail may
+// read it (see logsVisibility).
+func (oDb *DB) GetLog(ctx context.Context, id string, p ListParams, userEmail string) ([]map[string]any, error) {
 	if len(p.SelectExprs) == 0 {
 		return nil, fmt.Errorf("getLog: no select expressions")
 	}
-	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+	// An event of the caller may name a node or a service of another app.
+	selectExprs, selectArgs := maskJoinedColumns(p.SelectExprs, p.Groups, p.IsManager, nodesMask, servicesMask)
+	query := "SELECT " + strings.Join(selectExprs, ", ") +
 		" FROM log" + logJoins + " WHERE log.id = ?"
-	args := []any{id}
+	args := append(selectArgs, id)
+	if cond, condArgs := logsVisibility(p, userEmail); cond != "" {
+		query += " AND " + cond
+		args = append(args, condArgs...)
+	}
 	query, args = appendLimitOffset(query, args, p.Limit, p.Offset)
 	rows, err := oDb.DB.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -66,14 +98,21 @@ func (oDb *DB) GetLog(ctx context.Context, id string, p ListParams) ([]map[strin
 const logJoins = " LEFT JOIN nodes ON nodes.node_id = log.node_id" +
 	" LEFT JOIN services ON services.svc_id = log.svc_id"
 
-// GetLogs returns rows from the collector log table.
-func (oDb *DB) GetLogs(ctx context.Context, p ListParams, fset LogsFiltersetFilter) ([]map[string]any, error) {
+// GetLogs returns rows from the collector log table the user of email
+// userEmail may read (see logsVisibility).
+func (oDb *DB) GetLogs(ctx context.Context, p ListParams, fset LogsFiltersetFilter, userEmail string) ([]map[string]any, error) {
 	if len(p.SelectExprs) == 0 {
 		return nil, fmt.Errorf("getLogs: no select expressions")
 	}
-	query := "SELECT " + strings.Join(p.SelectExprs, ", ") +
+	// An event of the caller may name a node or a service of another app.
+	selectExprs, selectArgs := maskJoinedColumns(p.SelectExprs, p.Groups, p.IsManager, nodesMask, servicesMask)
+	query := "SELECT " + strings.Join(selectExprs, ", ") +
 		" FROM log" + logJoins + " WHERE log.id > 0"
-	args := []any{}
+	args := selectArgs
+	if cond, condArgs := logsVisibility(p, userEmail); cond != "" {
+		query += " AND " + cond
+		args = append(args, condArgs...)
+	}
 	if fset.Active {
 		query, args = appendLogsFiltersetClause(query, args, fset.NodeIDs, fset.SvcIDs)
 	}

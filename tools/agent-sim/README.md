@@ -86,6 +86,28 @@ To exercise every path in a short run, shorten the intervals and raise the
 rates: `--info-interval 2m --daily-interval 2m --stats-interval 1m
 --changes-per-hour 20 --actions-per-day 300`.
 
+### A realistic fleet
+
+`--catalog realistic` builds, rather than numbered clusters, the fleet of a
+mid-sized company, for the screenshots of the documentation: its apps
+(BILLING, CRM, ERP, WEB, PAYMENT, DATA, INFRA) and their ops teams, two
+datacenters (PA1 in Paris, LY2 in Lyon), 14 clusters and 33 nodes named after
+them (`pa1-billing-db01`, `ly2-kafka01`), Dell, HPE, Lenovo and VMware servers
+with their system, memory, location and packages, and 31 services named after
+what they run (`prd/svc/billing-pgsql`). The counts flags do not apply; the
+prefix names the arrays and switches (`--arrays 2`: `pa1-fa01`, `pa1-fa02`).
+
+```sh
+./agent-sim setup --catalog realistic --prefix pa1 | dbsql
+./agent-sim run --catalog realistic --prefix pa1 --arrays 2 --feeder ... --duration 10h \
+    --inventory-spread 5m --actions-per-day 24
+./agent-sim teardown --catalog realistic --prefix pa1 | dbsql
+```
+
+`setup` registers the apps of the catalog with their ops team, not their
+responsible and publication groups: set them, and the users, for the
+visibility the screenshots need.
+
 ## Results
 
 In `results/<name>/`:

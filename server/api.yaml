@@ -2439,10 +2439,13 @@ paths:
                 cluster_id:
                   type: string
                   description: |
-                    The cluster id of the node, set on the node so it is
-                    known before its first daemon status. Absent or empty, the
-                    node cluster id is left untouched. Ignored for a joining
-                    node, which takes the cluster id of the enroller.
+                    The cluster id of the node, claimed for the node so it is
+                    known before its first daemon status: the node becomes a
+                    member of a cluster the collector does not know at once, of
+                    a cluster known already once a member lists it in its
+                    daemon status. Absent or empty, the node cluster id is left
+                    untouched. Ignored for a joining node, which takes the
+                    cluster id of the enroller.
       responses:
         200:
           description: Accepted
@@ -2470,6 +2473,43 @@ paths:
         - bearerAuth: [ ]
       tags:
         - auth
+
+  /auth/node/bootstrap:
+    post:
+      operationId: PostAuthNodeBootstrap
+      description: |
+        A node being provisioned trades the bootstrap token issued for it
+        (POST /nodes/{node_id}/bootstrap_token) for its collector credentials
+        and the configuration of its declared cluster. The token is the
+        credential: it is used once, for the nodename it was issued for.
+
+        The first node of a cluster without seed is elected seed: it creates the
+        cluster. The others join it, enrolled by a member (POST
+        /clusters/{cluster_id}/enrollments). The uuid returned replaces any
+        previous registration of the node.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeBootstrapRequest'
+      tags:
+        - provisioning
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeBootstrap'
+        400:
+          $ref: '#/components/responses/400'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - { }
 
   /auth/backchannel-logout:
     post:
@@ -2946,7 +2986,9 @@ paths:
   /disks:
     post:
       operationId: PostDisks
-      description: Create or update a disk in diskinfo
+      description: |
+        Create or update a disk in diskinfo. A Manager or a StorageManager, or a
+        node proxy of the array of the disk.
       requestBody:
         required: true
         content:
@@ -3073,7 +3115,9 @@ paths:
   /disks/{disk_id}:
     delete:
       operationId: DeleteDisk
-      description: Delete a disk from diskinfo
+      description: |
+        Delete a disk from diskinfo. A Manager or a StorageManager, or a node
+        proxy of the array of the disk.
       parameters:
         - in: path
           name: disk_id
@@ -8021,7 +8065,10 @@ paths:
         - bearerAuth: [ ]
     get:
       operationId: GetLogs
-      description: List events in the collector log
+      description: |
+        List events in the collector log. A Manager reads them all; another user
+        reads their own events and those of the nodes and services of an app
+        their groups are responsible for. Users only.
       parameters:
         - in: query
           name: fset_id
@@ -8055,7 +8102,9 @@ paths:
   /logs/{log_id}:
     get:
       operationId: GetLog
-      description: Display a collector log event properties
+      description: |
+        Display a collector log event properties, if the user may read it, see
+        GET /logs. Users only.
       parameters:
         - in: path
           name: log_id
@@ -8480,6 +8529,46 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+    post:
+      operationId: PostClusters
+      description: |
+        Declare a cluster the collector provisions: its name, the app of its
+        nodes and its heartbeats. Without cluster_id a new cluster is declared,
+        its id generated, its first bootstrapped node creating it; with the id
+        of a cluster reporting already, its nodes are the seed and every node
+        bootstrapped joins it. Declare its nodes with POST /nodes (cluster_id),
+        then issue their tokens (POST /nodes/{node_id}/bootstrap_token).
+        Manager, or NodeManager responsible for the app and for every
+        node of the cluster when it reports already.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterDeclarationInput'
+      tags:
+        - provisioning
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterDeclaration'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /clusters/{cluster_id}:
     get:
       operationId: GetCluster
@@ -8510,6 +8599,402 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteCluster
+      description: |
+        Delete a cluster from the collector: its nodes and its services, with
+        everything that refers to them (instances, resources, alerts, checks,
+        packages, tags, registrations…), its heartbeats, its declaration with
+        its bootstrap tokens and enrollments, and the om3 grants given on it.
+        The history of its orchestration runs stays. The agents of a cluster
+        still running must register again to report. NodeManager privilege,
+        and responsibility for every node and service of the cluster (a
+        Manager is responsible for them all).
+      parameters:
+        - in: path
+          name: cluster_id
+          required: true
+          description: Cluster identifier (clusters.cluster_id, a uuid)
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        204:
+          description: Deleted
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /clusters/{cluster_id}/declaration:
+    get:
+      operationId: GetClusterDeclaration
+      description: |
+        The declaration of a cluster: what the collector provisions its nodes
+        with (name, app, heartbeats) and the node elected to create it, the
+        seed.
+        Manager, or NodeManager responsible for the app of the declaration
+        and the nodes of the cluster: another declaration is not found.
+      parameters:
+        - $ref: '#/components/parameters/inPathClusterId'
+      tags:
+        - provisioning
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterDeclaration'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutClusterDeclaration
+      description: |
+        Change the app and the heartbeats of a declared cluster. The nodes
+        already bootstrapped keep the configuration they were given.
+        Manager, or NodeManager responsible for the apps and the nodes of
+        the cluster.
+      parameters:
+        - $ref: '#/components/parameters/inPathClusterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterDeclarationUpdate'
+      tags:
+        - provisioning
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterDeclaration'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteClusterDeclaration
+      description: |
+        Delete the declaration of a cluster, its unused bootstrap tokens and
+        its enrollments. The cluster, its nodes and their registrations stay.
+        Manager, or NodeManager responsible for the app and the nodes of
+        the cluster.
+      parameters:
+        - $ref: '#/components/parameters/inPathClusterId'
+      tags:
+        - provisioning
+      responses:
+        204:
+          description: Deleted
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /cluster_declarations:
+    get:
+      operationId: GetClusterDeclarations
+      description: |
+        The declared clusters, by name, with their nodes declared and reporting
+        and their pending enrollments. Manager, or NodeManager: the
+        declarations listed are those whose app and cluster nodes the user is
+        responsible for.
+      tags:
+        - provisioning
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterDeclarationList'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /clusters/{cluster_id}/declaration/nodes:
+    get:
+      operationId: GetClusterDeclarationNodes
+      description: |
+        The nodes of a declared cluster, those the collector has with its
+        cluster_id or bootstrapped into it, with their last bootstrap token and
+        whether they report.
+        Manager, or NodeManager responsible for the app of the declaration
+        and the nodes of the cluster: another declaration is not found.
+      parameters:
+        - $ref: '#/components/parameters/inPathClusterId'
+      tags:
+        - provisioning
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterDeclarationNodeList'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostClusterDeclarationNode
+      description: |
+        Declare a node of a declared cluster: the collector creates it with the
+        cluster_id, the app given or the one of the declaration, the team of the
+        caller. A node of that name in the cluster already is returned as is;
+        one in another cluster is refused. Manager, or NodeManager
+        responsible for the app, the one of the declaration and the nodes
+        of the cluster.
+      parameters:
+        - $ref: '#/components/parameters/inPathClusterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterDeclarationNodeInput'
+      tags:
+        - provisioning
+      responses:
+        201:
+          description: Created, or found in the cluster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterDeclarationNode'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /clusters/{cluster_id}/enrollments:
+    get:
+      operationId: GetClusterEnrollments
+      description: |
+        The last 100 enrollments of nodes into a declared cluster, newest first.
+        A user who sees the cluster (see GET /clusters), or a node of it.
+      parameters:
+        - $ref: '#/components/parameters/inPathClusterId'
+      tags:
+        - provisioning
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterEnrollmentList'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostClusterEnrollment
+      description: |
+        A bootstrapped node asks to join its declared cluster. It hands a token
+        of the join role its daemon created: a member of the cluster claims the
+        enrollment and enrolls the node with it (om3 POST /api/cluster/enroll).
+        The token is kept in the cache only, until the enrollment expires
+        (15 minutes). A pending enrollment of the same node is replaced.
+
+        The caller is the joining node, authenticated by its credentials; its
+        cluster in the collector must be the one of the path, and it must not be
+        the seed of the cluster.
+      parameters:
+        - $ref: '#/components/parameters/inPathClusterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterEnrollmentRequest'
+      tags:
+        - provisioning
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterEnrollment'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+
+  /clusters/{cluster_id}/enrollments/claim:
+    post:
+      operationId: PostClusterEnrollmentClaim
+      description: |
+        A member of the cluster claims the oldest pending enrollment of another
+        node, with its join token, to enroll it. 204 when none is pending.
+        The caller is a node, its cluster in the collector the one of the path.
+      parameters:
+        - $ref: '#/components/parameters/inPathClusterId'
+      tags:
+        - provisioning
+      responses:
+        200:
+          description: Claimed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterEnrollmentClaim'
+        204:
+          description: No pending enrollment
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+
+  /clusters/{cluster_id}/enrollments/{enrollment_id}:
+    get:
+      operationId: GetClusterEnrollment
+      description: |
+        An enrollment, the joining node polling it to wait for its join.
+        A user who sees the cluster, or a node of it.
+      parameters:
+        - $ref: '#/components/parameters/inPathClusterId'
+        - $ref: '#/components/parameters/inPathEnrollmentId'
+      tags:
+        - provisioning
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterEnrollment'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /clusters/{cluster_id}/enrollments/{enrollment_id}/result:
+    post:
+      operationId: PostClusterEnrollmentResult
+      description: |
+        The member that claimed an enrollment reports how it ended: done when
+        the joining node accepted the join order (om3 POST /api/cluster/enroll),
+        which it then carries out; failed with the error otherwise. The join is
+        complete when the node reports the cluster as its own.
+      parameters:
+        - $ref: '#/components/parameters/inPathClusterId'
+        - $ref: '#/components/parameters/inPathEnrollmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterEnrollmentResult'
+      tags:
+        - provisioning
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterEnrollment'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
 
   /resources:
     get:
@@ -8921,6 +9406,147 @@ paths:
           $ref: '#/components/responses/401'
         404:
           $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /scheduler/tasks:
+    get:
+      operationId: GetSchedulerTasks
+      description: |
+        List the tasks of the scheduler and their subtasks, as the scheduler
+        declared them at its last start: a subtask is named
+        "<task>: <subtask>" and has its task as parent. Each has its period
+        and timeout in seconds, whether it is disabled, its last run (status,
+        begin, duration, error), its next run for an enabled task, and the
+        count, failures and durations of its runs of the last 24 hours.
+        Manager only.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchedulerTaskListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /scheduler/tasks/{task_name}:
+    get:
+      operationId: GetSchedulerTask
+      description: A task or a subtask of the scheduler. Manager only.
+      parameters:
+        - $ref: '#/components/parameters/inPathSchedulerTaskName'
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchedulerTaskListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutSchedulerTask
+      description: |
+        Disable or enable a task of the scheduler. The scheduler reads the
+        flag every 5 seconds: it stops a disabled task, interrupting a run in
+        progress, and starts an enabled one, which runs at the end of its
+        period from its last run. A subtask runs with its task and can not be
+        disabled alone. Requires the Manager privilege. The action is logged
+        in the collector's log.
+      parameters:
+        - $ref: '#/components/parameters/inPathSchedulerTaskName'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchedulerTaskInput'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchedulerTaskListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /scheduler/runs:
+    get:
+      operationId: GetSchedulerRuns
+      description: |
+        List the runs of the scheduler tasks and subtasks of the last 7 days,
+        the last first: filter on task_name for the runs of a task, on status
+        (ok or failed) for the failures. Manager only.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchedulerRunListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -10000,7 +10626,8 @@ paths:
       description: |
         Create or update a node (by nodename or node_id). The attributes a user
         sets are checked against the strict and regex constraints, as by
-        POST /nodes/{node_id}.
+        POST /nodes/{node_id}. Creating a node requires the NodeManager
+        privilege; updating one is POST /nodes/{node_id}.
       requestBody:
         required: true
         content:
@@ -10018,6 +10645,10 @@ paths:
                   type: string
                 cluster_id:
                   type: string
+                  description: |
+                    Set by a Manager only, refused to a node: a node is a
+                    member of the cluster its daemon status reports, once a
+                    member confirms it.
                 warranty_end:
                   type: string
                 maintenance_end:
@@ -10373,6 +11004,10 @@ paths:
                   type: string
                 cluster_id:
                   type: string
+                  description: |
+                    Set by a Manager only, refused to a node: a node is a
+                    member of the cluster its daemon status reports, once a
+                    member confirms it.
                 warranty_end:
                   type: string
                 maintenance_end:
@@ -11799,7 +12434,9 @@ paths:
         swap, process count and paging. The resolution is the
         finest the files keep for the period: a minute over half an hour, ten minutes
         over three days, an hour over ninety days, a day beyond. A node without
-        statistics returns an empty list.
+        statistics returns an empty list. A user reads the statistics of the nodes
+        of an app their groups are responsible for, a Manager of every node, a node
+        its own; another node answers 404.
       parameters:
         - in: path
           name: node_id
@@ -12112,6 +12749,48 @@ paths:
                 $ref: '#/components/schemas/ListResponse'
         404:
           $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /nodes/{node_id}/bootstrap_token:
+    post:
+      operationId: PostNodeBootstrapToken
+      description: |
+        Issue the bootstrap token of a declared node: the node must name a
+        cluster with a declaration. The token is shown once, kept hashed; it
+        revokes the unused token issued before. Manager, or NodeManager
+        responsible for the node and the nodes of its cluster: the token
+        gives whoever holds it the identity of the node.
+      parameters:
+        - $ref: '#/components/parameters/inPathNodeId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeBootstrapTokenRequest'
+      tags:
+        - provisioning
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeBootstrapToken'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -15410,6 +16089,52 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /services/{svc_id}/startup:
+    get:
+      operationId: GetServiceStartup
+      description: |
+        The startup graph of a service on one of its nodes, as the historical
+        collector's startup tab drew it: its resources in the order the agent
+        starts them, read from the service configuration, with the state the
+        node last reported. A service whose configuration was never received
+        has its nodes and no vertices. The services of the applications the
+        caller's groups are responsible for only, unless a manager.
+      parameters:
+        - in: path
+          name: svc_id
+          required: true
+          description: Service identifier (svc_id UUID or svcname)
+          schema:
+            type: string
+        - in: query
+          name: node_id
+          description: The node to draw the startup on, the first of the service by name if absent
+          schema:
+            type: string
+        - in: query
+          name: show_disabled
+          description: Draw the disabled resources too, which the agent skips
+          schema:
+            type: boolean
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceStartup'
+        400:
+          $ref: '#/components/responses/400'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /services/{svc_id}/resinfo:
     get:
       operationId: GetServiceResinfo
@@ -16510,7 +17235,8 @@ paths:
       operationId: PostUsers
       description: |
         Create a user, with its private group "user_<id>". Requires the UserManager
-        privilege. An email or username already in use is refused with a 409. Without
+        privilege. An email or username already in use is refused with a 409, and so
+        is a full name ("first last") borne by another user or a group. Without
         a password the account exists but cannot sign in with one. A password is
         refused with a 400 when password sign-in is disabled (server.auth.basic_users
         false).
@@ -16896,7 +17622,9 @@ paths:
         their profile is the provider's, 403. Another user's requires the
         UserManager privilege (or Manager), else 403.
         Only the keys given are changed; names are trimmed, at most 128
-        characters, and may be empty. The email must be a valid address, at most 512
+        characters, and may be empty. A changed full name ("first last") borne by
+        another user or by a group is refused (409): the requests know their
+        creator and assignees by it. The email must be a valid address, at most 512
         characters, not used by another user (409): it is the sign-in name, so the
         next requests must authenticate with it. The change is logged with the fields
         changed. Requires user authentication. Returns the user.
@@ -31150,6 +31878,125 @@ components:
           items:
             $ref: '#/components/schemas/SearchGroup'
 
+    SchedulerTaskRow:
+      type: object
+      description: |
+        A task or a subtask of the scheduler. Every property is optional: the
+        `props` query parameter selects which columns the server returns. The
+        dates are those of the database, as text, empty when unset.
+      properties:
+        id:
+          type: integer
+        task_name:
+          type: string
+          description: 'The name of the task, "<task>: <subtask>" for a subtask.'
+        parent:
+          type: string
+          description: The task running this subtask, empty for a task.
+        task_desc:
+          type: string
+        period_s:
+          type: integer
+          description: Seconds between two runs, the period of its task for a subtask; 0 when not scheduled.
+        timeout_s:
+          type: integer
+          description: Seconds a run may last.
+        is_disabled:
+          type: boolean
+        declared:
+          type: boolean
+          description: Whether the scheduler declared it at its last start; false for a task the code does not hold any more.
+        last_run_at:
+          type: string
+          description: When the scheduler last started the task, which the next run follows by its period. Empty for a subtask.
+        next_run_at:
+          type: string
+          description: When the scheduler runs an enabled task next. Empty for a subtask or a disabled task.
+        last_status:
+          type: string
+          description: ok or failed; empty before the first recorded run.
+        last_begin_at:
+          type: string
+        last_duration_ms:
+          type: integer
+          nullable: true
+        last_error:
+          type: string
+        runs_24h:
+          type: integer
+        failures_24h:
+          type: integer
+        avg_duration_ms_24h:
+          type: integer
+          nullable: true
+        max_duration_ms_24h:
+          type: integer
+          nullable: true
+
+    SchedulerTaskListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/SchedulerTaskRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    SchedulerTaskInput:
+      type: object
+      required:
+        - is_disabled
+      properties:
+        is_disabled:
+          type: boolean
+
+    SchedulerRunRow:
+      type: object
+      description: |
+        A run of a scheduler task or subtask. Every property is optional: the
+        `props` query parameter selects which columns the server returns.
+      properties:
+        id:
+          type: integer
+        task_name:
+          type: string
+        begin_at:
+          type: string
+        duration_ms:
+          type: integer
+        status:
+          type: string
+          description: ok or failed.
+        error:
+          type: string
+
+    SchedulerRunListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/SchedulerRunRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
     SysreportSecurePatternRow:
       type: object
       description: |
@@ -32534,6 +33381,108 @@ components:
           type: integer
           description: Resources of a resource type, disks of a disk group.
 
+    ServiceStartup:
+      type: object
+      description: The startup graph of a service on a node.
+      required: [svc_id, svcname, nodes, vertices, edges]
+      properties:
+        svc_id:
+          type: string
+        svcname:
+          type: string
+        node_id:
+          type: string
+          description: The node drawn, absent for a service with no instance.
+        nodename:
+          type: string
+        nodes:
+          type: array
+          description: The nodes of the service, by name.
+          items:
+            $ref: '#/components/schemas/ServiceStartupNode'
+        vertices:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceStartupVertex'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceStartupEdge'
+
+    ServiceStartupNode:
+      type: object
+      required: [node_id, nodename]
+      properties:
+        node_id:
+          type: string
+        nodename:
+          type: string
+
+    ServiceStartupVertex:
+      type: object
+      required: [id, kind, label]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [service, node, subset, resource, trigger, encap]
+        label:
+          type: string
+        rid:
+          type: string
+          description: The resource; that of a trigger; the container of an encap node.
+        family:
+          type: string
+          description: Driver group of a resource, ip, volume, disk, fs, share, container, app.
+        type:
+          type: string
+          description: Driver of a resource, docker, netns, flag...
+        desc:
+          type: string
+          description: Description of a resource the agent reports; command of a trigger.
+        status:
+          type: string
+          description: State of a resource the agent last reported, absent when never reported.
+        trigger:
+          type: string
+          description: Hook of a trigger, blocking_pre_start, pre_start, blocking_post_start, post_start.
+        parallel:
+          type: boolean
+          description: A subset whose resources start in parallel.
+        disabled:
+          type: boolean
+        optional:
+          type: boolean
+        monitor:
+          type: boolean
+        standby:
+          type: boolean
+        encap:
+          type: boolean
+        node:
+          type: string
+          description: The encap node a resource runs in.
+
+    ServiceStartupEdge:
+      type: object
+      required: [from, to, kind]
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        kind:
+          type: string
+          enum: [sequence, requires]
+          description: |
+            sequence, from a step to a step that follows it; requires, from a
+            resource to one whose start waits for it (start_requires), or from
+            a container to the encap node it holds.
+        label:
+          type: string
+          description: The states a requirement waits for.
+
     TopologyEdge:
       type: object
       required: [from, to]
@@ -32993,6 +33942,312 @@ components:
         meta:
           $ref: '#/components/schemas/ListMeta'
 
+    ClusterHeartbeat:
+      description: |
+        A hb#<n> section of the om3 cluster configuration, n its rank from 1:
+        its keywords and their values. type is required.
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+      additionalProperties:
+        type: string
+    ClusterDeclarationInput:
+      type: object
+      required:
+        - cluster_name
+      properties:
+        cluster_name:
+          type: string
+        cluster_id:
+          type: string
+          description: The id of a cluster reporting already. Omitted, a new id.
+        app:
+          type: string
+          description: The app of the nodes of the cluster.
+        heartbeats:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterHeartbeat'
+    ClusterDeclarationUpdate:
+      type: object
+      properties:
+        app:
+          type: string
+        heartbeats:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterHeartbeat'
+    ClusterDeclaration:
+      type: object
+      required:
+        - cluster_id
+        - cluster_name
+        - app
+        - heartbeats
+        - created_by
+        - created
+        - updated
+      properties:
+        cluster_id:
+          type: string
+        cluster_name:
+          type: string
+        app:
+          type: string
+        heartbeats:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterHeartbeat'
+        seed_node_id:
+          type: string
+          nullable: true
+        seed_nodename:
+          type: string
+          nullable: true
+        created_by:
+          type: string
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+    ClusterDeclarationSummary:
+      allOf:
+        - $ref: '#/components/schemas/ClusterDeclaration'
+        - type: object
+          required:
+            - node_count
+            - reporting_count
+            - pending_enrollments
+          properties:
+            node_count:
+              type: integer
+              description: The nodes the collector has with the cluster_id.
+            reporting_count:
+              type: integer
+              description: Those that reported to the collector.
+            pending_enrollments:
+              type: integer
+    ClusterDeclarationList:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterDeclarationSummary'
+    ClusterDeclarationNode:
+      type: object
+      required:
+        - node_id
+        - nodename
+        - app
+        - cluster_id
+        - seed
+      properties:
+        node_id:
+          type: string
+        nodename:
+          type: string
+        app:
+          type: string
+        cluster_id:
+          type: string
+          description: The cluster the node row names now.
+        seed:
+          type: boolean
+        last_comm:
+          type: string
+          format: date-time
+          nullable: true
+          description: The last report of the node, null when it never reported.
+        token_created:
+          type: string
+          format: date-time
+          nullable: true
+        token_expires:
+          type: string
+          format: date-time
+          nullable: true
+        token_used:
+          type: string
+          format: date-time
+          nullable: true
+    ClusterDeclarationNodeInput:
+      type: object
+      required:
+        - nodename
+      properties:
+        nodename:
+          type: string
+        app:
+          type: string
+    ClusterDeclarationNodeList:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterDeclarationNode'
+    NodeBootstrapTokenRequest:
+      type: object
+      properties:
+        ttl_minutes:
+          type: integer
+          description: The lifetime of the token, 60 by default, 1440 at most.
+    NodeBootstrapToken:
+      type: object
+      required:
+        - token
+        - expires
+      properties:
+        token:
+          type: string
+        expires:
+          type: string
+          format: date-time
+    NodeBootstrapRequest:
+      type: object
+      required:
+        - nodename
+        - token
+      properties:
+        nodename:
+          type: string
+        token:
+          type: string
+    NodeBootstrapCluster:
+      type: object
+      required:
+        - id
+        - name
+        - role
+        - heartbeats
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [seed, join]
+        seed_nodename:
+          type: string
+          description: The node that created the cluster, when role is join.
+        heartbeats:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterHeartbeat'
+    NodeBootstrap:
+      type: object
+      required:
+        - node_id
+        - nodename
+        - uuid
+        - app
+        - cluster
+      properties:
+        node_id:
+          type: string
+        nodename:
+          type: string
+        uuid:
+          type: string
+          description: The credential of the node on the collector (node.uuid).
+        app:
+          type: string
+        cluster:
+          $ref: '#/components/schemas/NodeBootstrapCluster'
+    ClusterEnrollmentRequest:
+      type: object
+      required:
+        - join_token
+      properties:
+        join_token:
+          type: string
+        node_addr:
+          type: string
+          description: Where the members reach the api of the node. Its nodename by default.
+    ClusterEnrollmentState:
+      type: string
+      enum: [pending, claimed, done, failed, expired]
+    ClusterEnrollment:
+      type: object
+      required:
+        - id
+        - cluster_id
+        - node_id
+        - nodename
+        - node_addr
+        - state
+        - message
+        - created
+        - updated
+        - expires
+      properties:
+        id:
+          type: integer
+          format: int64
+        cluster_id:
+          type: string
+        node_id:
+          type: string
+        nodename:
+          type: string
+        node_addr:
+          type: string
+        state:
+          $ref: '#/components/schemas/ClusterEnrollmentState'
+        claimed_by:
+          type: string
+          nullable: true
+        message:
+          type: string
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        expires:
+          type: string
+          format: date-time
+    ClusterEnrollmentList:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterEnrollment'
+    ClusterEnrollmentClaim:
+      type: object
+      required:
+        - enrollment
+        - join_token
+      properties:
+        enrollment:
+          $ref: '#/components/schemas/ClusterEnrollment'
+        join_token:
+          type: string
+    ClusterEnrollmentResult:
+      type: object
+      required:
+        - state
+      properties:
+        state:
+          type: string
+          enum: [done, failed]
+        message:
+          type: string
     Problem:
       type: object
       properties:
@@ -33577,6 +34832,20 @@ components:
       schema:
         type: string
 
+    inPathClusterId:
+      in: path
+      name: cluster_id
+      required: true
+      description: Cluster identifier (clusters.cluster_id, a uuid)
+      schema:
+        type: string
+    inPathEnrollmentId:
+      in: path
+      name: enrollment_id
+      required: true
+      schema:
+        type: integer
+        format: int64
     inPathNodeId:
       in: path
       name: node_id
@@ -33641,6 +34910,13 @@ components:
       schema:
         type: string
 
+    inPathSchedulerTaskName:
+      in: path
+      name: task_name
+      required: true
+      description: 'The name of a scheduler task, "<task>: <subtask>" for a subtask, url-encoded.'
+      schema:
+        type: string
     inQueryFilter:
       in: query
       name: filter

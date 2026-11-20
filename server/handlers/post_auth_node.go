@@ -2,6 +2,7 @@ package serverhandlers
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/spf13/viper"
 
+	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/server"
 	"github.com/opensvc/oc3/util/echolog"
 	"github.com/opensvc/oc3/util/logkey"
@@ -123,28 +125,43 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 		log.Error("failed to find node", logkey.Error, err)
 		return JSONProblemf(c, http.StatusInternalServerError, "node lookup failed")
 	}
-	// The cluster id, when given, is set on the node, so the speaker reports
-	// for it are accepted before the worker reconciles its cluster id from
-	// its first daemon status. Absent or empty, it leaves the node cluster id
-	// untouched.
+	// The cluster id, when given, is claimed for the node, so the speaker
+	// reports for it are accepted before its first daemon status: the node
+	// becomes a member of a cluster the collector does not know, or of a
+	// known one once a member confirms it (see cdb.ClaimClusterMembership).
+	// Absent or empty, it leaves the node cluster id untouched.
 	if node != nil {
 		// Node already exists in node table
 		nodeID = node.NodeID
-		if clusterID != "" && clusterID != node.ClusterID {
-			if err := odb.UpdateNodeFields(ctx, nodeID, map[string]any{"cluster_id": clusterID}); err != nil {
-				log.Error("failed to update node cluster id", logkey.Error, err)
-				return JSONProblemf(c, http.StatusInternalServerError, "cannot update node")
+		// Registered already, its password is never given to an anonymous
+		// caller, who would only have to know its name and its app, nor is
+		// its cluster changed: the node registers again with its own
+		// credentials, or a user responsible for its app registers it.
+		if IsAuthByAnonRegister(c) {
+			if registered, err := odb.AuthNodesByNodeID(ctx, nodeID); err != nil {
+				log.Error("failed to find auth_node", logkey.Error, err)
+				return JSONProblemf(c, http.StatusInternalServerError, "auth_node lookup failed")
+			} else if len(registered) > 0 {
+				a.nodeRegisterLog(c, ctx, log, "warning", "node %(node)s anonymous registration refused: already registered", nodeID,
+					map[string]any{"node": nodename})
+				return JSONProblemf(c, http.StatusForbidden,
+					"node %s is already registered: register it again with its node credentials, or with the credentials of a collector user", nodename)
 			}
-			if err := odb.Session.NotifyChanges(ctx); err != nil {
-				log.Debug("register node can't notify changes", logkey.Error, err)
+		}
+		if clusterID != node.ClusterID {
+			if err := a.claimNodeCluster(c, ctx, log, nodeID, nodename, clusterID); err != nil {
+				return err
 			}
 		}
 	} else {
 		// Node does not exist: create it with a new node_id
 		nodeID = uuid.New().String()
-		if err := odb.InsertNode(ctx, nodename, teamResponsible, app, nodeID, clusterID); err != nil {
+		if err := odb.InsertNode(ctx, nodename, teamResponsible, app, nodeID, ""); err != nil {
 			log.Error("failed to insert node", logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot create node")
+		}
+		if err := a.claimNodeCluster(c, ctx, log, nodeID, nodename, clusterID); err != nil {
+			return err
 		}
 	}
 
@@ -189,4 +206,30 @@ func (a *Api) PostAuthNode(c echo.Context) error {
 			map[string]any{"node": nodename})
 		return JSONProblem(c, http.StatusConflict, "node double registration attempt")
 	}
+}
+
+// claimNodeCluster claims the cluster clusterID for the node registering. A
+// claim waiting for a member to confirm it does not fail the registration:
+// the node reports its cluster again in its daemon status.
+func (a *Api) claimNodeCluster(c echo.Context, ctx context.Context, log *slog.Logger, nodeID, nodename, clusterID string) error {
+	if clusterID == "" {
+		return nil
+	}
+	claim, err := a.ODB.ClaimClusterMembership(ctx, nodeID, clusterID)
+	if err != nil {
+		log.Error("failed to claim the node cluster", logkey.Error, err)
+		return denyRequest(c, http.StatusInternalServerError, "cannot update node")
+	}
+	switch claim {
+	case cdb.ClusterClaimPending:
+		a.nodeRegisterLog(c, ctx, log, "info", "node %(node)s claims the cluster %(cluster_id)s, waiting for a member to confirm", nodeID,
+			map[string]any{"node": nodename, "cluster_id": clusterID})
+	case cdb.ClusterClaimOrphan:
+		a.nodeRegisterLog(c, ctx, log, "warning", "node %(node)s takes over the cluster %(cluster_id)s, known without node", nodeID,
+			map[string]any{"node": nodename, "cluster_id": clusterID})
+	}
+	if err := a.ODB.Session.NotifyChanges(ctx); err != nil {
+		log.Debug("register node can't notify changes", logkey.Error, err)
+	}
+	return nil
 }

@@ -133,7 +133,7 @@ func (oDb *DB) CreateCompRulesetVariable(ctx context.Context, rulesetID int64, f
 		vals = append(vals, "?")
 		args = append(args, fields[k])
 	}
-	res, err := oDb.DB.ExecContext(ctx, "INSERT INTO comp_rulesets_variables ("+strings.Join(cols, ", ")+") VALUES ("+strings.Join(vals, ", ")+")", args...)
+	res, err := oDb.ExecContext(ctx, "INSERT INTO comp_rulesets_variables ("+strings.Join(cols, ", ")+") VALUES ("+strings.Join(vals, ", ")+")", args...)
 	if err != nil {
 		return 0, fmt.Errorf("createCompRulesetVariable: %w", err)
 	}
@@ -151,7 +151,7 @@ func (oDb *DB) UpdateCompRulesetVariable(ctx context.Context, id int64, fields m
 		args = append(args, fields[k])
 	}
 	args = append(args, id)
-	if _, err := oDb.DB.ExecContext(ctx, "UPDATE comp_rulesets_variables SET "+strings.Join(sets, ", ")+" WHERE id = ?", args...); err != nil {
+	if _, err := oDb.ExecContext(ctx, "UPDATE comp_rulesets_variables SET "+strings.Join(sets, ", ")+" WHERE id = ?", args...); err != nil {
 		return fmt.Errorf("updateCompRulesetVariable: %w", err)
 	}
 	oDb.SetChange("comp_rulesets_variables")
@@ -160,7 +160,7 @@ func (oDb *DB) UpdateCompRulesetVariable(ctx context.Context, id int64, fields m
 
 // DeleteCompRulesetVariable deletes a variable.
 func (oDb *DB) DeleteCompRulesetVariable(ctx context.Context, id int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM comp_rulesets_variables WHERE id = ?", id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "DELETE FROM comp_rulesets_variables WHERE id = ?", id); err != nil {
 		return fmt.Errorf("deleteCompRulesetVariable: %w", err)
 	}
 	oDb.SetChange("comp_rulesets_variables")
@@ -170,7 +170,7 @@ func (oDb *DB) DeleteCompRulesetVariable(ctx context.Context, id int64) error {
 // CopyCompRulesetVariable copies a variable to another ruleset, authored by
 // author, as copy_variable_to_ruleset().
 func (oDb *DB) CopyCompRulesetVariable(ctx context.Context, id, dstRulesetID int64, author string) (int64, error) {
-	res, err := oDb.DB.ExecContext(ctx, "INSERT INTO comp_rulesets_variables (ruleset_id, var_name, var_class, var_value, var_author, var_updated)"+
+	res, err := oDb.ExecContext(ctx, "INSERT INTO comp_rulesets_variables (ruleset_id, var_name, var_class, var_value, var_author, var_updated)"+
 		" SELECT ?, var_name, var_class, var_value, ?, NOW() FROM comp_rulesets_variables WHERE id = ?", dstRulesetID, author, id)
 	if err != nil {
 		return 0, fmt.Errorf("copyCompRulesetVariable: %w", err)
@@ -182,7 +182,7 @@ func (oDb *DB) CopyCompRulesetVariable(ctx context.Context, id, dstRulesetID int
 // MoveCompRulesetVariable moves a variable to another ruleset, as
 // move_variable_to_ruleset().
 func (oDb *DB) MoveCompRulesetVariable(ctx context.Context, id, dstRulesetID int64) error {
-	if _, err := oDb.DB.ExecContext(ctx, "UPDATE comp_rulesets_variables SET ruleset_id = ? WHERE id = ?", dstRulesetID, id); err != nil {
+	if _, err := oDb.ExecContext(ctx, "UPDATE comp_rulesets_variables SET ruleset_id = ? WHERE id = ?", dstRulesetID, id); err != nil {
 		return fmt.Errorf("moveCompRulesetVariable: %w", err)
 	}
 	oDb.SetChange("comp_rulesets_variables")
