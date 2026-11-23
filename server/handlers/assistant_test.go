@@ -153,6 +153,16 @@ func TestAssistantRelay(t *testing.T) {
 		t.Fatalf("capabilities relayed to %s: %d", seen.path, rec.Code)
 	}
 
+	// The models are relayed.
+	c, rec = assistantRequest(http.MethodGet, "/", "", xauth.AuthSourceBearer)
+	if err := a.GetAssistantModels(c); err != nil {
+		t.Fatal(err)
+	}
+	if rec.Code != http.StatusOK || seen.method != http.MethodGet || seen.path != "/base/v1/oc3/models" ||
+		seen.auth != "Bearer user-access-token" || seen.cookie != "" || seen.extra != "" {
+		t.Fatalf("models relayed: %+v, %d", seen, rec.Code)
+	}
+
 	// The tools are relayed, with the token only.
 	c, rec = assistantRequest(http.MethodGet, "/", "", xauth.AuthSourceBearer)
 	if err := a.GetAssistantTools(c); err != nil {

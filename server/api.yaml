@@ -7009,6 +7009,61 @@ paths:
                 $ref: '#/components/schemas/AssistantError'
       security:
         - basicAuth: [ ]
+  /assistant/models:
+    get:
+      operationId: GetAssistantModels
+      description: |
+        The models the runs of the caller choose from, the default first: their
+        ID, which the forwardedProps.model of a run names, their label, whether
+        each is the default, and whether the caller can run on it. An agent that
+        offers no choice does not tell custom.models in its capabilities.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      responses:
+        200:
+          description: The models.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantModels'
+        401:
+          description: No access token for the caller (assistant_token_unavailable), or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
         - bearerAuth: [ ]
 
   /assistant/tools:
@@ -28370,6 +28425,9 @@ components:
         feedback:
           $ref: '#/components/schemas/AssistantFeedback'
           description: On an assistant message, the feedback of the user on its turn, if any.
+        model_id:
+          type: string
+          description: On the last assistant message of a turn, the id of the model the turn last ran on; absent for a turn recorded before.
     AssistantMessagePage:
       type: object
       required:
@@ -28389,8 +28447,8 @@ components:
       description: |
         The AG-UI RunAgentInput of a run. The agent reads threadId, runId,
         protocolVersion, the last message, a message of the user, the ids of the
-        others, the tools of the client and resume; not the state, the context or
-        the forwarded properties.
+        others, the tools of the client, resume, and of the forwarded properties
+        model; not the state, nor the context.
       required:
       - threadId
       - runId
@@ -28449,6 +28507,18 @@ components:
                 properties:
                   approved:
                     type: boolean
+        forwardedProps:
+          type: object
+          description: |
+            Properties for the agent. model, the id of a model GET
+            /assistant/models lists, chooses the model a new turn runs on; absent,
+            the default model. A resumed turn keeps the model it started on. A
+            model the agent does not offer is refused with 400 model_unknown.
+          properties:
+            model:
+              type: string
+              minLength: 1
+              maxLength: 64
       additionalProperties: true
     AssistantRunMessage:
       type: object
@@ -28647,6 +28717,36 @@ components:
       type: object
       description: The AG-UI AgentCapabilities of the agent.
       additionalProperties: true
+    AssistantModels:
+      type: object
+      description: The models the agent offers, as it gives them.
+      required:
+      - models
+      properties:
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssistantModel'
+    AssistantModel:
+      type: object
+      required:
+      - id
+      - label
+      - default
+      - ready
+      properties:
+        id:
+          type: string
+          description: The ID of the model, opaque, for forwardedProps.model.
+        label:
+          type: string
+          description: The name to show.
+        default:
+          type: boolean
+          description: Whether a run that names no model runs on it.
+        ready:
+          type: boolean
+          description: Whether the caller can run on it.
     AssistantTools:
       type: object
       description: The tools the agent lists, as it gives them.
