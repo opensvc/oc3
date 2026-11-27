@@ -273,6 +273,12 @@ func (a *Api) GetAssistantModels(c echo.Context) error {
 	return a.assistantRelay(c, http.MethodGet, "/models", nil, 0, false)
 }
 
+// GetAssistantSkills handles GET /assistant/skills: the skills a run of the
+// caller may ask, as the agent lists them.
+func (a *Api) GetAssistantSkills(c echo.Context) error {
+	return a.assistantRelay(c, http.MethodGet, "/skills", nil, 0, false)
+}
+
 // GetAssistantTools handles GET /assistant/tools: the tools of the MCP the
 // model may call for the caller, as the agent lists them.
 func (a *Api) GetAssistantTools(c echo.Context) error {

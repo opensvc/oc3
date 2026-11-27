@@ -2528,8 +2528,11 @@ type AssistantMessage struct {
 	// ModelId On the last assistant message of a turn, the id of the model the turn last ran on; absent for a turn recorded before.
 	ModelId *string              `json:"model_id,omitempty"`
 	Role    AssistantMessageRole `json:"role"`
-	Text    string               `json:"text"`
-	TurnId  string               `json:"turn_id"`
+
+	// Skill On the message of the user that starts a turn, the name of the skill it asked with forwardedProps.skill, which the agent loaded first; absent when it asked none, or for a turn recorded before.
+	Skill  *string `json:"skill,omitempty"`
+	Text   string  `json:"text"`
+	TurnId string  `json:"turn_id"`
 }
 
 // AssistantMessageRole defines model for AssistantMessage.Role.
@@ -2627,14 +2630,20 @@ type AssistantRunEventType string
 // AssistantRunInput The AG-UI RunAgentInput of a run. The agent reads threadId, runId,
 // protocolVersion, the last message, a message of the user, the ids of the
 // others, the tools of the client, resume, and of the forwarded properties
-// model; not the state, nor the context.
+// model and skill; not the state, nor the context.
 type AssistantRunInput struct {
 	// ForwardedProps Properties for the agent. model, the id of a model GET
 	// /assistant/models lists, chooses the model a new turn runs on; absent,
 	// the default model. A resumed turn keeps the model it started on. A
 	// model the agent does not offer is refused with 400 model_unknown.
+	// skill, the name of a skill GET /assistant/skills lists, has the
+	// agent load its procedure before the model answers a new turn;
+	// absent or null, none. A name not shaped as one is refused with 400
+	// invalid_skill; a skill the user is not served, or whose load is
+	// refused, fails the run with RUN_ERROR skill_unavailable.
 	ForwardedProps *struct {
 		Model *string `json:"model,omitempty"`
+		Skill *string `json:"skill,omitempty"`
 	} `json:"forwardedProps,omitempty"`
 	Messages []AssistantRunMessage `json:"messages"`
 
@@ -2696,6 +2705,20 @@ type AssistantRunOutcome struct {
 
 // AssistantRunOutcomeType defines model for AssistantRunOutcome.Type.
 type AssistantRunOutcomeType string
+
+// AssistantSkill defines model for AssistantSkill.
+type AssistantSkill struct {
+	// Description What the skill does, at most 300 bytes.
+	Description string `json:"description"`
+
+	// Name The name of the skill, for forwardedProps.skill.
+	Name string `json:"name"`
+}
+
+// AssistantSkills The skills a run may ask, as the agent gives them.
+type AssistantSkills struct {
+	Skills []AssistantSkill `json:"skills"`
+}
 
 // AssistantStatus defines model for AssistantStatus.
 type AssistantStatus struct {
