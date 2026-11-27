@@ -149,14 +149,20 @@ func (oDb *DB) ClusterNodesResponsibility(ctx context.Context, clusterID string,
 // minutes, running the om3 agent ("v3." or "3." versions) and reading its own
 // queue (pull or feed), to post a cluster action for: nil when there is none.
 func (oDb *DB) ClusterLiveNode(ctx context.Context, clusterID string) (*NodeActionTarget, error) {
+	return oDb.ClusterLiveNodeExcept(ctx, clusterID, "")
+}
+
+// ClusterLiveNodeExcept is ClusterLiveNode, but never the node exceptNodeID:
+// the peer a node down is woken from.
+func (oDb *DB) ClusterLiveNodeExcept(ctx context.Context, clusterID, exceptNodeID string) (*NodeActionTarget, error) {
 	const query = "SELECT node_id, COALESCE(nodename, ''), COALESCE(os_name, ''), COALESCE(action_type, '')," +
 		" COALESCE(collector, ''), COALESCE(connect_to, '')" +
-		" FROM nodes WHERE cluster_id = ? AND last_comm > NOW() - INTERVAL 15 MINUTE" +
+		" FROM nodes WHERE cluster_id = ? AND node_id <> ? AND last_comm > NOW() - INTERVAL 15 MINUTE" +
 		" AND (version LIKE 'v3.%' OR version LIKE '3.%')" +
 		" AND COALESCE(action_type, '') IN ('', 'pull', 'feed')" +
 		" ORDER BY nodename LIMIT 1"
 	var t NodeActionTarget
-	err := oDb.DB.QueryRowContext(ctx, query, clusterID).
+	err := oDb.DB.QueryRowContext(ctx, query, clusterID, exceptNodeID).
 		Scan(&t.NodeID, &t.Nodename, &t.OSName, &t.ActionType, &t.Collector, &t.ConnectTo)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):

@@ -267,6 +267,7 @@ var propsMapping = map[string]propMapping{
 			"team_integ":            colStr(schema.NodesTeamInteg),
 			"team_support":          colStr(schema.NodesTeamSupport),
 			"serial":                colStr(schema.NodesSerial),
+			"machine_uuid":          colStr(schema.NodesMachineUUID),
 			"model":                 colStr(schema.NodesModel),
 			"manufacturer":          colStr(schema.NodesManufacturer),
 			"type":                  colStr(schema.NodesType),

@@ -111,10 +111,17 @@ paths:
         checks, sysreport, updatecomp, updatepkg, scanscsi,
         reboot, schedule_reboot, unschedule_reboot, shutdown, drain,
         compliance_check, compliance_fix (on every module attached to the node),
-        freeze and thaw on a node; freeze, thaw, abort (of the running
+        freeze, thaw and wake on a node; freeze, thaw, abort (of the running
         orchestration) and updatepkg on a cluster. Compliance actions on a given module, moduleset
-        or ruleset, Wake On LAN, the root password rotation and agent options are
+        or ruleset, the root password rotation and agent options are
         not supported.
+
+        A node down can not dequeue its own wake: it is queued on a live peer of
+        its cluster, as `om node wake --node <node>`, which asks the collector to
+        start the container of a virtual machine node on its hypervisor, else sends
+        Wake-on-LAN magic packets. With no live peer, the start of the container of
+        a virtual machine node is queued on its hypervisor directly; a physical node
+        can not be woken then.
 
         A reboot or a shutdown takes the node down while the agent runs it, so
         the agent never posts its result: the collector ends it as done, ret 0,
@@ -129,6 +136,10 @@ paths:
         index of each refused entry in the list with its reason; entries
         differing only by rid are merged into one action on those resources, a
         refusal then naming each of them.
+
+        An entry accepted with nothing to queue, as the wake of a node already
+        up, is named in notices, by its index with the reason: one entry alone
+        then answers as a list, its notice in info.
       requestBody:
         required: true
         content:
@@ -21307,6 +21318,41 @@ paths:
           $ref: '#/components/responses/500'
       security:
         - basicAuth: [ ]
+  /agent/wake:
+    post:
+      operationId: PostAgentWake
+      description: |
+        Wake a powered off virtual machine node of the cluster of the calling
+        node: queue the start of the container resource of its hypervisor whose
+        virtual machine has the machine uuid the node reported, the uuid key of
+        the resource info. The hypervisor must report to this collector. A start
+        already queued and not done is returned rather than queued again.
+      parameters:
+        - in: query
+          name: nodename
+          required: true
+          description: the node to wake, a node of the cluster of the caller
+          schema:
+            type: string
+      tags: [ agent ]
+      responses:
+        200:
+          $ref: '#/components/responses/WakeAgentInfo'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+
   /agent/compliance/data:
     get:
       operationId: GetAgentComplianceData
@@ -26238,6 +26284,44 @@ components:
             properties:
               info:
                 type: string
+    WakeAgentInfo:
+      description: |
+        The start of the container running the node, queued, or nothing queued
+        for a node up, awake true, its hypervisor, path and rid empty.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - nodename
+              - hypervisor
+              - path
+              - rid
+              - action_id
+              - queued
+            properties:
+              nodename:
+                type: string
+                description: the node to wake
+              hypervisor:
+                type: string
+                description: the node the container is started on
+              path:
+                type: string
+                description: the service holding the container
+              rid:
+                type: string
+                description: the container resource
+              action_id:
+                type: integer
+                format: int64
+                description: the id of the start action in the action queue
+              queued:
+                type: boolean
+                description: false when a start queued before and not done yet is returned
+              awake:
+                type: boolean
+                description: true when the node is up, as the last status of its cluster says, and nothing was queued
     ComplianceAgentInfo:
       description: What was done.
       content:
@@ -26692,6 +26776,9 @@ components:
           type: string
         serial:
           type: string
+        machine_uuid:
+          type: string
+          description: SMBIOS system uuid of the node, as the agent reports it. A hypervisor sets it to the uuid of the virtual machine.
         model:
           type: string
         manufacturer:
@@ -33822,6 +33909,20 @@ components:
               index:
                 type: integer
                 description: Index of the refused entry in the list sent, from 0
+              message:
+                type: string
+        notices:
+          type: array
+          description: |
+            The entries accepted with nothing to queue, as the wake of a node
+            already up, by index in the list sent with the reason.
+          items:
+            type: object
+            required: [index, message]
+            properties:
+              index:
+                type: integer
+                description: Index of the entry in the list sent, from 0
               message:
                 type: string
 

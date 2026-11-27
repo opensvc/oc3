@@ -184,12 +184,20 @@ func (a *Api) PutActions(c echo.Context) error {
 		refusals := []string{}
 		// The refusals by entry of the list sent, for the caller to name each.
 		refused := []refusedEntry{}
+		// The entries accepted with nothing to queue, by entry of the list sent.
+		notices := []refusedEntry{}
 		for _, e := range factorizeActionEntries(entries) {
 			queued, err := a.queueActionEntry(actorOf(c), log, ctx, e)
 			if err != nil {
 				refusals = append(refusals, describeRefusal(e, err))
 				for _, i := range e.indexes {
 					refused = append(refused, refusedEntry{Index: i, Message: refusalMessage(err)})
+				}
+				continue
+			}
+			if queued.ID == 0 && queued.Notice != "" {
+				for _, i := range e.indexes {
+					notices = append(notices, refusedEntry{Index: i, Message: queued.Notice})
 				}
 				continue
 			}
@@ -210,6 +218,7 @@ func (a *Api) PutActions(c echo.Context) error {
 			"error":    refusals,
 			"data":     rows,
 			"refusals": refused,
+			"notices":  notices,
 		})
 	}
 
@@ -220,6 +229,16 @@ func (a *Api) PutActions(c echo.Context) error {
 	queued, err := a.queueActionEntry(actorOf(c), log, ctx, entry)
 	if err != nil {
 		return actionProblem(c, err)
+	}
+	// Nothing to queue: no action to read back, the answer of a list says why.
+	if queued.ID == 0 && queued.Notice != "" {
+		return c.JSON(http.StatusOK, map[string]any{
+			"info":     []string{queued.Notice},
+			"error":    []string{},
+			"data":     []map[string]any{},
+			"refusals": []refusedEntry{},
+			"notices":  []refusedEntry{{Index: 0, Message: queued.Notice}},
+		})
 	}
 	if err := a.ODB.Session.NotifyChanges(ctx); err != nil {
 		log.Error("cannot notify changes", logkey.Error, err)

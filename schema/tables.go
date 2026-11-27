@@ -1102,6 +1102,7 @@ var (
 	NodesLocZip              = &Col{T: TNodes, Name: "loc_zip", Nullable: true}
 	NodesTeamResponsible     = &Col{T: TNodes, Name: "team_responsible", Nullable: true}
 	NodesSerial              = &Col{T: TNodes, Name: "serial", Nullable: true}
+	NodesMachineUUID         = &Col{T: TNodes, Name: "machine_uuid", Nullable: true}
 	NodesModel               = &Col{T: TNodes, Name: "model", Nullable: true}
 	NodesType                = &Col{T: TNodes, Name: "type", Nullable: true}
 	NodesWarrantyEnd         = &Col{T: TNodes, Name: "warranty_end", Nullable: true}
@@ -2599,6 +2600,7 @@ var AllCols = []*Col{
 	NodesLocZip,
 	NodesTeamResponsible,
 	NodesSerial,
+	NodesMachineUUID,
 	NodesModel,
 	NodesType,
 	NodesWarrantyEnd,

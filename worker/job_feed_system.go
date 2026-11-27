@@ -527,6 +527,7 @@ func (d *jobFeedSystem) properties(ctx context.Context) error {
 			mariadb.Mapping{To: "fqdn", Get: get},
 			mariadb.Mapping{To: "last_boot", Get: get, Modify: mariadb.ModifyFromRFC3339},
 			mariadb.Mapping{To: "listener_port", Get: get},
+			mariadb.Mapping{To: "machine_uuid", Get: get, Optional: true},
 			mariadb.Mapping{To: "loc_addr", Get: get, Optional: true},
 			mariadb.Mapping{To: "loc_building", Get: get, Optional: true},
 			mariadb.Mapping{To: "loc_city", Get: get, Optional: true},

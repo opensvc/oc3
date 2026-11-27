@@ -17,9 +17,9 @@ import (
 
 // nodeActions are the agent actions the API accepts, the node agent entries of
 // the historical collector action menu (am_node_agent_leafs in action_menu.js),
-// but Wake On LAN, run through a proxy node of the same network, the
-// provisioning from a template, and the root password rotation, which is not
-// offered.
+// but the provisioning from a template, and the root password rotation, which
+// is not offered. The wake is queued on a live peer of the node, see
+// queueNodeWake.
 var nodeActions = map[string]bool{
 	"pushasset":         true,
 	"pushdisks":         true,
@@ -40,6 +40,7 @@ var nodeActions = map[string]bool{
 	"compliance_fix":    true,
 	"freeze":            true,
 	"thaw":              true,
+	"wake":              true,
 }
 
 // nodeActionWords are the agent commands of the actions whose name is not the
@@ -92,6 +93,9 @@ type queuedAction struct {
 	Command string
 	NodeID  string
 	Info    string
+	// Notice says why nothing was queued for an entry accepted, as the wake
+	// of a node already up: ID is then 0.
+	Notice string
 }
 
 // actionRefusal is a queueing request that did not go through, with the HTTP
@@ -164,6 +168,11 @@ func (a *Api) queueNodeAction(act actionActor, log *slog.Logger, ctx context.Con
 	}
 	if !responsible {
 		return nil, refuseAction(http.StatusForbidden, "user is not responsible for node %s", nodeID)
+	}
+
+	// A node down can not dequeue its own wake: a peer runs it.
+	if action == "wake" {
+		return a.queueNodeWake(act, log, ctx, node)
 	}
 
 	target, err := odb.NodeActionTargetByID(ctx, node.NodeID)

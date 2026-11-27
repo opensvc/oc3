@@ -2209,8 +2209,16 @@ type ActionEnqueueListResult struct {
 	Data []map[string]interface{} `json:"data"`
 
 	// Error One message per refused entry, naming its target
-	Error    []string `json:"error"`
-	Info     []string `json:"info"`
+	Error []string `json:"error"`
+	Info  []string `json:"info"`
+
+	// Notices The entries accepted with nothing to queue, as the wake of a node
+	// already up, by index in the list sent with the reason.
+	Notices *[]struct {
+		// Index Index of the entry in the list sent, from 0
+		Index   int    `json:"index"`
+		Message string `json:"message"`
+	} `json:"notices,omitempty"`
 	Refusals []struct {
 		// Index Index of the refused entry in the list sent, from 0
 		Index   int    `json:"index"`
@@ -3269,6 +3277,9 @@ type CompNodeModulesetRow struct {
 	LocRack             *string `json:"loc_rack,omitempty"`
 	LocRoom             *string `json:"loc_room,omitempty"`
 	LocZip              *string `json:"loc_zip,omitempty"`
+
+	// MachineUuid SMBIOS system uuid of the node, as the agent reports it. A hypervisor sets it to the uuid of the virtual machine.
+	MachineUuid         *string `json:"machine_uuid,omitempty"`
 	MaintenanceEnd      *string `json:"maintenance_end,omitempty"`
 	Manufacturer        *string `json:"manufacturer,omitempty"`
 	MemBanks            *int    `json:"mem_banks,omitempty"`
@@ -3372,6 +3383,9 @@ type CompNodeRulesetRow struct {
 	LocRack             *string `json:"loc_rack,omitempty"`
 	LocRoom             *string `json:"loc_room,omitempty"`
 	LocZip              *string `json:"loc_zip,omitempty"`
+
+	// MachineUuid SMBIOS system uuid of the node, as the agent reports it. A hypervisor sets it to the uuid of the virtual machine.
+	MachineUuid         *string `json:"machine_uuid,omitempty"`
 	MaintenanceEnd      *string `json:"maintenance_end,omitempty"`
 	Manufacturer        *string `json:"manufacturer,omitempty"`
 	MemBanks            *int    `json:"mem_banks,omitempty"`
@@ -5518,6 +5532,9 @@ type NodeRow struct {
 	LocRack             *string `json:"loc_rack,omitempty"`
 	LocRoom             *string `json:"loc_room,omitempty"`
 	LocZip              *string `json:"loc_zip,omitempty"`
+
+	// MachineUuid SMBIOS system uuid of the node, as the agent reports it. A hypervisor sets it to the uuid of the virtual machine.
+	MachineUuid         *string `json:"machine_uuid,omitempty"`
 	MaintenanceEnd      *string `json:"maintenance_end,omitempty"`
 	Manufacturer        *string `json:"manufacturer,omitempty"`
 	MemBanks            *int    `json:"mem_banks,omitempty"`
@@ -8041,6 +8058,30 @@ type TagAgentInfo struct {
 	Info string `json:"info"`
 }
 
+// WakeAgentInfo defines model for WakeAgentInfo.
+type WakeAgentInfo struct {
+	// ActionId the id of the start action in the action queue
+	ActionId int64 `json:"action_id"`
+
+	// Awake true when the node is up, as the last status of its cluster says, and nothing was queued
+	Awake *bool `json:"awake,omitempty"`
+
+	// Hypervisor the node the container is started on
+	Hypervisor string `json:"hypervisor"`
+
+	// Nodename the node to wake
+	Nodename string `json:"nodename"`
+
+	// Path the service holding the container
+	Path string `json:"path"`
+
+	// Queued false when a start queued before and not done yet is returned
+	Queued bool `json:"queued"`
+
+	// Rid the container resource
+	Rid string `json:"rid"`
+}
+
 // basicAuthContextKey is the context key for basicAuth security scheme
 type basicAuthContextKey string
 
@@ -8238,6 +8279,12 @@ type DeleteAgentTagParams struct {
 type PostAgentTagParams struct {
 	// Path The object of the node, as namespace/kind/name. Default the node.
 	Path *InQueryAgentPath `form:"path,omitempty" json:"path,omitempty"`
+}
+
+// PostAgentWakeParams defines parameters for PostAgentWake.
+type PostAgentWakeParams struct {
+	// Nodename the node to wake, a node of the cluster of the caller
+	Nodename string `form:"nodename" json:"nodename"`
 }
 
 // GetAIResourcesParams defines parameters for GetAIResources.
