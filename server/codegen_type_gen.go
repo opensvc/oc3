@@ -2521,12 +2521,18 @@ type AssistantInterrupt struct {
 
 // AssistantMessage defines model for AssistantMessage.
 type AssistantMessage struct {
-	CreatedAt time.Time            `json:"created_at"`
-	Feedback  *AssistantFeedback   `json:"feedback,omitempty"`
-	Id        string               `json:"id"`
-	Role      AssistantMessageRole `json:"role"`
-	Text      string               `json:"text"`
-	TurnId    string               `json:"turn_id"`
+	CreatedAt time.Time          `json:"created_at"`
+	Feedback  *AssistantFeedback `json:"feedback,omitempty"`
+	Id        string             `json:"id"`
+
+	// ModelId On the last assistant message of a turn, the id of the model the turn last ran on; absent for a turn recorded before.
+	ModelId *string              `json:"model_id,omitempty"`
+	Role    AssistantMessageRole `json:"role"`
+
+	// Skill On the message of the user that starts a turn, the name of the skill it asked with forwardedProps.skill, which the agent loaded first; absent when it asked none, or for a turn recorded before.
+	Skill  *string `json:"skill,omitempty"`
+	Text   string  `json:"text"`
+	TurnId string  `json:"turn_id"`
 }
 
 // AssistantMessageRole defines model for AssistantMessage.Role.
@@ -2539,6 +2545,26 @@ type AssistantMessagePage struct {
 
 	// NextCursor Pass it as `before` to read the previous page; empty when there is none.
 	NextCursor string `json:"next_cursor"`
+}
+
+// AssistantModel defines model for AssistantModel.
+type AssistantModel struct {
+	// Default Whether a run that names no model runs on it.
+	Default bool `json:"default"`
+
+	// Id The ID of the model, opaque, for forwardedProps.model.
+	Id string `json:"id"`
+
+	// Label The name to show.
+	Label string `json:"label"`
+
+	// Ready Whether the caller can run on it.
+	Ready bool `json:"ready"`
+}
+
+// AssistantModels The models the agent offers, as it gives them.
+type AssistantModels struct {
+	Models []AssistantModel `json:"models"`
 }
 
 // AssistantRunEvent One AG-UI event of a run. RUN_STARTED, then the answers of the model
@@ -2603,9 +2629,22 @@ type AssistantRunEventType string
 
 // AssistantRunInput The AG-UI RunAgentInput of a run. The agent reads threadId, runId,
 // protocolVersion, the last message, a message of the user, the ids of the
-// others, the tools of the client and resume; not the state, the context or
-// the forwarded properties.
+// others, the tools of the client, resume, and of the forwarded properties
+// model and skill; not the state, nor the context.
 type AssistantRunInput struct {
+	// ForwardedProps Properties for the agent. model, the id of a model GET
+	// /assistant/models lists, chooses the model a new turn runs on; absent,
+	// the default model. A resumed turn keeps the model it started on. A
+	// model the agent does not offer is refused with 400 model_unknown.
+	// skill, the name of a skill GET /assistant/skills lists, has the
+	// agent load its procedure before the model answers a new turn;
+	// absent or null, none. A name not shaped as one is refused with 400
+	// invalid_skill; a skill the user is not served, or whose load is
+	// refused, fails the run with RUN_ERROR skill_unavailable.
+	ForwardedProps *struct {
+		Model *string `json:"model,omitempty"`
+		Skill *string `json:"skill,omitempty"`
+	} `json:"forwardedProps,omitempty"`
 	Messages []AssistantRunMessage `json:"messages"`
 
 	// ProtocolVersion The version of AG-UI the client speaks, MAJOR.MINOR.
@@ -2666,6 +2705,20 @@ type AssistantRunOutcome struct {
 
 // AssistantRunOutcomeType defines model for AssistantRunOutcome.Type.
 type AssistantRunOutcomeType string
+
+// AssistantSkill defines model for AssistantSkill.
+type AssistantSkill struct {
+	// Description What the skill does, at most 300 bytes.
+	Description string `json:"description"`
+
+	// Name The name of the skill, for forwardedProps.skill.
+	Name string `json:"name"`
+}
+
+// AssistantSkills The skills a run may ask, as the agent gives them.
+type AssistantSkills struct {
+	Skills []AssistantSkill `json:"skills"`
+}
 
 // AssistantStatus defines model for AssistantStatus.
 type AssistantStatus struct {
@@ -19392,6 +19445,14 @@ func (a *AssistantRunInput) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	if raw, found := object["forwardedProps"]; found {
+		err = json.Unmarshal(raw, &a.ForwardedProps)
+		if err != nil {
+			return fmt.Errorf("error reading 'forwardedProps': %w", err)
+		}
+		delete(object, "forwardedProps")
+	}
+
 	if raw, found := object["messages"]; found {
 		err = json.Unmarshal(raw, &a.Messages)
 		if err != nil {
@@ -19458,6 +19519,13 @@ func (a *AssistantRunInput) UnmarshalJSON(b []byte) error {
 func (a AssistantRunInput) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
+
+	if a.ForwardedProps != nil {
+		object["forwardedProps"], err = json.Marshal(a.ForwardedProps)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'forwardedProps': %w", err)
+		}
+	}
 
 	if a.Messages != nil {
 		object["messages"], err = json.Marshal(a.Messages)

@@ -7009,6 +7009,120 @@ paths:
                 $ref: '#/components/schemas/AssistantError'
       security:
         - basicAuth: [ ]
+  /assistant/models:
+    get:
+      operationId: GetAssistantModels
+      description: |
+        The models the runs of the caller choose from, the default first: their
+        ID, which the forwardedProps.model of a run names, their label, whether
+        each is the default, and whether the caller can run on it. An agent that
+        offers no choice does not tell custom.models in its capabilities.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      responses:
+        200:
+          description: The models.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantModels'
+        401:
+          description: No access token for the caller (assistant_token_unavailable), or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/skills:
+    get:
+      operationId: GetAssistantSkills
+      description: |
+        The skills a run of the caller may ask, as the MCP of the collector
+        serves them to the user: their name, which the forwardedProps.skill of
+        a run names, and their description, at most 32. The procedure of an
+        asked skill is loaded by the agent before the model answers. An agent
+        that offers no such choice does not tell custom.skills in its
+        capabilities.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      responses:
+        200:
+          description: The skills.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantSkills'
+        401:
+          description: No access token for the caller (assistant_token_unavailable), or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the agent lists no skills for this backend (not_found).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable), or could not read the skills of the MCP (skills_unavailable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
         - bearerAuth: [ ]
 
   /assistant/tools:
@@ -28370,6 +28484,12 @@ components:
         feedback:
           $ref: '#/components/schemas/AssistantFeedback'
           description: On an assistant message, the feedback of the user on its turn, if any.
+        model_id:
+          type: string
+          description: On the last assistant message of a turn, the id of the model the turn last ran on; absent for a turn recorded before.
+        skill:
+          type: string
+          description: On the message of the user that starts a turn, the name of the skill it asked with forwardedProps.skill, which the agent loaded first; absent when it asked none, or for a turn recorded before.
     AssistantMessagePage:
       type: object
       required:
@@ -28389,8 +28509,8 @@ components:
       description: |
         The AG-UI RunAgentInput of a run. The agent reads threadId, runId,
         protocolVersion, the last message, a message of the user, the ids of the
-        others, the tools of the client and resume; not the state, the context or
-        the forwarded properties.
+        others, the tools of the client, resume, and of the forwarded properties
+        model and skill; not the state, nor the context.
       required:
       - threadId
       - runId
@@ -28449,6 +28569,29 @@ components:
                 properties:
                   approved:
                     type: boolean
+        forwardedProps:
+          type: object
+          description: |
+            Properties for the agent. model, the id of a model GET
+            /assistant/models lists, chooses the model a new turn runs on; absent,
+            the default model. A resumed turn keeps the model it started on. A
+            model the agent does not offer is refused with 400 model_unknown.
+            skill, the name of a skill GET /assistant/skills lists, has the
+            agent load its procedure before the model answers a new turn;
+            absent or null, none. A name not shaped as one is refused with 400
+            invalid_skill; a skill the user is not served, or whose load is
+            refused, fails the run with RUN_ERROR skill_unavailable.
+          properties:
+            model:
+              type: string
+              minLength: 1
+              maxLength: 64
+            skill:
+              type: string
+              nullable: true
+              minLength: 1
+              maxLength: 64
+              pattern: '^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$'
       additionalProperties: true
     AssistantRunMessage:
       type: object
@@ -28647,6 +28790,62 @@ components:
       type: object
       description: The AG-UI AgentCapabilities of the agent.
       additionalProperties: true
+    AssistantModels:
+      type: object
+      description: The models the agent offers, as it gives them.
+      required:
+      - models
+      properties:
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssistantModel'
+    AssistantModel:
+      type: object
+      required:
+      - id
+      - label
+      - default
+      - ready
+      properties:
+        id:
+          type: string
+          description: The ID of the model, opaque, for forwardedProps.model.
+        label:
+          type: string
+          description: The name to show.
+        default:
+          type: boolean
+          description: Whether a run that names no model runs on it.
+        ready:
+          type: boolean
+          description: Whether the caller can run on it.
+    AssistantSkills:
+      type: object
+      description: The skills a run may ask, as the agent gives them.
+      required:
+      - skills
+      properties:
+        skills:
+          type: array
+          maxItems: 32
+          items:
+            $ref: '#/components/schemas/AssistantSkill'
+    AssistantSkill:
+      type: object
+      required:
+      - name
+      - description
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: '^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$'
+          description: The name of the skill, for forwardedProps.skill.
+        description:
+          type: string
+          description: What the skill does, at most 300 bytes.
     AssistantTools:
       type: object
       description: The tools the agent lists, as it gives them.
